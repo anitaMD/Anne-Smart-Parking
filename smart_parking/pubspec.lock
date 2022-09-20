@@ -95,10 +95,12 @@ packages:
   country_state_city_picker:
     dependency: "direct main"
     description:
-      name: country_state_city_picker
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.2.8"
+      path: "."
+      ref: HEAD
+      resolved-ref: "2ab468ac00b5e3e479cbb7bc639b25d13b2129e8"
+      url: "https://github.com/anitaMD/country_state_city_picker"
+    source: git
+    version: "1.0.1"
   cross_file:
     dependency: transitive
     description:
