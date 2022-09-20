@@ -1,0 +1,15 @@
+Anne Smart P:
+ADDRESS: GEOCODE: elevation=37.0, timezone=Africa/Dakar, geoNumber=3571984883173,streetNumber=null, streetAddress=Ancienne Piste, city=Dakar, countryCode=SN, countryName=Senegal, region=Dakar, postal=null, distance=0.062
+
+
+Another Smart Parking :
+ADDRESS: GEOCODE: elevation=30.0, timezone=Africa/Dakar, geoNumber=3571984604679,streetNumber=1, streetAddress=rue GY-501, city=Scat Urbam, countryCode=SN, countryName=Senegal, region=Scat Urbam, SN, postal=null, distance=0.255
+
+ECPI SmartP:
+ADDRESS: GEOCODE: elevation=42.0, timezone=Africa/Dakar, geoNumber=3571984383168,streetNumber=null, streetAddress=Rue SC-184, city=Dakar, countryCode=SN, countryName=Senegal, region=Dakar, postal=30018, distance=0.068
+
+
+
+
+
+

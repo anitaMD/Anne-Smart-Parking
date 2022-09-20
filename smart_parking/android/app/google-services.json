@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "519728814403",
+    "firebase_url": "https://smartparking-anne-default-rtdb.firebaseio.com",
+    "project_id": "smartparking-anne",
+    "storage_bucket": "smartparking-anne.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:519728814403:android:b77fcda746ab9251bb77f6",
+        "android_client_info": {
+          "package_name": "com.example.smart_parking"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "519728814403-f8r1vdkfr4rcjolrvp8o11k7ahgrejrq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.smart_parking",
+            "certificate_hash": "879e4fc08b6d2aa888a609810ca208201bfbc8c4"
+          }
+        },
+        {
+          "client_id": "519728814403-6h1sgd8j8uq16ha37lq6i2r9l137fqto.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoFnRPOY-sj6DedMhcjOX47FLgqv_mpEQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "519728814403-6h1sgd8j8uq16ha37lq6i2r9l137fqto.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
