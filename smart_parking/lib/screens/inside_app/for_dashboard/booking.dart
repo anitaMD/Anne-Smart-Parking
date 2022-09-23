@@ -33,7 +33,9 @@ class BookingPageState extends State<BookingPage> {
             const ImageConfiguration(devicePixelRatio: 5.5),
             'assets/images/parking_marker_icon.png')
         .then((onValue) {
-      smartParkingIconMarker = onValue;
+      setState(() {
+        smartParkingIconMarker = onValue;
+      });
     });
     rootBundle.loadString('assets/mapstyle/mapstyle.txt').then((string) {
       _mapStyle = string;
@@ -67,7 +69,7 @@ class BookingPageState extends State<BookingPage> {
   double aParkingLongitude = 0.0;
   //
   String sentParkingIDtoSlotsBooking = '';
-  late BitmapDescriptor smartParkingIconMarker;
+  BitmapDescriptor smartParkingIconMarker = BitmapDescriptor.defaultMarker;
   Map<String, dynamic> fetchedMappingResult =
       {}; //contains entries from firestore "locations" document like {{key,value}, {key,value},...} with key=document_id and value={name, geopoint{}, streetadd...} and each entry in value is a map of elements that can be accessed through value.key or value.value
   Map<String, List<Placemark>> mappedParkingPlacemarks = {};

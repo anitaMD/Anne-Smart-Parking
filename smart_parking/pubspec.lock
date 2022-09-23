@@ -97,7 +97,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "2ab468ac00b5e3e479cbb7bc639b25d13b2129e8"
+      resolved-ref: "352868989ee764222c38e0da24e5380c5dc2bc6c"
       url: "https://github.com/anitaMD/country_state_city_picker"
     source: git
     version: "1.0.1"
@@ -323,14 +323,14 @@ packages:
       name: geolocator_android
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.1.0"
+    version: "4.1.3"
   geolocator_apple:
     dependency: transitive
     description:
       name: geolocator_apple
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.2.1"
+    version: "2.2.2"
   geolocator_platform_interface:
     dependency: transitive
     description:
@@ -470,7 +470,7 @@ packages:
       name: image_picker_ios
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.8.6"
+    version: "0.8.6+1"
   image_picker_platform_interface:
     dependency: transitive
     description:
@@ -652,7 +652,7 @@ packages:
       name: plugin_platform_interface
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.1.2"
+    version: "2.1.3"
   process:
     dependency: transitive
     description:

@@ -56,7 +56,6 @@ class _MyAppState extends State<MyApp> {
             // Define the default brightness and colors.
             brightness: Brightness.light,
             primaryColor: Colors.indigo,
-
             // Define the default font family.
           ),
           home: widget.status == true

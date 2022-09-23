@@ -1,12 +1,13 @@
 buildscript {
-    ext.kotlin_version = '1.6.10'
+    ext.kotlin_version = '1.7.10'
     repositories {
         google()
         mavenCentral()
+
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.0'
+        classpath 'com.android.tools.build:gradle:7.0.0' //7.3.0 won't work because one of the plugins' dependecny needs kotlin gradle org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.20 yet 7.3.0 supports starting kotlin gradle pulgin 1.5.20 and higher. so let's keep it like this for now
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.google.gms:google-services:4.3.10'
        
