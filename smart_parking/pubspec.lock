@@ -49,21 +49,21 @@ packages:
       name: cloud_firestore
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.4.8"
+    version: "3.4.9"
   cloud_firestore_platform_interface:
     dependency: transitive
     description:
       name: cloud_firestore_platform_interface
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "5.7.4"
+    version: "5.7.5"
   cloud_firestore_web:
     dependency: transitive
     description:
       name: cloud_firestore_web
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.8.7"
+    version: "2.8.8"
   collection:
     dependency: transitive
     description:
@@ -85,19 +85,12 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.3.0"
-  country_list_pick:
-    dependency: "direct main"
-    description:
-      name: country_list_pick
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.0.1+6"
   country_state_city_picker:
     dependency: "direct main"
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "352868989ee764222c38e0da24e5380c5dc2bc6c"
+      resolved-ref: "416737862eec216a38924a339ca38777d59d809f"
       url: "https://github.com/anitaMD/country_state_city_picker"
     source: git
     version: "1.0.1"
@@ -170,28 +163,28 @@ packages:
       name: firebase_auth
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.9.0"
+    version: "3.10.0"
   firebase_auth_platform_interface:
     dependency: transitive
     description:
       name: firebase_auth_platform_interface
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "6.8.0"
+    version: "6.9.0"
   firebase_auth_web:
     dependency: "direct main"
     description:
       name: firebase_auth_web
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.4.1"
+    version: "4.5.0"
   firebase_core:
     dependency: "direct main"
     description:
       name: firebase_core
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.22.0"
+    version: "1.23.0"
   firebase_core_platform_interface:
     dependency: transitive
     description:
@@ -212,21 +205,21 @@ packages:
       name: firebase_storage
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "10.3.8"
+    version: "10.3.9"
   firebase_storage_platform_interface:
     dependency: transitive
     description:
       name: firebase_storage_platform_interface
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.1.16"
+    version: "4.1.17"
   firebase_storage_web:
     dependency: transitive
     description:
       name: firebase_storage_web
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.3.6"
+    version: "3.3.7"
   flag:
     dependency: "direct main"
     description:
@@ -239,6 +232,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_emoji:
+    dependency: "direct main"
+    description:
+      name: flutter_emoji
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.4.0"
   flutter_form_builder:
     dependency: "direct main"
     description:
@@ -316,7 +316,7 @@ packages:
       name: geolocator
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "9.0.1"
+    version: "9.0.2"
   geolocator_android:
     dependency: transitive
     description:
@@ -393,7 +393,7 @@ packages:
       name: google_sign_in
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "5.4.1"
+    version: "5.4.2"
   google_sign_in_android:
     dependency: transitive
     description:

@@ -7,7 +7,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.0' //7.3.0 won't work because one of the plugins' dependecny needs kotlin gradle org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.20 yet 7.3.0 supports starting kotlin gradle pulgin 1.5.20 and higher. so let's keep it like this for now
+        classpath 'com.android.tools.build:gradle:7.0.0' //7.3.0 won't work because one of the plugins' dependecny needs kotlin gradle org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.20 yet 7.3.0 supports starting kotlin gradle pulgin 1.5.20 and higher. so let's keep it like this for now. check https://stackoverflow.com/questions/54693595/flutter-the-android-gradle-plugin-supports-only-kotlin-gradle-plugin-version-1
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.google.gms:google-services:4.3.10'
        

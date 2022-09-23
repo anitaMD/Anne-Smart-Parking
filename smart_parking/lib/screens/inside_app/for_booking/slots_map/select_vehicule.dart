@@ -12,8 +12,8 @@ import 'package:smart_parking/styling/styling.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:country_list_pick/country_list_pick.dart';
 import 'package:country_state_city_picker/country_state_city_picker.dart';
+import 'package:flutter_emoji/flutter_emoji.dart';
 
 class SelectVehicule extends StatefulWidget {
   final User? currentlySIUser;
@@ -34,23 +34,32 @@ class _SelectVehiculeState extends State<SelectVehicule> {
       isVehiculeSelected = false,
       addCarIconPressed = false,
       firstTimeCallingShow = true,
-      callSelectVehiculeAfterAdd = false;
+      callSelectVehiculeAfterAdd = false,
+      isFlagAvailable = false;
+
   List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched = [];
   String isoCountryCode = '',
       keyValue = 'TEST',
       localeName = Platform.localeName,
       country = '',
       region = '',
+      realCountryValue = 'Select Reg. Country',
+      realStateCityValue = 'Select Reg. State/City',
+      realCityDepValue = 'Select Reg. City/Department',
       cityCountryPattern = "^[A-ZÀ-Ú][À-Úà-ú -zA-Z']*",
       licensePlatePattern = "[A-Z0-9]*",
       modelDetailPattern = "^([A-ZÀ-Ú0-9])([À-Úà-ú a-zA-Z'0-9-]*)";
 
   final CarouselController carouselController = CarouselController();
-  int current = 0, expandVehiculeCardTotalCalls = 0, alertIndex = 0;
+  int current = 0,
+      expandVehiculeCardTotalCalls = 0,
+      alertIndex = 0,
+      totalStates = 0,
+      totalCities = 0;
   ScrollController infoListViewController = ScrollController();
   double cardHeight = 100;
   Set<String> fetchedCarLogosAssets = {};
-  Map<String, dynamic> pickVehiculeNeededInfMapped = {};
+  Map<String, dynamic> pickVehiculeNeededInfMapped = {}, formFetchedInf = {};
   Set<Map<String, dynamic>> allUserCars = {},
       allUserMotorcycles = {},
       mappedSelectedVehiculeCard = {};
@@ -101,6 +110,29 @@ class _SelectVehiculeState extends State<SelectVehicule> {
 
   selectVehiculeAlertCard(int alertIndex, String showVehicule) {
     vehiculesInfoFetched = pickVehiculeNeededInfMapped['fetchedVehiculeInfo'];
+    print(" vehiculesInfoFetched $vehiculesInfoFetched");
+    var theCurrentVehicule = vehiculesInfoFetched.singleWhere((element) {
+      return element.data()['Specs']['License Plate N°'].toString().contains(
+          getAllLicensePlateNumbers(vehiculesInfoFetched, showVehicule)
+              .elementAt(alertIndex));
+    });
+    String theCountryISO = EmojiParser()
+        .unemojify(
+            "${theCurrentVehicule.data()['Other Details']['Reg. Country ISO']}")
+        .split("-")
+        .last
+        .split(':')
+        .first
+        .toUpperCase();
+
+    String theCityISO =
+        theCurrentVehicule.data()['Other Details']['Reg. City ISO'];
+
+    String theRegYear = theCurrentVehicule
+        .data()['Specs']['Registration Year']
+        .toString()
+        .substring(2);
+
     return SizedBox(
       height: cardHeight,
       child: Card(
@@ -116,15 +148,21 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Flag.fromCode(
-                          FlagsCode.SN,
+                        Flag.fromString(
+                          theCountryISO,
+                          replacement: SizedBox(
+                            child: Container(
+                              height: 20,
+                              color: Colors.black54,
+                            ),
+                          ),
                           width: 120,
                           height: 20,
                         ),
                         Align(
                           child: FittedBox(
                             child: Text(
-                              isoCountryCode,
+                              theCountryISO,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,
@@ -195,7 +233,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                 ),
               ),
               Flexible(
-                //CITY COED AND YEAR
+                //CITY CODE AND REG YEAR
                 child: Container(
                     color: Colors.transparent,
                     padding: const EdgeInsets.only(left: 5, right: 5),
@@ -203,12 +241,12 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       crossAxisAlignment: CrossAxisAlignment.center,
-                      children: const [
+                      children: [
                         Align(
                           child: FittedBox(
                             child: Text(
-                              'DK',
-                              style: TextStyle(
+                              theCityISO,
+                              style: const TextStyle(
                                 color: Colors.black,
                                 fontSize: 15,
                                 fontFamily: 'OpenSans',
@@ -220,8 +258,8 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                         Align(
                           child: FittedBox(
                             child: Text(
-                              '15',
-                              style: TextStyle(
+                              theRegYear,
+                              style: const TextStyle(
                                 color: Colors.black,
                                 fontSize: 15,
                                 fontFamily: 'OpenSans',
@@ -650,7 +688,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
         element['Type'] == "Car"
             ? {
                 allVehiculesLicensePlates
-                    .add(element.data()['Specs']['License Plate']),
+                    .add(element.data()['Specs']['License Plate N°']),
                 allUserCars.add({element.id: element.data()})
               }
             : null;
@@ -791,12 +829,12 @@ Future<String> getCountryName() async {
     );
   }
 
-  void addCarInfoToFirebase(Map<String, dynamic> formRes) {
+  Future<QuerySnapshot<Map<String, dynamic>>> addVehiculeInfoToFirebase(
+      Map<String, dynamic> formRes) {
     CollectionReference vehiculesCollectionRef =
         myDB.collection("users/${widget.currentlySIUser!.uid}/vehicules");
     WriteBatch batch = myDB.batch();
     print("FROM ADDCARIN ${formRes['car brand']}");
-
     myDB
         .collection("users/${widget.currentlySIUser!.uid}/vehicules")
         .get()
@@ -815,29 +853,41 @@ Future<String> getCountryName() async {
             'Type': 'Car',
             'Specs': {
               'Brand': formRes['car brand'],
-              'City': formRes['city'],
+              'Registration City': formFetchedInf['reg city'],
+              'Registration Country': formFetchedInf['reg country'],
               'Color': 'White',
-              'Country': formRes['country'],
-              'License Plate': formRes['license plate'],
+              'License Plate N°': formRes['license plate'],
               'Model Detail': formRes['model detail'],
-              'Year': formRes['year']
+              'Registration Year': formRes['year']
             },
             'History': {
               'Overall Parking Hours': 0,
               'Total Bookings': 0,
             },
+            'Other Details': {
+              'Reg. City ISO': formRes['city iso'],
+              'Reg. Country ISO': EmojiParser()
+                  .unemojify(realCountryValue)
+                  .split("-")
+                  .last
+                  .split(':')
+                  .first
+                  .toUpperCase(),
+            },
           });
       await batch.commit().whenComplete(() => print("SUCCESSFULYWRITTEN"));
 
-      myDB
+      await myDB
           .collection("users/${widget.currentlySIUser!.uid}/vehicules")
           .get()
-          .then((value) {
+          .then((value) async {
         var firstInitializedDoc = value.docs
             .where((element) => element.data().keys.contains('initialized'));
 
         firstInitializedDoc.isNotEmpty
-            ? vehiculesCollectionRef.doc(firstInitializedDoc.first.id).delete()
+            ? await vehiculesCollectionRef
+                .doc(firstInitializedDoc.first.id)
+                .delete()
             : null;
       });
 
@@ -846,6 +896,9 @@ Future<String> getCountryName() async {
           print("DONNE: ${value.docs.length}"),
           batch.commit().whenComplete(() => print("SUCCESSFULLY DELETED")), */
     });
+    return myDB
+        .collection("users/${widget.currentlySIUser!.uid}/vehicules")
+        .get();
   }
 
   selectVehiculeAlertDialog(
@@ -859,7 +912,7 @@ Future<String> getCountryName() async {
           actionsAlignment: MainAxisAlignment.spaceBetween,
           content: SizedBox(
             width: double.maxFinite,
-            height: cardHeight + 100,
+            height: cardHeight + 110,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -880,7 +933,7 @@ Future<String> getCountryName() async {
                   carouselItems.isEmpty
                       ? Container()
                       : SizedBox(
-                          height: 80,
+                          height: 70,
                           child: Column(
                             children: [
                               SizedBox(
@@ -1017,9 +1070,8 @@ Future<String> getCountryName() async {
 
   registerCarForm(String vehiculeType, int smoothIndicatorLength,
       Iterable<Widget> carouselItems) {
-    String countryValue;
-    String stateValue;
-    String cityValue;
+    // https://stackoverflow.com/questions/71792773/how-to-pop-out-double-alert-message/
+
     List<String> carOptions = [];
     getDirectory().then((value) {
       fetchedCarLogosAssets.addAll(value);
@@ -1042,25 +1094,28 @@ Future<String> getCountryName() async {
     bool autoValidate = true,
         readOnly = false,
         showSegmentedControl = true,
-        cityHasError = false,
+        cityIsoHasError = false,
         countryHasError = false,
         carBrandHasError = false,
         carColorHasError = false,
         licensePlateHasError = false,
         modelDetailHasError = false,
         yearHasError = false,
-        cityFieldInitiallyEmpty = true,
+        brandFieldInitiallyEmpty = true,
+        cityIsoFieldInitiallyEmpty = true,
         carColorFieldInitiallyEmpty = true,
         countryFieldInitiallyEmpty = true,
         licensePlateFieldInitiallyEmpty = true,
         modelDetailFieldInitiallyEmpty = true,
         yearFieldInitiallyEmpty = true;
+    final textField1Key = GlobalKey<FormBuilderFieldState>();
     // ignore: unused_element
     void onChanged(dynamic val) => debugPrint(val.toString());
     final formKey = GlobalKey<FormBuilderState>();
+    //https://www.iso.org/obp/ui#iso:code:3166:SN
     return showDialog(
         barrierDismissible: false,
-        useRootNavigator: true,
+        useRootNavigator: false,
         context: context,
         builder: (dialcontext) =>
             StatefulBuilder(builder: (dialcontext, setState) {
@@ -1083,26 +1138,7 @@ Future<String> getCountryName() async {
                         ),
                         const SizedBox(height: 20),
                         SizedBox(
-                          height: 200,
-                          child: SelectState(
-                            onCountryChanged: (value) {
-                              setState(() {
-                                countryValue = value;
-                              });
-                            },
-                            onStateChanged: (value) {
-                              setState(() {
-                                stateValue = value;
-                              });
-                            },
-                            onCityChanged: (value) {
-                              setState(() {
-                                cityValue = value;
-                              });
-                            },
-                          ),
-                        ),
-                        SizedBox(
+                          //DO NOT EDIT
                           height: cardHeight,
                           child: Card(
                               surfaceTintColor: Colors.yellow,
@@ -1258,6 +1294,48 @@ Future<String> getCountryName() async {
                                 ],
                               )),
                         ),
+                        SizedBox(
+                          child: SelectState(
+                            style: realCountryValue.contains("Reg.") ||
+                                    realStateCityValue.contains("Reg.")
+                                ? const TextStyle(
+                                    color: Color.fromARGB(163, 0, 0, 0))
+                                : const TextStyle(color: Colors.black),
+                            decoration: const InputDecoration(
+                              contentPadding:
+                                  EdgeInsets.only(top: 8, bottom: 8),
+                            ),
+                            onCountryChanged: (value) {
+                              setState(() {
+                                realCountryValue = value;
+                              });
+                            },
+                            onStateChanged: (value) {
+                              setState(() {
+                                realStateCityValue = value;
+                              });
+                            },
+                            onCityChanged: (value) {
+                              setState(() {
+                                realCityDepValue = value;
+                              });
+                            },
+                            onCityLengthChanged: (int value) {
+                              setState(() {
+                                totalCities = value;
+                                print(
+                                    "TOTAL CITIES OR DEPARTMENT: $totalCities");
+                              });
+                            },
+                            onStateLengthChanged: (int value) {
+                              setState(() {
+                                totalStates = value;
+                                print(
+                                    "TOTAL STATES/REGIONSORCITY: $totalStates");
+                              });
+                            },
+                          ),
+                        ),
                         FormBuilder(
                           key: formKey,
                           // enabled: false,
@@ -1270,16 +1348,83 @@ Future<String> getCountryName() async {
                           skipDisabled: true,
                           child: Column(
                             children: [
+                              FormBuilderTextField(
+                                maxLength: 3,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp("[A-Z*]*"),
+                                      replacementString: ''),
+                                  FilteringTextInputFormatter.deny(
+                                      RegExp(r'[/\\0-9]')),
+                                ],
+                                textCapitalization:
+                                    TextCapitalization.characters,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                name: 'city iso',
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.only(
+                                      bottom: 15, top: 15),
+                                  counterStyle: const TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 8,
+                                    height: 0.2,
+                                  ),
+                                  hintText: 'Example for Dakar : DK',
+                                  labelStyle: cityIsoFieldInitiallyEmpty
+                                      ? null
+                                      : customlabelStyleAddCar,
+                                  labelText: 'City ISO 3166 code',
+                                  suffixIcon: cityIsoHasError == true
+                                      ? const Icon(Icons.error,
+                                          color: Colors.red)
+                                      : cityIsoFieldInitiallyEmpty
+                                          ? null
+                                          : const Icon(Icons.check,
+                                              color: Colors.green),
+                                ),
+                                onChanged: (val) {
+                                  setState(() {
+                                    cityIsoFieldInitiallyEmpty = false;
+                                    cityIsoHasError = !(formKey
+                                            .currentState?.fields['city iso']
+                                            ?.validate() ??
+                                        false);
+                                  });
+                                },
+                                // valueTransformer: (text) => num.tryParse(text),
+                                validator: FormBuilderValidators.compose([
+                                  FormBuilderValidators.required(),
+                                  FormBuilderValidators.match("[A-Z*]{2,3}",
+                                      errorText: "2-3 letters required."),
+                                  FormBuilderValidators.max(70),
+                                ]),
+                                //initialValue: '?',
+                                keyboardType: TextInputType.name,
+                                textInputAction: TextInputAction.next,
+                              ),
+
                               FormBuilderDropdown<String>(
-                                autofocus:
-                                    true, //CHECK WHY THIS VALUE IS KINDA STUCK
-                                // autovalidate: true,
+                                alignment: Alignment.centerLeft,
+                                autofocus: true,
                                 name: 'car brand',
                                 decoration: InputDecoration(
                                   labelText: 'Car Brand',
                                   suffix: carBrandHasError == true
-                                      ? const Icon(Icons.error)
-                                      : const Icon(Icons.check),
+                                      ? const Icon(
+                                          Icons.error,
+                                          size: 30,
+                                        )
+                                      : brandFieldInitiallyEmpty == true
+                                          ? null
+                                          : brandFieldInitiallyEmpty == false &&
+                                                  carBrandHasError == false
+                                              ? const Icon(
+                                                  Icons.check,
+                                                  color: Colors.green,
+                                                  size: 25,
+                                                )
+                                              : null,
                                   hintText: 'Select A Brand',
                                 ),
                                 validator: FormBuilderValidators.compose(
@@ -1294,6 +1439,7 @@ Future<String> getCountryName() async {
                                     .toList(),
                                 onChanged: (val) {
                                   setState(() {
+                                    brandFieldInitiallyEmpty = false;
                                     carBrandHasError = !(formKey
                                             .currentState?.fields['car brand']
                                             ?.validate() ??
@@ -1302,41 +1448,7 @@ Future<String> getCountryName() async {
                                 },
                                 valueTransformer: (val) => val?.toString(),
                               ),
-
-                              FormBuilderDropdown<String>(
-                                autofocus:
-                                    true, //CHECK WHY THIS VALUE IS KINDA STUCK
-                                // autovalidate: true,
-                                name: 'test city',
-                                decoration: InputDecoration(
-                                  labelText: 'test city',
-                                  suffix: carBrandHasError == true
-                                      ? const Icon(Icons.error)
-                                      : const Icon(Icons.check),
-                                  hintText: 'test city',
-                                ),
-                                validator: FormBuilderValidators.compose(
-                                    [FormBuilderValidators.required()]),
-                                items: carOptions
-                                    .map((brand) => DropdownMenuItem(
-                                          alignment:
-                                              AlignmentDirectional.center,
-                                          value: brand,
-                                          child: Text(brand),
-                                        ))
-                                    .toList(),
-                                onChanged: (val) {
-                                  setState(() {
-                                    carBrandHasError = !(formKey
-                                            .currentState?.fields['car brand']
-                                            ?.validate() ??
-                                        false);
-                                  });
-                                },
-                                valueTransformer: (val) => val?.toString(),
-                              ),
-
-                              //CITY FIELD
+                              /*             //CITY FIELD
                               FormBuilderTextField(
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
@@ -1430,21 +1542,30 @@ Future<String> getCountryName() async {
                                 keyboardType: TextInputType.text,
                                 textInputAction: TextInputAction.next,
                               ),
-
+ */
                               //LICENSE PLATE FIELD
                               FormBuilderTextField(
-                                maxLength: 8,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
                                       RegExp(licensePlatePattern),
                                       replacementString: ''),
                                 ],
+                                maxLength: 8,
+                                maxLengthEnforcement:
+                                    MaxLengthEnforcement.enforced,
                                 textCapitalization:
                                     TextCapitalization.characters,
                                 autovalidateMode:
                                     AutovalidateMode.onUserInteraction,
                                 name: 'license plate',
                                 decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.only(
+                                      bottom: 15, top: 15),
+                                  counterStyle: const TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 8,
+                                    height: 0.2,
+                                  ),
                                   hintText: 'Your car lincense plate',
                                   labelText: 'License Plate',
                                   suffixIcon: licensePlateHasError
@@ -1523,17 +1644,23 @@ Future<String> getCountryName() async {
 
                               //YEAR FIELD
                               FormBuilderTextField(
-                                maxLength: 4,
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
                                       RegExp('^[1-2][0-9]*'),
                                       replacementString: ''),
                                 ],
-
                                 autovalidateMode:
                                     AutovalidateMode.onUserInteraction,
+                                maxLength: 4,
                                 name: 'year',
                                 decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.only(
+                                      bottom: 15, top: 15),
+                                  counterStyle: const TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 8,
+                                    height: 0.2,
+                                  ),
                                   hintText: 'Year Of First Registration',
                                   labelText: 'Year',
                                   suffixIcon: yearHasError
@@ -1575,62 +1702,62 @@ Future<String> getCountryName() async {
                           children: <Widget>[
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () {
-                                  if (formKey.currentState?.saveAndValidate() ??
-                                      false) {
-                                    debugPrint(
-                                        formKey.currentState?.value.toString());
-                                    print(
-                                        "VALIDATION SUCCESS ${formKey.currentState!.value}");
-                                    addCarInfoToFirebase(
-                                        formKey.currentState!.value);
-                                    Navigator.of(dialcontext).pop();
-                                    Navigator.of(context).pop();
-                                    ScaffoldMessenger.of(dialcontext)
-                                        .showSnackBar(
-                                      SnackBar(
-                                        content: Text(vehiculeType
-                                                    .contains('Car') ==
-                                                true
-                                            ? 'Car added successfully'
-                                            : 'Motorcycle added successfully'),
-                                      ),
-                                    );
-
-                                    Future.delayed(const Duration(seconds: 4))
-                                        .then((value) {
-                                      myDB
-                                          .collection(
-                                              "users/${widget.currentlySIUser!.uid}/vehicules")
-                                          .get()
-                                          .then((snapshotV) async {
-                                        print(
-                                            "THIS VALUE: ${snapshotV.docs.length}");
-                                        await afterVehiculeAddGetNeededInf(
-                                            vehiculeType, snapshotV.docs);
-                                        setState(
-                                          () {
-                                            carouselItems =
-                                                pickVehiculeNeededInfMapped[
-                                                    'item'] as Iterable<Widget>;
-                                            smoothIndicatorLength =
-                                                carouselItems.length;
-                                          },
-                                        );
-
-                                        print(
-                                            "CHECHK BEFORE:${carouselItems.length} _____ vehiculeType: $vehiculeType ");
-                                        selectVehiculeAlertDialog(
-                                          smoothIndicatorLength,
-                                          carouselItems,
-                                          vehiculeType,
-                                        );
-                                      });
-                                    });
+                                onPressed: () async {
+                                  if (realCountryValue.contains("Reg.") ||
+                                      realStateCityValue.contains("Reg.")) {
+                                    null;
                                   } else {
-                                    debugPrint(
-                                        formKey.currentState?.value.toString());
-                                    debugPrint('validation failed');
+                                    if (formKey.currentState
+                                            ?.saveAndValidate() ??
+                                        false) {
+                                      debugPrint(
+                                          "GIRL ${formKey.currentState?.value.toString()}");
+                                      formFetchedInf
+                                          .addAll(formKey.currentState!.value);
+                                      print("YOU DID FETCH: $formFetchedInf");
+
+                                      formFetchedInf.addAll({
+                                        'reg country':
+                                            realCountryValue.split("    ").last,
+                                        'reg city': realStateCityValue,
+                                      });
+                                      print(
+                                          "YOU DID FETCH AGAIN: $formFetchedInf");
+                                      print(
+                                          "VALIDATION SUCCESS ${formKey.currentState!.value}");
+                                      await addVehiculeInfoToFirebase(
+                                              formFetchedInf)
+                                          .then((fireSnap) {
+                                        Future.delayed(
+                                                const Duration(seconds: 2))
+                                            .then((value) {
+                                          firstTimeCallingShow == true
+                                              ? Navigator.of(dialcontext).pop(
+                                                  true) //to discard the "no vehicule registed ADD alert"
+                                              : null;
+                                          Navigator.of(context).pop(true);
+                                          ScaffoldMessenger.of(dialcontext)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(vehiculeType
+                                                          .contains('Car') ==
+                                                      true
+                                                  ? 'Car added successfully'
+                                                  : 'Motorcycle added successfully'),
+                                            ),
+                                          );
+                                        });
+                                      });
+                                      /*  Future.delayed(Duration(seconds: 5))
+                                        .then((value) {
+                                      Navigator.of(context).pop();
+                                      Navigator.of(dialcontext).pop();
+                                    }); */
+                                    } else {
+                                      debugPrint(formKey.currentState?.value
+                                          .toString());
+                                      debugPrint('validation failed');
+                                    }
                                   }
                                 },
                                 child: const Text(
@@ -1660,7 +1787,40 @@ Future<String> getCountryName() async {
                   ),
                 ),
               );
-            }));
+            })).then((value) {
+      if (value == true) {
+        myDB
+            .collection("users/${widget.currentlySIUser!.uid}/vehicules")
+            .get()
+            .then((snapshotV) async {
+          print("THIS VALUE: ${snapshotV.docs.length}");
+          await afterVehiculeAddGetNeededInf(vehiculeType, snapshotV.docs);
+
+          setState(
+            () {
+              carouselItems =
+                  pickVehiculeNeededInfMapped['item'] as Iterable<Widget>;
+              smoothIndicatorLength = carouselItems.length;
+              isFlagAvailable = true;
+            },
+          );
+
+          print(
+              "CHECHK BEFORE:${carouselItems.length} _____ vehiculeType: $vehiculeType ");
+          selectVehiculeAlertDialog(
+            smoothIndicatorLength,
+            carouselItems,
+            vehiculeType,
+          );
+        });
+
+        setState(() {
+          firstTimeCallingShow = false;
+        });
+      } else {
+        print("HERE WE GO");
+      }
+    });
   }
 
   afterVehiculeAddGetNeededInf(String vehiculeType,
@@ -1675,6 +1835,7 @@ Future<String> getCountryName() async {
       'vehiculeType': vehiculeType
     });
     print("DAVE: $pickVehiculeNeededInfMapped");
+    return pickVehiculeNeededInfMapped['fetchedVehiculeInfo'];
   }
 
 //
@@ -1744,6 +1905,9 @@ Future<String> getCountryName() async {
     return carLogosAssets;
   }
 
+  refresh() => Future.delayed(const Duration(seconds: 1), () {
+        setState(() {});
+      });
 /* THESE WILL BE NEEDED IF I EVER WANT TO DISPLAY A CAROUSEL USING THE CAROULSEL SLIDER DEPENDANCY
   /*   expandedCardForCarousel(String showVehicule) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(

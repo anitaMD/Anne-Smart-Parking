@@ -67,10 +67,10 @@ dependencies:
   flag: ^6.0.0
   flutter_form_builder: ^7.6.0
   form_builder_validators: ^8.3.0
-  country_list_pick: ^1.0.1+6
   country_state_city_picker : 
     git:
       url: https://github.com/anitaMD/country_state_city_picker
+  flutter_emoji: ^2.4.0
 
 
   
