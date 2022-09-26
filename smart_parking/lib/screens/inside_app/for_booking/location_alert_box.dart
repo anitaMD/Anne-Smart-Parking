@@ -38,17 +38,17 @@ class _ActivateLocationAlertBoxState extends State<ActivateLocationAlertBox> {
     final currentLocationProvider =
         Provider.of<CurrentLocationNotifier>(context);
     //
-    Future.delayed(
+    /*   Future.delayed(
       const Duration(seconds: 10),
-    );
-    return Dialog(
-      insetPadding: const EdgeInsets.all(60.0),
+    ); */
+    return AlertDialog(
+      insetPadding: const EdgeInsets.all(40.0),
       elevation: 0,
       backgroundColor: const Color(0xffffffff),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15.0),
       ),
-      child: Column(
+      content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 15),
@@ -86,6 +86,12 @@ class _ActivateLocationAlertBoxState extends State<ActivateLocationAlertBox> {
                             currentLocationProvider
                                 .updateLocationFromAlertBox(dummyPosition),
                             Navigator.pop(context),
+                            Navigator.pop(context),
+                            Navigator.pop(context, true),
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(const SnackBar(
+                              content: Text("Location successfully activated!"),
+                            )),
                           });
                 } catch (e) {
                   bool testEnabled;
@@ -95,17 +101,23 @@ class _ActivateLocationAlertBoxState extends State<ActivateLocationAlertBox> {
                     // Location services are not enabled don't continue
                     // accessing the position and request users of the
                     // App to enable the location services.
-                    return Future.error('Location services are disabled.');
+
                   }
                 }
               },
               child: Center(
-                child: Text(
-                  "Turn on",
-                  style: TextStyle(
-                    fontSize: 18.0,
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.bold,
+                child: InkWell(
+                  onTap: () {
+                    //Navigator.of(context).popUntil((route) => false);
+                    //Navigator.pop(context, true);
+                  },
+                  child: Text(
+                    "Turn on",
+                    style: TextStyle(
+                      fontSize: 18.0,
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -124,7 +136,9 @@ class _ActivateLocationAlertBoxState extends State<ActivateLocationAlertBox> {
               ),
               highlightColor: Colors.grey[200],
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(context, false);
+                Navigator.pop(context, false);
+                Navigator.pop(context, false);
               },
               child: const Center(
                 child: Text(

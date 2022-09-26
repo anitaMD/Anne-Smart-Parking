@@ -1,7 +1,6 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -55,7 +54,10 @@ class BookingPageState extends State<BookingPage> {
 
   // VARIABLES------------------------
   FocusNode mapFocus = FocusNode();
-  bool isParkingLocationIconNotClicked = true;
+  bool isParkingLocationIconNotClicked = true,
+      isNewCameraPositionAvailable = false;
+  CameraPosition newCameraPosition =
+      const CameraPosition(target: LatLng(0.0, 0.0));
   final drangHandlePanelController = PanelController();
   late String _mapStyle;
   MapType _currentMapType = MapType.normal;
@@ -65,8 +67,7 @@ class BookingPageState extends State<BookingPage> {
       FirestoreParkingLocationService();
   // ignore: prefer_typing_uninitialized_variables
   var fetchedParkingLat, fetchedParkingLng;
-  double aParkingLatitude = 0.0;
-  double aParkingLongitude = 0.0;
+  double aParkingLatitude = 0.0, aParkingLongitude = 0.0;
   //
   String sentParkingIDtoSlotsBooking = '';
   BitmapDescriptor smartParkingIconMarker = BitmapDescriptor.defaultMarker;
@@ -214,6 +215,51 @@ class BookingPageState extends State<BookingPage> {
     );
   }
 
+  displayLocationEnablerDialBox(
+      bool rejectedFromTheStart, bool enabledAfterRejected) {
+    if (rejectedFromTheStart == true && enabledAfterRejected == false) {
+      Future.delayed(const Duration(seconds: 5)).then((value) => {
+            showDialog(
+              barrierColor: Colors.black12,
+              barrierDismissible: false,
+              context: context,
+              builder: (dialContext) =>
+                  StatefulBuilder(builder: (dialContext, setState) {
+                return const ActivateLocationAlertBox(
+                  title: "Device Location Needed",
+                  description:
+                      "To display the map and available smart parkings, we need to access your location.",
+                );
+              }),
+            ).then((value) async {
+              value == true
+                  ? print("LOCATION SUCCESSFULLY ENABLED FROM 'TURN ON'")
+                  : null;
+              setState(() {
+                isNewCameraPositionAvailable = true;
+                newCameraPosition = CameraPosition(
+                    target: LatLng(
+                        context
+                            .read<CurrentLocationNotifier>()
+                            .locationFetchedFromAlertBox
+                            .latitude,
+                        context
+                            .read<CurrentLocationNotifier>()
+                            .locationFetchedFromAlertBox
+                            .longitude),
+                    zoom: 11,
+                    bearing: 10);
+              });
+
+              await _controller.future.then((value) => value.animateCamera(
+                  CameraUpdate.newCameraPosition(newCameraPosition)));
+            })
+          });
+    }
+    print(
+        "WATCHING CONTEXT${context.watch<CurrentLocationNotifier>().locationFetchedFromAlertBox}");
+  }
+
   @override
   Widget build(BuildContext context) {
     double panelHeightClosed = MediaQuery.of(context).size.height * 0.1;
@@ -225,33 +271,13 @@ class BookingPageState extends State<BookingPage> {
     if (mapCreated == true) mapInitialize(); //MAP INITIALIZATION----
 
     displayLocationEnablerDialBox(
-        bool rejectedFromTheStart, bool enabledAfterRejected) {
-      if (rejectedFromTheStart == true && enabledAfterRejected == false) {
-        Future.delayed(const Duration(seconds: 10)).then((value) => {
-              showDialog(
-                barrierColor: Colors.black26,
-                barrierDismissible: false,
-                context: context,
-                builder: (context) {
-                  return const ActivateLocationAlertBox(
-                    title: "Device Location Needed",
-                    description:
-                        "To display the map and available smart parkings, we need to access your location.",
-                  );
-                },
-              )
-            });
-      }
-    }
-
-    displayLocationEnablerDialBox(
         currentLocationProvider.serviceRejectedFromTheStart,
         currentLocationProvider.serviceEnabledAfterRejected);
     print(
         " MAPTYPEEUU $_currentMapType"); //TERRAIN IS THE ONE WITH COLORS AND LESS MARKERS FROM OTHER PACES
 
     print(
-        "POSITION AVAILABLE NOW?  ${currentLocationProvider.positionAvailable}");
+        "POSITION AVAILABLE NOW?  ${context.watch<CurrentLocationNotifier>().positionAvailable}");
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 246, 244, 248),
       //backgroundColor: Colors.white,
@@ -289,10 +315,14 @@ class BookingPageState extends State<BookingPage> {
                                 .locationEnabledFromAlertBox ==
                             true
                         ? LatLng(
-                            currentLocationProvider
-                                .locationFetchedFromAlertBox.latitude,
-                            currentLocationProvider
-                                .locationFetchedFromAlertBox.longitude)
+                            context
+                                .read<CurrentLocationNotifier>()
+                                .locationFetchedFromAlertBox
+                                .latitude,
+                            context
+                                .watch<CurrentLocationNotifier>()
+                                .locationFetchedFromAlertBox
+                                .longitude)
                         : LatLng(
                             currentLocationProvider.currentUserLat.toDouble(),
                             currentLocationProvider.currentUserLng.toDouble()),
@@ -372,7 +402,9 @@ class BookingPageState extends State<BookingPage> {
                       panelScrollController: panelScrollController,
                       dragHandlePanelController: drangHandlePanelController,
                     ), */ //MAKE THE BLACK CONTAINER The draggable tiroir hand icon
-                    body: displayMyMap(currentUserPositionCamera),
+                    body: isNewCameraPositionAvailable == true
+                        ? displayMyMap(newCameraPosition)
+                        : displayMyMap(currentUserPositionCamera),
 
                     /* SomeMarkers(
                             notifyParent: refresh, mappedMarkers: myMapMarkers), */

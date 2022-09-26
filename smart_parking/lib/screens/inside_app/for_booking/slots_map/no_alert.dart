@@ -32,24 +32,24 @@ class _BookingThroughSlotsMapNoAlertDialogState
   //AUTHENTICATION
   var firebaseService = FirebaseService();
   User? currentlySignedInUser;
-
-  //
   int parkingSlotsTotal = 10;
+
   double alleyHeight = 200,
       singleSpotHeight = 50,
       singleSpotWidth = 120,
       spaceBetweenSlots = 35.0,
       alleySpotWidthRatio = 1 / 4;
   bool isSelected = false;
+
   Color slotHighlithgColor = Colors.green;
   Color finalSelectedColorSlot = Colors.transparent;
 
   //LISTS AND MAPS
   final alleyA = <String>{}, alleyB = <String>{};
   var mappedAlleyASelectedCheck = {}, mappedAlleyBSelectedCheck = {};
-  Map<String, dynamic> insideParkingInfoFetched = {};
   List<Map<String, dynamic>> mappedSelectedSlotAlley = [];
-  Map<String, dynamic> linkedParkingNameAndInsideInfo = {};
+  Map<String, dynamic> linkedParkingNameAndInsideInfo = {},
+      insideParkingInfoFetched = {};
   Map<String, Set> mappedAlleysAndSlotIds = {};
 
 //RESERVATION VARS
@@ -66,7 +66,8 @@ class _BookingThroughSlotsMapNoAlertDialogState
   Color selectedTimeSlotColor = Colors.orange;
   ScrollController singleChildController = ScrollController(),
       gridController = ScrollController(),
-      infoListViewController = ScrollController();
+      infoListViewController = ScrollController(),
+      bodyScrollBarController = ScrollController();
   int activeStep = 0, upperBound = 2;
 
   @override
@@ -100,7 +101,6 @@ class _BookingThroughSlotsMapNoAlertDialogState
             minute: int.parse(
                 context.watch<StateManagement>().closingHour.split(":")[1]));
     //
-
     context
         .watch<StateManagement>()
         .getTimeSlotsIntervals(startTime, endTime, interval)
@@ -113,7 +113,6 @@ class _BookingThroughSlotsMapNoAlertDialogState
 /* print(
     "OUTSIDE FETCHED ${context.read<StateManagement>().timeSlotsParsed.length}"); */
     fetchedTimes = context.read<StateManagement>().timeSlotsParsed;
-    print("TESTING THIS $fetchedTimes");
     return Scaffold(
       //backgroundColor: Colors.white60,
       appBar: AppBar(
@@ -154,74 +153,86 @@ class _BookingThroughSlotsMapNoAlertDialogState
         ],
         backgroundColor: Colors.blueGrey,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
+      body: RawScrollbar(
+        mainAxisMargin: 190,
+        minOverscrollLength: 5,
+        minThumbLength: 7,
+        scrollbarOrientation: ScrollbarOrientation.right,
+        thumbColor: Colors.black26,
+        radius: const Radius.circular(10),
+        trackColor: Colors.blueGrey.shade100,
+        thumbVisibility: true,
+        trackVisibility: true,
+        controller: singleChildController,
         child: SingleChildScrollView(
           controller: singleChildController,
-          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance
-                  .collection(
-                      "locations/${widget.receivedID}/insideParkingInfo")
-                  .snapshots()
-              /* .map((snapshot) => snapshot.docs
-                      .map((doc) => InsideInfo.fromFirestore(
-                          doc.data() as Map<String, dynamic>))
-                      .toList())*/
-              ,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Text('');
-                } else {
-                  String source = snapshot.data!.metadata.hasPendingWrites
-                      ? "Local"
-                      : "Server";
-                  // insideParkingInfoFetched.clear();
-                  insideParkingInfoFetched = snapshot.data!.docs[0].data();
-                  for (var element
-                      in widget.mappedParkingsGeneralInfo.entries) {
-                    if (element.key == widget.receivedID) {
-                      String currentlySelectedParkingsName = element.value
-                          .toString()
-                          .split(',')
-                          .toList()
-                          .elementAt(element.value
-                              .toString()
-                              .split(',')
-                              .toList()
-                              .indexWhere(
-                                  (element) => element.contains("Parking")))
-                          .split(':')
-                          .toList()
-                          .last
-                          .split('}')
-                          .first;
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 20, 10, 10),
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection(
+                        "locations/${widget.receivedID}/insideParkingInfo")
+                    .snapshots()
+                /* .map((snapshot) => snapshot.docs
+                        .map((doc) => InsideInfo.fromFirestore(
+                            doc.data() as Map<String, dynamic>))
+                        .toList())*/
+                ,
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Text('');
+                  } else {
+                    String source = snapshot.data!.metadata.hasPendingWrites
+                        ? "Local"
+                        : "Server";
+                    // insideParkingInfoFetched.clear();
+                    insideParkingInfoFetched = snapshot.data!.docs[0].data();
+                    for (var element
+                        in widget.mappedParkingsGeneralInfo.entries) {
+                      if (element.key == widget.receivedID) {
+                        String currentlySelectedParkingsName = element.value
+                            .toString()
+                            .split(',')
+                            .toList()
+                            .elementAt(element.value
+                                .toString()
+                                .split(',')
+                                .toList()
+                                .indexWhere(
+                                    (element) => element.contains("Parking")))
+                            .split(':')
+                            .toList()
+                            .last
+                            .split('}')
+                            .first;
 
-                      linkedParkingNameAndInsideInfo.addAll({
-                        'Parking Name': currentlySelectedParkingsName,
-                        'Info': insideParkingInfoFetched
-                      });
-                      snapshot.data!.docs[0]
-                          .data()
-                          .update('Occupied Slots', (value) => 2);
+                        linkedParkingNameAndInsideInfo.addAll({
+                          'Parking Name': currentlySelectedParkingsName,
+                          'Info': insideParkingInfoFetched
+                        });
+                        snapshot.data!.docs[0]
+                            .data()
+                            .update('Occupied Slots', (value) => 2);
+                      }
                     }
+                    parkingSlotsTotal =
+                        insideParkingInfoFetched["Total Slots Number"];
+                    getAlleySlotsId(parkingSlotsTotal);
+                    //insideParkingInfoFetched.update("Occupied Slots", (value) => 5);
+                    //getInsideParkingSlotsInfo(insideParkingInfoFetched); STOPPED HERE
+
+                    print(
+                        "DATA SNAPSHOT: $linkedParkingNameAndInsideInfo)))) SOURCE: $source _____ ${insideParkingInfoFetched["Available Slots"]}");
+
+                    return Column(
+                      children: [
+                        bookerBody(alleyListViewMinHeightToDisplay, startTime,
+                            endTime),
+                      ],
+                    );
                   }
-                  parkingSlotsTotal =
-                      insideParkingInfoFetched["Total Slots Number"];
-                  getAlleySlotsId(parkingSlotsTotal);
-                  //insideParkingInfoFetched.update("Occupied Slots", (value) => 5);
-                  //getInsideParkingSlotsInfo(insideParkingInfoFetched); STOPPED HERE
-
-                  print(
-                      "DATA SNAPSHOT: $linkedParkingNameAndInsideInfo)))) SOURCE: $source _____ ${insideParkingInfoFetched["Available Slots"]}");
-
-                  return Column(
-                    children: [
-                      bookerBody(
-                          alleyListViewMinHeightToDisplay, startTime, endTime),
-                    ],
-                  );
-                }
-              }),
+                }),
+          ),
         ),
       ),
     );
@@ -608,43 +619,52 @@ class _BookingThroughSlotsMapNoAlertDialogState
   }
 
   tableCalendar() {
-    return Container(
-      //CALENDAR//
-      margin: const EdgeInsets.fromLTRB(15, 5, 15, 5),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black, width: 1.0),
-        borderRadius: BorderRadius.circular(20),
+    return Card(
+      elevation: 5,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
       ),
-      child: TableCalendar(
-        rowHeight: 40,
-        pageJumpingEnabled: true,
-        startingDayOfWeek: StartingDayOfWeek.monday,
-        focusedDay: focusedDay,
-        firstDay: DateTime.now(),
-        lastDay: DateTime(DateTime.now().year + 1),
-        selectedDayPredicate: (day) {
-          return isSameDay(selectedDay, day);
-        },
-        onDaySelected: (newSelectedDay, newFocusedDay) {
-          print("BEFORE  SELECTED $selectedDay FOCUSED $focusedDay");
-          setState(() {
-            (newSelectedDay.weekday == DateTime.sunday ||
-                    newSelectedDay.weekday == DateTime.saturday)
-                ? null
-                : selectedDay = newSelectedDay;
-            focusedDay = newFocusedDay; // update `_focusedDay` here as well
-          });
-          print("AFTERR SELECTED $selectedDay FOCUSED $focusedDay");
-        },
-        //STYLING OF CALENDAR
-        calendarFormat: format,
-        onFormatChanged: (newFormat) => setState(() {
-          format = newFormat;
-        }),
-        calendarStyle: const CalendarStyle(
-          //weekendDecoration: BoxDecoration(color: Colors.purple),
-          selectedDecoration:
-              BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+      child: Container(
+        //CALENDAR//
+        margin: const EdgeInsets.only(left: 20, right: 20, top: 5, bottom: 5),
+        /* decoration: BoxDecoration(
+          border: Border.all(color: Colors.black54, width: 1.0),
+          borderRadius: BorderRadius.circular(20),
+        ), */
+        child: TableCalendar(
+          rowHeight: 40,
+          headerStyle: const HeaderStyle(
+              formatButtonTextStyle: TextStyle(fontSize: 10.0),
+              titleTextStyle: TextStyle(fontSize: 11)),
+          pageJumpingEnabled: true,
+          startingDayOfWeek: StartingDayOfWeek.monday,
+          focusedDay: focusedDay,
+          firstDay: DateTime.now(),
+          lastDay: DateTime(DateTime.now().year + 1),
+          selectedDayPredicate: (day) {
+            return isSameDay(selectedDay, day);
+          },
+          onDaySelected: (newSelectedDay, newFocusedDay) {
+            print("BEFORE  SELECTED $selectedDay FOCUSED $focusedDay");
+            setState(() {
+              (newSelectedDay.weekday == DateTime.sunday ||
+                      newSelectedDay.weekday == DateTime.saturday)
+                  ? null
+                  : selectedDay = newSelectedDay;
+              focusedDay = newFocusedDay; // update `_focusedDay` here as well
+            });
+            print("AFTERR SELECTED $selectedDay FOCUSED $focusedDay");
+          },
+          //STYLING OF CALENDAR
+          calendarFormat: format,
+          onFormatChanged: (newFormat) => setState(() {
+            format = newFormat;
+          }),
+          calendarStyle: const CalendarStyle(
+            //weekendDecoration: BoxDecoration(color: Colors.purple),
+            selectedDecoration:
+                BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+          ),
         ),
       ),
     );
@@ -838,145 +858,204 @@ class _BookingThroughSlotsMapNoAlertDialogState
     switch (activeStep) {
       case 0:
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 20, top: 10),
-            child: Row(
-              children: const [
-                Icon(
-                  Icons.info,
-                  color: Colors.indigo,
-                ),
-                SizedBox(width: 10),
-                Text(
-                  'Parking Details',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
-              ],
-            ),
-          ),
-          addWhiteSpace(10),
-          Container(
-            margin: const EdgeInsets.only(left: 15, right: 15),
-            height: 100,
-            child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
+          SizedBox(
+            height: 200,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 20, right: 20),
+              child: Column(
                 children: [
-                  Flexible(
-                    child: RawScrollbar(
-                      minOverscrollLength: 8,
-                      scrollbarOrientation: ScrollbarOrientation.bottom,
-                      thumbColor: Colors.blueGrey,
-                      radius: const Radius.circular(20),
-                      thumbVisibility: true,
-                      trackVisibility: true,
-                      controller: infoListViewController,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 0, 0, 20),
-                        child: ListView.builder(
-                            controller:
-                                infoListViewController, //DO NOT REMOVE. LISTVIEW AND SCROLLBAR MUST SHARE THE SAME CONTROLLER OR YOU'LL GET AN ERROR
-                            itemCount: 4,
-                            scrollDirection: Axis.horizontal,
-                            itemBuilder: (context, index) {
-                              final item = Card(
-                                // surfaceTintColor: Colors.yellow,
-                                shadowColor: Colors.black,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                ),
-                                elevation: 5,
-                                child: Container(
-                                  //THERE WAS AN EXPANDED HERE BEFORE CONTAINER
-                                  //width: 95,
-                                  decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(50)),
-                                  child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Align(
-                                        child: FittedBox(
-                                          child: Text(
-                                            index == 0
-                                                ? 'Name'
-                                                : index == 1
-                                                    ? "Capacity"
-                                                    : index == 2
-                                                        ? "Available"
-                                                        : "Fee/30mns",
-                                            style: const TextStyle(
-                                              color: Colors.blueGrey,
-                                              fontSize: 15,
-                                              fontFamily: 'OpenSans',
-                                              fontWeight: FontWeight.w900,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                          width: 85,
-                                          child: Align(
-                                            child: FittedBox(
-                                                child: Text(
-                                              //
-
-                                              index == 0
-                                                  ? linkedParkingNameAndInsideInfo[
-                                                      'Parking Name']
-                                                  : index == 1
-                                                      ? insideParkingInfoFetched[
-                                                              'Total Slots Number']
-                                                          .toString()
-                                                      : index == 2
-                                                          ? insideParkingInfoFetched[
-                                                                  'Available Slots']
-                                                              .toString()
-                                                          : index == 3
-                                                              ? "${insideParkingInfoFetched['Fee per 30 minutes'].toString()} CFA"
-                                                              : 'Loading',
-
-                                              style: const TextStyle(
-                                                color: Colors.black,
-                                                fontSize: 15,
-                                                fontFamily: 'OpenSans',
-                                                fontWeight: FontWeight.w900,
-                                              ),
-                                            )),
-                                          )),
-                                    ],
-                                  ),
-                                ),
-                              );
-                              return item;
-                            }),
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Row(
+                      children: const [
+                        Icon(
+                          Icons.info,
+                          color: Colors.indigo,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Parking Details',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 16),
+                        ),
+                      ],
                     ),
                   ),
-                ]),
-          ),
-          addWhiteSpace(20),
+                  addWhiteSpace(10),
+                  Flexible(
+                    child: SizedBox(
+                      //margin: const EdgeInsets.only(right: 5),
+                      height: 150,
+                      child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: RawScrollbar(
+                                minOverscrollLength: 8,
+                                scrollbarOrientation:
+                                    ScrollbarOrientation.bottom,
+                                thumbColor: Colors.blueGrey,
+                                radius: const Radius.circular(20),
+                                thumbVisibility: true,
+                                trackVisibility: true,
+                                controller: infoListViewController,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 0, 0, 20),
+                                  child: ListView.builder(
+                                      controller:
+                                          infoListViewController, //DO NOT REMOVE. LISTVIEW AND SCROLLBAR MUST SHARE THE SAME CONTROLLER OR YOU'LL GET AN ERROR
+                                      itemCount: 4,
+                                      scrollDirection: Axis.horizontal,
+                                      itemBuilder: (context, index) {
+                                        final item = Card(
+                                          // surfaceTintColor: Colors.yellow,
+                                          shadowColor: Colors.black,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10.0),
+                                          ),
+                                          elevation: 5,
+                                          child: Container(
+                                            //THERE WAS AN EXPANDED HERE BEFORE CONTAINER
+                                            //width: 95,
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(50)),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                Align(
+                                                  child: FittedBox(
+                                                    child: Text(
+                                                      index == 0
+                                                          ? 'Name'
+                                                          : index == 1
+                                                              ? "Capacity"
+                                                              : index == 2
+                                                                  ? "Available"
+                                                                  : "Fee/30mns",
+                                                      style: const TextStyle(
+                                                        color: Colors.blueGrey,
+                                                        fontSize: 15,
+                                                        fontFamily: 'OpenSans',
+                                                        fontWeight:
+                                                            FontWeight.w900,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                    width: 85,
+                                                    child: Align(
+                                                      child: FittedBox(
+                                                          child: Text(
+                                                        //
 
-          //
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 10, 0, 10),
-            child: Text(
-              'Pick A Date',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                                        index == 0
+                                                            ? linkedParkingNameAndInsideInfo[
+                                                                'Parking Name']
+                                                            : index == 1
+                                                                ? insideParkingInfoFetched[
+                                                                        'Total Slots Number']
+                                                                    .toString()
+                                                                : index == 2
+                                                                    ? insideParkingInfoFetched[
+                                                                            'Available Slots']
+                                                                        .toString()
+                                                                    : index == 3
+                                                                        ? "${insideParkingInfoFetched['Fee per 30 minutes'].toString()} CFA"
+                                                                        : 'Loading',
+
+                                                        style: const TextStyle(
+                                                          color: Colors.black,
+                                                          fontSize: 15,
+                                                          fontFamily:
+                                                              'OpenSans',
+                                                          fontWeight:
+                                                              FontWeight.w900,
+                                                        ),
+                                                      )),
+                                                    )),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                        return item;
+                                      }),
+                                ),
+                              ),
+                            ),
+                          ]),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          tableCalendar(),
           addWhiteSpace(40),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 10, 0, 0),
-            child: Text(
-              'Pick A Vehicule',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          SizedBox(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 20, right: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.calendar_month_rounded,
+                            color: Colors.indigo),
+                        SizedBox(width: 10),
+                        Text(
+                          'Select A Date',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                  tableCalendar(),
+                ],
+              ),
             ),
           ),
-          SelectVehicule(currentlySIUser: currentlySignedInUser),
+          addWhiteSpace(50),
+          SizedBox(
+            child: Padding(
+              padding: const EdgeInsets.only(
+                left: 20,
+                right: 20,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: const [
+                        Icon(
+                          Icons.check_circle_rounded,
+                          color: Colors.indigo,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Select A Vehicule',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SelectVehicule(currentlySIUser: currentlySignedInUser),
+                ],
+              ),
+            ),
+          )
         ]);
 
       case 1:

@@ -1,6 +1,5 @@
 // ignore_for_file: avoid_print, unused_local_variable
 import 'dart:convert';
-import 'dart:io' show Platform;
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,19 +28,19 @@ class _SelectVehiculeState extends State<SelectVehicule> {
   IconData carIcon = Icons.car_rental,
       motorcycleIcon = Icons.motorcycle,
       arrowIcon = Icons.keyboard_double_arrow_down_rounded;
+
   bool isCarArrowExpanded = false,
-      isMotorcArrowExpanded = false,
+      //isMotorcArrowExpanded = false,
       isVehiculeSelected = false,
       addCarIconPressed = false,
       firstTimeCallingShow = true,
+      newCarAdded = false,
       callSelectVehiculeAfterAdd = false,
+      carSelectionCanceled = false,
       isFlagAvailable = false;
 
   List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched = [];
-  String isoCountryCode = '',
-      keyValue = 'TEST',
-      localeName = Platform.localeName,
-      country = '',
+  String country = '',
       region = '',
       realCountryValue = 'Select Reg. Country',
       realStateCityValue = 'Select Reg. State/City',
@@ -54,17 +53,23 @@ class _SelectVehiculeState extends State<SelectVehicule> {
   int current = 0,
       expandVehiculeCardTotalCalls = 0,
       alertIndex = 0,
+      currentSmoothIndicator = 0,
       totalStates = 0,
       totalCities = 0;
+  Iterable<Widget> currentCarouselItems = [];
+
   ScrollController infoListViewController = ScrollController();
   double cardHeight = 100;
   Set<String> fetchedCarLogosAssets = {};
-  Map<String, dynamic> pickVehiculeNeededInfMapped = {}, formFetchedInf = {};
+  Map<String, dynamic> pickVehiculeNeededInfMapped = {},
+      formFetchedInf = {},
+      selectedCarInfo = {};
   Set<Map<String, dynamic>> allUserCars = {},
       allUserMotorcycles = {},
       mappedSelectedVehiculeCard = {};
   Color cardCol = Colors.white;
   var myDB = FirebaseFirestore.instance;
+
   @override
   void initState() {
     //batchDelete();
@@ -73,7 +78,6 @@ class _SelectVehiculeState extends State<SelectVehicule> {
       print("LOCALE NAME: $value");
       setState(() {
         country = value["country"];
-        isoCountryCode = value['countryCode'];
         region = value['region'];
       });
       //print("ISO NAME: $isoCountryCode");
@@ -88,22 +92,21 @@ class _SelectVehiculeState extends State<SelectVehicule> {
         Row(
           children: [
             Expanded(
-              child: isVehiculeSelected == true
-                  ? selectedCarCard()
-                  : carCard(carIcon, 'Car', arrowIcon),
-            ),
-            Expanded(
-              child: motorcycleCard(motorcycleIcon, 'Motorcycle', arrowIcon),
+              child: isCarArrowExpanded == false || isVehiculeSelected == false
+                  ? carCard(carIcon, 'Car', arrowIcon)
+                  : isVehiculeSelected == true
+                      ? selectedCarCard(true)
+                      : Container(
+                          height: 10,
+                          color: Colors.green,
+                        ),
             ),
           ],
         ),
-
         isCarArrowExpanded == true
             ? Container()
-            : isMotorcArrowExpanded == true
-                ? getVehiculeNeededInfo("showMotorc")
-                : getVehiculeNeededInfo(
-                    'showCar'), //to get the test list from the get go. DO NOT DELETE
+            : getVehiculeNeededInfo(
+                'showCar'), //to get the test list from the get go. DO NOT DELETE
       ],
     );
   }
@@ -276,10 +279,13 @@ class _SelectVehiculeState extends State<SelectVehicule> {
     );
   }
 
-  Widget showSingleVehiculeCardForAlertCarousel(
+  showSingleVehiculeCardForAlertCarousel(
     List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched,
     String showVehicule,
   ) {
+    selectedCarInfo.isNotEmpty
+        ? ("COUNTRY IOS: ${selectedCarInfo['Other Details']['Reg. Country ISO']}")
+        : print("NULLU");
     return SizedBox(
       height: cardHeight,
       child: Card(
@@ -300,11 +306,11 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                           width: 120,
                           height: 20,
                         ),
-                        Align(
+                        const Align(
                           child: FittedBox(
                             child: Text(
-                              isoCountryCode,
-                              style: const TextStyle(
+                              "YT",
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,
                                 fontFamily: 'OpenSans',
@@ -427,7 +433,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
             FirebaseFirestore.instance.collection("carBrandLogos").snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Text('Loading brand logos');
+            return const Text(''); //Text('Loading brand logos');
           } else {
             List<QueryDocumentSnapshot<Map<String, dynamic>>>
                 allVehiculesTypesLogosFetched = snapshot.data!.docs;
@@ -468,13 +474,14 @@ class _SelectVehiculeState extends State<SelectVehicule> {
   }
 
   getVehiculeNeededInfo(String vehiculeType) {
+/*     Flutter StreamBuilder doesn't need to call setState to rebuild its children. StreamBuilder rebuilds by default when change were detected on stream.  */
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
             .collection("users/${widget.currentlySIUser!.uid}/vehicules")
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Text('Loading vehicules');
+            return const Text(''); //Text('Loading vehicules');
           } else {
             var vehiculesInfoFetched = snapshot.data!.docs;
             mappedSelectedVehiculeCard
@@ -495,24 +502,216 @@ class _SelectVehiculeState extends State<SelectVehicule> {
               'vehiculeType': vehiculeType
             });
 
+            currentCarouselItems = carSlider;
+            currentSmoothIndicator = carSlider.length;
+
             return Container(
+              height: 10,
               color: Colors.red,
-              height: 50,
             );
           }
         });
   }
 
-  selectedCarCard() {
-    return const Card(
-      borderOnForeground: false,
-      color: Colors.green,
-      child: Text('YES'),
+  Widget selectedCarCard(bool vehiculeSelected) {
+    print(
+        " vehiculeSelected $vehiculeSelected _________ isVehiculeSelected $isVehiculeSelected ");
+    if (!mounted) null;
+    //DO NOT REMOVE following Setstate as it refreshes the stfw
+    setState(
+      () {
+        carSelectionCanceled = false;
+      },
     );
-  }
-
-  selectedmotorcycleCard() {
-    return const Card(borderOnForeground: true, color: Colors.yellow);
+    return Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        elevation: 5,
+        child: Container(
+            padding: const EdgeInsets.fromLTRB(40, 20, 40, 0),
+            width: 130,
+            height: 200,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(50)),
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: SizedBox(
+                      height: cardHeight,
+                      child: Card(
+                          shadowColor: const Color(0xff7986CB),
+                          elevation: 10,
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Container(
+                                    height: cardHeight,
+                                    padding: const EdgeInsets.only(
+                                        left: 5, right: 5),
+                                    color:
+                                        const Color.fromARGB(255, 11, 73, 150),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceAround,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Flag.fromString(
+                                          selectedCarInfo['Other Details']
+                                              ['Reg. Country ISO'],
+                                          width: 120,
+                                          height: 20,
+                                        ),
+                                        Align(
+                                          child: FittedBox(
+                                            child: Text(
+                                              selectedCarInfo['Other Details']
+                                                  ['Reg. Country ISO'],
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 15,
+                                                fontFamily: 'OpenSans',
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    )),
+                              ),
+                              //Text("TESTING")
+                              Expanded(
+                                //LICENSEPLATE
+                                flex: 6,
+                                child: Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  //crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                        flex: 2,
+                                        child: showVehiculeLogo(
+                                            vehiculesInfoFetched, 'showCar')),
+                                    FittedBox(
+                                      child: Text(
+                                          getAllLicensePlateNumbers(
+                                                  vehiculesInfoFetched,
+                                                  'showCar')
+                                              .elementAt(alertIndex),
+                                          style: const TextStyle(
+                                              letterSpacing: 2.0,
+                                              fontSize: 25,
+                                              fontFamily: 'OpenSans',
+                                              fontWeight: FontWeight.w900)),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: SizedBox(
+                                        width: 100,
+                                        child: FittedBox(
+                                          child: Text(
+                                              getVehiculeModelDetail(
+                                                      vehiculesInfoFetched,
+                                                      'showCar')
+                                                  .elementAt(alertIndex),
+                                              style: const TextStyle(
+                                                // letterSpacing: 1.0,
+                                                fontSize: 10,
+                                                fontFamily: 'OpenSans',
+                                              )),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Flexible(
+                                //CITY CODE AND YEAR
+                                child: Container(
+                                    color: Colors.transparent,
+                                    padding: const EdgeInsets.only(
+                                        left: 5, right: 5),
+                                    height: cardHeight,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceAround,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Align(
+                                          child: FittedBox(
+                                            child: Text(
+                                              selectedCarInfo['Other Details']
+                                                  ['Reg. City ISO'],
+                                              style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 15,
+                                                fontFamily: 'OpenSans',
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Align(
+                                          child: FittedBox(
+                                            child: Text(
+                                              selectedCarInfo['Specs']
+                                                  ['Registration Year'],
+                                              style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 15,
+                                                fontFamily: 'OpenSans',
+                                                fontWeight: FontWeight.w900,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    )),
+                              ),
+                            ],
+                          )),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 100,
+                    height: 15,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        selectVehiculeAlertDialog(
+                            currentSmoothIndicator, currentCarouselItems);
+                      },
+                      style: ButtonStyle(
+                          elevation: MaterialStateProperty.all(1),
+                          shape: MaterialStateProperty.all(
+                            const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                              bottom: Radius.circular(20),
+                              top: Radius.circular(20),
+                            )),
+                          ),
+                          shadowColor: MaterialStateProperty.all(
+                              const Color(0xff7986CB)),
+                          backgroundColor: MaterialStateProperty.all(
+                              const Color(0xff78909C))),
+                      child: Container(
+                        padding: const EdgeInsets.only(top: 2, bottom: 2),
+                        child: const Align(
+                          child: FittedBox(
+                            child: Text('CHANGE',
+                                style: TextStyle(
+                                    //fontSize: 10,
+                                    letterSpacing: 1,
+                                    fontFamily: 'OpenSans',
+                                    fontWeight: FontWeight.w900)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                ])));
   }
 
   carCard(IconData carIcon, String carLabel, IconData buttonIcon) {
@@ -542,9 +741,9 @@ class _SelectVehiculeState extends State<SelectVehicule> {
               ),
             ),
             SizedBox(
-              width: 80,
-              height: 30,
-              child: ElevatedButton(
+                width: 80,
+                height: 30,
+                child: ElevatedButton(
                   onPressed: () async {
                     isCarArrowExpanded == false
                         ? setState(() {
@@ -553,7 +752,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                             current =
                                 0; //otherwise, will get an error because current could ba at 2 when motrocycle index stops at 1 so DO NOT DELETE
                             isCarArrowExpanded = true;
-                            isMotorcArrowExpanded = false;
+                            //isMotorcArrowExpanded = false;
                             addCarIconPressed = false;
                             callSelectVehiculeAfterAdd = false;
                           })
@@ -576,102 +775,28 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                       //print("OBTENU $obtenu");
                     }
                   },
-                  style: ButtonStyle(
-                      elevation: MaterialStateProperty.all(1),
-                      shape: MaterialStateProperty.all(
-                        const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                          bottom: Radius.circular(20),
-                          top: Radius.circular(20),
-                        )),
-                      ),
-                      shadowColor:
-                          MaterialStateProperty.all(const Color(0xff7986CB)),
-                      backgroundColor:
-                          MaterialStateProperty.all(const Color(0xff78909C))),
-                  child: Icon(
-                    isCarArrowExpanded == true
-                        ? Icons.keyboard_arrow_up
-                        : arrowIcon,
-                    size: 15,
-                  )),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  motorcycleCard(
-      IconData motorcycleIcon, String motorcycleLabel, IconData buttonIcon) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      elevation: 5,
-      child: Container(
-        width: 130,
-        height: 140,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(50)),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(
-              motorcycleIcon,
-              size: 40,
-            ),
-            Align(
-              child: FittedBox(
-                child: Text(
-                  motorcycleLabel,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontFamily: 'OpenSans',
-                    fontWeight: FontWeight.w900,
+                  style: ElevatedButton.styleFrom(
+                    elevation: 5,
+                    backgroundColor: const Color(0xff78909C),
+                    shape: const CircleBorder(),
                   ),
-                ),
-              ),
-            ),
-            SizedBox(
-              width: 80,
-              height: 30,
-              child: ElevatedButton(
-                  onPressed: () {
-                    //DEAL WITH SELECTEDCARCARD
-                    isMotorcArrowExpanded == false
-                        ? setState(() {
-                            expandVehiculeCardTotalCalls = 0;
-                            current =
-                                0; //otherwise, will get an error because current could ba at 2 when motrocycle index stops at 1 so DO NOT DELETE
-                            isMotorcArrowExpanded = true;
-                            isCarArrowExpanded =
-                                false; //both shouldn(t be true at the same time)
-                          })
-                        : setState(() {
-                            isMotorcArrowExpanded = false;
-                          });
-                  },
-                  style: ButtonStyle(
-                      elevation: MaterialStateProperty.all(1),
-                      shape: MaterialStateProperty.all(
-                        const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                          bottom: Radius.circular(20),
-                          top: Radius.circular(20),
-                        )),
-                      ),
-                      shadowColor:
-                          MaterialStateProperty.all(const Color(0xff7986CB)),
-                      backgroundColor:
-                          MaterialStateProperty.all(const Color(0xff78909C))),
-                  child: Icon(
-                    isMotorcArrowExpanded == true
-                        ? Icons.keyboard_arrow_up
-                        : arrowIcon,
-                    size: 15,
-                  )),
-            )
+                  /*    style: ButtonStyle(
+                    elevation: MaterialStateProperty.all(1),
+                    shape: MaterialStateProperty.all(
+                      const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(20),
+                        top: Radius.circular(20),
+                      )),
+                    ),
+                    shadowColor:
+                        MaterialStateProperty.all(const Color(0xff7986CB)),
+                    backgroundColor:
+                        MaterialStateProperty.all(const Color(0xff78909C))), */
+                  child: isCarArrowExpanded == false
+                      ? const Icon(Icons.add, size: 20)
+                      : const Icon(Icons.keyboard_arrow_up, size: 20),
+                ))
           ],
         ),
       ),
@@ -734,7 +859,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
   List<String> getVehiculeModelDetail(
       List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched,
       String showVehicule) {
-    Set<String> allVehiculesModelsDetails = {};
+    List<String> allVehiculesModelsDetails = [];
     if (showVehicule.contains('Car')) {
       //contains is case sensitive so be careful
       for (var element in vehiculesInfoFetched) {
@@ -906,6 +1031,7 @@ Future<String> getCountryName() async {
       [String vehiculeType = 'Car']) async {
     await showDialog(
       useRootNavigator: false,
+      barrierDismissible: false,
       context: context,
       builder: (context) => StatefulBuilder(builder: (context, setState) {
         return AlertDialog(
@@ -963,8 +1089,11 @@ Future<String> getCountryName() async {
                                   onPressed: () async {
                                     Navigator.pop(context);
                                     print("YES PRESSED");
-                                    await registerCarForm(vehiculeType,
-                                        smoothIndicatorLength, carouselItems);
+                                    var registerFormResult =
+                                        await registerCarForm(
+                                            vehiculeType,
+                                            smoothIndicatorLength,
+                                            carouselItems);
                                   },
                                   child: const Icon(
                                     Icons.add,
@@ -1033,7 +1162,12 @@ Future<String> getCountryName() async {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pop(context, true),
+                    onPressed: () => {
+                      setState(() {
+                        isVehiculeSelected = true; ////stopped here
+                      }),
+                      Navigator.pop(context, 'CAR SELECTED')
+                    },
                     child: const Text(
                       'SELECT',
                       style: TextStyle(
@@ -1065,7 +1199,29 @@ Future<String> getCountryName() async {
                 ],
         );
       }),
-    );
+    ).then((value) {
+      print("VALUE IS: $value");
+      if (value == 'CAR SELECTED') {
+        print(
+            "CAR SELECTED $alertIndex ______ ${vehiculesInfoFetched.elementAt(alertIndex).data()}");
+        // selectedCarInfo.clear;
+        selectedCarInfo
+            .addAll(vehiculesInfoFetched.elementAt(alertIndex).data());
+        selectedCarCard(true);
+      } else if (value == 'NEW CAR ADDED') {
+        setState(() {
+          isVehiculeSelected == false;
+        });
+      } else {
+        isVehiculeSelected == false
+            ? print("CANCELED CAR SELECTION")
+            : print("CANCELED CAR CHANGE");
+        setState(() {
+          carSelectionCanceled = true;
+          isVehiculeSelected == false ? isCarArrowExpanded = false : null;
+        });
+      }
+    });
   }
 
   registerCarForm(String vehiculeType, int smoothIndicatorLength,
@@ -1108,6 +1264,8 @@ Future<String> getCountryName() async {
         licensePlateFieldInitiallyEmpty = true,
         modelDetailFieldInitiallyEmpty = true,
         yearFieldInitiallyEmpty = true;
+
+    int allStates = 0, allCities = 0;
     final textField1Key = GlobalKey<FormBuilderFieldState>();
     // ignore: unused_element
     void onChanged(dynamic val) => debugPrint(val.toString());
@@ -1321,17 +1479,15 @@ Future<String> getCountryName() async {
                               });
                             },
                             onCityLengthChanged: (int value) {
+                              print("TOTAL CITIES OR DEPARTMENT: $value");
                               setState(() {
                                 totalCities = value;
-                                print(
-                                    "TOTAL CITIES OR DEPARTMENT: $totalCities");
                               });
                             },
                             onStateLengthChanged: (int value) {
                               setState(() {
                                 totalStates = value;
-                                print(
-                                    "TOTAL STATES/REGIONSORCITY: $totalStates");
+                                print("TOTAL STATES/REGIONSORCITY: $value");
                               });
                             },
                           ),
@@ -1374,7 +1530,7 @@ Future<String> getCountryName() async {
                                   labelStyle: cityIsoFieldInitiallyEmpty
                                       ? null
                                       : customlabelStyleAddCar,
-                                  labelText: 'City ISO 3166 code',
+                                  labelText: 'City ISO-3166 code',
                                   suffixIcon: cityIsoHasError == true
                                       ? const Icon(Icons.error,
                                           color: Colors.red)
@@ -1405,7 +1561,6 @@ Future<String> getCountryName() async {
                               ),
 
                               FormBuilderDropdown<String>(
-                                alignment: Alignment.centerLeft,
                                 autofocus: true,
                                 name: 'car brand',
                                 decoration: InputDecoration(
@@ -1432,7 +1587,7 @@ Future<String> getCountryName() async {
                                 items: carOptions
                                     .map((brand) => DropdownMenuItem(
                                           alignment:
-                                              AlignmentDirectional.center,
+                                              AlignmentDirectional.centerStart,
                                           value: brand,
                                           child: Text(brand),
                                         ))
@@ -1715,7 +1870,11 @@ Future<String> getCountryName() async {
                                       formFetchedInf
                                           .addAll(formKey.currentState!.value);
                                       print("YOU DID FETCH: $formFetchedInf");
-
+                                      carouselItems =
+                                          pickVehiculeNeededInfMapped['item']
+                                              as Iterable<Widget>;
+                                      smoothIndicatorLength =
+                                          carouselItems.length;
                                       formFetchedInf.addAll({
                                         'reg country':
                                             realCountryValue.split("    ").last,
@@ -1731,11 +1890,12 @@ Future<String> getCountryName() async {
                                         Future.delayed(
                                                 const Duration(seconds: 2))
                                             .then((value) {
-                                          firstTimeCallingShow == true
+                                          smoothIndicatorLength == 0
                                               ? Navigator.of(dialcontext).pop(
-                                                  true) //to discard the "no vehicule registed ADD alert"
+                                                  'NEW CAR ADDED') //to discard the "no vehicule registed ADD alert"
                                               : null;
-                                          Navigator.of(context).pop(true);
+                                          Navigator.of(context)
+                                              .pop('NEW CAR ADDED');
                                           ScaffoldMessenger.of(dialcontext)
                                               .showSnackBar(
                                             SnackBar(
@@ -1771,6 +1931,10 @@ Future<String> getCountryName() async {
                                 child: OutlinedButton(
                                     onPressed: () {
                                       formKey.currentState?.reset();
+
+                                      realCountryValue = 'Select Reg. Country';
+                                      realStateCityValue =
+                                          'Select Reg. State/City';
                                     },
                                     // color: Theme.of(context).colorScheme.secondary,
                                     child: Text(
@@ -1788,7 +1952,7 @@ Future<String> getCountryName() async {
                 ),
               );
             })).then((value) {
-      if (value == true) {
+      if (value == 'NEW CAR ADDED') {
         myDB
             .collection("users/${widget.currentlySIUser!.uid}/vehicules")
             .get()
@@ -1802,6 +1966,7 @@ Future<String> getCountryName() async {
                   pickVehiculeNeededInfMapped['item'] as Iterable<Widget>;
               smoothIndicatorLength = carouselItems.length;
               isFlagAvailable = true;
+              newCarAdded = true;
             },
           );
 
@@ -1813,6 +1978,7 @@ Future<String> getCountryName() async {
             vehiculeType,
           );
         });
+        print("WORKED AGAIN");
 
         setState(() {
           firstTimeCallingShow = false;
@@ -1909,6 +2075,90 @@ Future<String> getCountryName() async {
         setState(() {});
       });
 /* THESE WILL BE NEEDED IF I EVER WANT TO DISPLAY A CAROUSEL USING THE CAROULSEL SLIDER DEPENDANCY
+
+/*   selectedmotorcycleCard() {
+    return const Card(borderOnForeground: true, color: Colors.yellow);
+  }
+ */
+  
+
+ /*  motorcycleCard(
+      IconData motorcycleIcon, String motorcycleLabel, IconData buttonIcon) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      elevation: 5,
+      child: Container(
+        width: 130,
+        height: 140,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(50)),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              motorcycleIcon,
+              size: 40,
+            ),
+            Align(
+              child: FittedBox(
+                child: Text(
+                  motorcycleLabel,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontFamily: 'OpenSans',
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 80,
+              height: 30,
+              child: ElevatedButton(
+                  onPressed: () {
+                    //DEAL WITH SELECTEDCARCARD
+                    isMotorcArrowExpanded == false
+                        ? setState(() {
+                            expandVehiculeCardTotalCalls = 0;
+                            current =
+                                0; //otherwise, will get an error because current could ba at 2 when motrocycle index stops at 1 so DO NOT DELETE
+                            isMotorcArrowExpanded = true;
+                            isCarArrowExpanded =
+                                false; //both shouldn(t be true at the same time)
+                          })
+                        : setState(() {
+                            isMotorcArrowExpanded = false;
+                          });
+                  },
+                  style: ButtonStyle(
+                      elevation: MaterialStateProperty.all(1),
+                      shape: MaterialStateProperty.all(
+                        const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                          bottom: Radius.circular(20),
+                          top: Radius.circular(20),
+                        )),
+                      ),
+                      shadowColor:
+                          MaterialStateProperty.all(const Color(0xff7986CB)),
+                      backgroundColor:
+                          MaterialStateProperty.all(const Color(0xff78909C))),
+                  child: Icon(
+                    isMotorcArrowExpanded == true
+                        ? Icons.keyboard_arrow_up
+                        : arrowIcon,
+                    size: 15,
+                  )),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+ */
+
   /*   expandedCardForCarousel(String showVehicule) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
