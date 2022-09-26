@@ -2,6 +2,7 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_parking/screens/inside_app/for_booking/booking_overview.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/slots_map/select_vehicule.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -41,7 +42,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
       alleySpotWidthRatio = 1 / 4;
   bool isSelected = false;
 
-  Color slotHighlithgColor = Colors.green;
+  Color slotHighlithbgColor = Colors.green;
   Color finalSelectedColorSlot = Colors.transparent;
 
   //LISTS AND MAPS
@@ -49,14 +50,19 @@ class _BookingThroughSlotsMapNoAlertDialogState
   var mappedAlleyASelectedCheck = {}, mappedAlleyBSelectedCheck = {};
   List<Map<String, dynamic>> mappedSelectedSlotAlley = [];
   Map<String, dynamic> linkedParkingNameAndInsideInfo = {},
-      insideParkingInfoFetched = {};
+      insideParkingInfoFetched = {},
+      bookerFirstPageInfoMapped = {},
+      selectedVehiculeInfoMappedFromSelectVehicule = {};
   Map<String, Set> mappedAlleysAndSlotIds = {};
 
 //RESERVATION VARS
   bool isReservationDayPicked = false,
       isReservationStartTimePicked = false,
       isReservationDurationPicked = false,
-      firstTimeAskingForDateSelect = true;
+      firstTimeAskingForDateSelect = true,
+      nextPressedWithoutFirstPageAllInfoFetched = false,
+      removeMaterialBannerSizedBox = false,
+      reShowSelectedCarCard = false;
 
 //BOOKER
   Set<TimeOfDay> fetchedTimes = {};
@@ -84,6 +90,9 @@ class _BookingThroughSlotsMapNoAlertDialogState
 
   @override
   Widget build(BuildContext context) {
+    print(
+        "nextPressedWithoutFirstPageAllInfoFetched $nextPressedWithoutFirstPageAllInfoFetched");
+
     currentlySignedInUser = firebaseService.auth.currentUser;
     print(
         "SIGNED IN CURRENTLY ${firebaseService.auth.currentUser?.uid.toString()}");
@@ -113,6 +122,25 @@ class _BookingThroughSlotsMapNoAlertDialogState
 /* print(
     "OUTSIDE FETCHED ${context.read<StateManagement>().timeSlotsParsed.length}"); */
     fetchedTimes = context.read<StateManagement>().timeSlotsParsed;
+    Map<String, dynamic> selectedVehiculeInfoEmptyTest;
+    bookerFirstPageInfoMapped.isNotEmpty
+        ? {
+            selectedVehiculeInfoEmptyTest =
+                bookerFirstPageInfoMapped['Selected Vehicule Info']
+                    as Map<String, dynamic>,
+            selectedVehiculeInfoEmptyTest.isNotEmpty
+                ? {
+                    ScaffoldMessenger.of(context).clearMaterialBanners(),
+                    setState(() {
+                      removeMaterialBannerSizedBox = true;
+                      print(
+                          "removeMaterialBannerSizedBox $removeMaterialBannerSizedBox");
+                    })
+                  }
+                : null
+          }
+        : null;
+
     return Scaffold(
       //backgroundColor: Colors.white60,
       appBar: AppBar(
@@ -264,7 +292,9 @@ class _BookingThroughSlotsMapNoAlertDialogState
                     .update('isSlotSelected', (value) => 'true'),
                 mappedSelectedSlotAlley
                     .elementAt(i + parkingSlotsTotal ~/ 2)
-                    .update('highlightColor', (value) => slotHighlithgColor),
+                    .update('highlightColor', (value) => slotHighlithbgColor),
+                /* refreshSlotColorState(
+                    mappedSelectedSlotAlley.elementAt(i).values.last), */
               }
             : {
                 singleAlleyInfo.update('isSlotSelected', (value) => 'false'),
@@ -280,7 +310,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                     .update('isSlotSelected', (value) => 'true'),
                 mappedSelectedSlotAlley
                     .elementAt(i)
-                    .update('highlightColor', (value) => slotHighlithgColor),
+                    .update('highlightColor', (value) => slotHighlithbgColor),
                 refreshSlotColorState(
                     mappedSelectedSlotAlley.elementAt(i).values.last),
               }
@@ -304,7 +334,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
         (i) => Material(
               color: const Color.fromARGB(255, 63, 97, 95).withAlpha(80),
               child: InkWell(
-                highlightColor: Colors.pink,
+                highlightColor: Colors.blueGrey.shade500,
                 onTap: () {
                   isSelected = true;
                   print("Click event on Container _");
@@ -352,14 +382,14 @@ class _BookingThroughSlotsMapNoAlertDialogState
     return List.generate(
         rightAlleySlotsTotal,
         (i) => Material(
-              color: Colors.transparent,
+              color: const Color.fromARGB(255, 63, 97, 95).withAlpha(80),
               child: InkWell(
                 onTap: () {
                   print("Click event on Container");
                   fetchAlleySelectedSlotId(i, "alleyB");
                 },
+                highlightColor: Colors.blueGrey.shade500,
                 splashColor: Colors.yellow,
-                focusColor: Colors.green,
                 child: Container(
                   height: singleSpotHeight,
                   width: singleSpotWidth,
@@ -369,14 +399,6 @@ class _BookingThroughSlotsMapNoAlertDialogState
                           color: Colors.indigo.withAlpha(30), width: 2),
                       bottom: BorderSide(
                           color: Colors.indigo.withAlpha(30), width: 2),
-                    ),
-                    gradient: LinearGradient(
-                      /* begin: Alignment(0.0, -1.0),
-                                  end: Alignment(0.0, 0.6), */
-                      colors: <Color>[
-                        Colors.indigo.withAlpha(70),
-                        const Color(0x00ef5f50),
-                      ],
                     ),
                   ),
                   child: CustomPaint(
@@ -739,6 +761,12 @@ class _BookingThroughSlotsMapNoAlertDialogState
     );
   }
 
+  fetchSelectedVehiculeInfo(Map<String, dynamic> selectedVehiculeInf) {
+    setState(() {
+      selectedVehiculeInfoMappedFromSelectVehicule.addAll(selectedVehiculeInf);
+    });
+  }
+
   bookingStepper() {
     return Container(
       margin: const EdgeInsets.only(left: 5, right: 5),
@@ -802,7 +830,90 @@ class _BookingThroughSlotsMapNoAlertDialogState
             backgroundColor:
                 MaterialStateProperty.all(const Color(0xff78909C))),
         onPressed: () {
-          activeStep < upperBound
+          setState(() {
+            nextPressedWithoutFirstPageAllInfoFetched = true;
+          });
+          var selectedVehiculeInfoEmptyTest =
+              bookerFirstPageInfoMapped['Selected Vehicule Info']
+                  as Map<String, dynamic>;
+          selectedVehiculeInfoEmptyTest.isNotEmpty
+              ? null
+              : {
+                  //
+
+                  ScaffoldMessenger.of(context).showMaterialBanner(
+                      MaterialBanner(
+                          onVisible: (() {}),
+                          elevation: 10,
+                          contentTextStyle: const TextStyle(
+                              color: Colors.white, fontSize: 30),
+                          backgroundColor: Colors.black.withOpacity(0.5),
+                          leadingPadding: const EdgeInsets.only(right: 10),
+                          leading: const Icon(
+                            Icons.info,
+                            color: Colors.red,
+                            size: 25,
+                          ),
+                          content: const FittedBox(
+                            child: Text(
+                              'Please select a vehicule to proceed.',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontFamily: 'OpenSans',
+                                  fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                          actions: [
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              nextPressedWithoutFirstPageAllInfoFetched = false;
+                            });
+                            ScaffoldMessenger.of(context)
+                                .hideCurrentMaterialBanner();
+                          },
+                          child: const Text('OK',
+                              style: TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 15,
+                                  fontFamily: 'OpenSans',
+                                  fontWeight: FontWeight.w900)),
+                        ),
+                      ])),
+
+                  /* ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    backgroundColor: Colors.black.withOpacity(0.7),
+                    margin: const EdgeInsets.fromLTRB(20, 0, 20, 50),
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(20))),
+                    elevation: 10,
+                    behavior: SnackBarBehavior.floating,
+                    content: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(
+                          Icons.info,
+                          color: Colors.red,
+                          size: 25,
+                        ),
+                        SizedBox(width: 15),
+                        FittedBox(
+                          child: Text(
+                            'Please select a vehicule to proceed.',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontFamily: 'OpenSans',
+                                fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ))
+                 */
+                };
+          activeStep < upperBound && selectedVehiculeInfoEmptyTest.isNotEmpty
               ? setState(() {
                   activeStep += 1;
                 })
@@ -857,11 +968,26 @@ class _BookingThroughSlotsMapNoAlertDialogState
       TimeOfDay endTime) {
     switch (activeStep) {
       case 0:
+        bookerFirstPageInfoMapped.addAll({
+          'Selected Parking Name':
+              linkedParkingNameAndInsideInfo['Parking Name'],
+          'Selected Parking Fee / 30mns':
+              insideParkingInfoFetched['Fee per 30 minutes'].toString(),
+          'Selected Day': selectedDay,
+          'Selected Vehicule Info': selectedVehiculeInfoMappedFromSelectVehicule
+        });
+        print("Booker First Page INFO: $bookerFirstPageInfoMapped}");
+        BookingOverviewFinal(
+            bookerFirstPageInfoFetched: bookerFirstPageInfoMapped);
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          nextPressedWithoutFirstPageAllInfoFetched == true &&
+                  removeMaterialBannerSizedBox == false
+              ? const SizedBox(height: 40)
+              : Container(),
           SizedBox(
             height: 200,
             child: Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20),
+              padding: const EdgeInsets.only(left: 10, right: 10),
               child: Column(
                 children: [
                   Padding(
@@ -985,6 +1111,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                             ),
                                           ),
                                         );
+
                                         return item;
                                       }),
                                 ),
@@ -1000,7 +1127,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
           addWhiteSpace(40),
           SizedBox(
             child: Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20),
+              padding: const EdgeInsets.only(left: 10, right: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1028,8 +1155,8 @@ class _BookingThroughSlotsMapNoAlertDialogState
           SizedBox(
             child: Padding(
               padding: const EdgeInsets.only(
-                left: 20,
-                right: 20,
+                left: 10,
+                right: 10,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1051,7 +1178,16 @@ class _BookingThroughSlotsMapNoAlertDialogState
                       ],
                     ),
                   ),
-                  SelectVehicule(currentlySIUser: currentlySignedInUser),
+                  SelectVehicule(
+                      currentlySIUser: currentlySignedInUser,
+                      updateParkingDetailsAndSelectedDayMapped:
+                          fetchSelectedVehiculeInfo,
+                      reShowSelectedCarCard:
+                          selectedVehiculeInfoMappedFromSelectVehicule.isEmpty
+                              ? false
+                              : true,
+                      selectedCarDetails:
+                          selectedVehiculeInfoMappedFromSelectVehicule),
                 ],
               ),
             ),
@@ -1062,18 +1198,41 @@ class _BookingThroughSlotsMapNoAlertDialogState
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(11, 10, 0, 10),
-              child: Text(
-                'Pick Your Desired Spot',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-            ),
-            insideParkingLayout(alleyListViewMinHeightToDisplay),
-            addWhiteSpace(20),
-            timeSlotsLegendColorCode(),
-            addWhiteSpace(10), //edit height and shape of card
-            timeSlotsGrid(startTime, endTime),
+            Padding(
+                padding: const EdgeInsets.only(left: 5, right: 5),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 10, 0, 20),
+                      child: Row(
+                        children: const [
+                          CircleAvatar(
+                            radius: 15,
+                            backgroundColor: Colors.blueGrey,
+                            foregroundColor: Colors.white,
+                            child: Icon(
+                              Icons.local_parking_sharp,
+                              size: 20,
+                            ),
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          Text(
+                            'Select A Spot',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                    insideParkingLayout(alleyListViewMinHeightToDisplay),
+                    addWhiteSpace(20),
+                    timeSlotsLegendColorCode(),
+                    addWhiteSpace(10), //edit height and shape of card
+                    timeSlotsGrid(startTime, endTime),
+                  ],
+                )),
           ],
         );
 
@@ -1090,22 +1249,6 @@ class _BookingThroughSlotsMapNoAlertDialogState
     }
   }
 }
-
-/* void getInsideParkingSlotsInfo(Map<String,dynamic> insideParkingInfoFetched) {
-   for (var element in insideParkingInfoFetched) {
-     
-   }
-      
-    }
-    ;
-    insideParkingInfoFetched.keys
-                    .where((element) => element.toString() == 'Available Slots')
-                    .fetchedAvailableSlots =
-                insideParkingInfoFetched.values.where((element) =>
-                    element.toString() ==
-                    'Available Slots'); //FIND A WAY TO FETCH EVERY ELEMENT OF DATA SNAPSHOT
-            //snapshot.data!.docs;
-  }*/
 
 //
 class DashedSeparatedBordersPainterLTRB extends CustomPainter {

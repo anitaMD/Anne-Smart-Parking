@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, unused_local_variable
+// ignore_for_file: avoid_debugPrint, unused_local_variable
 import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,7 +16,15 @@ import 'package:flutter_emoji/flutter_emoji.dart';
 
 class SelectVehicule extends StatefulWidget {
   final User? currentlySIUser;
-  const SelectVehicule({Key? key, required this.currentlySIUser})
+  final Function(Map<String, dynamic>) updateParkingDetailsAndSelectedDayMapped;
+  final bool reShowSelectedCarCard;
+  final Map<String, dynamic> selectedCarDetails;
+  const SelectVehicule(
+      {Key? key,
+      required this.currentlySIUser,
+      required this.updateParkingDetailsAndSelectedDayMapped,
+      required this.reShowSelectedCarCard,
+      required this.selectedCarDetails})
       : super(key: key);
 
   @override
@@ -33,11 +41,13 @@ class _SelectVehiculeState extends State<SelectVehicule> {
       //isMotorcArrowExpanded = false,
       isVehiculeSelected = false,
       addCarIconPressed = false,
-      firstTimeCallingShow = true,
       newCarAdded = false,
       callSelectVehiculeAfterAdd = false,
       carSelectionCanceled = false,
-      isFlagAvailable = false;
+      isFlagAvailable = false,
+      widgetReShowSelectedCarCard = false,
+      firstTimeClickingOnChangeCarAfterNextPrev = true,
+      stateSetter = false;
 
   List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched = [];
   String country = '',
@@ -74,27 +84,29 @@ class _SelectVehiculeState extends State<SelectVehicule> {
   void initState() {
     //batchDelete();
     //batchWriteCarLogos(); //call it only when necessary
-    getCountry().then((value) {
-      print("LOCALE NAME: $value");
-      setState(() {
-        country = value["country"];
-        region = value['region'];
-      });
-      //print("ISO NAME: $isoCountryCode");
-    });
+    widgetReShowSelectedCarCard = widget.reShowSelectedCarCard;
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    /*  widgetReShowSelectedCarCard == true
+        ? Future.delayed(Duration(seconds: 5)).then((value) => setState(
+              () {
+                isCarArrowExpanded = true;
+              },
+            ))
+        : null; */
     return Column(
       children: [
         Row(
           children: [
             Expanded(
-              child: isCarArrowExpanded == false || isVehiculeSelected == false
+              child: isCarArrowExpanded == false &&
+                      widget.reShowSelectedCarCard == false
                   ? carCard(carIcon, 'Car', arrowIcon)
-                  : isVehiculeSelected == true
+                  : isVehiculeSelected == true ||
+                          widget.selectedCarDetails.isNotEmpty
                       ? selectedCarCard(true)
                       : Container(
                           height: 10,
@@ -105,15 +117,18 @@ class _SelectVehiculeState extends State<SelectVehicule> {
         ),
         isCarArrowExpanded == true
             ? Container()
-            : getVehiculeNeededInfo(
-                'showCar'), //to get the test list from the get go. DO NOT DELETE
+            : isCarArrowExpanded == false ||
+                    widget.reShowSelectedCarCard == true
+                ? getVehiculeNeededInfo('showCar')
+                : Container(), //to get the test list from the get go. DO NOT DELETE
       ],
     );
   }
 
   selectVehiculeAlertCard(int alertIndex, String showVehicule) {
     vehiculesInfoFetched = pickVehiculeNeededInfMapped['fetchedVehiculeInfo'];
-    print(" vehiculesInfoFetched $vehiculesInfoFetched");
+    debugPrint("VehiculesInfoFetched $vehiculesInfoFetched");
+
     var theCurrentVehicule = vehiculesInfoFetched.singleWhere((element) {
       return element.data()['Specs']['License Plate N°'].toString().contains(
           getAllLicensePlateNumbers(vehiculesInfoFetched, showVehicule)
@@ -283,9 +298,6 @@ class _SelectVehiculeState extends State<SelectVehicule> {
     List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched,
     String showVehicule,
   ) {
-    selectedCarInfo.isNotEmpty
-        ? ("COUNTRY IOS: ${selectedCarInfo['Other Details']['Reg. Country ISO']}")
-        : print("NULLU");
     return SizedBox(
       height: cardHeight,
       child: Card(
@@ -437,31 +449,65 @@ class _SelectVehiculeState extends State<SelectVehicule> {
           } else {
             List<QueryDocumentSnapshot<Map<String, dynamic>>>
                 allVehiculesTypesLogosFetched = snapshot.data!.docs;
-            useAlertIndex == false
-                ? print(
-                    "Currently displayed Vehicule's brand: ${getAllVehiculesBrands(vehiculesInfoFetched, showVehicule).elementAt(current).toLowerCase()}")
-                : print(
-                    "Currently displayed Vehicule's brand: ${getAllVehiculesBrands(vehiculesInfoFetched, showVehicule).elementAt(alertIndex).toLowerCase()}");
             var currentVehiculeLogoInfo =
                 allVehiculesTypesLogosFetched.where((element) {
-              return useAlertIndex == false
+              if (firstTimeClickingOnChangeCarAfterNextPrev == true &&
+                  widget.reShowSelectedCarCard == true) {
+                return element
+                        .data()['Brand Info']['Name']
+                        .toString()
+                        .toLowerCase() ==
+                    widget.selectedCarDetails['Specs']['Brand']
+                        .toString()
+                        .toLowerCase();
+              } else {
+                return element
+                        .data()['Brand Info']['Name']
+                        .toString()
+                        .toLowerCase() ==
+                    getAllVehiculesBrands(vehiculesInfoFetched, showVehicule)
+                        .elementAt(alertIndex)
+                        .toLowerCase();
+              }
+
+              /* return useAlertIndex == false &&
+                      widgetReShowSelectedCarCard == false
                   ? element
                           .data()['Brand Info']['Name']
                           .toString()
                           .toLowerCase() ==
                       getAllVehiculesBrands(vehiculesInfoFetched, showVehicule)
-                          .elementAt(current)
-                          .toLowerCase()
-                  : element
-                          .data()['Brand Info']['Name']
-                          .toString()
-                          .toLowerCase() ==
-                      getAllVehiculesBrands(vehiculesInfoFetched, showVehicule)
                           .elementAt(alertIndex)
-                          .toLowerCase();
+                          .toLowerCase()
+                  : useAlertIndex == true &&
+                          widgetReShowSelectedCarCard == false
+                      ? element
+                              .data()['Brand Info']['Name']
+                              .toString()
+                              .toLowerCase() ==
+                          getAllVehiculesBrands(
+                                  vehiculesInfoFetched, showVehicule)
+                              .elementAt(alertIndex)
+                              .toLowerCase()
+                      : firstTimeClickingOnChangeCarAfterNextPrev == true
+                          ? element
+                                  .data()['Brand Info']['Name']
+                                  .toString()
+                                  .toLowerCase() ==
+                              widget.selectedCarDetails['Specs']['Brand']
+                                  .toString()
+                                  .toLowerCase()
+                          : element
+                                  .data()['Brand Info']['Name']
+                                  .toString()
+                                  .toLowerCase() ==
+                              getAllVehiculesBrands(
+                                      vehiculesInfoFetched, showVehicule)
+                                  .elementAt(alertIndex)
+                                  .toLowerCase(); */
             });
 
-            print(
+            debugPrint(
                 "Currently displayed vehicule's logo info: ${currentVehiculeLogoInfo.first.data()}");
             return ClipOval(
                 child: Image.asset(
@@ -495,7 +541,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                 .map((e) => showSingleVehiculeCardForAlertCarousel(
                     vehiculesInfoFetched,
                     vehiculeType)); //maps every registerd vehicule's license plate number to its corresponding singleVehiculeCard
-            print("CAROUSEL ELEMENTS NUMBER: ${carSlider.length}");
+            debugPrint("CAROUSEL ELEMENTS NUMBER: ${carSlider.length}");
             pickVehiculeNeededInfMapped.addAll({
               'item': carSlider,
               'fetchedVehiculeInfo': vehiculesInfoFetched,
@@ -506,16 +552,14 @@ class _SelectVehiculeState extends State<SelectVehicule> {
             currentSmoothIndicator = carSlider.length;
 
             return Container(
-              height: 10,
-              color: Colors.red,
-            );
+                /*  height: 15,
+              color: Colors.red, */
+                );
           }
         });
   }
 
-  Widget selectedCarCard(bool vehiculeSelected) {
-    print(
-        " vehiculeSelected $vehiculeSelected _________ isVehiculeSelected $isVehiculeSelected ");
+  Widget selectedCarCard(bool vehiculeSelected, [bool widgetReshow = false]) {
     if (!mounted) null;
     //DO NOT REMOVE following Setstate as it refreshes the stfw
     setState(
@@ -523,6 +567,10 @@ class _SelectVehiculeState extends State<SelectVehicule> {
         carSelectionCanceled = false;
       },
     );
+    var fetchedAlertIndex = 0;
+    widgetReshow == true
+        ? fetchedAlertIndex = widget.selectedCarDetails['alertIndex']
+        : null;
     return Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
@@ -559,16 +607,26 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                                           CrossAxisAlignment.center,
                                       children: [
                                         Flag.fromString(
-                                          selectedCarInfo['Other Details']
-                                              ['Reg. Country ISO'],
+                                          widgetReShowSelectedCarCard == true
+                                              ? widget.selectedCarDetails[
+                                                      'Other Details']
+                                                  ['Reg. Country ISO']
+                                              : selectedCarInfo['Other Details']
+                                                  ['Reg. Country ISO'],
                                           width: 120,
                                           height: 20,
                                         ),
                                         Align(
                                           child: FittedBox(
                                             child: Text(
-                                              selectedCarInfo['Other Details']
-                                                  ['Reg. Country ISO'],
+                                              widgetReShowSelectedCarCard ==
+                                                      true
+                                                  ? widget.selectedCarDetails[
+                                                          'Other Details']
+                                                      ['Reg. Country ISO']
+                                                  : selectedCarInfo[
+                                                          'Other Details']
+                                                      ['Reg. Country ISO'],
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 15,
@@ -596,10 +654,13 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                                             vehiculesInfoFetched, 'showCar')),
                                     FittedBox(
                                       child: Text(
-                                          getAllLicensePlateNumbers(
-                                                  vehiculesInfoFetched,
-                                                  'showCar')
-                                              .elementAt(alertIndex),
+                                          widgetReShowSelectedCarCard == true
+                                              ? widget.selectedCarDetails[
+                                                  'Specs']['License Plate N°']
+                                              : getAllLicensePlateNumbers(
+                                                      vehiculesInfoFetched,
+                                                      'showCar')
+                                                  .elementAt(alertIndex),
                                           style: const TextStyle(
                                               letterSpacing: 2.0,
                                               fontSize: 25,
@@ -612,10 +673,14 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                                         width: 100,
                                         child: FittedBox(
                                           child: Text(
-                                              getVehiculeModelDetail(
-                                                      vehiculesInfoFetched,
-                                                      'showCar')
-                                                  .elementAt(alertIndex),
+                                              widgetReShowSelectedCarCard ==
+                                                      true
+                                                  ? widget.selectedCarDetails[
+                                                      'Specs']['Model Detail']
+                                                  : getVehiculeModelDetail(
+                                                          vehiculesInfoFetched,
+                                                          'showCar')
+                                                      .elementAt(alertIndex),
                                               style: const TextStyle(
                                                 // letterSpacing: 1.0,
                                                 fontSize: 10,
@@ -643,8 +708,14 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                                         Align(
                                           child: FittedBox(
                                             child: Text(
-                                              selectedCarInfo['Other Details']
-                                                  ['Reg. City ISO'],
+                                              widgetReShowSelectedCarCard ==
+                                                      true
+                                                  ? widget.selectedCarDetails[
+                                                          'Other Details']
+                                                      ['Reg. City ISO']
+                                                  : selectedCarInfo[
+                                                          'Other Details']
+                                                      ['Reg. City ISO'],
                                               style: const TextStyle(
                                                 color: Colors.black,
                                                 fontSize: 15,
@@ -657,8 +728,13 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                                         Align(
                                           child: FittedBox(
                                             child: Text(
-                                              selectedCarInfo['Specs']
-                                                  ['Registration Year'],
+                                              widgetReShowSelectedCarCard ==
+                                                      true
+                                                  ? widget.selectedCarDetails[
+                                                          'Specs']
+                                                      ['Registration Year']
+                                                  : selectedCarInfo['Specs']
+                                                      ['Registration Year'],
                                               style: const TextStyle(
                                                 color: Colors.black,
                                                 fontSize: 15,
@@ -680,6 +756,16 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                     height: 15,
                     child: ElevatedButton(
                       onPressed: () async {
+                        widget.reShowSelectedCarCard == true &&
+                                firstTimeClickingOnChangeCarAfterNextPrev ==
+                                    true
+                            ? setState(
+                                () {
+                                  firstTimeClickingOnChangeCarAfterNextPrev =
+                                      false;
+                                },
+                              )
+                            : null;
                         selectVehiculeAlertDialog(
                             currentSmoothIndicator, currentCarouselItems);
                       },
@@ -772,7 +858,6 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                           ? selectVehiculeAlertDialog(
                               smoothIndicatorLength, carouselItems)
                           : Container();
-                      //print("OBTENU $obtenu");
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -829,7 +914,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
             : null;
       }
     }
-    print("ALL LICENSES OF CURRENT USER $allVehiculesLicensePlates");
+    debugPrint("ALL LICENSES OF CURRENT USER $allVehiculesLicensePlates");
     return allVehiculesLicensePlates.toList();
   }
 
@@ -852,7 +937,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
             : null;
       }
     }
-    print("ALL BRANDS OF CURRENT USER $allVehiculesBrands");
+    debugPrint("ALL BRANDS OF CURRENT USER $allVehiculesBrands");
     return allVehiculesBrands.toList();
   }
 
@@ -876,7 +961,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
             : null;
       }
     }
-    print("ALL MODEL DETAILS OF CURRENT USER $allVehiculesModelsDetails");
+    debugPrint("ALL MODEL DETAILS OF CURRENT USER $allVehiculesModelsDetails");
     return allVehiculesModelsDetails.toList();
   }
 
@@ -884,7 +969,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
     Network n = Network("http://ip-api.com/json");
     var locationSTR = (await n.getData());
     var locationInfo = jsonDecode(locationSTR);
-    print("VOICI: $locationInfo");
+    debugPrint("Location from getCountry: $getCountry()");
     return locationInfo;
   }
 
@@ -893,7 +978,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
 /* USE THIS IN CASE NETWORK EXCEPTION AGAIN
 Future<String> getCountryName() async {
     Position position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    debugPrint('location: ${position.latitude}');
+    debugdebugPrint('location: ${position.latitude}');
     final coordinates = new Coordinates(position.latitude, position.longitude);
     var addresses = await Geocoder.local.findAddressesFromCoordinates(coordinates);
     var first = addresses.first;
@@ -959,7 +1044,6 @@ Future<String> getCountryName() async {
     CollectionReference vehiculesCollectionRef =
         myDB.collection("users/${widget.currentlySIUser!.uid}/vehicules");
     WriteBatch batch = myDB.batch();
-    print("FROM ADDCARIN ${formRes['car brand']}");
     myDB
         .collection("users/${widget.currentlySIUser!.uid}/vehicules")
         .get()
@@ -1000,7 +1084,9 @@ Future<String> getCountryName() async {
                   .toUpperCase(),
             },
           });
-      await batch.commit().whenComplete(() => print("SUCCESSFULYWRITTEN"));
+      await batch
+          .commit()
+          .whenComplete(() => debugPrint("CAR SUCCESSFULLY ADDED IN FIREBASE"));
 
       await myDB
           .collection("users/${widget.currentlySIUser!.uid}/vehicules")
@@ -1015,11 +1101,6 @@ Future<String> getCountryName() async {
                 .delete()
             : null;
       });
-
-      /* for (int i = 0; i < value.docs.length; i++)
-            {batch.delete(value.docs.elementAt(i).reference)},
-          print("DONNE: ${value.docs.length}"),
-          batch.commit().whenComplete(() => print("SUCCESSFULLY DELETED")), */
     });
     return myDB
         .collection("users/${widget.currentlySIUser!.uid}/vehicules")
@@ -1088,7 +1169,6 @@ Future<String> getCountryName() async {
                                   ),
                                   onPressed: () async {
                                     Navigator.pop(context);
-                                    print("YES PRESSED");
                                     var registerFormResult =
                                         await registerCarForm(
                                             vehiculeType,
@@ -1200,13 +1280,23 @@ Future<String> getCountryName() async {
         );
       }),
     ).then((value) {
-      print("VALUE IS: $value");
+      debugPrint("SelectVehiculeAlert result: $value");
       if (value == 'CAR SELECTED') {
-        print(
+        debugPrint(
             "CAR SELECTED $alertIndex ______ ${vehiculesInfoFetched.elementAt(alertIndex).data()}");
+        setState(
+          () {
+            widgetReShowSelectedCarCard = false;
+          },
+        );
         // selectedCarInfo.clear;
         selectedCarInfo
             .addAll(vehiculesInfoFetched.elementAt(alertIndex).data());
+        selectedCarInfo.addAll({
+          'alertIndex': alertIndex,
+        });
+
+        widget.updateParkingDetailsAndSelectedDayMapped(selectedCarInfo);
         selectedCarCard(true);
       } else if (value == 'NEW CAR ADDED') {
         setState(() {
@@ -1214,8 +1304,8 @@ Future<String> getCountryName() async {
         });
       } else {
         isVehiculeSelected == false
-            ? print("CANCELED CAR SELECTION")
-            : print("CANCELED CAR CHANGE");
+            ? debugPrint("CANCELED CAR SELECTION")
+            : debugPrint("CANCELED CAR CHANGE");
         setState(() {
           carSelectionCanceled = true;
           isVehiculeSelected == false ? isCarArrowExpanded = false : null;
@@ -1227,7 +1317,6 @@ Future<String> getCountryName() async {
   registerCarForm(String vehiculeType, int smoothIndicatorLength,
       Iterable<Widget> carouselItems) {
     // https://stackoverflow.com/questions/71792773/how-to-pop-out-double-alert-message/
-
     List<String> carOptions = [];
     getDirectory().then((value) {
       fetchedCarLogosAssets.addAll(value);
@@ -1245,7 +1334,6 @@ Future<String> getCountryName() async {
         carOptions.add(carBrandFormatted);
       }
       carOptions.add('OTHER');
-      print("CAR OPTS: $carOptions");
     });
     bool autoValidate = true,
         readOnly = false,
@@ -1479,7 +1567,6 @@ Future<String> getCountryName() async {
                               });
                             },
                             onCityLengthChanged: (int value) {
-                              print("TOTAL CITIES OR DEPARTMENT: $value");
                               setState(() {
                                 totalCities = value;
                               });
@@ -1487,7 +1574,6 @@ Future<String> getCountryName() async {
                             onStateLengthChanged: (int value) {
                               setState(() {
                                 totalStates = value;
-                                print("TOTAL STATES/REGIONSORCITY: $value");
                               });
                             },
                           ),
@@ -1497,8 +1583,8 @@ Future<String> getCountryName() async {
                           // enabled: false,
                           onChanged: () {
                             formKey.currentState!.save();
-                            print(
-                                "ANNIE ${formKey.currentState!.value.toString()}");
+                            debugPrint(
+                                "USER INPUT FROM FORM ${formKey.currentState!.value.toString()}");
                           },
                           autovalidateMode: AutovalidateMode.disabled,
                           skipDisabled: true,
@@ -1865,11 +1951,10 @@ Future<String> getCountryName() async {
                                     if (formKey.currentState
                                             ?.saveAndValidate() ??
                                         false) {
-                                      debugPrint(
-                                          "GIRL ${formKey.currentState?.value.toString()}");
                                       formFetchedInf
                                           .addAll(formKey.currentState!.value);
-                                      print("YOU DID FETCH: $formFetchedInf");
+                                      debugPrint(
+                                          "FETCHED FORM RESULT $formFetchedInf");
                                       carouselItems =
                                           pickVehiculeNeededInfMapped['item']
                                               as Iterable<Widget>;
@@ -1880,10 +1965,9 @@ Future<String> getCountryName() async {
                                             realCountryValue.split("    ").last,
                                         'reg city': realStateCityValue,
                                       });
-                                      print(
-                                          "YOU DID FETCH AGAIN: $formFetchedInf");
-                                      print(
-                                          "VALIDATION SUCCESS ${formKey.currentState!.value}");
+
+                                      debugPrint(
+                                          "FORM VALIDATION SUCCESS ${formKey.currentState!.value}");
                                       await addVehiculeInfoToFirebase(
                                               formFetchedInf)
                                           .then((fireSnap) {
@@ -1916,7 +2000,7 @@ Future<String> getCountryName() async {
                                     } else {
                                       debugPrint(formKey.currentState?.value
                                           .toString());
-                                      debugPrint('validation failed');
+                                      debugPrint('Form validation failed');
                                     }
                                   }
                                 },
@@ -1957,9 +2041,7 @@ Future<String> getCountryName() async {
             .collection("users/${widget.currentlySIUser!.uid}/vehicules")
             .get()
             .then((snapshotV) async {
-          print("THIS VALUE: ${snapshotV.docs.length}");
           await afterVehiculeAddGetNeededInf(vehiculeType, snapshotV.docs);
-
           setState(
             () {
               carouselItems =
@@ -1969,22 +2051,18 @@ Future<String> getCountryName() async {
               newCarAdded = true;
             },
           );
-
-          print(
-              "CHECHK BEFORE:${carouselItems.length} _____ vehiculeType: $vehiculeType ");
           selectVehiculeAlertDialog(
             smoothIndicatorLength,
             carouselItems,
             vehiculeType,
           );
         });
-        print("WORKED AGAIN");
-
+/* 
         setState(() {
           firstTimeCallingShow = false;
-        });
+        }); */
       } else {
-        print("HERE WE GO");
+        debugPrint("HERE WE GO");
       }
     });
   }
@@ -1994,32 +2072,31 @@ Future<String> getCountryName() async {
     Iterable<Widget> carSlider = getAllLicensePlateNumbers(docs, vehiculeType)
         .map((e) => showSingleVehiculeCardForAlertCarousel(docs,
             vehiculeType)); //maps every registerd vehicule's license plate number to its corresponding singleVehiculeCard
-    print("CAROUSEL ELEMENTS NUMBER: ${carSlider.length}");
+    debugPrint("CAROUSEL ELEMENTS NUMBER: ${carSlider.length}");
     pickVehiculeNeededInfMapped.addAll({
       'item': carSlider,
       'fetchedVehiculeInfo': docs,
       'vehiculeType': vehiculeType
     });
-    print("DAVE: $pickVehiculeNeededInfMapped");
+    debugPrint("pickVehiculeNeededInfMapped: $pickVehiculeNeededInfMapped");
     return pickVehiculeNeededInfMapped['fetchedVehiculeInfo'];
   }
 
-//
   batchDelete() async {
     CollectionReference collectionRef = myDB.collection("carBrandLogos");
     WriteBatch batch = myDB.batch();
     collectionRef.get().then((value) => {
-          print("DONNE: ${value.docs.length}"),
+          debugPrint("DONNE: ${value.docs.length}"),
           for (int i = 0; i < value.docs.length; i++)
             {batch.delete(value.docs.elementAt(i).reference)},
-          print("DONNE: ${value.docs.length}"),
-          batch.commit().whenComplete(() => print("SUCCESSFULLY DELETED")),
-          //map((document) => {print("MAMAM: ${document.id}")})
+          debugPrint("DONNE: ${value.docs.length}"),
+          batch.commit().whenComplete(() => debugPrint("SUCCESSFULLY DELETED")),
+          //map((document) => {debugPrint("MAMAM: ${document.id}")})
         });
 
     /* {batch.delete(document.reference)})
         });
-    batch.commit().whenComplete(() => print("SUCCESSFULLY DELETED")); */
+    batch.commit().whenComplete(() => debugPrint("SUCCESSFULLY DELETED")); */
   }
 
   batchWriteCarLogos() async {
@@ -2028,9 +2105,7 @@ Future<String> getCountryName() async {
     });
     CollectionReference collectionRef = myDB.collection("carBrandLogos");
     WriteBatch batch = myDB.batch();
-    //print("HAHA $fetchedCarLogosAssets");
     for (int i = 0; i < fetchedCarLogosAssets.length; i++) {
-      //print("HAHA ${fetchedCarLogosAssets.elementAt(i)}");
       batch.set(
         collectionRef.doc(),
         {
@@ -2048,7 +2123,9 @@ Future<String> getCountryName() async {
         },
       );
     }
-    await batch.commit().whenComplete(() => print("SUCCESSFULYWRITTEN"));
+    await batch
+        .commit()
+        .whenComplete(() => debugPrint("SUCCESSFULLY WRITTEN TO FIREBASE"));
   }
 
   Future<Set<String>> getDirectory() async {
@@ -2067,13 +2144,14 @@ Future<String> getCountryName() async {
         carLogosAssets.add(asset);
       }
     }
-    print("PATH: $carLogosAssets");
+    debugPrint("PATH: $carLogosAssets");
     return carLogosAssets;
   }
 
   refresh() => Future.delayed(const Duration(seconds: 1), () {
         setState(() {});
       });
+
 /* THESE WILL BE NEEDED IF I EVER WANT TO DISPLAY A CAROUSEL USING THE CAROULSEL SLIDER DEPENDANCY
 
 /*   selectedmotorcycleCard() {
@@ -2176,14 +2254,14 @@ Future<String> getCountryName() async {
             for (var element in vehiculesInfoFetched) {
               vehiculeInfMappedWithDocID.addAll({element.id: element.data()});
             }
-            print("VEHICULES LENGHT: $vehiculeInfMappedWithDocID");
+            debugPrint("VEHICULES LENGHT: $vehiculeInfMappedWithDocID");
             var neededVehiculesNumber =
                 getAllLicensePlates(vehiculesInfoFetched, showVehicule).length;
             Iterable<Widget> carSlider =
                 getAllLicensePlates(vehiculesInfoFetched, showVehicule).map(
                     (e) =>
                         getCardForSlider(vehiculesInfoFetched, showVehicule));
-            print("CAROUSEL LEGNTH: ${carSlider.length}");
+            debugPrint("CAROUSEL LEGNTH: ${carSlider.length}");
       
             return buildCarousel(carSlider.toList(), vehiculesInfoFetched, showVehicule);
           }
@@ -2353,7 +2431,7 @@ Future<String> getCountryName() async {
                   //updateKey(itemIndex);
                   GestureDetector(
                       onTap: () {
-                        print(
+                        debugPrint(
                             "Currently selected car : ${getAllVehiculesBrands(vehiculesInfoFetched, showVehicule).elementAt(current)}");
 
                         isVehiculeSelected =
@@ -2362,7 +2440,7 @@ Future<String> getCountryName() async {
                       child: carSlider.elementAt(current)),
           options: CarouselOptions(
             onPageChanged: (index, reason) {
-              print("REASON: ${reason.index}");
+              debugPrint("REASON: ${reason.index}");
               setState(() {
                 current = index;
               });
