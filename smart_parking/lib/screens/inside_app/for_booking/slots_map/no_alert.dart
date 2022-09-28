@@ -1,6 +1,8 @@
 // ignore_for_file: avoid_print
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/booking_overview.dart';
@@ -80,7 +82,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
   DateTime selectedDay = DateTime.now(), focusedDay = DateTime.now();
   Color selectedTimeSlotColor = Colors.orange;
   ScrollController singleChildController = ScrollController(),
-      gridController = ScrollController(),
+      timeSlotGridController = ScrollController(),
       infoListViewController = ScrollController(),
       bodyScrollBarController = ScrollController();
   int activeStep = 0, upperBound = 2;
@@ -791,57 +793,68 @@ class _BookingThroughSlotsMapNoAlertDialogState
     return Container(
       color: Colors.white,
       height: fetchedTimes.toList().length * 20,
-      child: Scrollbar(
-        thumbVisibility: true,
-        controller: gridController,
-        child: GridView.builder(
-            //primary: false,
-            controller: gridController,
-            shrinkWrap: true,
-            itemCount: fetchedTimes.toList().isEmpty
-                ? 10
-                : fetchedTimes.toList().length - 1,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                childAspectRatio: 1.5,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 15,
-                crossAxisCount: 3),
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onTap: () async {
-                  context.read<StateManagement>().updateSelectedTime(
-                      fetchedTimes.elementAt(index)); //don't change
-                  showUserRangePicker(index, endTime, startTime);
-                },
-                child: Row(
-                  children: [
-                    Card(
-                        //margin:const EdgeInsets.only(left: 20, right: 10),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15)),
-                        color: getSelectedTimeSlotColor(index),
-                        child: fetchedTimes.toList().isEmpty
-                            ? null
-                            : Center(
-                                child: (index + 1) ==
-                                        fetchedTimes.toList().length
+      child: Column(
+        children: [
+          Flexible(
+            child: Scrollbar(
+              thumbVisibility: true,
+              controller: timeSlotGridController,
+              child: GridView.builder(
+                  //primary: false,
+                  controller: timeSlotGridController,
+                  shrinkWrap: true,
+                  itemCount: fetchedTimes.toList().isEmpty
+                      ? 10
+                      : fetchedTimes.toList().length - 1,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      childAspectRatio: 1.5,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 15,
+                      crossAxisCount: 3),
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () async {
+                        context.read<StateManagement>().updateSelectedTime(
+                            fetchedTimes.elementAt(index)); //don't change
+                        showUserRangePicker(index, endTime, startTime);
+                      },
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Card(
+                                //margin:const EdgeInsets.only(left: 20, right: 10),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15)),
+                                color: getSelectedTimeSlotColor(index),
+                                child: fetchedTimes.toList().isEmpty
                                     ? null
-                                    : GridTile(
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                              left: 8.0, right: 8.0),
-                                          child: FittedBox(
-                                            alignment: Alignment.bottomCenter,
-                                            child: Text(
-                                                "${fetchedTimes.elementAt(index).format(context)} - ${fetchedTimes.elementAt(index + 1).format(context)}"),
-                                          ),
-                                        ),
-                                      ),
-                              )),
-                  ],
-                ),
-              );
-            }),
+                                    : Center(
+                                        child: (index + 1) ==
+                                                fetchedTimes.toList().length
+                                            ? null
+                                            : GridTile(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          left: 8.0,
+                                                          right: 8.0),
+                                                  child: FittedBox(
+                                                    alignment:
+                                                        Alignment.bottomCenter,
+                                                    child: Text(
+                                                        "${fetchedTimes.elementAt(index).format(context)} - ${fetchedTimes.elementAt(index + 1).format(context)}"),
+                                                  ),
+                                                ),
+                                              ),
+                                      )),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1488,7 +1501,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                 margin:
                                     const EdgeInsets.only(top: 0, right: 10),
                                 width: 100,
-                                height: 60,
+                                height: 78,
                                 child: Card(
                                   color: Colors.white,
                                   elevation: 5,
@@ -1591,6 +1604,36 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                             ),
                                           ),
                                         ),
+                                        Flexible(
+                                          child: SizedBox(
+                                            height: 15,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          left: 3.0, bottom: 5),
+                                                  child: getParkingSpotIcon(
+                                                      "legend", 'accessible'),
+                                                ),
+                                                const Flexible(
+                                                  child: FittedBox(
+                                                    child: Text(
+                                                      "Special",
+                                                      style: TextStyle(
+                                                          fontSize: 8,
+                                                          fontWeight:
+                                                              FontWeight.w500),
+                                                    ),
+                                                  ),
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -1618,7 +1661,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                     backgroundColor: Colors.blueGrey,
                                     foregroundColor: Colors.white,
                                     child: Icon(
-                                      Icons.timer,
+                                      Icons.access_time_filled_outlined,
                                       size: 20,
                                     ),
                                   ),
@@ -1626,7 +1669,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                     width: 10,
                                   ),
                                   Text(
-                                    'Select A Time Spot',
+                                    'Select A Time Slot',
                                     style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 16),
@@ -1746,8 +1789,14 @@ class _BookingThroughSlotsMapNoAlertDialogState
                       ),
                     ),
 
-                    /*  addWhiteSpace(10), //edit height and shape of card
-                    timeSlotsGrid(startTime, endTime), */
+                    addWhiteSpace(10), //edit height and shape of card
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
+                      child: Column(children: [
+                        timeSlotsGrid(startTime, endTime),
+                        //test()
+                      ]),
+                    ),
                   ],
                 )),
           ],
@@ -1842,9 +1891,15 @@ class _BookingThroughSlotsMapNoAlertDialogState
     Icon spotBookedIcon = Icon(Icons.lock_clock_outlined,
             size: iconSize, color: Colors.orange.shade700),
         spotAvailableIcon =
-            Icon(Icons.lock_open_outlined, color: Colors.green, size: iconSize);
+            Icon(Icons.lock_open_outlined, color: Colors.green, size: iconSize),
+        specialAccessIcon =
+            Icon(Icons.accessible, color: Colors.blue, size: iconSize + 2);
 
-    return whichIcon == 'available' ? spotAvailableIcon : spotBookedIcon;
+    return whichIcon == 'available'
+        ? spotAvailableIcon
+        : whichIcon == 'accessible'
+            ? specialAccessIcon
+            : spotBookedIcon;
   }
 
   getTimeSpotIcon(String status) {
@@ -1858,6 +1913,358 @@ class _BookingThroughSlotsMapNoAlertDialogState
                   ? Colors.red
                   : Colors.orange.shade700,
           shape: BoxShape.circle),
+    );
+  }
+
+  test() {
+    bool autoValidate = true;
+    bool readOnly = false;
+    bool showSegmentedControl = true;
+    final _formKey = GlobalKey<FormBuilderState>();
+    bool _ageHasError = false;
+    bool _genderHasError = false;
+
+    var genderOptions = ['Male', 'Female', 'Other'];
+
+    void _onChanged(dynamic val) => debugPrint("ANNAM ${val.toString()}");
+    return Column(
+      children: [
+        FormBuilder(
+          key: _formKey,
+          // enabled: false,
+          onChanged: () {
+            _formKey.currentState!.save();
+            debugPrint(_formKey.currentState!.value.toString());
+          },
+          autovalidateMode: AutovalidateMode.disabled,
+          initialValue: const {
+            'movie_rating': 5,
+            'best_language': 'Dart',
+            'age': '13',
+            'gender': 'Male',
+            'languages_filter': ['Dart']
+          },
+          skipDisabled: true,
+          child: Column(
+            children: <Widget>[
+              const SizedBox(height: 15),
+              FormBuilderDateTimePicker(
+                name: 'date',
+                initialEntryMode: DatePickerEntryMode.calendar,
+                initialValue: DateTime.now(),
+                inputType: InputType.both,
+                decoration: InputDecoration(
+                  labelText: 'Appointment Time',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      _formKey.currentState!.fields['date']?.didChange(null);
+                    },
+                  ),
+                ),
+                initialTime: const TimeOfDay(hour: 8, minute: 0),
+                // locale: const Locale.fromSubtags(languageCode: 'fr'),
+              ),
+              FormBuilderDateRangePicker(
+                name: 'date_range',
+                firstDate: DateTime(1970),
+                lastDate: DateTime(2030),
+                onChanged: _onChanged,
+                decoration: InputDecoration(
+                  labelText: 'Date Range',
+                  helperText: 'Helper text',
+                  hintText: 'Hint text',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      _formKey.currentState!.fields['date_range']
+                          ?.didChange(null);
+                    },
+                  ),
+                ),
+              ),
+              FormBuilderSlider(
+                name: 'slider',
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.min(6),
+                ]),
+                onChanged: _onChanged,
+                min: 0.0,
+                max: 10.0,
+                initialValue: 7.0,
+                divisions: 20,
+                activeColor: Colors.red,
+                inactiveColor: Colors.pink[100],
+                decoration: const InputDecoration(
+                  labelText: 'Number of things',
+                ),
+              ),
+              FormBuilderRangeSlider(
+                name: 'range_slider',
+                // validator: FormBuilderValidators.compose([FormBuilderValidators.min(context, 6)]),
+                onChanged: _onChanged,
+                min: 0.0,
+                max: 100.0,
+                initialValue: const RangeValues(4, 7),
+                divisions: 20,
+                activeColor: Colors.red,
+                inactiveColor: Colors.pink[100],
+                decoration: const InputDecoration(labelText: 'Price Range'),
+              ),
+              FormBuilderCheckbox(
+                name: 'accept_terms',
+                initialValue: false,
+                onChanged: _onChanged,
+                title: RichText(
+                  text: const TextSpan(
+                    children: [
+                      TextSpan(
+                        text: 'I have read and agree to the ',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                      TextSpan(
+                        text: 'Terms and Conditions',
+                        style: TextStyle(color: Colors.blue),
+                        // Flutter doesn't allow a button inside a button
+                        // https://github.com/flutter/flutter/issues/31437#issuecomment-492411086
+                        /*
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () {
+                                      print('launch url');
+                                    },
+                                  */
+                      ),
+                    ],
+                  ),
+                ),
+                validator: FormBuilderValidators.equal(
+                  true,
+                  errorText: 'You must accept terms and conditions to continue',
+                ),
+              ),
+              FormBuilderTextField(
+                autovalidateMode: AutovalidateMode.always,
+                name: 'age',
+                decoration: InputDecoration(
+                  labelText: 'Age',
+                  suffixIcon: _ageHasError
+                      ? Icon(Icons.error, color: Colors.red)
+                      : const Icon(Icons.check, color: Colors.green),
+                ),
+                onChanged: (val) {
+                  setState(() {
+                    _ageHasError =
+                        !(_formKey.currentState?.fields['age']?.validate() ??
+                            false);
+                  });
+                },
+                // valueTransformer: (text) => num.tryParse(text),
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.required(),
+                  FormBuilderValidators.numeric(),
+                  FormBuilderValidators.max(70),
+                ]),
+                // initialValue: '12',
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.next,
+              ),
+              FormBuilderDropdown<String>(
+                // autovalidate: true,
+                name: 'gender',
+                decoration: InputDecoration(
+                  labelText: 'Gender',
+                  suffix: _genderHasError
+                      ? const Icon(Icons.error)
+                      : const Icon(Icons.check),
+                  hintText: 'Select Gender',
+                ),
+                validator: FormBuilderValidators.compose(
+                    [FormBuilderValidators.required()]),
+                items: genderOptions
+                    .map((gender) => DropdownMenuItem(
+                          alignment: AlignmentDirectional.center,
+                          value: gender,
+                          child: Text(gender),
+                        ))
+                    .toList(),
+                onChanged: (val) {
+                  setState(() {
+                    _genderHasError =
+                        !(_formKey.currentState?.fields['gender']?.validate() ??
+                            false);
+                  });
+                },
+                valueTransformer: (val) => val?.toString(),
+              ),
+              FormBuilderRadioGroup<String>(
+                decoration: const InputDecoration(
+                  labelText: 'My chosen language',
+                ),
+                initialValue: null,
+                name: 'best_language',
+                onChanged: _onChanged,
+                validator: FormBuilderValidators.compose(
+                    [FormBuilderValidators.required()]),
+                options: ['Dart', 'Kotlin', 'Java', 'Swift', 'Objective-C']
+                    .map((lang) => FormBuilderFieldOption(
+                          value: lang,
+                          child: Text(lang),
+                        ))
+                    .toList(growable: false),
+                controlAffinity: ControlAffinity.trailing,
+              ),
+              FormBuilderSegmentedControl(
+                decoration: const InputDecoration(
+                  labelText: 'Movie Rating (Archer)',
+                ),
+                name: 'movie_rating',
+                // initialValue: 1,
+                // textStyle: TextStyle(fontWeight: FontWeight.bold),
+                options: List.generate(5, (i) => i + 1)
+                    .map((number) => FormBuilderFieldOption(
+                          value: number,
+                          child: Text(
+                            number.toString(),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ))
+                    .toList(),
+                onChanged: _onChanged,
+              ),
+              FormBuilderSwitch(
+                title: const Text('I Accept the terms and conditions'),
+                name: 'accept_terms_switch',
+                initialValue: true,
+                onChanged: _onChanged,
+              ),
+              FormBuilderCheckboxGroup<String>(
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(
+                    labelText: 'The language of my people'),
+                name: 'languages',
+                // initialValue: const ['Dart'],
+                options: const [
+                  FormBuilderFieldOption(value: 'Dart'),
+                  FormBuilderFieldOption(value: 'Kotlin'),
+                  FormBuilderFieldOption(value: 'Java'),
+                  FormBuilderFieldOption(value: 'Swift'),
+                  FormBuilderFieldOption(value: 'Objective-C'),
+                ],
+                onChanged: _onChanged,
+                separator: const VerticalDivider(
+                  width: 10,
+                  thickness: 5,
+                  color: Colors.red,
+                ),
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.minLength(1),
+                  FormBuilderValidators.maxLength(3),
+                ]),
+              ),
+              FormBuilderFilterChip<String>(
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(
+                    labelText: 'The language of my people'),
+                name: 'languages_filter',
+                selectedColor: Colors.red,
+                options: const [
+                  FormBuilderChipOption(
+                    value: 'Dart',
+                    avatar: CircleAvatar(child: Text('D')),
+                  ),
+                  FormBuilderChipOption(
+                    value: 'Kotlin',
+                    avatar: CircleAvatar(child: Text('K')),
+                  ),
+                  FormBuilderChipOption(
+                    value: 'Java',
+                    avatar: CircleAvatar(child: Text('J')),
+                  ),
+                  FormBuilderChipOption(
+                    value: 'Swift',
+                    avatar: CircleAvatar(child: Text('S')),
+                  ),
+                  FormBuilderChipOption(
+                    value: 'Objective-C',
+                    avatar: CircleAvatar(child: Text('O')),
+                  ),
+                ],
+                onChanged: _onChanged,
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.minLength(1),
+                  FormBuilderValidators.maxLength(3),
+                ]),
+              ),
+              FormBuilderChoiceChip<String>(
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                decoration: const InputDecoration(
+                    labelText:
+                        'Ok, if I had to choose one language, it would be:'),
+                name: 'languages_choice',
+                initialValue: 'Dart',
+                options: const [
+                  FormBuilderChipOption(
+                    value: 'Dart',
+                    avatar: CircleAvatar(child: Text('D')),
+                  ),
+                  FormBuilderChipOption(
+                    value: 'Kotlin',
+                    avatar: CircleAvatar(child: Text('K')),
+                  ),
+                  FormBuilderChipOption(
+                    value: 'Java',
+                    avatar: CircleAvatar(child: Text('J')),
+                  ),
+                  FormBuilderChipOption(
+                    value: 'Swift',
+                    avatar: CircleAvatar(child: Text('S')),
+                  ),
+                  FormBuilderChipOption(
+                    value: 'Objective-C',
+                    avatar: CircleAvatar(child: Text('O')),
+                  ),
+                ],
+                onChanged: _onChanged,
+              ),
+            ],
+          ),
+        ),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState?.saveAndValidate() ?? false) {
+                    debugPrint(
+                        " ANNAM ${_formKey.currentState?.value.toString()}");
+                  } else {
+                    debugPrint(_formKey.currentState?.value.toString());
+                    debugPrint('validation failed');
+                  }
+                },
+                child: const Text(
+                  'Submit',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  _formKey.currentState?.reset();
+                },
+                // color: Theme.of(context).colorScheme.secondary,
+                child: Text(
+                  'Reset',
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.secondary),
+                ),
+              ),
+            ),
+          ],
+        )
+      ],
     );
   }
 }

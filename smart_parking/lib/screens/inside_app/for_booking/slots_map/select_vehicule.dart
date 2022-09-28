@@ -105,13 +105,15 @@ class _SelectVehiculeState extends State<SelectVehicule> {
           children: [
             Expanded(
               child: isCarArrowExpanded == false &&
-                      widget.reShowSelectedCarCard == false &&
-                      tappedOnCarCard == false
+                      widget.reShowSelectedCarCard == false
                   ? carCard(carIcon, 'Car', arrowIcon)
                   : isVehiculeSelected == true ||
                           widget.selectedCarDetails.isNotEmpty
                       ? selectedCarCard(true)
-                      : Container(),
+                      : Container(
+                          height: 10,
+                          color: Colors.green,
+                        ),
             ),
           ],
         ),
