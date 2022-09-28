@@ -33,7 +33,7 @@ class SelectVehicule extends StatefulWidget {
 
 class _SelectVehiculeState extends State<SelectVehicule> {
   /* CHECK FOR CAR MODELS AND BRANDS https://www.kbb.com/car-make-model-list/new/view-all/ */
-  IconData carIcon = Icons.car_rental,
+  IconData carIcon = Icons.time_to_leave_rounded,
       motorcycleIcon = Icons.motorcycle,
       arrowIcon = Icons.keyboard_double_arrow_down_rounded;
 
@@ -47,7 +47,9 @@ class _SelectVehiculeState extends State<SelectVehicule> {
       isFlagAvailable = false,
       widgetReShowSelectedCarCard = false,
       firstTimeClickingOnChangeCarAfterNextPrev = true,
-      stateSetter = false;
+      stateSetter = false,
+      tappedOnCarCard = false,
+      cardDragEnd = false;
 
   List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched = [];
   String country = '',
@@ -103,15 +105,13 @@ class _SelectVehiculeState extends State<SelectVehicule> {
           children: [
             Expanded(
               child: isCarArrowExpanded == false &&
-                      widget.reShowSelectedCarCard == false
+                      widget.reShowSelectedCarCard == false &&
+                      tappedOnCarCard == false
                   ? carCard(carIcon, 'Car', arrowIcon)
                   : isVehiculeSelected == true ||
                           widget.selectedCarDetails.isNotEmpty
                       ? selectedCarCard(true)
-                      : Container(
-                          height: 10,
-                          color: Colors.green,
-                        ),
+                      : Container(),
             ),
           ],
         ),
@@ -572,187 +572,231 @@ class _SelectVehiculeState extends State<SelectVehicule> {
         ? fetchedAlertIndex = widget.selectedCarDetails['alertIndex']
         : null;
     return Card(
+        color: Colors.red,
+        shadowColor: const Color(0xff7986CB),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),
         elevation: 5,
         child: Container(
-            padding: const EdgeInsets.fromLTRB(40, 20, 40, 0),
-            width: 130,
-            height: 200,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(50)),
+            padding: const EdgeInsets.fromLTRB(40, 0, 40, 0),
+            width: 100, //130
+            height: 170, //200
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(50),
+            ),
             child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Flexible(
                     child: SizedBox(
                       height: cardHeight,
-                      child: Card(
-                          shadowColor: const Color(0xff7986CB),
-                          elevation: 10,
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Container(
-                                    height: cardHeight,
-                                    padding: const EdgeInsets.only(
-                                        left: 5, right: 5),
-                                    color:
-                                        const Color.fromARGB(255, 11, 73, 150),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Flag.fromString(
-                                          widgetReShowSelectedCarCard == true
-                                              ? widget.selectedCarDetails[
-                                                      'Other Details']
-                                                  ['Reg. Country ISO']
-                                              : selectedCarInfo['Other Details']
-                                                  ['Reg. Country ISO'],
-                                          width: 120,
-                                          height: 20,
-                                        ),
-                                        Align(
-                                          child: FittedBox(
-                                            child: Text(
-                                              widgetReShowSelectedCarCard ==
-                                                      true
-                                                  ? widget.selectedCarDetails[
-                                                          'Other Details']
-                                                      ['Reg. Country ISO']
-                                                  : selectedCarInfo[
-                                                          'Other Details']
-                                                      ['Reg. Country ISO'],
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 15,
-                                                fontFamily: 'OpenSans',
-                                                fontWeight: FontWeight.w900,
+                      child: GestureDetector(
+                        onTap: () async {
+                          widget.reShowSelectedCarCard == true &&
+                                  firstTimeClickingOnChangeCarAfterNextPrev ==
+                                      true
+                              ? setState(
+                                  () {
+                                    firstTimeClickingOnChangeCarAfterNextPrev =
+                                        false;
+                                  },
+                                )
+                              : null;
+                          selectVehiculeAlertDialog(
+                              currentSmoothIndicator, currentCarouselItems);
+                        },
+                        child: Card(
+                            shadowColor: const Color(0xff7986CB),
+                            elevation: 10,
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Container(
+                                      height: cardHeight,
+                                      padding: const EdgeInsets.only(
+                                          left: 5, right: 5),
+                                      color: const Color.fromARGB(
+                                          255, 11, 73, 150),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceAround,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Flag.fromString(
+                                            widgetReShowSelectedCarCard == true
+                                                ? widget.selectedCarDetails[
+                                                        'Other Details']
+                                                    ['Reg. Country ISO']
+                                                : selectedCarInfo[
+                                                        'Other Details']
+                                                    ['Reg. Country ISO'],
+                                            width: 120,
+                                            height: 20,
+                                          ),
+                                          Align(
+                                            child: FittedBox(
+                                              child: Text(
+                                                widgetReShowSelectedCarCard ==
+                                                        true
+                                                    ? widget.selectedCarDetails[
+                                                            'Other Details']
+                                                        ['Reg. Country ISO']
+                                                    : selectedCarInfo[
+                                                            'Other Details']
+                                                        ['Reg. Country ISO'],
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 15,
+                                                  fontFamily: 'OpenSans',
+                                                  fontWeight: FontWeight.w900,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        )
-                                      ],
-                                    )),
-                              ),
-                              //Text("TESTING")
-                              Expanded(
-                                //LICENSEPLATE
-                                flex: 6,
-                                child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  //crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                        flex: 2,
-                                        child: showVehiculeLogo(
-                                            vehiculesInfoFetched, 'showCar')),
-                                    FittedBox(
-                                      child: Text(
-                                          widgetReShowSelectedCarCard == true
-                                              ? widget.selectedCarDetails[
-                                                  'Specs']['License Plate N°']
-                                              : getAllLicensePlateNumbers(
-                                                      vehiculesInfoFetched,
-                                                      'showCar')
-                                                  .elementAt(alertIndex),
-                                          style: const TextStyle(
-                                              letterSpacing: 2.0,
-                                              fontSize: 25,
-                                              fontFamily: 'OpenSans',
-                                              fontWeight: FontWeight.w900)),
-                                    ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: SizedBox(
-                                        width: 100,
-                                        child: FittedBox(
-                                          child: Text(
-                                              widgetReShowSelectedCarCard ==
-                                                      true
-                                                  ? widget.selectedCarDetails[
-                                                      'Specs']['Model Detail']
-                                                  : getVehiculeModelDetail(
-                                                          vehiculesInfoFetched,
-                                                          'showCar')
-                                                      .elementAt(alertIndex),
-                                              style: const TextStyle(
-                                                // letterSpacing: 1.0,
-                                                fontSize: 10,
+                                          )
+                                        ],
+                                      )),
+                                ),
+                                //Text("TESTING")
+                                Expanded(
+                                  //LICENSEPLATE
+                                  flex: 6,
+                                  child: Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    //crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Expanded(
+                                          flex: 2,
+                                          child: showVehiculeLogo(
+                                              vehiculesInfoFetched, 'showCar')),
+                                      FittedBox(
+                                        child: Text(
+                                            widgetReShowSelectedCarCard == true
+                                                ? widget.selectedCarDetails[
+                                                    'Specs']['License Plate N°']
+                                                : getAllLicensePlateNumbers(
+                                                        vehiculesInfoFetched,
+                                                        'showCar')
+                                                    .elementAt(alertIndex),
+                                            style: const TextStyle(
+                                                letterSpacing: 2.0,
+                                                fontSize: 25,
                                                 fontFamily: 'OpenSans',
-                                              )),
+                                                fontWeight: FontWeight.w900)),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: SizedBox(
+                                          width: 100,
+                                          child: FittedBox(
+                                            child: Text(
+                                                widgetReShowSelectedCarCard ==
+                                                        true
+                                                    ? widget.selectedCarDetails[
+                                                        'Specs']['Model Detail']
+                                                    : getVehiculeModelDetail(
+                                                            vehiculesInfoFetched,
+                                                            'showCar')
+                                                        .elementAt(alertIndex),
+                                                style: const TextStyle(
+                                                  // letterSpacing: 1.0,
+                                                  fontSize: 10,
+                                                  fontFamily: 'OpenSans',
+                                                )),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              Flexible(
-                                //CITY CODE AND YEAR
-                                child: Container(
-                                    color: Colors.transparent,
-                                    padding: const EdgeInsets.only(
-                                        left: 5, right: 5),
-                                    height: cardHeight,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceAround,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Align(
-                                          child: FittedBox(
-                                            child: Text(
-                                              widgetReShowSelectedCarCard ==
-                                                      true
-                                                  ? widget.selectedCarDetails[
-                                                          'Other Details']
-                                                      ['Reg. City ISO']
-                                                  : selectedCarInfo[
-                                                          'Other Details']
-                                                      ['Reg. City ISO'],
-                                              style: const TextStyle(
-                                                color: Colors.black,
-                                                fontSize: 15,
-                                                fontFamily: 'OpenSans',
-                                                fontWeight: FontWeight.w900,
+                                Flexible(
+                                  //CITY CODE AND YEAR
+                                  child: Container(
+                                      color: Colors.transparent,
+                                      padding: const EdgeInsets.only(
+                                          left: 5, right: 5),
+                                      height: cardHeight,
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceAround,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Align(
+                                            child: FittedBox(
+                                              child: Text(
+                                                widgetReShowSelectedCarCard ==
+                                                        true
+                                                    ? widget.selectedCarDetails[
+                                                            'Other Details']
+                                                        ['Reg. City ISO']
+                                                    : selectedCarInfo[
+                                                            'Other Details']
+                                                        ['Reg. City ISO'],
+                                                style: const TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 15,
+                                                  fontFamily: 'OpenSans',
+                                                  fontWeight: FontWeight.w900,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        Align(
-                                          child: FittedBox(
-                                            child: Text(
-                                              widgetReShowSelectedCarCard ==
-                                                      true
-                                                  ? widget.selectedCarDetails[
-                                                          'Specs']
-                                                      ['Registration Year']
-                                                  : selectedCarInfo['Specs']
-                                                      ['Registration Year'],
-                                              style: const TextStyle(
-                                                color: Colors.black,
-                                                fontSize: 15,
-                                                fontFamily: 'OpenSans',
-                                                fontWeight: FontWeight.w900,
+                                          Align(
+                                            child: FittedBox(
+                                              child: Text(
+                                                widgetReShowSelectedCarCard ==
+                                                        true
+                                                    ? widget.selectedCarDetails[
+                                                            'Specs'][
+                                                            'Registration Year']
+                                                        .toString()
+                                                        .substring(1, 3)
+                                                    : selectedCarInfo['Specs'][
+                                                            'Registration Year']
+                                                        .toString()
+                                                        .substring(1, 3),
+                                                style: const TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 15,
+                                                  fontFamily: 'OpenSans',
+                                                  fontWeight: FontWeight.w900,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        )
-                                      ],
-                                    )),
-                              ),
-                            ],
-                          )),
+                                          )
+                                        ],
+                                      )),
+                                ),
+                              ],
+                            )),
+                      ),
                     ),
                   ),
-                  SizedBox(
-                    width: 100,
+                  /*  Flexible(
+                    child: Container(
+                      decoration: BoxDecoration(
+                          color: Colors.red.shade400.withOpacity(1),
+                          borderRadius: BorderRadius.vertical(
+                            bottom: Radius.circular(20),
+                            top: Radius.circular(20),
+                          )),
+                      child: FittedBox(
+                        child: Text('Click above to change car.',
+                            style: TextStyle(
+                                //fontSize: 10,
+                                //letterSpacing: 1,
+                                color: Colors.white,
+                                fontFamily: 'OpenSans',
+                                fontWeight: FontWeight.w200)),
+                      ),
+                    ),
+                  )
+                  */ /*  SizedBox(
+                    width: 50,
                     height: 15,
                     child: ElevatedButton(
                       onPressed: () async {
@@ -770,7 +814,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                             currentSmoothIndicator, currentCarouselItems);
                       },
                       style: ButtonStyle(
-                          elevation: MaterialStateProperty.all(1),
+                          elevation: MaterialStateProperty.all(5),
                           shape: MaterialStateProperty.all(
                             const RoundedRectangleBorder(
                                 borderRadius: BorderRadius.vertical(
@@ -781,7 +825,7 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                           shadowColor: MaterialStateProperty.all(
                               const Color(0xff7986CB)),
                           backgroundColor: MaterialStateProperty.all(
-                              const Color(0xff78909C))),
+                              Color.fromARGB(255, 185, 202, 211))),
                       child: Container(
                         padding: const EdgeInsets.only(top: 2, bottom: 2),
                         child: const Align(
@@ -797,92 +841,111 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                       ),
                     ),
                   )
+                 */
                 ])));
   }
 
   carCard(IconData carIcon, String carLabel, IconData buttonIcon) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      elevation: 5,
-      child: Container(
-        width: 130,
-        height: 140,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(50)),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(
-              carIcon,
-              size: 40,
-            ),
-            Text(
-              carLabel,
-              style: const TextStyle(
-                fontSize: 15,
-                fontFamily: 'OpenSans',
-                fontWeight: FontWeight.w900,
+    return GestureDetector(
+      onTap: () {
+        debugPrint("TAPPED ON CARD");
+        setState(() {
+          tappedOnCarCard = true;
+        });
+        var carouselItems =
+            pickVehiculeNeededInfMapped['item'] as Iterable<Widget>;
+        int smoothIndicatorLength = 0;
+        pickVehiculeNeededInfMapped.isNotEmpty
+            ? smoothIndicatorLength = carouselItems.length
+            : smoothIndicatorLength = 0;
+
+        pickVehiculeNeededInfMapped.isNotEmpty
+            ? selectVehiculeAlertDialog(smoothIndicatorLength, carouselItems)
+            : Container();
+      },
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        elevation: 5,
+        child: Container(
+          width: 130,
+          height: 140,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(50)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(
+                carIcon,
+                size: 40,
               ),
-            ),
-            SizedBox(
-                width: 80,
-                height: 30,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    isCarArrowExpanded == false
-                        ? setState(() {
-                            alertIndex = 0;
-                            expandVehiculeCardTotalCalls = 0;
-                            current =
-                                0; //otherwise, will get an error because current could ba at 2 when motrocycle index stops at 1 so DO NOT DELETE
-                            isCarArrowExpanded = true;
-                            //isMotorcArrowExpanded = false;
-                            addCarIconPressed = false;
-                            callSelectVehiculeAfterAdd = false;
-                          })
-                        : setState(() {
-                            isCarArrowExpanded = false;
-                          });
+              /*   Text(
+                carLabel,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontFamily: 'OpenSans',
+                  fontWeight: FontWeight.w900,
+                ),
+              ), */
+              SizedBox(
+                  width: 80,
+                  height: 30,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      isCarArrowExpanded == false
+                          ? setState(() {
+                              alertIndex = 0;
+                              expandVehiculeCardTotalCalls = 0;
+                              current =
+                                  0; //otherwise, will get an error because current could ba at 2 when motrocycle index stops at 1 so DO NOT DELETE
+                              isCarArrowExpanded = true;
+                              //isMotorcArrowExpanded = false;
+                              addCarIconPressed = false;
+                              callSelectVehiculeAfterAdd = false;
+                            })
+                          : setState(() {
+                              isCarArrowExpanded = false;
+                            });
 
-                    if (isCarArrowExpanded == true) {
-                      var carouselItems = pickVehiculeNeededInfMapped['item']
-                          as Iterable<Widget>;
-                      int smoothIndicatorLength = 0;
-                      pickVehiculeNeededInfMapped.isNotEmpty
-                          ? smoothIndicatorLength = carouselItems.length
-                          : smoothIndicatorLength = 0;
+                      if (isCarArrowExpanded == true) {
+                        var carouselItems = pickVehiculeNeededInfMapped['item']
+                            as Iterable<Widget>;
+                        int smoothIndicatorLength = 0;
+                        pickVehiculeNeededInfMapped.isNotEmpty
+                            ? smoothIndicatorLength = carouselItems.length
+                            : smoothIndicatorLength = 0;
 
-                      pickVehiculeNeededInfMapped.isNotEmpty
-                          ? selectVehiculeAlertDialog(
-                              smoothIndicatorLength, carouselItems)
-                          : Container();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    elevation: 5,
-                    backgroundColor: const Color(0xff78909C),
-                    shape: const CircleBorder(),
-                  ),
-                  /*    style: ButtonStyle(
-                    elevation: MaterialStateProperty.all(1),
-                    shape: MaterialStateProperty.all(
-                      const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                        bottom: Radius.circular(20),
-                        top: Radius.circular(20),
-                      )),
+                        pickVehiculeNeededInfMapped.isNotEmpty
+                            ? selectVehiculeAlertDialog(
+                                smoothIndicatorLength, carouselItems)
+                            : Container();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      elevation: 5,
+                      backgroundColor: const Color(0xff78909C),
+                      shape: const CircleBorder(),
                     ),
-                    shadowColor:
-                        MaterialStateProperty.all(const Color(0xff7986CB)),
-                    backgroundColor:
-                        MaterialStateProperty.all(const Color(0xff78909C))), */
-                  child: isCarArrowExpanded == false
-                      ? const Icon(Icons.add, size: 20)
-                      : const Icon(Icons.keyboard_arrow_up, size: 20),
-                ))
-          ],
+                    /*    style: ButtonStyle(
+                      elevation: MaterialStateProperty.all(1),
+                      shape: MaterialStateProperty.all(
+                        const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                          bottom: Radius.circular(20),
+                          top: Radius.circular(20),
+                        )),
+                      ),
+                      shadowColor:
+                          MaterialStateProperty.all(const Color(0xff7986CB)),
+                      backgroundColor:
+                          MaterialStateProperty.all(const Color(0xff78909C))), */
+                    child: isCarArrowExpanded == false
+                        ? const Icon(Icons.add, size: 20)
+                        : const Icon(Icons.keyboard_arrow_up, size: 20),
+                  ))
+            ],
+          ),
         ),
       ),
     );

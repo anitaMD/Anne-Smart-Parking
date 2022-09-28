@@ -14,7 +14,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
   var status = prefs.getBool('isLoggedIn') ??
-      true; //true means user logged OUT and false means he's already logged in
+      true; //true means user logged OUT and false means he's already logged in. could rename to 'userHasToLogIn
   debugPrint("PREF STATUS $status");
   await Firebase.initializeApp();
   runApp(MyApp(status: status));
