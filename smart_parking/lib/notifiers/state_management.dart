@@ -4,20 +4,20 @@ class StateManagement with ChangeNotifier {
   final initialDate =
       DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
   var selectedTime = TimeOfDay.now();
-  String openingHour = '07:00', closingHour = '18:00';
+  String openingHour = '06:00', closingHour = '18:00'; //to initialize
   Duration interval = const Duration(minutes: 30);
   var updatedSelected = TimeOfDay.now();
-  Set<TimeOfDay> timeSlotsParsed = {};
+  List<TimeOfDay> timeSlotsParsed = [];
 
   updateSelectedTime(TimeOfDay timeofday) {
     selectedTime = timeofday;
     notifyListeners();
   }
 
-  updateTimeSlotList(TimeOfDay fetchedTimeSlots, List<TimeOfDay> value) {
-    timeSlotsParsed.length == value.length
-        ? null
-        : {timeSlotsParsed.add(fetchedTimeSlots), notifyListeners()};
+  updateOpeningAndClosingHours(
+      String openingHourFromFirebase, String closingHourFromFirebase) {
+    openingHour = openingHourFromFirebase;
+    closingHour = closingHourFromFirebase;
   }
 
   Stream<TimeOfDay> getTimeSlotsIntervals(
@@ -35,7 +35,6 @@ class StateManagement with ChangeNotifier {
         (hour == endTime.hour && minute <= endTime.minute));
 
     hour == endTime.hour && minute <= endTime.minute ? notifyListeners() : null;
-
     hour == endTime.hour + 2; //to break the loop
   }
 }//closing brack

@@ -1,8 +1,4 @@
-// ignore_for_file: avoid_print
-
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/booking_overview.dart';
@@ -46,7 +42,9 @@ class _BookingThroughSlotsMapNoAlertDialogState
   bool isSelected = false;
   Transform occupiedSpotIconLegend = Transform.rotate(
       angle: 50.15,
-      child: const Image(image: AssetImage("assets/images/car3.jpg")));
+      child: const Image(
+        image: AssetImage("assets/images/car3.jpg"),
+      ));
 
   Color slotHighlithbgColor = Colors.green;
   Color finalSelectedColorSlot = Colors.transparent;
@@ -55,14 +53,15 @@ class _BookingThroughSlotsMapNoAlertDialogState
   final alleyA = <String>{}, alleyB = <String>{};
   var mappedAlleyASelectedCheck = {}, mappedAlleyBSelectedCheck = {};
   List<Map<String, dynamic>> mappedSelectedSlotAlley = [];
+  List<QueryDocumentSnapshot<Map<String, dynamic>>>
+      slotsReservationsInfoFetchedList = [];
   Map<String, dynamic> linkedParkingNameAndInsideInfo = {},
       insideParkingInfoFetched = {},
       bookerFirstPageInfoMapped = {},
-      selectedVehiculeInfoMappedFromSelectVehicule = {};
+      selectedVehiculeInfoMappedFromSelectVehicule = {},
+      slotsReservationsInfoFetchedAsMapWithData = {};
   Map<String, Set> mappedAlleysAndSlotIds = {};
   late Map<String, dynamic> mappedInfoFromWidget = {};
-  ScrollController leftAlleyController = ScrollController(),
-      rightAlleyController = ScrollController();
 
 //RESERVATION VARS
   bool isReservationDayPicked = false,
@@ -72,20 +71,32 @@ class _BookingThroughSlotsMapNoAlertDialogState
       nextPressedWithoutFirstPageAllInfoFetched = false,
       removeMaterialBannerSizedBox = false,
       reShowSelectedCarCard = false,
-      dontShowAlleyAlertAgainTemporairyly = false;
-  Set available = {}, occupied = {}, booked = {};
+      dontShowAlleyAlertAgainTemporairyly = false,
+      updatedClosingAndOpening = false;
+  Set available = {},
+      occupied = {},
+      booked = {},
+      specialAvailable = {},
+      specialOccupied = {},
+      specialBooked = {};
 
 //BOOKER
-  Set<TimeOfDay> fetchedTimes = {};
+  Set<TimeOfDay> allBookedTimeSlots = {};
+  Set<TimeOfDay> timesOfDayFetched = {};
   CalendarFormat format = CalendarFormat.week;
   Duration interval = const Duration(minutes: 30);
   DateTime selectedDay = DateTime.now(), focusedDay = DateTime.now();
-  Color selectedTimeSlotColor = Colors.orange;
+  Color selectedTimeSlotColor = Colors.blueGrey.shade500;
   ScrollController singleChildController = ScrollController(),
+      leftAlleyController = ScrollController(),
+      rightAlleyController = ScrollController(),
       timeSlotGridController = ScrollController(),
       infoListViewController = ScrollController(),
       bodyScrollBarController = ScrollController();
-  int activeStep = 0, upperBound = 2;
+  int activeStep = 0, upperBound = 2, stop = 0; //do not remove any of these
+  var timeSlotAvailable = {},
+      timeSlotCurrentlyOccupied = {},
+      timeSlotbooked = {};
 
   @override
   void dispose() {
@@ -102,7 +113,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
     setState(
       () {
         parkingNameToolBar = ok['Name'];
-        print("NAMEMA $parkingNameToolBar");
+        // debugPrint("NAMEMA $parkingNameToolBar");
       },
     );
 
@@ -111,16 +122,20 @@ class _BookingThroughSlotsMapNoAlertDialogState
 
   @override
   Widget build(BuildContext context) {
-    print("WIDGET MAPPED! ${widget.mappedParkingsGeneralInfo.values.first}");
-    print(
+    debugPrint("WIDGET MAPPED! $mappedInfoFromWidget _ $focusedDay}");
+    debugPrint(
         "nextPressedWithoutFirstPageAllInfoFetched $nextPressedWithoutFirstPageAllInfoFetched");
     currentlySignedInUser = firebaseService.auth.currentUser;
-    print(
+    debugPrint(
         "SIGNED IN CURRENTLY ${firebaseService.auth.currentUser?.uid.toString()}");
     double alleyListViewMinHeightToDisplay = alleyHeight +
         (spaceBetweenSlots *
             (parkingSlotsTotal ~/ (parkingSlotsTotal ~/ 2) - 1));
 
+    var stateManagerRead = context.read<StateManagement>();
+
+    debugPrint(
+        "OK LISTENING: ${stateManagerRead.updateOpeningAndClosingHours(mappedInfoFromWidget['Opening Hour'], mappedInfoFromWidget['Closing Hour'])} __________ ${context.watch<StateManagement>().openingHour} ______ ${context.watch<StateManagement>().closingHour}");
     //TIMESLOTSELECTION
     TimeOfDay startTime = TimeOfDay(
             hour: int.parse(
@@ -132,19 +147,25 @@ class _BookingThroughSlotsMapNoAlertDialogState
                 context.watch<StateManagement>().closingHour.split(":")[0]),
             minute: int.parse(
                 context.watch<StateManagement>().closingHour.split(":")[1]));
-    //
-    context
-        .watch<StateManagement>()
+
+    debugPrint("OK LISTENING TIME OF  DAY $startTime ___ $endTime");
+    stateManagerRead
         .getTimeSlotsIntervals(startTime, endTime, interval)
         .toList()
         .then((value) {
-      for (var timeOfDay in value) {
-        context.read<StateManagement>().updateTimeSlotList(timeOfDay, value);
-      }
+      debugPrint("OK LISTENING LIST $value   ___ \t stop $stop");
+      stop < 2
+          ? setState(() {
+              timesOfDayFetched.clear;
+              timesOfDayFetched.addAll(value);
+              context.read<StateManagement>().timeSlotsParsed = value;
+            })
+          : null;
+
+      debugPrint(
+          "VOIR $timesOfDayFetched ____ context.readtimeSlotsParsed ${context.read<StateManagement>().timeSlotsParsed}");
     });
-/* print(
-    "OUTSIDE FETCHED ${context.read<StateManagement>().timeSlotsParsed.length}"); */
-    fetchedTimes = context.read<StateManagement>().timeSlotsParsed;
+    stop += 1;
     Map<String, dynamic> selectedVehiculeInfoEmptyTest;
     bookerFirstPageInfoMapped.isNotEmpty
         ? {
@@ -156,7 +177,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                     ScaffoldMessenger.of(context).clearMaterialBanners(),
                     setState(() {
                       removeMaterialBannerSizedBox = true;
-                      print(
+                      debugPrint(
                           "removeMaterialBannerSizedBox $removeMaterialBannerSizedBox");
                     })
                   }
@@ -282,13 +303,13 @@ class _BookingThroughSlotsMapNoAlertDialogState
                     //insideParkingInfoFetched.update("Occupied Slots", (value) => 5);
                     //getInsideParkingSlotsInfo(insideParkingInfoFetched); STOPPED HERE
 
-                    print(
-                        "DATA SNAPSHOT: $linkedParkingNameAndInsideInfo)))) SOURCE: $source _____ ${insideParkingInfoFetched["Available Slots"]}");
+                    debugPrint(
+                        "DATA SNAPSHOT: $linkedParkingNameAndInsideInfo)))) SOURCE: $source _____ ${insideParkingInfoFetched["Available Slots"]} \t \t insideParkingInfoFetched $insideParkingInfoFetched ");
 
                     return Column(
                       children: [
-                        bookerBody(alleyListViewMinHeightToDisplay, startTime,
-                            endTime),
+                        bookerBody(
+                            alleyListViewMinHeightToDisplay, startTime, endTime)
                       ],
                     );
                   }
@@ -297,17 +318,47 @@ class _BookingThroughSlotsMapNoAlertDialogState
         ),
       ),
     );
-
-    //WILLL NEED 3 COLUMNS with an expanded or flex for the 3 vertical columns and in each of the two extreme columns, INKWELL AND A CONATINER CHILD FOR EACH SLOT with the icons and colors. So find a wwway to create a function that allows me to show those and not repeat code much
   }
 
-  Color getSelectedTimeSlotColor(int index) {
-    return fetchedTimes.isEmpty
-        ? Colors.white
+  Color getSelectedTimeSlotColor(int index,
+      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
+    DateTime currentlySelectedDateForTimeSlotAvailability =
+        bookerFirstPageInfoMapped['Selected Day'];
+
+    var sameDayReservationAsUserList =
+        slotsReservationsInfoFetchedAsMapWithData.values.where(
+      (element) {
+        //fetching all the timeSlots that are booked for the selectedDay if USER HAS NOT CLICKED YET ON ANY PARKING SPOT
+        var timeST = element['BookingStart'] as Timestamp;
+        //print("MTMT ${timeST.toDate()}");
+        return timeST.toDate().day == selectedDay.day &&
+            timeST.toDate().month == selectedDay.month &&
+            timeST.toDate().year == selectedDay.year;
+      },
+    );
+    for (var singleReservationSameDayAsUserSelectedDay
+        in sameDayReservationAsUserList) {
+      var singleReservationCasted =
+          singleReservationSameDayAsUserSelectedDay as Map<String, dynamic>;
+      var singleBookingStartTimeStamp =
+          singleReservationSameDayAsUserSelectedDay['BookingStart']
+              as Timestamp;
+      debugPrint("$singleReservationCasted");
+      allBookedTimeSlots
+          .add(TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()));
+    }
+    debugPrint(
+        "slotsReservationsInfoFetchedAsMap HUN $slotsReservationsInfoFetchedAsMapWithData ______ \t sameDayReservationAsUserList ${sameDayReservationAsUserList.length} __ allBookedTimeSlots $allBookedTimeSlots");
+
+    return timesOfDayFetched.isEmpty
+        ? Colors.blue
         : context.watch<StateManagement>().selectedTime ==
-                fetchedTimes.elementAt(index)
+                timesOfDayFetched.elementAt(index)
             ? selectedTimeSlotColor
-            : Colors.white;
+            : allBookedTimeSlots.any(
+                    (element) => timesOfDayFetched.elementAt(index) == element)
+                ? Colors.orange
+                : Colors.white;
   }
 
   fetchAlleySelectedSlotId(int i, String alley) {
@@ -357,7 +408,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
       }
     }
 
-    print(
+    debugPrint(
         "REALLY? ${mappedSelectedSlotAlley.elementAt(i)} ___ $mappedSelectedSlotAlley");
   }
 
@@ -369,11 +420,11 @@ class _BookingThroughSlotsMapNoAlertDialogState
         (i) => Material(
               color: const Color.fromARGB(255, 63, 97, 95).withAlpha(80),
               child: InkWell(
-                onHover: (value) => print("HOVERED $value"),
+                onHover: (value) => debugPrint("HOVERED $value"),
                 highlightColor: Colors.blueGrey.shade500,
                 onTap: () {
                   isSelected = true;
-                  print("Click event on Container _");
+                  debugPrint("Click event on Container _");
                   fetchAlleySelectedSlotId(i, "alleyA");
                   //highlightSelectedSlot(isSelected, i);
                 },
@@ -410,14 +461,37 @@ class _BookingThroughSlotsMapNoAlertDialogState
                               children: [
                                 Flexible(
                                     flex: 2,
-                                    child: available.contains("A$i")
-                                        ? getParkingSpotIcon(
-                                            "insideSpot", 'available')
-                                        : occupied.contains("A$i")
-                                            ? occupiedSpotIconLegend
-                                            : getParkingSpotIcon(
-                                                "insideSpot", 'booked')),
-                                Flexible(child: FittedBox(child: Text('A$i'))),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        specialAvailable.contains("A$i") ||
+                                                specialOccupied
+                                                    .contains("A$i") ||
+                                                specialBooked.contains("A$i")
+                                            ? Flexible(
+                                                flex: 1,
+                                                child: getParkingSpotIcon(
+                                                    "insideSpot", 'accessible'))
+                                            : Container(),
+                                        Flexible(
+                                          child: available.contains("A$i") ||
+                                                  specialAvailable
+                                                      .contains("A$i")
+                                              ? getParkingSpotIcon(
+                                                  "insideSpot", 'available')
+                                              : occupied.contains("A$i") ||
+                                                      specialOccupied
+                                                          .contains("A$i")
+                                                  ? occupiedSpotIconLegend
+                                                  : getParkingSpotIcon(
+                                                      "insideSpot", 'booked'),
+                                        ),
+                                      ],
+                                    )),
+                                Flexible(
+                                    flex: 2,
+                                    child: FittedBox(child: Text('A$i'))),
                               ],
                             ),
                     ),
@@ -436,7 +510,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
               color: const Color.fromARGB(255, 63, 97, 95).withAlpha(80),
               child: InkWell(
                 onTap: () {
-                  print("Click event on Container");
+                  debugPrint("Click event on Container");
                   fetchAlleySelectedSlotId(i, "alleyB");
                 },
                 highlightColor: Colors.blueGrey.shade500,
@@ -472,15 +546,37 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                     MainAxisAlignment.spaceEvenly,
                                 children: [
                                   Flexible(
-                                      flex: 2,
-                                      child: available.contains("B$i")
-                                          ? getParkingSpotIcon(
-                                              "insideSpot", 'available')
-                                          : occupied.contains("B$i")
-                                              ? occupiedSpotIconLegend
-                                              : getParkingSpotIcon(
-                                                  "insideSpot", 'booked')),
-                                  Flexible(child: Text('B$i')),
+                                    flex: 2,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        specialAvailable.contains("B$i") ||
+                                                specialOccupied
+                                                    .contains("B$i") ||
+                                                specialBooked.contains("B$i")
+                                            ? Flexible(
+                                                flex: 1,
+                                                child: getParkingSpotIcon(
+                                                    "insideSpot", 'accessible'))
+                                            : Container(),
+                                        Flexible(
+                                          child: available.contains("B$i") ||
+                                                  specialAvailable
+                                                      .contains("B$i")
+                                              ? getParkingSpotIcon(
+                                                  "insideSpot", 'available')
+                                              : occupied.contains("B$i") ||
+                                                      specialOccupied
+                                                          .contains("B$i")
+                                                  ? occupiedSpotIconLegend
+                                                  : getParkingSpotIcon(
+                                                      "insideSpot", 'booked'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Flexible(flex: 2, child: Text('B$i')),
                                 ],
                               )),
                   ),
@@ -523,8 +619,21 @@ class _BookingThroughSlotsMapNoAlertDialogState
         ? insideParkingInfoFetched['Occupied Slots']['IDs'] as List
         : 'insideParkingInfoFetched empty';
 
-    print(
-        "availableSlotsStatus $availableSlotsList \t bookedSlotsList $bookedSlotsList \t currentlyOccupiedSlotsList $currentlyOccupiedSlotsList");
+    var specialAvailableSlotsList = insideParkingInfoFetched.isNotEmpty
+        ? insideParkingInfoFetched['Special Spots']['Available'] as List
+        : 'insideParkingInfoFetched empty';
+
+    var specialBookedSlotsList = insideParkingInfoFetched.isNotEmpty
+        ? insideParkingInfoFetched['Special Spots']['Booked'] as List
+        : 'insideParkingInfoFetched empty';
+
+    var specialCurrentlyOccupiedSlotsList = insideParkingInfoFetched.isNotEmpty
+        ? insideParkingInfoFetched['Special Spots']['Occupied'] as List
+        : 'insideParkingInfoFetched empty';
+
+    debugPrint(
+        "availableSlotsStatus $availableSlotsList \t bookedSlotsList $bookedSlotsList \t currentlyOccupiedSlotsList $currentlyOccupiedSlotsList  \t SPECIAL specialAvailableSlotsList $specialAvailableSlotsList \t specialBookedSlotsList $specialBookedSlotsList  \t specialCurrentlyOccupiedSlotsList $specialCurrentlyOccupiedSlotsList");
+
     for (var i = 0; i < parkingSlotsTotal; i++) {
       (i < parkingSlotsTotal ~/ 2)
           ? {
@@ -532,14 +641,28 @@ class _BookingThroughSlotsMapNoAlertDialogState
               mappedSelectedSlotAlley.add({
                 "alleyA_Id": alleyA.elementAt(i) /* "A$i" */,
                 "isSlotSelected": false,
-                "isSlotBooked":
-                    bookedSlotsList.toString().contains("A$i") ? true : false,
+                "isSlotBooked": bookedSlotsList.toString().contains("A$i") ||
+                        specialBookedSlotsList.toString().contains("A$i")
+                    ? true
+                    : false,
                 "isSlotCurrentlyOccupied":
-                    currentlyOccupiedSlotsList.toString().contains("A$i")
+                    currentlyOccupiedSlotsList.toString().contains("A$i") ||
+                            specialCurrentlyOccupiedSlotsList
+                                .toString()
+                                .contains("A$i")
                         ? true
                         : false,
                 "isSlotCurrentlyFree":
-                    availableSlotsList.toString().contains("A$i")
+                    availableSlotsList.toString().contains("A$i") ||
+                            specialAvailableSlotsList.toString().contains("A$i")
+                        ? true
+                        : false,
+                "isSpecialSpot":
+                    specialAvailableSlotsList.toString().contains("A$i") ||
+                            specialCurrentlyOccupiedSlotsList
+                                .toString()
+                                .contains("A$i") ||
+                            specialBookedSlotsList.toString().contains("A$i")
                         ? true
                         : false,
                 "highlightColor": Colors.transparent
@@ -552,48 +675,81 @@ class _BookingThroughSlotsMapNoAlertDialogState
                     alleyBindexStart), //3 because at this point, i = 3 and I need the counter to reset
                 "isSlotSelected": false,
                 "isSlotBooked": bookedSlotsList
-                        .toString()
-                        .contains("B${i - alleyBindexStart}")
+                            .toString()
+                            .contains("B${i - alleyBindexStart}") ||
+                        specialBookedSlotsList
+                            .toString()
+                            .contains("B${i - alleyBindexStart}")
                     ? true
                     : false,
                 "isSlotCurrentlyOccupied": currentlyOccupiedSlotsList
-                        .toString()
-                        .contains("B${i - alleyBindexStart}")
+                            .toString()
+                            .contains("B${i - alleyBindexStart}") ||
+                        specialCurrentlyOccupiedSlotsList
+                            .toString()
+                            .contains("B${i - alleyBindexStart}")
                     ? true
                     : false,
                 "isSlotCurrentlyFree": availableSlotsList
-                        .toString()
-                        .contains("B${i - alleyBindexStart}")
+                            .toString()
+                            .contains("B${i - alleyBindexStart}") ||
+                        specialAvailableSlotsList
+                            .toString()
+                            .contains("B${i - alleyBindexStart}")
+                    ? true
+                    : false,
+                "isSpecialSpot": specialAvailableSlotsList
+                            .toString()
+                            .contains("B${i - alleyBindexStart}") ||
+                        specialCurrentlyOccupiedSlotsList
+                            .toString()
+                            .contains("B${i - alleyBindexStart}") ||
+                        specialBookedSlotsList
+                            .toString()
+                            .contains("B${i - alleyBindexStart}")
                     ? true
                     : false,
                 "highlightColor": Colors.transparent
               })
             };
     }
-    print("ALLEY A : $alleyA ______________ ALLEY B : $alleyB");
+    debugPrint("ALLEY A : $alleyA ______________ ALLEY B : $alleyB");
     for (var element in mappedSelectedSlotAlley) {
-      element['isSlotCurrentlyFree'] == true
-          ? available.add(element.values.first)
-          : element['isSlotBooked'] == true
-              ? booked.add(element.values.first)
-              : element['isSlotCurrentlyOccupied'] == true
-                  ? occupied.add(element.values.first)
-                  : null;
+      //element.values.first is B4 in {alleyB_Id: B4, isSlotSelected: false, isSlotBooked: false, isSlotCurrentlyOccupied: false, isSlotCurrentlyFree: true, isSpecialSpot: true, highlightColor: Color(0x00000000)}
+      if (element['isSpecialSpot'] == false) {
+        element['isSlotCurrentlyFree'] == true
+            ? available.add(element.values.first)
+            : element['isSlotBooked'] == true
+                ? booked.add(element.values.first)
+                : element['isSlotCurrentlyOccupied'] == true
+                    ? occupied.add(element.values.first)
+                    : null;
+      } else {
+        element['isSlotCurrentlyFree'] == true
+            ? specialAvailable.add(element.values.first)
+            : element['isSlotBooked'] == true
+                ? specialBooked.add(element.values.first)
+                : element['isSlotCurrentlyOccupied'] == true
+                    ? specialOccupied.add(element.values.first)
+                    : null;
+      }
     }
-    debugPrint("Available: $available");
-    debugPrint("Booked: $booked");
-    debugPrint("Occupied: $occupied");
+    debugPrint(
+        "Available: $available ______ SPECIAL Available: $specialAvailable");
+    debugPrint("Booked: $booked ______ SPECIAL Available: $specialBooked");
+    debugPrint(
+        "Occupied: $occupied ______ SPECIAL Available: $specialOccupied");
 
     debugPrint(
         "\t mappedAlleysAndSlotIdsSelected : \t $mappedSelectedSlotAlley ");
-    //print("mappedAlleysAndSlotIdsSelected : $mappedAlleyASelectedCheck ");
+    //debugPrint("mappedAlleysAndSlotIdsSelected : $mappedAlleyASelectedCheck ");
 
     mappedAlleysAndSlotIds.addAll({
       'Alley A': alleyA,
       'Alley B': alleyB,
     });
 
-    print("mappedAlleysAndSlotIds : $mappedAlleysAndSlotIds");
+    debugPrint("mappedAlleysAndSlotIds : $mappedAlleysAndSlotIds");
   }
 
   insideParkingLayout(double alleyListViewMinHeightToDisplay) {
@@ -761,14 +917,17 @@ class _BookingThroughSlotsMapNoAlertDialogState
     );
   }
 
-  void showUserRangePicker(int index, TimeOfDay parkingClosingHour,
-      TimeOfDay parkingOpeningHour) async {
-    TimeRange result = await showTimeRangePicker(
+  showUserRangePicker(
+      int index,
+      TimeOfDay parkingClosingHour,
+      TimeOfDay parkingOpeningHour,
+      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) async {
+    TimeRange? result = await showTimeRangePicker(
         context: context,
-        start: fetchedTimes.elementAt(index),
+        start: timesOfDayFetched.elementAt(index),
         end: TimeOfDay(
-            hour: fetchedTimes.elementAt(index).hour + 3,
-            minute: fetchedTimes.elementAt(index).minute),
+            hour: timesOfDayFetched.elementAt(index).hour + 3,
+            minute: timesOfDayFetched.elementAt(index).minute),
         disabledTime: TimeRange(
             startTime: parkingClosingHour, endTime: parkingOpeningHour),
         disabledColor: Colors.red.withOpacity(0.5),
@@ -786,13 +945,14 @@ class _BookingThroughSlotsMapNoAlertDialogState
         labelOffset: -30,
         rotateLabels: false,
         padding: 35);
-    print("resultTimeRange ${result.toString()}");
+    debugPrint("resultTimeRange ${result.toString()}");
   }
 
-  timeSlotsGrid(TimeOfDay startTime, TimeOfDay endTime) {
+  timeSlotsGrid(TimeOfDay startTime, TimeOfDay endTime,
+      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
     return Container(
       color: Colors.white,
-      height: fetchedTimes.toList().length * 20,
+      height: timesOfDayFetched.toList().length * 20,
       child: Column(
         children: [
           Flexible(
@@ -803,9 +963,9 @@ class _BookingThroughSlotsMapNoAlertDialogState
                   //primary: false,
                   controller: timeSlotGridController,
                   shrinkWrap: true,
-                  itemCount: fetchedTimes.toList().isEmpty
+                  itemCount: timesOfDayFetched.toList().isEmpty
                       ? 10
-                      : fetchedTimes.toList().length - 1,
+                      : timesOfDayFetched.toList().length - 1,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       childAspectRatio: 1.5,
                       crossAxisSpacing: 10,
@@ -815,8 +975,9 @@ class _BookingThroughSlotsMapNoAlertDialogState
                     return GestureDetector(
                       onTap: () async {
                         context.read<StateManagement>().updateSelectedTime(
-                            fetchedTimes.elementAt(index)); //don't change
-                        showUserRangePicker(index, endTime, startTime);
+                            timesOfDayFetched.elementAt(index)); //don't change
+                        showUserRangePicker(index, endTime, startTime,
+                            slotsReservationsInfoFetchedAsMapWithData);
                       },
                       child: Row(
                         children: [
@@ -825,12 +986,15 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                 //margin:const EdgeInsets.only(left: 20, right: 10),
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(15)),
-                                color: getSelectedTimeSlotColor(index),
-                                child: fetchedTimes.toList().isEmpty
+                                color: getSelectedTimeSlotColor(index,
+                                    slotsReservationsInfoFetchedAsMapWithData),
+                                child: timesOfDayFetched.toList().isEmpty
                                     ? null
                                     : Center(
                                         child: (index + 1) ==
-                                                fetchedTimes.toList().length
+                                                timesOfDayFetched
+                                                    .toList()
+                                                    .length
                                             ? null
                                             : GridTile(
                                                 child: Padding(
@@ -842,7 +1006,20 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                     alignment:
                                                         Alignment.bottomCenter,
                                                     child: Text(
-                                                        "${fetchedTimes.elementAt(index).format(context)} - ${fetchedTimes.elementAt(index + 1).format(context)}"),
+                                                        "${timesOfDayFetched.elementAt(index).format(context)} - ${timesOfDayFetched.elementAt(index + 1).format(context)}",
+                                                        style: TextStyle(
+                                                            color: context
+                                                                        .watch<
+                                                                            StateManagement>()
+                                                                        .selectedTime ==
+                                                                    timesOfDayFetched
+                                                                        .elementAt(
+                                                                            index)
+                                                                ? Colors.white
+                                                                : Colors.black,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w400)),
                                                   ),
                                                 ),
                                               ),
@@ -886,15 +1063,17 @@ class _BookingThroughSlotsMapNoAlertDialogState
             return isSameDay(selectedDay, day);
           },
           onDaySelected: (newSelectedDay, newFocusedDay) {
-            print("BEFORE  SELECTED $selectedDay FOCUSED $focusedDay");
+            debugPrint("BEFORE  SELECTED $selectedDay FOCUSED $focusedDay");
             setState(() {
-              (newSelectedDay.weekday == DateTime.sunday ||
+              /*  (newSelectedDay.weekday == DateTime.sunday ||
                       newSelectedDay.weekday == DateTime.saturday)
                   ? null
-                  : selectedDay = newSelectedDay;
+                  : //I'LL SUPPOSE THE PARKINGS ARE OPEN EVERYDAY */
+
+              selectedDay = newSelectedDay;
               focusedDay = newFocusedDay; // update `_focusedDay` here as well
             });
-            print("AFTERR SELECTED $selectedDay FOCUSED $focusedDay");
+            debugPrint("AFTERR SELECTED $selectedDay FOCUSED $focusedDay");
           },
           //STYLING OF CALENDAR
           calendarFormat: format,
@@ -1189,6 +1368,18 @@ class _BookingThroughSlotsMapNoAlertDialogState
       TimeOfDay endTime) {
     switch (activeStep) {
       case 0:
+        var sAV =
+            insideParkingInfoFetched['Special Spots']['Available'] as List;
+        var sOC = insideParkingInfoFetched['Special Spots']['Occupied'] as List;
+        var sBO = insideParkingInfoFetched['Special Spots']['Booked'] as List;
+        //by summing available occupied and booked
+
+        var specialSpotsFinalTotal = sAV.length + sOC.length + sBO.length;
+        var totalParkingCapacity =
+            insideParkingInfoFetched['Total Slots Number'];
+        // ignore: unused_local_variable
+        var normalSpotsTotal = totalParkingCapacity - specialSpotsFinalTotal;
+
         bookerFirstPageInfoMapped.addAll({
           'Selected Parking Name':
               linkedParkingNameAndInsideInfo['Parking Name'],
@@ -1197,7 +1388,8 @@ class _BookingThroughSlotsMapNoAlertDialogState
           'Selected Day': selectedDay,
           'Selected Vehicule Info': selectedVehiculeInfoMappedFromSelectVehicule
         });
-        print("Booker First Page INFO: $bookerFirstPageInfoMapped}");
+        debugPrint(
+            "Booker First Page INFO: $bookerFirstPageInfoMapped ___ normalSpotsTotal $specialSpotsFinalTotal}");
         BookingOverviewFinal(
             bookerFirstPageInfoFetched: bookerFirstPageInfoMapped);
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1346,9 +1538,10 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                                             15),
                                                                     Text(index ==
                                                                             0
-                                                                        ? insideParkingInfoFetched['Total Slots Number']
+                                                                        ? specialSpotsFinalTotal
                                                                             .toString()
-                                                                        : insideParkingInfoFetched['Available Slots']['Total']
+                                                                        : specialAvailable
+                                                                            .length
                                                                             .toString()), // for handicaped
                                                                     const SizedBox(
                                                                       width: 10,
@@ -1362,7 +1555,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                                             15),
                                                                     Text(index ==
                                                                             0
-                                                                        ? insideParkingInfoFetched['Total Slots Number']
+                                                                        ? (available.length + occupied.length + booked.length)
                                                                             .toString()
                                                                         : insideParkingInfoFetched['Available Slots']['Total']
                                                                             .toString()), // for handicaped
@@ -1457,350 +1650,400 @@ class _BookingThroughSlotsMapNoAlertDialogState
         ]);
 
       case 1:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-                padding: const EdgeInsets.only(left: 5, right: 5),
-                child: Column(
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance
+                .collection("slotsReservations")
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Text('');
+              } else {
+                String source = snapshot.data!.metadata.hasPendingWrites
+                    ? "Local"
+                    : "Server";
+                slotsReservationsInfoFetchedList = snapshot.data!.docs;
+                //slotsReservationsInfoFetchedAsMapWithData.addAll(slotsReservationsInfoFetchedList.);
+                for (var element in slotsReservationsInfoFetchedList) {
+                  slotsReservationsInfoFetchedAsMapWithData.addAll({
+                    element.id: element.data()
+                  }); //lement id is key and value is the data
+                }
+                /* debugPrint(
+                    "slotsReservationsInfoFetchedAsMap $slotsReservationsInfoFetchedAsMapWithData"); */
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            children: [
-                              Row(
-                                children: const [
-                                  CircleAvatar(
-                                    radius: 15,
-                                    backgroundColor: Colors.blueGrey,
-                                    foregroundColor: Colors.white,
-                                    child: Icon(
-                                      Icons.local_parking_sharp,
-                                      size: 20,
-                                    ),
+                        padding: const EdgeInsets.only(left: 5, right: 5),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    children: [
+                                      Row(
+                                        children: const [
+                                          CircleAvatar(
+                                            radius: 15,
+                                            backgroundColor: Colors.blueGrey,
+                                            foregroundColor: Colors.white,
+                                            child: Icon(
+                                              Icons.local_parking_sharp,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: 10,
+                                          ),
+                                          Text(
+                                            'Select A Spot',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 16),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                  SizedBox(
-                                    width: 10,
-                                  ),
-                                  Text(
-                                    'Select A Spot',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16),
-                                  ),
+                                  Column(
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.only(
+                                            top: 0, right: 10),
+                                        width: 100,
+                                        height: 78,
+                                        child: Card(
+                                          color: Colors.white,
+                                          elevation: 5,
+                                          child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                5, 5, 10, 5),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                //FRIST LINE
+                                                Flexible(
+                                                  child: SizedBox(
+                                                    height: 15,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .only(
+                                                                  left: 4.0),
+                                                          child:
+                                                              getParkingSpotIcon(
+                                                                  "legend",
+                                                                  'available'),
+                                                        ),
+                                                        const Flexible(
+                                                          child: FittedBox(
+                                                            child: Text(
+                                                              "Available",
+                                                              style: TextStyle(
+                                                                  fontSize: 8,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500),
+                                                            ),
+                                                          ),
+                                                        )
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                //SECOND LINE
+                                                Flexible(
+                                                  child: SizedBox(
+                                                    height: 15,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .only(
+                                                                  left: 4.0),
+                                                          child:
+                                                              getParkingSpotIcon(
+                                                                  "legend",
+                                                                  "booked"),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 10,
+                                                        ),
+                                                        const Flexible(
+                                                          child: FittedBox(
+                                                            child: Text(
+                                                              "Booked",
+                                                              style: TextStyle(
+                                                                  fontSize: 8,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500),
+                                                            ),
+                                                          ),
+                                                        )
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                Flexible(
+                                                  child: SizedBox(
+                                                    height: 15,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        occupiedSpotIconLegend,
+                                                        const SizedBox(
+                                                          width: 10,
+                                                        ),
+                                                        const Flexible(
+                                                          child: FittedBox(
+                                                            child: Text(
+                                                              "Occupied",
+                                                              style: TextStyle(
+                                                                  fontSize: 8,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500),
+                                                            ),
+                                                          ),
+                                                        )
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                Flexible(
+                                                  child: SizedBox(
+                                                    height: 15,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .only(
+                                                                  left: 3.0,
+                                                                  bottom: 5),
+                                                          child:
+                                                              getParkingSpotIcon(
+                                                                  "legend",
+                                                                  'accessible'),
+                                                        ),
+                                                        const Flexible(
+                                                          child: FittedBox(
+                                                            child: Text(
+                                                              "Special",
+                                                              style: TextStyle(
+                                                                  fontSize: 8,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500),
+                                                            ),
+                                                          ),
+                                                        )
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
                                 ],
                               ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Container(
-                                margin:
-                                    const EdgeInsets.only(top: 0, right: 10),
-                                width: 100,
-                                height: 78,
-                                child: Card(
-                                  color: Colors.white,
-                                  elevation: 5,
-                                  child: Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(5, 5, 10, 5),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        //FRIST LINE
-                                        Flexible(
-                                          child: SizedBox(
-                                            height: 15,
-                                            child: Row(
+                            ),
+                            insideParkingLayout(
+                                alleyListViewMinHeightToDisplay),
+                            addWhiteSpace(40),
+                            //
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    children: [
+                                      Row(
+                                        children: const [
+                                          CircleAvatar(
+                                            radius: 15,
+                                            backgroundColor: Colors.blueGrey,
+                                            foregroundColor: Colors.white,
+                                            child: Icon(
+                                              Icons.access_time_filled_outlined,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: 10,
+                                          ),
+                                          Text(
+                                            'Select A Time Slot',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 16),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  Column(
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.only(
+                                            top: 0, right: 10),
+                                        width: 100,
+                                        height: 60,
+                                        child: Card(
+                                          color: Colors.white,
+                                          elevation: 5,
+                                          child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                5, 5, 10, 5),
+                                            child: Column(
                                               mainAxisAlignment:
                                                   MainAxisAlignment
                                                       .spaceBetween,
                                               children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 4.0),
-                                                  child: getParkingSpotIcon(
-                                                      "legend", 'available'),
-                                                ),
-                                                const Flexible(
-                                                  child: FittedBox(
-                                                    child: Text(
-                                                      "Available",
-                                                      style: TextStyle(
-                                                          fontSize: 8,
-                                                          fontWeight:
-                                                              FontWeight.w500),
+                                                //FRIST LINE
+                                                Flexible(
+                                                  child: SizedBox(
+                                                    height: 15,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        getTimeSpotIcon(
+                                                            'available'),
+                                                        const Flexible(
+                                                          child: FittedBox(
+                                                            child: Text(
+                                                              "Available",
+                                                              style: TextStyle(
+                                                                  fontSize: 8,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500),
+                                                            ),
+                                                          ),
+                                                        )
+                                                      ],
                                                     ),
                                                   ),
-                                                )
+                                                ),
+                                                //SECOND LINE
+                                                Flexible(
+                                                  child: SizedBox(
+                                                    height: 15,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        getTimeSpotIcon(
+                                                            'booked'),
+                                                        const SizedBox(
+                                                          width: 10,
+                                                        ),
+                                                        const Flexible(
+                                                          child: FittedBox(
+                                                            child: Text(
+                                                              "Booked",
+                                                              style: TextStyle(
+                                                                  fontSize: 8,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500),
+                                                            ),
+                                                          ),
+                                                        )
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                Flexible(
+                                                  child: SizedBox(
+                                                    height: 15,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Transform.rotate(
+                                                            angle: 50.15,
+                                                            child:
+                                                                getTimeSpotIcon(
+                                                                    'occupied')),
+                                                        const SizedBox(
+                                                          width: 10,
+                                                        ),
+                                                        const Flexible(
+                                                          child: FittedBox(
+                                                            child: Text(
+                                                              "Occupied",
+                                                              style: TextStyle(
+                                                                  fontSize: 8,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500),
+                                                            ),
+                                                          ),
+                                                        )
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),
                                         ),
-                                        //SECOND LINE
-                                        Flexible(
-                                          child: SizedBox(
-                                            height: 15,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 4.0),
-                                                  child: getParkingSpotIcon(
-                                                      "legend", "booked"),
-                                                ),
-                                                const SizedBox(
-                                                  width: 10,
-                                                ),
-                                                const Flexible(
-                                                  child: FittedBox(
-                                                    child: Text(
-                                                      "Booked",
-                                                      style: TextStyle(
-                                                          fontSize: 8,
-                                                          fontWeight:
-                                                              FontWeight.w500),
-                                                    ),
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        Flexible(
-                                          child: SizedBox(
-                                            height: 15,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                occupiedSpotIconLegend,
-                                                const SizedBox(
-                                                  width: 10,
-                                                ),
-                                                const Flexible(
-                                                  child: FittedBox(
-                                                    child: Text(
-                                                      "Occupied",
-                                                      style: TextStyle(
-                                                          fontSize: 8,
-                                                          fontWeight:
-                                                              FontWeight.w500),
-                                                    ),
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        Flexible(
-                                          child: SizedBox(
-                                            height: 15,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 3.0, bottom: 5),
-                                                  child: getParkingSpotIcon(
-                                                      "legend", 'accessible'),
-                                                ),
-                                                const Flexible(
-                                                  child: FittedBox(
-                                                    child: Text(
-                                                      "Special",
-                                                      style: TextStyle(
-                                                          fontSize: 8,
-                                                          fontWeight:
-                                                              FontWeight.w500),
-                                                    ),
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                    insideParkingLayout(alleyListViewMinHeightToDisplay),
-                    addWhiteSpace(40),
-                    //
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            children: [
-                              Row(
-                                children: const [
-                                  CircleAvatar(
-                                    radius: 15,
-                                    backgroundColor: Colors.blueGrey,
-                                    foregroundColor: Colors.white,
-                                    child: Icon(
-                                      Icons.access_time_filled_outlined,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 10,
-                                  ),
-                                  Text(
-                                    'Select A Time Slot',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16),
-                                  ),
+                                      ),
+                                    ],
+                                  )
                                 ],
                               ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Container(
-                                margin:
-                                    const EdgeInsets.only(top: 0, right: 10),
-                                width: 100,
-                                height: 60,
-                                child: Card(
-                                  color: Colors.white,
-                                  elevation: 5,
-                                  child: Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(5, 5, 10, 5),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        //FRIST LINE
-                                        Flexible(
-                                          child: SizedBox(
-                                            height: 15,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                getTimeSpotIcon('available'),
-                                                const Flexible(
-                                                  child: FittedBox(
-                                                    child: Text(
-                                                      "Available",
-                                                      style: TextStyle(
-                                                          fontSize: 8,
-                                                          fontWeight:
-                                                              FontWeight.w500),
-                                                    ),
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        //SECOND LINE
-                                        Flexible(
-                                          child: SizedBox(
-                                            height: 15,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                getTimeSpotIcon('booked'),
-                                                const SizedBox(
-                                                  width: 10,
-                                                ),
-                                                const Flexible(
-                                                  child: FittedBox(
-                                                    child: Text(
-                                                      "Booked",
-                                                      style: TextStyle(
-                                                          fontSize: 8,
-                                                          fontWeight:
-                                                              FontWeight.w500),
-                                                    ),
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        Flexible(
-                                          child: SizedBox(
-                                            height: 15,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Transform.rotate(
-                                                    angle: 50.15,
-                                                    child: getTimeSpotIcon(
-                                                        'occupied')),
-                                                const SizedBox(
-                                                  width: 10,
-                                                ),
-                                                const Flexible(
-                                                  child: FittedBox(
-                                                    child: Text(
-                                                      "Occupied",
-                                                      style: TextStyle(
-                                                          fontSize: 8,
-                                                          fontWeight:
-                                                              FontWeight.w500),
-                                                    ),
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
+                            ),
 
-                    addWhiteSpace(10), //edit height and shape of card
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
-                      child: Column(children: [
-                        timeSlotsGrid(startTime, endTime),
-                        //test()
-                      ]),
-                    ),
+                            addWhiteSpace(10), //edit height and shape of card
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
+                              child: Column(children: [
+                                timeSlotsGrid(startTime, endTime,
+                                    slotsReservationsInfoFetchedAsMapWithData),
+                                ElevatedButton(
+                                    onPressed: () {}, child: Text('CLICK'))
+                                //test()
+                              ]),
+                            ),
+                          ],
+                        )),
                   ],
-                )),
-          ],
-        );
+                );
+              }
+            });
 
       case 2:
         return Container(
@@ -1867,7 +2110,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                 ),
               ),
             )).then((value) {
-      print("SHOW AGAIN OR NOT $value");
+      debugPrint("SHOW AGAIN OR NOT $value");
       value == 'do not show again'
           ? prefs.setBool("dontShowAlleyAlertAgain", true)
           : value == 'show again'
@@ -1887,6 +2130,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
   }
 
   Icon getParkingSpotIcon(String legendOrInsideSpot, String whichIcon) {
+    // don't need to add spotOccupiedIcon because it is NOT an ICON but an IMAGE
     double? iconSize = legendOrInsideSpot == 'legend' ? 13 : 20;
     Icon spotBookedIcon = Icon(Icons.lock_clock_outlined,
             size: iconSize, color: Colors.orange.shade700),
@@ -1916,7 +2160,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
     );
   }
 
-  test() {
+/*   test() {
     bool autoValidate = true;
     bool readOnly = false;
     bool showSegmentedControl = true;
@@ -2030,7 +2274,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                         /*
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () {
-                                      print('launch url');
+                                      debugPrint('launch url');
                                     },
                                   */
                       ),
@@ -2266,7 +2510,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
         )
       ],
     );
-  }
+  } */
 }
 
 //

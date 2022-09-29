@@ -85,7 +85,7 @@ class LoginRegisterState extends State<LoginRegister> {
           email: _emailController.text, password: _passwordController.text);
 
       Fluttertoast.showToast(
-          msg: 'Sucessfully logged in',
+          msg: 'Successfully logged in',
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.CENTER,
           timeInSecForIosWeb: 1,
