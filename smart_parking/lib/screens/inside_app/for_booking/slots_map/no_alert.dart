@@ -16,20 +16,16 @@ class BookingThroughSlotsMapNoAlertDialog extends StatefulWidget {
   final Map<String, dynamic> mappedParkingsGeneralInfo;
   final bool slotBooked;
   const BookingThroughSlotsMapNoAlertDialog(
-      {Key? key,
-      required this.receivedID,
-      required this.mappedParkingsGeneralInfo,
-      required this.slotBooked})
+      {Key? key, required this.receivedID, required this.mappedParkingsGeneralInfo, required this.slotBooked})
       : super(key: key);
 
   @override
-  State<BookingThroughSlotsMapNoAlertDialog> createState() =>
-      _BookingThroughSlotsMapNoAlertDialogState();
+  State<BookingThroughSlotsMapNoAlertDialog> createState() => _BookingThroughSlotsMapNoAlertDialogState();
 }
 
-class _BookingThroughSlotsMapNoAlertDialogState
-    extends State<BookingThroughSlotsMapNoAlertDialog> {
+class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlotsMapNoAlertDialog> {
   //AUTHENTICATION
+  var myDB = FirebaseFirestore.instance;
   var firebaseService = FirebaseService();
   User? currentlySignedInUser;
   int parkingSlotsTotal = 10;
@@ -40,6 +36,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
       spaceBetweenSlots = 35.0,
       alleySpotWidthRatio = 1 / 4;
   bool isSelected = false;
+
   Transform occupiedSpotIconLegend = Transform.rotate(
       angle: 50.15,
       child: const Image(
@@ -53,8 +50,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
   final alleyA = <String>{}, alleyB = <String>{};
   var mappedAlleyASelectedCheck = {}, mappedAlleyBSelectedCheck = {};
   List<Map<String, dynamic>> mappedSelectedSlotAlley = [];
-  List<QueryDocumentSnapshot<Map<String, dynamic>>>
-      slotsReservationsInfoFetchedList = [];
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> slotsReservationsInfoFetchedList = [];
   Map<String, dynamic> linkedParkingNameAndInsideInfo = {},
       insideParkingInfoFetched = {},
       bookerFirstPageInfoMapped = {},
@@ -62,6 +58,8 @@ class _BookingThroughSlotsMapNoAlertDialogState
       slotsReservationsInfoFetchedAsMapWithData = {};
   Map<String, Set> mappedAlleysAndSlotIds = {};
   late Map<String, dynamic> mappedInfoFromWidget = {};
+
+  bool test = true;
 
 //RESERVATION VARS
   bool isReservationDayPicked = false,
@@ -73,15 +71,35 @@ class _BookingThroughSlotsMapNoAlertDialogState
       reShowSelectedCarCard = false,
       dontShowAlleyAlertAgainTemporairyly = false,
       updatedClosingAndOpening = false;
-  Set available = {},
-      occupied = {},
-      booked = {},
-      specialAvailable = {},
-      specialOccupied = {},
-      specialBooked = {};
+
+  Set rAvailableIDs = {},
+      rOccupiedAfterBookedIDs = {},
+      rOccupiedNoPriorBookingIDs = {},
+      rBookedIDs = {},
+      sAvailableIDs = {},
+      sOccupiedAfterBookedIDs = {},
+      sOccupiedNoPriorBookingIDs = {},
+      sBookedIDs = {},
+      allSpecialSpotsIDs = {},
+      allRegularSpotsID = {};
+
+  int specialTotal = 0,
+      specialAvailableTotal = 0,
+      regularTotal = 0,
+      regularAvailableTotal = 0,
+      totalParkingCapacity = 0;
+  //OccupiedNoPriorBooking for cars parked onlhy by interacting with the real parking and didn't use the app to book like taxis or whatever
+  Set<String> spotIDsWithinXHoursList = {},
+      spotIDsWithinXHoursBookedNotOccupied = {},
+      spotIDsWithinXHoursBookedAndOccupied = {},
+      spotIDsWithinXHoursBookedThenFreed =
+          {}; //do not delete any because will need to update an eventuel is booking over value
 
 //BOOKER
+
+  Map<String, dynamic> testallBookedTimeSlotsInMinutes = {}, withinXHoursParkingSpotIDsToShow = {};
   Set<TimeOfDay> allBookedTimeSlots = {};
+  Map<String, dynamic> testallBookedTimeSlots = {}, allReservationsSameDaySameParkingWithKey = {};
   Set<TimeOfDay> timesOfDayFetched = {};
   CalendarFormat format = CalendarFormat.week;
   Duration interval = const Duration(minutes: 30);
@@ -94,9 +112,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
       infoListViewController = ScrollController(),
       bodyScrollBarController = ScrollController();
   int activeStep = 0, upperBound = 2, stop = 0; //do not remove any of these
-  var timeSlotAvailable = {},
-      timeSlotCurrentlyOccupied = {},
-      timeSlotbooked = {};
+  var timeSlotAvailable = {}, timeSlotCurrentlyOccupied = {}, timeSlotbooked = {};
 
   @override
   void dispose() {
@@ -107,30 +123,28 @@ class _BookingThroughSlotsMapNoAlertDialogState
   @override
   void initState() {
     //getAlleySlotsId(parkingSlotsTotal);
-    var ok = widget.mappedParkingsGeneralInfo[widget.receivedID]
-        as Map<String, dynamic>;
+    //batchWriteInsideParkingInfo();
+    var ok = widget.mappedParkingsGeneralInfo[widget.receivedID] as Map<String, dynamic>;
     mappedInfoFromWidget.addAll(ok);
     setState(
       () {
         parkingNameToolBar = ok['Name'];
-        // debugPrint("NAMEMA $parkingNameToolBar");
+        debugPrint("NAMEMA ${widget.receivedID}");
       },
     );
 
+    fetchParkingSlotsInfoFromFB();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("WIDGET MAPPED! $mappedInfoFromWidget _ $focusedDay}");
-    debugPrint(
-        "nextPressedWithoutFirstPageAllInfoFetched $nextPressedWithoutFirstPageAllInfoFetched");
+    debugPrint("WIDGET MAPPED! $mappedInfoFromWidget _ $focusedDay");
+    debugPrint("nextPressedWithoutFirstPageAllInfoFetched $nextPressedWithoutFirstPageAllInfoFetched");
     currentlySignedInUser = firebaseService.auth.currentUser;
-    debugPrint(
-        "SIGNED IN CURRENTLY ${firebaseService.auth.currentUser?.uid.toString()}");
-    double alleyListViewMinHeightToDisplay = alleyHeight +
-        (spaceBetweenSlots *
-            (parkingSlotsTotal ~/ (parkingSlotsTotal ~/ 2) - 1));
+    debugPrint("SIGNED IN CURRENTLY ${firebaseService.auth.currentUser?.uid.toString()}");
+    double alleyListViewMinHeightToDisplay =
+        alleyHeight + (spaceBetweenSlots * (parkingSlotsTotal ~/ (parkingSlotsTotal ~/ 2) - 1));
 
     var stateManagerRead = context.read<StateManagement>();
 
@@ -138,21 +152,14 @@ class _BookingThroughSlotsMapNoAlertDialogState
         "OK LISTENING: ${stateManagerRead.updateOpeningAndClosingHours(mappedInfoFromWidget['Opening Hour'], mappedInfoFromWidget['Closing Hour'])} __________ ${context.watch<StateManagement>().openingHour} ______ ${context.watch<StateManagement>().closingHour}");
     //TIMESLOTSELECTION
     TimeOfDay startTime = TimeOfDay(
-            hour: int.parse(
-                context.watch<StateManagement>().openingHour.split(":")[0]),
-            minute: int.parse(
-                context.watch<StateManagement>().openingHour.split(":")[1])),
+            hour: int.parse(context.watch<StateManagement>().openingHour.split(":")[0]),
+            minute: int.parse(context.watch<StateManagement>().openingHour.split(":")[1])),
         endTime = TimeOfDay(
-            hour: int.parse(
-                context.watch<StateManagement>().closingHour.split(":")[0]),
-            minute: int.parse(
-                context.watch<StateManagement>().closingHour.split(":")[1]));
+            hour: int.parse(context.watch<StateManagement>().closingHour.split(":")[0]),
+            minute: int.parse(context.watch<StateManagement>().closingHour.split(":")[1]));
 
     debugPrint("OK LISTENING TIME OF  DAY $startTime ___ $endTime");
-    stateManagerRead
-        .getTimeSlotsIntervals(startTime, endTime, interval)
-        .toList()
-        .then((value) {
+    stateManagerRead.getTimeSlotsIntervals(startTime, endTime, interval).toList().then((value) {
       debugPrint("OK LISTENING LIST $value   ___ \t stop $stop");
       stop < 2
           ? setState(() {
@@ -169,16 +176,13 @@ class _BookingThroughSlotsMapNoAlertDialogState
     Map<String, dynamic> selectedVehiculeInfoEmptyTest;
     bookerFirstPageInfoMapped.isNotEmpty
         ? {
-            selectedVehiculeInfoEmptyTest =
-                bookerFirstPageInfoMapped['Selected Vehicule Info']
-                    as Map<String, dynamic>,
+            selectedVehiculeInfoEmptyTest = bookerFirstPageInfoMapped['Selected Vehicule Info'] as Map<String, dynamic>,
             selectedVehiculeInfoEmptyTest.isNotEmpty
                 ? {
                     ScaffoldMessenger.of(context).clearMaterialBanners(),
                     setState(() {
                       removeMaterialBannerSizedBox = true;
-                      debugPrint(
-                          "removeMaterialBannerSizedBox $removeMaterialBannerSizedBox");
+                      debugPrint("removeMaterialBannerSizedBox $removeMaterialBannerSizedBox");
                     })
                   }
                 : null
@@ -252,8 +256,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
             padding: const EdgeInsets.fromLTRB(10, 20, 10, 10),
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
-                    .collection(
-                        "locations/${widget.receivedID}/insideParkingInfo")
+                    .collection("locations/${widget.receivedID}/insideParkingInfo")
                     .snapshots()
                 /* .map((snapshot) => snapshot.docs
                         .map((doc) => InsideInfo.fromFirestore(
@@ -264,13 +267,10 @@ class _BookingThroughSlotsMapNoAlertDialogState
                   if (!snapshot.hasData) {
                     return const Text('');
                   } else {
-                    String source = snapshot.data!.metadata.hasPendingWrites
-                        ? "Local"
-                        : "Server";
+                    String source = snapshot.data!.metadata.hasPendingWrites ? "Local" : "Server";
                     // insideParkingInfoFetched.clear();
-                    insideParkingInfoFetched = snapshot.data!.docs[0].data();
-                    for (var element
-                        in widget.mappedParkingsGeneralInfo.entries) {
+                    insideParkingInfoFetched = snapshot.data!.docs[0].data(); //PUT BACK 0
+                    for (var element in widget.mappedParkingsGeneralInfo.entries) {
                       if (element.key == widget.receivedID) {
                         String currentlySelectedParkingsName = element.value
                             .toString()
@@ -280,37 +280,27 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                 .toString()
                                 .split(',')
                                 .toList()
-                                .indexWhere(
-                                    (element) => element.contains("Parking")))
+                                .indexWhere((element) => element.contains("Parking")))
                             .split(':')
                             .toList()
                             .last
                             .split('}')
                             .first;
-
-                        linkedParkingNameAndInsideInfo.addAll({
-                          'Parking Name': currentlySelectedParkingsName,
-                          'Info': insideParkingInfoFetched
-                        });
+//come back here and put whatever as Map<String, dynamic> and treat the data isntead of splitting
+                        linkedParkingNameAndInsideInfo
+                            .addAll({'Parking Name': currentlySelectedParkingsName, 'Info': insideParkingInfoFetched});
                         /* snapshot.data!.docs[0]
                             .data()
                             .update('Occupied Slots', (value) => 2); */
                       }
                     }
-                    parkingSlotsTotal =
-                        insideParkingInfoFetched["Total Slots Number"];
-                    getAlleySlotsId(parkingSlotsTotal);
-                    //insideParkingInfoFetched.update("Occupied Slots", (value) => 5);
-                    //getInsideParkingSlotsInfo(insideParkingInfoFetched); STOPPED HERE
-
+                    parkingSlotsTotal = insideParkingInfoFetched["Total"];
+                    fetchParkingSlotsInfoFromFB();
                     debugPrint(
-                        "DATA SNAPSHOT: $linkedParkingNameAndInsideInfo)))) SOURCE: $source _____ ${insideParkingInfoFetched["Available Slots"]} \t \t insideParkingInfoFetched $insideParkingInfoFetched ");
+                        "DATA SNAP: linkedParkingNameAndInsideInfo $linkedParkingNameAndInsideInfo \t insideParkingInfoFetched $insideParkingInfoFetched");
 
                     return Column(
-                      children: [
-                        bookerBody(
-                            alleyListViewMinHeightToDisplay, startTime, endTime)
-                      ],
+                      children: [bookerBody(alleyListViewMinHeightToDisplay, startTime, endTime)],
                     );
                   }
                 }),
@@ -320,50 +310,75 @@ class _BookingThroughSlotsMapNoAlertDialogState
     );
   }
 
-  Color getSelectedTimeSlotColor(int index,
-      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
-    DateTime currentlySelectedDateForTimeSlotAvailability =
-        bookerFirstPageInfoMapped['Selected Day'];
+  Color getSelectedTimeSlotColor(int index, Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
+    Map<String, dynamic> bookedIntervalsSlotColor =
+        testconvertAllTimesOfDayFetched(testallBookedTimeSlotsInMinutes, timesOfDayFetched);
+    Set timeSlotCardBookedIndex = <int>{};
 
-    var sameDayReservationAsUserList =
+    for (var element in bookedIntervalsSlotColor.values) {
+      debugPrint("MALA : $element");
+      index >= element['startIndex'] && index <= element['endIndex'] ? timeSlotCardBookedIndex.add(index) : null;
+    }
+    /*
+    DO NOT DELETE
+    Set<int> allBookedTimeSlotsInMinutes = {};
+     /*  var sameDayReservationAsUserList =
         slotsReservationsInfoFetchedAsMapWithData.values.where(
       (element) {
         //fetching all the timeSlots that are booked for the selectedDay if USER HAS NOT CLICKED YET ON ANY PARKING SPOT
         var timeST = element['BookingStart'] as Timestamp;
-        //print("MTMT ${timeST.toDate()}");
+
+        //debugPrint("MTMT ${timeST.toDate()}");
         return timeST.toDate().day == selectedDay.day &&
             timeST.toDate().month == selectedDay.month &&
             timeST.toDate().year == selectedDay.year;
       },
-    );
-    for (var singleReservationSameDayAsUserSelectedDay
+    ); */
+     for (var singleReservationSameDayAsUserSelectedDay
         in sameDayReservationAsUserList) {
       var singleReservationCasted =
           singleReservationSameDayAsUserSelectedDay as Map<String, dynamic>;
       var singleBookingStartTimeStamp =
           singleReservationSameDayAsUserSelectedDay['BookingStart']
               as Timestamp;
+      var singleBookingEndTimeStamp =
+          singleReservationSameDayAsUserSelectedDay['BookingEnd'] as Timestamp;
       debugPrint("$singleReservationCasted");
+
       allBookedTimeSlots
           .add(TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()));
-    }
-    debugPrint(
-        "slotsReservationsInfoFetchedAsMap HUN $slotsReservationsInfoFetchedAsMapWithData ______ \t sameDayReservationAsUserList ${sameDayReservationAsUserList.length} __ allBookedTimeSlots $allBookedTimeSlots");
+      testallBookedTimeSlotsInMinutes.addAll({});
 
+      int bookedTimeInt =
+          (TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()).hour *
+                      60 +
+                  TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate())
+                      .minute) *
+              60;
+      allBookedTimeSlotsInMinutes.add(bookedTimeInt);
+    }
+  Set<int> bookedTimeSlotColor = convertAllTimesOfDayFetched(
+        allBookedTimeSlotsInMinutes, timesOfDayFetched); 
+        
+         /*FOR the return below : bookedTimeSlotColor.any((element) => element ~/ 2 == index) ==
+                    true
+                ? Colors.orange */
+            
+        */
+    debugPrint(" PFF ${bookedIntervalsSlotColor.values}");
     return timesOfDayFetched.isEmpty
         ? Colors.blue
-        : context.watch<StateManagement>().selectedTime ==
-                timesOfDayFetched.elementAt(index)
+        : context.watch<StateManagement>().selectedTime == timesOfDayFetched.elementAt(index)
             ? selectedTimeSlotColor
-            : allBookedTimeSlots.any(
-                    (element) => timesOfDayFetched.elementAt(index) == element)
-                ? Colors.orange
-                : Colors.white;
+            /*  : timeSlotCardBookedIndex.any((element) => element == index) == true
+                ? Colors.orange */ //ADD IF PARKING SPOT IS SELECTED TOO
+            : Colors.white;
+    //: Colors.white;
   }
 
   fetchAlleySelectedSlotId(int i, String alley) {
     for (var singleAlleyInfo in mappedSelectedSlotAlley) {
-      singleAlleyInfo.update('isSlotSelected', (value) => 'false');
+      singleAlleyInfo.update('isSlotSelected', (value) => false);
       // DO NOT MOVE OR REMOVE THE UPPER LINE CMD. It has to put everything to false before putting only the selected slot to true
       singleAlleyInfo.update('highlightColor', (value) => Colors.transparent);
       refreshSlotColorState(Colors.transparent);
@@ -371,49 +386,34 @@ class _BookingThroughSlotsMapNoAlertDialogState
         mappedSelectedSlotAlley.elementAt(i + parkingSlotsTotal ~/ 2) ==
                 singleAlleyInfo //parkingSlotsTotal ~/ 2 = 3 needed to get to the B section because the received i in parameters is limited to half the total number of slots
             ? {
-                mappedSelectedSlotAlley
-                    .elementAt(i + parkingSlotsTotal ~/ 2)
-                    .update('isSlotSelected', (value) => 'true'),
+                mappedSelectedSlotAlley.elementAt(i + parkingSlotsTotal ~/ 2).update('isSlotSelected', (value) => true),
                 mappedSelectedSlotAlley
                     .elementAt(i + parkingSlotsTotal ~/ 2)
                     .update('highlightColor', (value) => slotHighlithbgColor),
-                refreshSlotColorState(mappedSelectedSlotAlley
-                    .elementAt(i + parkingSlotsTotal ~/ 2)
-                    .values
-                    .last),
+                refreshSlotColorState(mappedSelectedSlotAlley.elementAt(i + parkingSlotsTotal ~/ 2).values.last),
               }
             : {
-                singleAlleyInfo.update('isSlotSelected', (value) => 'false'),
-                singleAlleyInfo.update(
-                    'highlightColor', (value) => Colors.transparent)
+                singleAlleyInfo.update('isSlotSelected', (value) => false),
+                singleAlleyInfo.update('highlightColor', (value) => Colors.transparent)
               };
-      } else if (singleAlleyInfo.keys.first.contains('A') &&
-          alley.contains('A')) {
+      } else if (singleAlleyInfo.keys.first.contains('A') && alley.contains('A')) {
         mappedSelectedSlotAlley.elementAt(i) == singleAlleyInfo
             ? {
-                mappedSelectedSlotAlley
-                    .elementAt(i)
-                    .update('isSlotSelected', (value) => 'true'),
-                mappedSelectedSlotAlley
-                    .elementAt(i)
-                    .update('highlightColor', (value) => slotHighlithbgColor),
-                refreshSlotColorState(
-                    mappedSelectedSlotAlley.elementAt(i).values.last),
+                mappedSelectedSlotAlley.elementAt(i).update('isSlotSelected', (value) => true),
+                mappedSelectedSlotAlley.elementAt(i).update('highlightColor', (value) => slotHighlithbgColor),
+                refreshSlotColorState(mappedSelectedSlotAlley.elementAt(i).values.last),
               }
             : {
-                singleAlleyInfo.update('isSlotSelected', (value) => 'false'),
-                singleAlleyInfo.update(
-                    'highlightColor', (value) => Colors.transparent)
+                singleAlleyInfo.update('isSlotSelected', (value) => false),
+                singleAlleyInfo.update('highlightColor', (value) => Colors.transparent)
               };
       }
     }
 
-    debugPrint(
-        "REALLY? ${mappedSelectedSlotAlley.elementAt(i)} ___ $mappedSelectedSlotAlley");
+    debugPrint("REALLY? ${mappedSelectedSlotAlley.elementAt(i)} ___ $mappedSelectedSlotAlley");
   }
 
-  buildLeftAlleySlots(
-      int parkingSlotsTotal, double spaceBetweenSlots, bool isSelected) {
+  buildLeftAlleySlots(int parkingSlotsTotal, double spaceBetweenSlots, bool isSelected) {
     int leftAlleySlotsTotal = parkingSlotsTotal ~/ 2;
     return List.generate(
         leftAlleySlotsTotal,
@@ -423,22 +423,18 @@ class _BookingThroughSlotsMapNoAlertDialogState
                 onHover: (value) => debugPrint("HOVERED $value"),
                 highlightColor: Colors.blueGrey.shade500,
                 onTap: () {
-                  isSelected = true;
-                  debugPrint("Click event on Container _");
                   fetchAlleySelectedSlotId(i, "alleyA");
                   //highlightSelectedSlot(isSelected, i);
                 },
                 splashColor: Colors.yellow,
                 child: Container(
-                  height: singleSpotHeight, //REVIENS
+                  height: singleSpotHeight,
                   width: singleSpotWidth,
                   decoration: BoxDecoration(
                     color: mappedSelectedSlotAlley.elementAt(i).values.last,
                     border: Border(
-                      top: BorderSide(
-                          color: Colors.indigo.withAlpha(30), width: 2),
-                      bottom: BorderSide(
-                          color: Colors.indigo.withAlpha(30), width: 2),
+                      top: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
+                      bottom: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
                     ),
                     /*  gradient: LinearGradient(
                       /* begin: Alignment(0.0, -1.0),
@@ -450,11 +446,10 @@ class _BookingThroughSlotsMapNoAlertDialogState
                     ), */
                   ),
                   child: CustomPaint(
-                    foregroundPainter: DashedSeparatedBordersPainterLTRB(
-                        false, true, false, true),
+                    foregroundPainter: DashedSeparatedBordersPainterLTRB(false, true, false, true),
                     child: Center(
-                      child: mappedSelectedSlotAlley.elementAt(i).values.contains(
-                              'true') //crcks if 'isSlotSelected is true or not
+                      child: mappedSelectedSlotAlley.elementAt(i)['isSlotSelected'] ==
+                              true //checks if 'isSlotSelected is true or not
                           ? const Text('Selected')
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -462,36 +457,36 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                 Flexible(
                                     flex: 2,
                                     child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        specialAvailable.contains("A$i") ||
-                                                specialOccupied
-                                                    .contains("A$i") ||
-                                                specialBooked.contains("A$i")
-                                            ? Flexible(
-                                                flex: 1,
-                                                child: getParkingSpotIcon(
-                                                    "insideSpot", 'accessible'))
+                                        allSpecialSpotsIDs.contains("A$i")
+                                            ? Flexible(flex: 1, child: getParkingSpotIcon("insideSpot", 'accessible'))
                                             : Container(),
                                         Flexible(
-                                          child: available.contains("A$i") ||
-                                                  specialAvailable
-                                                      .contains("A$i")
+                                          child: /* available.contains("A$i") ||
+                                                  specialAvailable.contains("A$i")
                                               ? getParkingSpotIcon(
                                                   "insideSpot", 'available')
                                               : occupied.contains("A$i") ||
-                                                      specialOccupied
-                                                          .contains("A$i")
+                                                      specialOccupied.contains("A$i")
                                                   ? occupiedSpotIconLegend
-                                                  : getParkingSpotIcon(
-                                                      "insideSpot", 'booked'),
+                                                  :  */
+                                              rOccupiedAfterBookedIDs.contains("A$i") ||
+                                                      sOccupiedAfterBookedIDs.contains("A$i")
+                                                  ? occupiedSpotIconLegend
+                                                  : spotIDsWithinXHoursBookedAndOccupied.contains("A$i") ||
+                                                          rOccupiedNoPriorBookingIDs.contains("A$i") ||
+                                                          sOccupiedNoPriorBookingIDs.contains("A$i")
+                                                      ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
+                                                      : spotIDsWithinXHoursBookedThenFreed.contains("A$i") ||
+                                                              sAvailableIDs.contains("A$i") ||
+                                                              rAvailableIDs.contains("A$i")
+                                                          ? getParkingSpotIcon("insideSpot", 'available')
+                                                          : getParkingSpotIcon("insideSpot", 'booked'),
                                         ),
                                       ],
                                     )),
-                                Flexible(
-                                    flex: 2,
-                                    child: FittedBox(child: Text('A$i'))),
+                                Flexible(flex: 2, child: FittedBox(child: Text('A$i'))),
                               ],
                             ),
                     ),
@@ -501,8 +496,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
             )).toList(); // replace * with your rupee or use Icon instead
   }
 
-  buildRightAlleySlots(
-      int parkingSlotsTotal, double spaceBetweenSlots, bool isSelected) {
+  buildRightAlleySlots(int parkingSlotsTotal, double spaceBetweenSlots, bool isSelected) {
     int rightAlleySlotsTotal = parkingSlotsTotal ~/ 2;
     return List.generate(
         rightAlleySlotsTotal,
@@ -519,59 +513,52 @@ class _BookingThroughSlotsMapNoAlertDialogState
                   height: singleSpotHeight,
                   width: singleSpotWidth,
                   decoration: BoxDecoration(
-                    color: mappedSelectedSlotAlley
-                        .elementAt(i + parkingSlotsTotal ~/ 2)
-                        .values
-                        .last,
+                    color: mappedSelectedSlotAlley.elementAt(i + parkingSlotsTotal ~/ 2).values.last,
                     border: Border(
-                      top: BorderSide(
-                          color: Colors.indigo.withAlpha(30), width: 2),
-                      bottom: BorderSide(
-                          color: Colors.indigo.withAlpha(30), width: 2),
+                      top: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
+                      bottom: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
                     ),
                   ),
                   child: CustomPaint(
                     //child: Container(color: Colors.yellow,),
-                    foregroundPainter: DashedSeparatedBordersPainterLTRB(
-                        false, true, false, true),
+                    foregroundPainter: DashedSeparatedBordersPainterLTRB(false, true, false, true),
                     child: Center(
-                        child: mappedSelectedSlotAlley
-                                .elementAt(i + parkingSlotsTotal ~/ 2)
-                                .values
-                                .contains(
-                                    'true') //crcks if 'isSlotSelected is true or not
+                        child: mappedSelectedSlotAlley.elementAt(i + parkingSlotsTotal ~/ 2)['isSlotSelected'] ==
+                                true //crcks if 'isSlotSelected is true or not
                             ? const Text('Selected')
                             : Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
                                   Flexible(
                                     flex: 2,
                                     child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        specialAvailable.contains("B$i") ||
-                                                specialOccupied
-                                                    .contains("B$i") ||
-                                                specialBooked.contains("B$i")
-                                            ? Flexible(
-                                                flex: 1,
-                                                child: getParkingSpotIcon(
-                                                    "insideSpot", 'accessible'))
+                                        allSpecialSpotsIDs.contains("B$i")
+                                            ? Flexible(flex: 1, child: getParkingSpotIcon("insideSpot", 'accessible'))
                                             : Container(),
                                         Flexible(
-                                          child: available.contains("B$i") ||
-                                                  specialAvailable
-                                                      .contains("B$i")
+                                          child: rOccupiedAfterBookedIDs.contains("B$i") ||
+                                                  sOccupiedAfterBookedIDs.contains("B$i")
+                                              ? occupiedSpotIconLegend
+                                              : spotIDsWithinXHoursBookedAndOccupied.contains("B$i") ||
+                                                      rOccupiedNoPriorBookingIDs.contains("B$i") ||
+                                                      sOccupiedNoPriorBookingIDs.contains("B$i")
+                                                  ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
+                                                  : spotIDsWithinXHoursBookedThenFreed.contains("B$i") ||
+                                                          sAvailableIDs.contains("B$i") ||
+                                                          rAvailableIDs.contains("B$i")
+                                                      ? getParkingSpotIcon("insideSpot", 'available')
+                                                      : getParkingSpotIcon("insideSpot", 'booked'),
+                                          /* available.contains("B$i") ||
+                                                  specialAvailable.contains("B$i")
                                               ? getParkingSpotIcon(
                                                   "insideSpot", 'available')
                                               : occupied.contains("B$i") ||
-                                                      specialOccupied
-                                                          .contains("B$i")
+                                                      specialOccupied.contains("B$i")
                                                   ? occupiedSpotIconLegend
                                                   : getParkingSpotIcon(
-                                                      "insideSpot", 'booked'),
+                                                      "insideSpot", 'booked') */
                                         ),
                                       ],
                                     ),
@@ -590,8 +577,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
     Color myColor = Colors.yellow;
     for (var singleAlleyInfo in mappedSelectedSlotAlley) {
       myColor = Colors.transparent;
-      if (mappedSelectedSlotAlley.elementAt(i).values.last ==
-          singleAlleyInfo.values.last) {
+      if (mappedSelectedSlotAlley.elementAt(i).values.last == singleAlleyInfo.values.last) {
         myColor = Colors.transparent;
       }
     }
@@ -604,163 +590,99 @@ class _BookingThroughSlotsMapNoAlertDialogState
     });
   }
 
-  getAlleySlotsId(parkingSlotsTotal) {
-    int alleyBindexStart = parkingSlotsTotal ~/ 2;
-    var j = 0;
-    var availableSlotsList = insideParkingInfoFetched.isNotEmpty
-        ? insideParkingInfoFetched['Available Slots']['IDs'] as List
-        : 'insideParkingInfoFetched empty';
-
-    var bookedSlotsList = insideParkingInfoFetched.isNotEmpty
-        ? insideParkingInfoFetched['Booked Slots']['IDs'] as List
-        : 'insideParkingInfoFetched empty';
-
-    var currentlyOccupiedSlotsList = insideParkingInfoFetched.isNotEmpty
-        ? insideParkingInfoFetched['Occupied Slots']['IDs'] as List
-        : 'insideParkingInfoFetched empty';
-
-    var specialAvailableSlotsList = insideParkingInfoFetched.isNotEmpty
-        ? insideParkingInfoFetched['Special Spots']['Available'] as List
-        : 'insideParkingInfoFetched empty';
-
-    var specialBookedSlotsList = insideParkingInfoFetched.isNotEmpty
-        ? insideParkingInfoFetched['Special Spots']['Booked'] as List
-        : 'insideParkingInfoFetched empty';
-
-    var specialCurrentlyOccupiedSlotsList = insideParkingInfoFetched.isNotEmpty
-        ? insideParkingInfoFetched['Special Spots']['Occupied'] as List
-        : 'insideParkingInfoFetched empty';
-
-    debugPrint(
-        "availableSlotsStatus $availableSlotsList \t bookedSlotsList $bookedSlotsList \t currentlyOccupiedSlotsList $currentlyOccupiedSlotsList  \t SPECIAL specialAvailableSlotsList $specialAvailableSlotsList \t specialBookedSlotsList $specialBookedSlotsList  \t specialCurrentlyOccupiedSlotsList $specialCurrentlyOccupiedSlotsList");
-
-    for (var i = 0; i < parkingSlotsTotal; i++) {
-      (i < parkingSlotsTotal ~/ 2)
-          ? {
-              alleyA.add("A$i"),
-              mappedSelectedSlotAlley.add({
-                "alleyA_Id": alleyA.elementAt(i) /* "A$i" */,
-                "isSlotSelected": false,
-                "isSlotBooked": bookedSlotsList.toString().contains("A$i") ||
-                        specialBookedSlotsList.toString().contains("A$i")
-                    ? true
-                    : false,
-                "isSlotCurrentlyOccupied":
-                    currentlyOccupiedSlotsList.toString().contains("A$i") ||
-                            specialCurrentlyOccupiedSlotsList
-                                .toString()
-                                .contains("A$i")
-                        ? true
-                        : false,
-                "isSlotCurrentlyFree":
-                    availableSlotsList.toString().contains("A$i") ||
-                            specialAvailableSlotsList.toString().contains("A$i")
-                        ? true
-                        : false,
-                "isSpecialSpot":
-                    specialAvailableSlotsList.toString().contains("A$i") ||
-                            specialCurrentlyOccupiedSlotsList
-                                .toString()
-                                .contains("A$i") ||
-                            specialBookedSlotsList.toString().contains("A$i")
-                        ? true
-                        : false,
-                "highlightColor": Colors.transparent
-              })
+  getAlleySlotsIdWithFBListeners(parkingSlotsTotal) {
+    var withinXHoursEntriesFetched = getWithinXHoursAvailabalitySatus(3);
+    FirebaseFirestore.instance
+        .collection("slotsReservations")
+        .where("ParkingID", isEqualTo: widget.receivedID)
+        .snapshots()
+        .listen((event) {
+      //by default, someone who books will not be parked yet. so VEHICULESTATUS will be not yet parked
+      for (var change in event.docChanges) {
+        switch (change.type) {
+          case DocumentChangeType.added:
+            debugPrint("Slots Reservations Document Just Loaded: ${change.doc.data()}");
+            break;
+          case DocumentChangeType.modified:
+            debugPrint("Slots Reservations Document Just EDITED: ${change.doc.data()}");
+            if (change.doc.data()!['VehiculeStatus'] == 'Parked') {
+              spotIDsWithinXHoursBookedNotOccupied.remove(change.doc.data()!['SlotID']);
+              spotIDsWithinXHoursBookedAndOccupied.add(change.doc.data()!['SlotID']);
             }
-          : {
-              alleyB.add("B${j++}"),
-              mappedSelectedSlotAlley.add({
-                "alleyB_Id": alleyB.elementAt(i -
-                    alleyBindexStart), //3 because at this point, i = 3 and I need the counter to reset
-                "isSlotSelected": false,
-                "isSlotBooked": bookedSlotsList
-                            .toString()
-                            .contains("B${i - alleyBindexStart}") ||
-                        specialBookedSlotsList
-                            .toString()
-                            .contains("B${i - alleyBindexStart}")
-                    ? true
-                    : false,
-                "isSlotCurrentlyOccupied": currentlyOccupiedSlotsList
-                            .toString()
-                            .contains("B${i - alleyBindexStart}") ||
-                        specialCurrentlyOccupiedSlotsList
-                            .toString()
-                            .contains("B${i - alleyBindexStart}")
-                    ? true
-                    : false,
-                "isSlotCurrentlyFree": availableSlotsList
-                            .toString()
-                            .contains("B${i - alleyBindexStart}") ||
-                        specialAvailableSlotsList
-                            .toString()
-                            .contains("B${i - alleyBindexStart}")
-                    ? true
-                    : false,
-                "isSpecialSpot": specialAvailableSlotsList
-                            .toString()
-                            .contains("B${i - alleyBindexStart}") ||
-                        specialCurrentlyOccupiedSlotsList
-                            .toString()
-                            .contains("B${i - alleyBindexStart}") ||
-                        specialBookedSlotsList
-                            .toString()
-                            .contains("B${i - alleyBindexStart}")
-                    ? true
-                    : false,
-                "highlightColor": Colors.transparent
-              })
-            };
-    }
-    debugPrint("ALLEY A : $alleyA ______________ ALLEY B : $alleyB");
-    for (var element in mappedSelectedSlotAlley) {
-      //element.values.first is B4 in {alleyB_Id: B4, isSlotSelected: false, isSlotBooked: false, isSlotCurrentlyOccupied: false, isSlotCurrentlyFree: true, isSpecialSpot: true, highlightColor: Color(0x00000000)}
-      if (element['isSpecialSpot'] == false) {
-        element['isSlotCurrentlyFree'] == true
-            ? available.add(element.values.first)
-            : element['isSlotBooked'] == true
-                ? booked.add(element.values.first)
-                : element['isSlotCurrentlyOccupied'] == true
-                    ? occupied.add(element.values.first)
-                    : null;
-      } else {
-        element['isSlotCurrentlyFree'] == true
-            ? specialAvailable.add(element.values.first)
-            : element['isSlotBooked'] == true
-                ? specialBooked.add(element.values.first)
-                : element['isSlotCurrentlyOccupied'] == true
-                    ? specialOccupied.add(element.values.first)
-                    : null;
+            if (change.doc.data()!['VehiculeStatus'] == 'Gone') {
+              spotIDsWithinXHoursBookedAndOccupied.remove(change.doc.data()!['SlotID']);
+              spotIDsWithinXHoursBookedThenFreed.add(change.doc.data()!['SlotID']);
+            }
+            break;
+          case DocumentChangeType.removed:
+            debugPrint("Reservation DONE SO Archived: ${change.doc.data()}");
+            break;
+        }
       }
-    }
-    debugPrint(
-        "Available: $available ______ SPECIAL Available: $specialAvailable");
-    debugPrint("Booked: $booked ______ SPECIAL Available: $specialBooked");
-    debugPrint(
-        "Occupied: $occupied ______ SPECIAL Available: $specialOccupied");
+    });
+    //FIND A WAY TO LINK THESE TWO EVENT LISTENERS TRHOUG BOOKED AND OCCUPIDETHENBOOKED. available will depen on these so no need to touch it
+    FirebaseFirestore.instance
+        .collection("locations/${widget.receivedID}/insideParkingInfo")
+        .where("Fee per 30 minutes", isGreaterThan: 400)
+        .snapshots()
+        .listen((event) {
+      for (var change in event.docChanges) {
+        switch (change.type) {
+          case DocumentChangeType.added:
+            debugPrint("Inside Parking Info Document Just Loaded: ${change.doc.data()}");
+            break;
+          case DocumentChangeType.modified:
+            debugPrint("Inside Parking Info Document Just EDITED: ${change.doc.data()}");
 
-    debugPrint(
-        "\t mappedAlleysAndSlotIdsSelected : \t $mappedSelectedSlotAlley ");
-    //debugPrint("mappedAlleysAndSlotIdsSelected : $mappedAlleyASelectedCheck ");
+            if (change.doc.data()!['Regular']['Available']['Booked'] == 'Parked') {
+              spotIDsWithinXHoursBookedNotOccupied.remove(change.doc.data()!['SlotID']);
+              spotIDsWithinXHoursBookedAndOccupied.add(change.doc.data()!['SlotID']);
+            }
+            if (change.doc.data()!['VehiculeStatus'] == 'Gone') {
+              spotIDsWithinXHoursBookedAndOccupied.remove(change.doc.data()!['SlotID']);
+              spotIDsWithinXHoursBookedThenFreed.add(change.doc.data()!['SlotID']);
+            }
 
-    mappedAlleysAndSlotIds.addAll({
-      'Alley A': alleyA,
-      'Alley B': alleyB,
+            break;
+          case DocumentChangeType.removed:
+            debugPrint("Reservation DONE SO Archived: ${change.doc.data()}");
+            break;
+        }
+      }
     });
 
+    for (var element in withinXHoursEntriesFetched) {
+      var values = element.value as Map<String, dynamic>;
+      spotIDsWithinXHoursList.add(values['SlotID']);
+      values['VehiculeStatus'] == 'Parked'
+          ? spotIDsWithinXHoursBookedAndOccupied.add(values['SlotID'])
+          : values['VehiculeStatus'] == 'Not Yet Parked'
+              ? spotIDsWithinXHoursBookedNotOccupied.add(values['SlotID'])
+              : spotIDsWithinXHoursBookedThenFreed.add(values['SlotID']);
+    }
+    withinXHoursParkingSpotIDsToShow.addAll({
+      'All Spot IDs': spotIDsWithinXHoursList,
+      'WithinXHoursBookedNotOccupied': spotIDsWithinXHoursBookedNotOccupied,
+      'WithinXHoursBookedThenFree': spotIDsWithinXHoursBookedThenFreed,
+      'WithinXHoursBookedAndOccupied': spotIDsWithinXHoursBookedAndOccupied
+    });
+    debugPrint("WORKED $withinXHoursEntriesFetched ______ $withinXHoursParkingSpotIDsToShow");
+
+    int alleyBindexStart = parkingSlotsTotal ~/ 2;
+    var j = 0;
+    //fetchParkingSlotsInfoFromFB();
+    createAlleysMappingWithIDs(alleyBindexStart, j);
     debugPrint("mappedAlleysAndSlotIds : $mappedAlleysAndSlotIds");
   }
 
   insideParkingLayout(double alleyListViewMinHeightToDisplay) {
-    double kindaWorkingContainerHeightForAlleys =
-        ((parkingSlotsTotal ~/ 2) - 0.5) * 80;
+    double kindaWorkingContainerHeightForAlleys = ((parkingSlotsTotal ~/ 2) - 0.5) * 80;
+    //print("kindaWorkingContainerHeightForAlleys $kindaWorkingContainerHeightForAlleys");
     return GestureDetector(
       onVerticalDragCancel: () async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         var status = prefs.getBool('dontShowAlleyAlertAgain') ?? true;
-        debugPrint(
-            "DON'T SHOW ALLEY EVER AGAIN? $status  _______ reshow tempo $dontShowAlleyAlertAgainTemporairyly");
+        debugPrint("DON'T SHOW ALLEY EVER AGAIN? $status  _______ reshow tempo $dontShowAlleyAlertAgainTemporairyly");
         dontShowAlleyAlertAgainTemporairyly == false
             ? showAlleyAlert()
             : dontShowAlleyAlertAgainTemporairyly == true || status == true
@@ -769,7 +691,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
       },
       child: Container(
         margin: const EdgeInsets.only(left: 10, right: 10),
-        height: kindaWorkingContainerHeightForAlleys,
+        height: kindaWorkingContainerHeightForAlleys > 480 ? 480 : kindaWorkingContainerHeightForAlleys,
         width: double.infinity,
         child: Card(
           shape: RoundedRectangleBorder(
@@ -783,20 +705,13 @@ class _BookingThroughSlotsMapNoAlertDialogState
             children: [
               Container(
                 /* LEFT ALLEY */
-                /* padding: const EdgeInsets.only(
-                  top: 10,
-                  bottom: 10,
-                ), */
                 decoration: BoxDecoration(
                     color: Colors.indigo.withAlpha(10),
                     border: Border(
-                      left: BorderSide(
-                          color: Colors.indigo.withAlpha(30), width: 2),
-                      right: BorderSide(
-                          color: Colors.indigo.withAlpha(30), width: 2),
+                      left: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
+                      right: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
                     )),
                 width: MediaQuery.of(context).size.width * alleySpotWidthRatio,
-                /*  height: alleyListViewMinHeightToDisplay, //otherwise, the slot will appear cutted so I need to show at least half of half the alley number of slots for UI concerns*/
                 child: RawScrollbar(
                   mainAxisMargin: 5.0,
                   trackVisibility: false,
@@ -811,8 +726,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                     shrinkWrap: false,
                     itemCount: parkingSlotsTotal ~/ 2,
                     itemBuilder: (context, index) {
-                      final item = buildLeftAlleySlots(parkingSlotsTotal,
-                          spaceBetweenSlots, isSelected)[index];
+                      final item = buildLeftAlleySlots(parkingSlotsTotal, spaceBetweenSlots, isSelected)[index];
                       return item;
                     },
                     separatorBuilder: (BuildContext context, int index) {
@@ -824,8 +738,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
               Expanded(
                 child: Container(
                   color: Colors.indigo.withAlpha(20),
-                  height:
-                      alleyHeight + spaceBetweenSlots * parkingSlotsTotal ~/ 2,
+                  //height: alleyHeight + spaceBetweenSlots * parkingSlotsTotal ~/ 2,
                   child: Stack(
                     alignment: Alignment.center,
                     children: const [
@@ -878,14 +791,11 @@ class _BookingThroughSlotsMapNoAlertDialogState
                 decoration: BoxDecoration(
                     color: Colors.indigo.withAlpha(10),
                     border: Border(
-                      left: BorderSide(
-                          color: Colors.indigo.withAlpha(30), width: 2),
-                      right: BorderSide(
-                          color: Colors.indigo.withAlpha(30), width: 2),
+                      left: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
+                      right: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
                     )),
                 width: MediaQuery.of(context).size.width * alleySpotWidthRatio,
-                height:
-                    alleyHeight + spaceBetweenSlots * parkingSlotsTotal ~/ 2,
+                //height: alleyHeight + spaceBetweenSlots * parkingSlotsTotal ~/ 2,
                 child: RawScrollbar(
                   mainAxisMargin: 5.0,
                   trackVisibility: false,
@@ -900,8 +810,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                     shrinkWrap: false,
                     itemCount: parkingSlotsTotal ~/ 2,
                     itemBuilder: (context, index) {
-                      final item = buildRightAlleySlots(parkingSlotsTotal,
-                          spaceBetweenSlots, isSelected)[index];
+                      final item = buildRightAlleySlots(parkingSlotsTotal, spaceBetweenSlots, isSelected)[index];
                       return item;
                     },
                     separatorBuilder: (BuildContext context, int index) {
@@ -917,29 +826,21 @@ class _BookingThroughSlotsMapNoAlertDialogState
     );
   }
 
-  showUserRangePicker(
-      int index,
-      TimeOfDay parkingClosingHour,
-      TimeOfDay parkingOpeningHour,
+  showUserRangePicker(int index, TimeOfDay parkingClosingHour, TimeOfDay parkingOpeningHour,
       Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) async {
     TimeRange? result = await showTimeRangePicker(
         context: context,
         start: timesOfDayFetched.elementAt(index),
         end: TimeOfDay(
-            hour: timesOfDayFetched.elementAt(index).hour + 3,
-            minute: timesOfDayFetched.elementAt(index).minute),
-        disabledTime: TimeRange(
-            startTime: parkingClosingHour, endTime: parkingOpeningHour),
+            hour: timesOfDayFetched.elementAt(index).hour + 3, minute: timesOfDayFetched.elementAt(index).minute),
+        disabledTime: TimeRange(startTime: parkingClosingHour, endTime: parkingOpeningHour),
         disabledColor: Colors.red.withOpacity(0.5),
         strokeWidth: 5,
         ticks: 24,
         ticksOffset: -12,
         ticksLength: 15,
         ticksColor: Colors.grey,
-        labels: ["24h", "3h", "6h", "9h", "12h", "15h", "18h", "21h"]
-            .asMap()
-            .entries
-            .map((e) {
+        labels: ["24h", "3h", "6h", "9h", "12h", "15h", "18h", "21h"].asMap().entries.map((e) {
           return ClockLabel.fromIndex(idx: e.key, length: 8, text: e.value);
         }).toList(),
         labelOffset: -30,
@@ -948,78 +849,62 @@ class _BookingThroughSlotsMapNoAlertDialogState
     debugPrint("resultTimeRange ${result.toString()}");
   }
 
-  timeSlotsGrid(TimeOfDay startTime, TimeOfDay endTime,
-      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
+  timeSlotsGrid(
+      TimeOfDay startTime, TimeOfDay endTime, Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
     return Container(
       color: Colors.white,
-      height: timesOfDayFetched.toList().length * 20,
+      height: timesOfDayFetched.toList().length * 10,
       child: Column(
         children: [
           Flexible(
             child: Scrollbar(
-              thumbVisibility: true,
+              thumbVisibility: false,
               controller: timeSlotGridController,
               child: GridView.builder(
                   //primary: false,
                   controller: timeSlotGridController,
                   shrinkWrap: true,
-                  itemCount: timesOfDayFetched.toList().isEmpty
-                      ? 10
-                      : timesOfDayFetched.toList().length - 1,
+                  itemCount: timesOfDayFetched.toList().isEmpty ? 10 : (timesOfDayFetched.toList().length ~/ 2),
+
+                  ///becaause I used two items per bloc
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      childAspectRatio: 1.5,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 15,
-                      crossAxisCount: 3),
+                      childAspectRatio: 1.5, crossAxisSpacing: 10, mainAxisSpacing: 15, crossAxisCount: 3),
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: () async {
-                        context.read<StateManagement>().updateSelectedTime(
-                            timesOfDayFetched.elementAt(index)); //don't change
-                        showUserRangePicker(index, endTime, startTime,
-                            slotsReservationsInfoFetchedAsMapWithData);
+                        context
+                            .read<StateManagement>()
+                            .updateSelectedTime(timesOfDayFetched.elementAt(index)); //don't change
+                        debugPrint("MAMAMA ${focusedDay.hour}");
+                        showUserRangePicker(index, endTime, startTime, slotsReservationsInfoFetchedAsMapWithData);
                       },
                       child: Row(
                         children: [
                           Flexible(
                             child: Card(
                                 //margin:const EdgeInsets.only(left: 20, right: 10),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15)),
-                                color: getSelectedTimeSlotColor(index,
-                                    slotsReservationsInfoFetchedAsMapWithData),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                color: getSelectedTimeSlotColor(index, slotsReservationsInfoFetchedAsMapWithData),
                                 child: timesOfDayFetched.toList().isEmpty
                                     ? null
                                     : Center(
-                                        child: (index + 1) ==
-                                                timesOfDayFetched
-                                                    .toList()
-                                                    .length
+                                        child: (index + 1) == timesOfDayFetched.toList().length
                                             ? null
                                             : GridTile(
                                                 child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 8.0,
-                                                          right: 8.0),
+                                                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
                                                   child: FittedBox(
-                                                    alignment:
-                                                        Alignment.bottomCenter,
+                                                    alignment: Alignment.bottomCenter,
                                                     child: Text(
-                                                        "${timesOfDayFetched.elementAt(index).format(context)} - ${timesOfDayFetched.elementAt(index + 1).format(context)}",
+                                                        (index * 2) + 1 < timesOfDayFetched.length - 1
+                                                            ? "${timesOfDayFetched.elementAt(index * 2).format(context)} - ${timesOfDayFetched.elementAt(index * 2 + 1).format(context)}"
+                                                            : 'OK',
                                                         style: TextStyle(
-                                                            color: context
-                                                                        .watch<
-                                                                            StateManagement>()
-                                                                        .selectedTime ==
-                                                                    timesOfDayFetched
-                                                                        .elementAt(
-                                                                            index)
+                                                            color: context.watch<StateManagement>().selectedTime ==
+                                                                    timesOfDayFetched.elementAt(index)
                                                                 ? Colors.white
                                                                 : Colors.black,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w400)),
+                                                            fontWeight: FontWeight.w400)),
                                                   ),
                                                 ),
                                               ),
@@ -1052,8 +937,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
         child: TableCalendar(
           rowHeight: 40,
           headerStyle: const HeaderStyle(
-              formatButtonTextStyle: TextStyle(fontSize: 10.0),
-              titleTextStyle: TextStyle(fontSize: 11)),
+              formatButtonTextStyle: TextStyle(fontSize: 10.0), titleTextStyle: TextStyle(fontSize: 11)),
           pageJumpingEnabled: true,
           startingDayOfWeek: StartingDayOfWeek.monday,
           focusedDay: focusedDay,
@@ -1070,8 +954,13 @@ class _BookingThroughSlotsMapNoAlertDialogState
                   ? null
                   : //I'LL SUPPOSE THE PARKINGS ARE OPEN EVERYDAY */
 
-              selectedDay = newSelectedDay;
-              focusedDay = newFocusedDay; // update `_focusedDay` here as well
+              selectedDay = DateTime(newSelectedDay.year, newSelectedDay.month, newSelectedDay.day, DateTime.now().hour,
+                  DateTime.now().minute, DateTime.now().second);
+
+              focusedDay = DateTime(newFocusedDay.year, newFocusedDay.month, newFocusedDay.day, DateTime.now().hour,
+                  DateTime.now().minute, DateTime.now().second);
+              //selectedDay.hour = DateTime.now().
+              // update `_focusedDay` here as well
             });
             debugPrint("AFTERR SELECTED $selectedDay FOCUSED $focusedDay");
           },
@@ -1082,8 +971,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
           }),
           calendarStyle: const CalendarStyle(
             //weekendDecoration: BoxDecoration(color: Colors.purple),
-            selectedDecoration:
-                BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+            selectedDecoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
           ),
         ),
       ),
@@ -1102,8 +990,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
               Container(
                 width: 20,
                 height: 20,
-                decoration: const BoxDecoration(
-                    color: Colors.green, shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
               ),
               const SizedBox(width: 3),
               const FittedBox(
@@ -1120,8 +1007,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
               Container(
                 width: 20,
                 height: 20,
-                decoration: const BoxDecoration(
-                    color: Colors.orange, shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
               ),
               const SizedBox(width: 3),
               const FittedBox(
@@ -1138,8 +1024,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
               Container(
                 width: 20,
                 height: 20,
-                decoration: const BoxDecoration(
-                    color: Colors.red, shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
               ),
               const SizedBox(width: 3),
               const FittedBox(
@@ -1227,51 +1112,43 @@ class _BookingThroughSlotsMapNoAlertDialogState
               )),
             ),
             shadowColor: MaterialStateProperty.all(const Color(0xff7986CB)),
-            backgroundColor:
-                MaterialStateProperty.all(const Color(0xff78909C))),
+            backgroundColor: MaterialStateProperty.all(const Color(0xff78909C))),
         onPressed: () {
           setState(() {
             nextPressedWithoutFirstPageAllInfoFetched = true;
           });
           var selectedVehiculeInfoEmptyTest =
-              bookerFirstPageInfoMapped['Selected Vehicule Info']
-                  as Map<String, dynamic>;
+              bookerFirstPageInfoMapped['Selected Vehicule Info'] as Map<String, dynamic>;
           selectedVehiculeInfoEmptyTest.isNotEmpty
               ? null
               : {
                   //
 
-                  ScaffoldMessenger.of(context).showMaterialBanner(
-                      MaterialBanner(
-                          onVisible: (() {}),
-                          elevation: 10,
-                          contentTextStyle: const TextStyle(
-                              color: Colors.white, fontSize: 30),
-                          backgroundColor: Colors.black.withOpacity(0.5),
-                          leadingPadding: const EdgeInsets.only(right: 10),
-                          leading: const Icon(
-                            Icons.info,
-                            color: Colors.red,
-                            size: 25,
-                          ),
-                          content: const FittedBox(
-                            child: Text(
-                              'Please select a vehicule to proceed.',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontFamily: 'OpenSans',
-                                  fontWeight: FontWeight.w900),
-                            ),
-                          ),
-                          actions: [
+                  ScaffoldMessenger.of(context).showMaterialBanner(MaterialBanner(
+                      onVisible: (() {}),
+                      elevation: 10,
+                      contentTextStyle: const TextStyle(color: Colors.white, fontSize: 30),
+                      backgroundColor: Colors.black.withOpacity(0.5),
+                      leadingPadding: const EdgeInsets.only(right: 10),
+                      leading: const Icon(
+                        Icons.info,
+                        color: Colors.red,
+                        size: 25,
+                      ),
+                      content: const FittedBox(
+                        child: Text(
+                          'Please select a vehicule to proceed.',
+                          style: TextStyle(
+                              color: Colors.white, fontSize: 15, fontFamily: 'OpenSans', fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                      actions: [
                         TextButton(
                           onPressed: () {
                             setState(() {
                               nextPressedWithoutFirstPageAllInfoFetched = false;
                             });
-                            ScaffoldMessenger.of(context)
-                                .hideCurrentMaterialBanner();
+                            ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
                           },
                           child: const Text('OK',
                               style: TextStyle(
@@ -1340,8 +1217,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
               )),
             ),
             shadowColor: MaterialStateProperty.all(const Color(0xff7986CB)),
-            backgroundColor:
-                MaterialStateProperty.all(const Color(0xff78909C))),
+            backgroundColor: MaterialStateProperty.all(const Color(0xff78909C))),
         onPressed: () {
           activeStep > 0
               ? setState(() {
@@ -1355,46 +1231,27 @@ class _BookingThroughSlotsMapNoAlertDialogState
   }
 
   /// Returns the header wrapping the header text.
-  bookerBody(double alleyListViewMinHeightToDisplay, TimeOfDay startTime,
-      TimeOfDay endTime) {
+  bookerBody(double alleyListViewMinHeightToDisplay, TimeOfDay startTime, TimeOfDay endTime) {
     return Container(
-      child:
-          switchBookerBody(alleyListViewMinHeightToDisplay, startTime, endTime),
+      child: switchBookerBody(alleyListViewMinHeightToDisplay, startTime, endTime),
     );
   }
 
   // Returns the header text based on the activeStep.
-  switchBookerBody(double alleyListViewMinHeightToDisplay, TimeOfDay startTime,
-      TimeOfDay endTime) {
+  switchBookerBody(double alleyListViewMinHeightToDisplay, TimeOfDay startTime, TimeOfDay endTime) {
     switch (activeStep) {
       case 0:
-        var sAV =
-            insideParkingInfoFetched['Special Spots']['Available'] as List;
-        var sOC = insideParkingInfoFetched['Special Spots']['Occupied'] as List;
-        var sBO = insideParkingInfoFetched['Special Spots']['Booked'] as List;
-        //by summing available occupied and booked
-
-        var specialSpotsFinalTotal = sAV.length + sOC.length + sBO.length;
-        var totalParkingCapacity =
-            insideParkingInfoFetched['Total Slots Number'];
-        // ignore: unused_local_variable
-        var normalSpotsTotal = totalParkingCapacity - specialSpotsFinalTotal;
-
         bookerFirstPageInfoMapped.addAll({
-          'Selected Parking Name':
-              linkedParkingNameAndInsideInfo['Parking Name'],
-          'Selected Parking Fee / 30mns':
-              insideParkingInfoFetched['Fee per 30 minutes'].toString(),
+          'Selected Parking Name': linkedParkingNameAndInsideInfo['Parking Name'],
+          'Selected Parking Fee / 30mns': insideParkingInfoFetched['Fee per 30 minutes'].toString(),
           'Selected Day': selectedDay,
           'Selected Vehicule Info': selectedVehiculeInfoMappedFromSelectVehicule
         });
         debugPrint(
-            "Booker First Page INFO: $bookerFirstPageInfoMapped ___ normalSpotsTotal $specialSpotsFinalTotal}");
-        BookingOverviewFinal(
-            bookerFirstPageInfoFetched: bookerFirstPageInfoMapped);
+            "Booker First Page INFO: $bookerFirstPageInfoMapped ___ normalSpotsTotal $regularTotal ___ specialsPOTS $specialTotal }");
+        BookingOverviewFinal(bookerFirstPageInfoFetched: bookerFirstPageInfoMapped);
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          nextPressedWithoutFirstPageAllInfoFetched == true &&
-                  removeMaterialBannerSizedBox == false
+          nextPressedWithoutFirstPageAllInfoFetched == true && removeMaterialBannerSizedBox == false
               ? const SizedBox(height: 40)
               : Container(),
           SizedBox(
@@ -1414,8 +1271,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                         SizedBox(width: 10),
                         Text(
                           'Parking Details',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 16),
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                         ),
                       ],
                     ),
@@ -1432,16 +1288,14 @@ class _BookingThroughSlotsMapNoAlertDialogState
                             Flexible(
                               child: RawScrollbar(
                                 minOverscrollLength: 8,
-                                scrollbarOrientation:
-                                    ScrollbarOrientation.bottom,
+                                scrollbarOrientation: ScrollbarOrientation.bottom,
                                 thumbColor: Colors.blueGrey,
                                 radius: const Radius.circular(20),
                                 thumbVisibility: true,
                                 trackVisibility: true,
                                 controller: infoListViewController,
                                 child: Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(0, 5, 0, 20),
+                                  padding: const EdgeInsets.fromLTRB(0, 5, 0, 20),
                                   child: ListView.builder(
                                       controller:
                                           infoListViewController, //DO NOT REMOVE. LISTVIEW AND SCROLLBAR MUST SHARE THE SAME CONTROLLER OR YOU'LL GET AN ERROR
@@ -1452,21 +1306,16 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                           // surfaceTintColor: Colors.yellow,
                                           shadowColor: Colors.black,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10.0),
+                                            borderRadius: BorderRadius.circular(10.0),
                                           ),
                                           elevation: 5,
                                           child: Container(
                                             //THERE WAS AN EXPANDED HERE BEFORE CONTAINER
                                             // width: 115,
-                                            decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(50)),
+                                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(50)),
                                             child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
+                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                              crossAxisAlignment: CrossAxisAlignment.center,
                                               children: [
                                                 Align(
                                                   child: FittedBox(
@@ -1487,8 +1336,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                         color: Colors.blueGrey,
                                                         fontSize: 12,
                                                         fontFamily: 'OpenSans',
-                                                        fontWeight:
-                                                            FontWeight.w800,
+                                                        fontWeight: FontWeight.w800,
                                                       ),
                                                     ),
                                                   ),
@@ -1507,57 +1355,33 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                             :  */
                                                                   index == 2
                                                                       ? "${insideParkingInfoFetched['Fee per 30 minutes'].toString()} CFA"
-                                                                      : index ==
-                                                                              3
-                                                                          ? mappedInfoFromWidget[
-                                                                              'Opening Hour']
-                                                                          : mappedInfoFromWidget[
-                                                                              'Closing Hour'],
+                                                                      : index == 3
+                                                                          ? mappedInfoFromWidget['Opening Hour']
+                                                                          : mappedInfoFromWidget['Closing Hour'],
 
-                                                                  style:
-                                                                      const TextStyle(
-                                                                    color: Colors
-                                                                        .black87,
-                                                                    fontSize:
-                                                                        13,
-                                                                    fontFamily:
-                                                                        'OpenSans',
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w800,
+                                                                  style: const TextStyle(
+                                                                    color: Colors.black87,
+                                                                    fontSize: 13,
+                                                                    fontFamily: 'OpenSans',
+                                                                    fontWeight: FontWeight.w800,
                                                                   ),
                                                                 )
                                                               : Row(
                                                                   children: [
-                                                                    const Icon(
-                                                                        Icons
-                                                                            .accessible,
-                                                                        color: Colors
-                                                                            .blue,
-                                                                        size:
-                                                                            15),
-                                                                    Text(index ==
-                                                                            0
-                                                                        ? specialSpotsFinalTotal
-                                                                            .toString()
-                                                                        : specialAvailable
-                                                                            .length
+                                                                    const Icon(Icons.accessible,
+                                                                        color: Colors.blue, size: 15),
+                                                                    Text(index == 0
+                                                                        ? specialTotal.toString()
+                                                                        : specialAvailableTotal
                                                                             .toString()), // for handicaped
                                                                     const SizedBox(
                                                                       width: 10,
                                                                     ),
-                                                                    const Icon(
-                                                                        Icons
-                                                                            .not_accessible,
-                                                                        color: Colors
-                                                                            .blue,
-                                                                        size:
-                                                                            15),
-                                                                    Text(index ==
-                                                                            0
-                                                                        ? (available.length + occupied.length + booked.length)
-                                                                            .toString()
-                                                                        : insideParkingInfoFetched['Available Slots']['Total']
+                                                                    const Icon(Icons.not_accessible,
+                                                                        color: Colors.blue, size: 15),
+                                                                    Text(index == 0
+                                                                        ? regularTotal.toString()
+                                                                        : regularAvailableTotal
                                                                             .toString()), // for handicaped
                                                                   ],
                                                                 )),
@@ -1590,13 +1414,11 @@ class _BookingThroughSlotsMapNoAlertDialogState
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Row(
                       children: const [
-                        Icon(Icons.calendar_month_rounded,
-                            color: Colors.indigo),
+                        Icon(Icons.calendar_month_rounded, color: Colors.indigo),
                         SizedBox(width: 10),
                         Text(
                           'Select A Date',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 16),
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                         ),
                       ],
                     ),
@@ -1627,22 +1449,16 @@ class _BookingThroughSlotsMapNoAlertDialogState
                         SizedBox(width: 10),
                         Text(
                           'Select A Vehicule',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 16),
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                         ),
                       ],
                     ),
                   ),
                   SelectVehicule(
                       currentlySIUser: currentlySignedInUser,
-                      updateParkingDetailsAndSelectedDayMapped:
-                          fetchSelectedVehiculeInfo,
-                      reShowSelectedCarCard:
-                          selectedVehiculeInfoMappedFromSelectVehicule.isEmpty
-                              ? false
-                              : true,
-                      selectedCarDetails:
-                          selectedVehiculeInfoMappedFromSelectVehicule),
+                      updateParkingDetailsAndSelectedDayMapped: fetchSelectedVehiculeInfo,
+                      reShowSelectedCarCard: selectedVehiculeInfoMappedFromSelectVehicule.isEmpty ? false : true,
+                      selectedCarDetails: selectedVehiculeInfoMappedFromSelectVehicule),
                 ],
               ),
             ),
@@ -1650,26 +1466,25 @@ class _BookingThroughSlotsMapNoAlertDialogState
         ]);
 
       case 1:
+        debugPrint(
+            "rAvailable $rAvailableIDs \t rBooked $rBookedIDs \t rOccupiedAfterBook $rOccupiedAfterBookedIDs \t SPECIAL rOccupiedNoPriorBooking $rOccupiedNoPriorBookingIDs \n sAvailable $sAvailableIDs \t sBooked $sBookedIDs \t sOccupiedAfterBooked $sOccupiedAfterBookedIDs \t sOccupiedNoPriorBooking $sOccupiedNoPriorBookingIDs \n specialTotal $specialTotal \t specialAvailableTotal $specialAvailableTotal \t regularTotal $regularTotal \t regularAvailableTotal $regularAvailableTotal \t totalParkingCapacity $totalParkingCapacity");
+
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance
-                .collection("slotsReservations")
-                .snapshots(),
+            stream: FirebaseFirestore.instance.collection("slotsReservations").snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Text('');
               } else {
-                String source = snapshot.data!.metadata.hasPendingWrites
-                    ? "Local"
-                    : "Server";
                 slotsReservationsInfoFetchedList = snapshot.data!.docs;
                 //slotsReservationsInfoFetchedAsMapWithData.addAll(slotsReservationsInfoFetchedList.);
                 for (var element in slotsReservationsInfoFetchedList) {
-                  slotsReservationsInfoFetchedAsMapWithData.addAll({
-                    element.id: element.data()
-                  }); //lement id is key and value is the data
+                  slotsReservationsInfoFetchedAsMapWithData
+                      .addAll({element.id: element.data()}); //lement id is key and value is the data
                 }
-                /* debugPrint(
-                    "slotsReservationsInfoFetchedAsMap $slotsReservationsInfoFetchedAsMapWithData"); */
+                debugPrint("slotsReservationsInfoFetchedAsMap $slotsReservationsInfoFetchedAsMapWithData");
+                fetchSlotReservationInfoFromFB(slotsReservationsInfoFetchedAsMapWithData);
+                getAlleySlotsIdWithFBListeners(parkingSlotsTotal);
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1680,8 +1495,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                             Padding(
                               padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Column(
                                     children: [
@@ -1701,9 +1515,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                           ),
                                           Text(
                                             'Select A Spot',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 16),
+                                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                                           ),
                                         ],
                                       ),
@@ -1712,49 +1524,34 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                   Column(
                                     children: [
                                       Container(
-                                        margin: const EdgeInsets.only(
-                                            top: 0, right: 10),
+                                        margin: const EdgeInsets.only(top: 0, right: 10),
                                         width: 100,
                                         height: 78,
                                         child: Card(
                                           color: Colors.white,
                                           elevation: 5,
                                           child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                                5, 5, 10, 5),
+                                            padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
                                             child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
                                                 //FRIST LINE
                                                 Flexible(
                                                   child: SizedBox(
                                                     height: 15,
                                                     child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                       children: [
                                                         Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                      .only(
-                                                                  left: 4.0),
-                                                          child:
-                                                              getParkingSpotIcon(
-                                                                  "legend",
-                                                                  'available'),
+                                                          padding: const EdgeInsets.only(left: 4.0),
+                                                          child: getParkingSpotIcon("legend", 'available'),
                                                         ),
                                                         const Flexible(
                                                           child: FittedBox(
                                                             child: Text(
                                                               "Available",
-                                                              style: TextStyle(
-                                                                  fontSize: 8,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500),
+                                                              style:
+                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
                                                             ),
                                                           ),
                                                         )
@@ -1767,19 +1564,11 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                   child: SizedBox(
                                                     height: 15,
                                                     child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                       children: [
                                                         Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                      .only(
-                                                                  left: 4.0),
-                                                          child:
-                                                              getParkingSpotIcon(
-                                                                  "legend",
-                                                                  "booked"),
+                                                          padding: const EdgeInsets.only(left: 4.0),
+                                                          child: getParkingSpotIcon("legend", "booked"),
                                                         ),
                                                         const SizedBox(
                                                           width: 10,
@@ -1788,11 +1577,8 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                           child: FittedBox(
                                                             child: Text(
                                                               "Booked",
-                                                              style: TextStyle(
-                                                                  fontSize: 8,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500),
+                                                              style:
+                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
                                                             ),
                                                           ),
                                                         )
@@ -1804,9 +1590,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                   child: SizedBox(
                                                     height: 15,
                                                     child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                       children: [
                                                         occupiedSpotIconLegend,
                                                         const SizedBox(
@@ -1816,11 +1600,8 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                           child: FittedBox(
                                                             child: Text(
                                                               "Occupied",
-                                                              style: TextStyle(
-                                                                  fontSize: 8,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500),
+                                                              style:
+                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
                                                             ),
                                                           ),
                                                         )
@@ -1832,30 +1613,18 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                   child: SizedBox(
                                                     height: 15,
                                                     child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                       children: [
                                                         Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                      .only(
-                                                                  left: 3.0,
-                                                                  bottom: 5),
-                                                          child:
-                                                              getParkingSpotIcon(
-                                                                  "legend",
-                                                                  'accessible'),
+                                                          padding: const EdgeInsets.only(left: 3.0, bottom: 5),
+                                                          child: getParkingSpotIcon("legend", 'accessible'),
                                                         ),
                                                         const Flexible(
                                                           child: FittedBox(
                                                             child: Text(
                                                               "Special",
-                                                              style: TextStyle(
-                                                                  fontSize: 8,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500),
+                                                              style:
+                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
                                                             ),
                                                           ),
                                                         )
@@ -1873,15 +1642,13 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                 ],
                               ),
                             ),
-                            insideParkingLayout(
-                                alleyListViewMinHeightToDisplay),
+                            insideParkingLayout(alleyListViewMinHeightToDisplay),
                             addWhiteSpace(40),
                             //
                             Padding(
                               padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Column(
                                     children: [
@@ -1901,9 +1668,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                           ),
                                           Text(
                                             'Select A Time Slot',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 16),
+                                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                                           ),
                                         ],
                                       ),
@@ -1912,41 +1677,31 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                   Column(
                                     children: [
                                       Container(
-                                        margin: const EdgeInsets.only(
-                                            top: 0, right: 10),
+                                        margin: const EdgeInsets.only(top: 0, right: 10),
                                         width: 100,
                                         height: 60,
                                         child: Card(
                                           color: Colors.white,
                                           elevation: 5,
                                           child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(
-                                                5, 5, 10, 5),
+                                            padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
                                             child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
                                                 //FRIST LINE
                                                 Flexible(
                                                   child: SizedBox(
                                                     height: 15,
                                                     child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                       children: [
-                                                        getTimeSpotIcon(
-                                                            'available'),
+                                                        getTimeSpotIcon('available'),
                                                         const Flexible(
                                                           child: FittedBox(
                                                             child: Text(
                                                               "Available",
-                                                              style: TextStyle(
-                                                                  fontSize: 8,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500),
+                                                              style:
+                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
                                                             ),
                                                           ),
                                                         )
@@ -1959,12 +1714,9 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                   child: SizedBox(
                                                     height: 15,
                                                     child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                       children: [
-                                                        getTimeSpotIcon(
-                                                            'booked'),
+                                                        getTimeSpotIcon('booked'),
                                                         const SizedBox(
                                                           width: 10,
                                                         ),
@@ -1972,11 +1724,8 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                           child: FittedBox(
                                                             child: Text(
                                                               "Booked",
-                                                              style: TextStyle(
-                                                                  fontSize: 8,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500),
+                                                              style:
+                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
                                                             ),
                                                           ),
                                                         )
@@ -1988,15 +1737,10 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                   child: SizedBox(
                                                     height: 15,
                                                     child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
+                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                       children: [
                                                         Transform.rotate(
-                                                            angle: 50.15,
-                                                            child:
-                                                                getTimeSpotIcon(
-                                                                    'occupied')),
+                                                            angle: 50.15, child: getTimeSpotIcon('occupied')),
                                                         const SizedBox(
                                                           width: 10,
                                                         ),
@@ -2004,11 +1748,8 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                                           child: FittedBox(
                                                             child: Text(
                                                               "Occupied",
-                                                              style: TextStyle(
-                                                                  fontSize: 8,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500),
+                                                              style:
+                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
                                                             ),
                                                           ),
                                                         )
@@ -2031,10 +1772,8 @@ class _BookingThroughSlotsMapNoAlertDialogState
                             Padding(
                               padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
                               child: Column(children: [
-                                timeSlotsGrid(startTime, endTime,
-                                    slotsReservationsInfoFetchedAsMapWithData),
-                                ElevatedButton(
-                                    onPressed: () {}, child: Text('CLICK'))
+                                timeSlotsGrid(startTime, endTime, slotsReservationsInfoFetchedAsMapWithData),
+
                                 //test()
                               ]),
                             ),
@@ -2072,10 +1811,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                       child: Text(
                         "Slide through the alleys to check all the slots.",
                         style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontFamily: 'OpenSans',
-                            fontWeight: FontWeight.w900),
+                            color: Colors.white, fontSize: 20, fontFamily: 'OpenSans', fontWeight: FontWeight.w900),
                       ),
                     ),
                     Image.asset(
@@ -2093,16 +1829,14 @@ class _BookingThroughSlotsMapNoAlertDialogState
                             child: FittedBox(
                                 child: Text(
                               "DO NOT SHOW EVER AGAIN",
-                              style: TextStyle(
-                                  fontSize: 12, color: Colors.red.shade400),
+                              style: TextStyle(fontSize: 12, color: Colors.red.shade400),
                             ))),
                         FittedBox(
                           child: TextButton(
                               onPressed: () {
                                 Navigator.pop(context, 'show again');
                               },
-                              child: const Text("OK",
-                                  style: TextStyle(fontSize: 12))),
+                              child: const Text("OK", style: TextStyle(fontSize: 12))),
                         ),
                       ],
                     )
@@ -2118,8 +1852,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                   prefs.setBool("dontShowAlleyAlertAgain", false),
                   setState(
                     () {
-                      dontShowAlleyAlertAgainTemporairyly =
-                          true; //temporairement
+                      dontShowAlleyAlertAgainTemporairyly = true; //temporairement
                     },
                   )
                 }
@@ -2132,12 +1865,9 @@ class _BookingThroughSlotsMapNoAlertDialogState
   Icon getParkingSpotIcon(String legendOrInsideSpot, String whichIcon) {
     // don't need to add spotOccupiedIcon because it is NOT an ICON but an IMAGE
     double? iconSize = legendOrInsideSpot == 'legend' ? 13 : 20;
-    Icon spotBookedIcon = Icon(Icons.lock_clock_outlined,
-            size: iconSize, color: Colors.orange.shade700),
-        spotAvailableIcon =
-            Icon(Icons.lock_open_outlined, color: Colors.green, size: iconSize),
-        specialAccessIcon =
-            Icon(Icons.accessible, color: Colors.blue, size: iconSize + 2);
+    Icon spotBookedIcon = Icon(Icons.lock_clock_outlined, size: iconSize, color: Colors.orange.shade700),
+        spotAvailableIcon = Icon(Icons.lock_open_outlined, color: Colors.green, size: iconSize),
+        specialAccessIcon = Icon(Icons.accessible, color: Colors.blue, size: iconSize + 2);
 
     return whichIcon == 'available'
         ? spotAvailableIcon
@@ -2160,373 +1890,290 @@ class _BookingThroughSlotsMapNoAlertDialogState
     );
   }
 
-/*   test() {
-    bool autoValidate = true;
-    bool readOnly = false;
-    bool showSegmentedControl = true;
-    final _formKey = GlobalKey<FormBuilderState>();
-    bool _ageHasError = false;
-    bool _genderHasError = false;
+  Map<String, dynamic> testconvertAllTimesOfDayFetched(
+      Map<String, dynamic> testallBookedTimeSlotsInMinutes, Set<TimeOfDay> timesOfDayFetched) {
+    Set<int> convertedTimesSet = {};
+    Map<String, dynamic> correspondingStartandEndIndexes = {};
 
-    var genderOptions = ['Male', 'Female', 'Other'];
+    for (var element in timesOfDayFetched) {
+      convertedTimesSet.add((element.hour * 60 + element.minute) * 60);
+    }
 
-    void _onChanged(dynamic val) => debugPrint("ANNAM ${val.toString()}");
-    return Column(
-      children: [
-        FormBuilder(
-          key: _formKey,
-          // enabled: false,
-          onChanged: () {
-            _formKey.currentState!.save();
-            debugPrint(_formKey.currentState!.value.toString());
-          },
-          autovalidateMode: AutovalidateMode.disabled,
-          initialValue: const {
-            'movie_rating': 5,
-            'best_language': 'Dart',
-            'age': '13',
-            'gender': 'Male',
-            'languages_filter': ['Dart']
-          },
-          skipDisabled: true,
-          child: Column(
-            children: <Widget>[
-              const SizedBox(height: 15),
-              FormBuilderDateTimePicker(
-                name: 'date',
-                initialEntryMode: DatePickerEntryMode.calendar,
-                initialValue: DateTime.now(),
-                inputType: InputType.both,
-                decoration: InputDecoration(
-                  labelText: 'Appointment Time',
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      _formKey.currentState!.fields['date']?.didChange(null);
-                    },
-                  ),
-                ),
-                initialTime: const TimeOfDay(hour: 8, minute: 0),
-                // locale: const Locale.fromSubtags(languageCode: 'fr'),
-              ),
-              FormBuilderDateRangePicker(
-                name: 'date_range',
-                firstDate: DateTime(1970),
-                lastDate: DateTime(2030),
-                onChanged: _onChanged,
-                decoration: InputDecoration(
-                  labelText: 'Date Range',
-                  helperText: 'Helper text',
-                  hintText: 'Hint text',
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      _formKey.currentState!.fields['date_range']
-                          ?.didChange(null);
-                    },
-                  ),
-                ),
-              ),
-              FormBuilderSlider(
-                name: 'slider',
-                validator: FormBuilderValidators.compose([
-                  FormBuilderValidators.min(6),
-                ]),
-                onChanged: _onChanged,
-                min: 0.0,
-                max: 10.0,
-                initialValue: 7.0,
-                divisions: 20,
-                activeColor: Colors.red,
-                inactiveColor: Colors.pink[100],
-                decoration: const InputDecoration(
-                  labelText: 'Number of things',
-                ),
-              ),
-              FormBuilderRangeSlider(
-                name: 'range_slider',
-                // validator: FormBuilderValidators.compose([FormBuilderValidators.min(context, 6)]),
-                onChanged: _onChanged,
-                min: 0.0,
-                max: 100.0,
-                initialValue: const RangeValues(4, 7),
-                divisions: 20,
-                activeColor: Colors.red,
-                inactiveColor: Colors.pink[100],
-                decoration: const InputDecoration(labelText: 'Price Range'),
-              ),
-              FormBuilderCheckbox(
-                name: 'accept_terms',
-                initialValue: false,
-                onChanged: _onChanged,
-                title: RichText(
-                  text: const TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'I have read and agree to the ',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                      TextSpan(
-                        text: 'Terms and Conditions',
-                        style: TextStyle(color: Colors.blue),
-                        // Flutter doesn't allow a button inside a button
-                        // https://github.com/flutter/flutter/issues/31437#issuecomment-492411086
-                        /*
-                                  recognizer: TapGestureRecognizer()
-                                    ..onTap = () {
-                                      debugPrint('launch url');
-                                    },
-                                  */
-                      ),
-                    ],
-                  ),
-                ),
-                validator: FormBuilderValidators.equal(
-                  true,
-                  errorText: 'You must accept terms and conditions to continue',
-                ),
-              ),
-              FormBuilderTextField(
-                autovalidateMode: AutovalidateMode.always,
-                name: 'age',
-                decoration: InputDecoration(
-                  labelText: 'Age',
-                  suffixIcon: _ageHasError
-                      ? Icon(Icons.error, color: Colors.red)
-                      : const Icon(Icons.check, color: Colors.green),
-                ),
-                onChanged: (val) {
-                  setState(() {
-                    _ageHasError =
-                        !(_formKey.currentState?.fields['age']?.validate() ??
-                            false);
-                  });
-                },
-                // valueTransformer: (text) => num.tryParse(text),
-                validator: FormBuilderValidators.compose([
-                  FormBuilderValidators.required(),
-                  FormBuilderValidators.numeric(),
-                  FormBuilderValidators.max(70),
-                ]),
-                // initialValue: '12',
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.next,
-              ),
-              FormBuilderDropdown<String>(
-                // autovalidate: true,
-                name: 'gender',
-                decoration: InputDecoration(
-                  labelText: 'Gender',
-                  suffix: _genderHasError
-                      ? const Icon(Icons.error)
-                      : const Icon(Icons.check),
-                  hintText: 'Select Gender',
-                ),
-                validator: FormBuilderValidators.compose(
-                    [FormBuilderValidators.required()]),
-                items: genderOptions
-                    .map((gender) => DropdownMenuItem(
-                          alignment: AlignmentDirectional.center,
-                          value: gender,
-                          child: Text(gender),
-                        ))
-                    .toList(),
-                onChanged: (val) {
-                  setState(() {
-                    _genderHasError =
-                        !(_formKey.currentState?.fields['gender']?.validate() ??
-                            false);
-                  });
-                },
-                valueTransformer: (val) => val?.toString(),
-              ),
-              FormBuilderRadioGroup<String>(
-                decoration: const InputDecoration(
-                  labelText: 'My chosen language',
-                ),
-                initialValue: null,
-                name: 'best_language',
-                onChanged: _onChanged,
-                validator: FormBuilderValidators.compose(
-                    [FormBuilderValidators.required()]),
-                options: ['Dart', 'Kotlin', 'Java', 'Swift', 'Objective-C']
-                    .map((lang) => FormBuilderFieldOption(
-                          value: lang,
-                          child: Text(lang),
-                        ))
-                    .toList(growable: false),
-                controlAffinity: ControlAffinity.trailing,
-              ),
-              FormBuilderSegmentedControl(
-                decoration: const InputDecoration(
-                  labelText: 'Movie Rating (Archer)',
-                ),
-                name: 'movie_rating',
-                // initialValue: 1,
-                // textStyle: TextStyle(fontWeight: FontWeight.bold),
-                options: List.generate(5, (i) => i + 1)
-                    .map((number) => FormBuilderFieldOption(
-                          value: number,
-                          child: Text(
-                            number.toString(),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ))
-                    .toList(),
-                onChanged: _onChanged,
-              ),
-              FormBuilderSwitch(
-                title: const Text('I Accept the terms and conditions'),
-                name: 'accept_terms_switch',
-                initialValue: true,
-                onChanged: _onChanged,
-              ),
-              FormBuilderCheckboxGroup<String>(
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: const InputDecoration(
-                    labelText: 'The language of my people'),
-                name: 'languages',
-                // initialValue: const ['Dart'],
-                options: const [
-                  FormBuilderFieldOption(value: 'Dart'),
-                  FormBuilderFieldOption(value: 'Kotlin'),
-                  FormBuilderFieldOption(value: 'Java'),
-                  FormBuilderFieldOption(value: 'Swift'),
-                  FormBuilderFieldOption(value: 'Objective-C'),
-                ],
-                onChanged: _onChanged,
-                separator: const VerticalDivider(
-                  width: 10,
-                  thickness: 5,
-                  color: Colors.red,
-                ),
-                validator: FormBuilderValidators.compose([
-                  FormBuilderValidators.minLength(1),
-                  FormBuilderValidators.maxLength(3),
-                ]),
-              ),
-              FormBuilderFilterChip<String>(
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: const InputDecoration(
-                    labelText: 'The language of my people'),
-                name: 'languages_filter',
-                selectedColor: Colors.red,
-                options: const [
-                  FormBuilderChipOption(
-                    value: 'Dart',
-                    avatar: CircleAvatar(child: Text('D')),
-                  ),
-                  FormBuilderChipOption(
-                    value: 'Kotlin',
-                    avatar: CircleAvatar(child: Text('K')),
-                  ),
-                  FormBuilderChipOption(
-                    value: 'Java',
-                    avatar: CircleAvatar(child: Text('J')),
-                  ),
-                  FormBuilderChipOption(
-                    value: 'Swift',
-                    avatar: CircleAvatar(child: Text('S')),
-                  ),
-                  FormBuilderChipOption(
-                    value: 'Objective-C',
-                    avatar: CircleAvatar(child: Text('O')),
-                  ),
-                ],
-                onChanged: _onChanged,
-                validator: FormBuilderValidators.compose([
-                  FormBuilderValidators.minLength(1),
-                  FormBuilderValidators.maxLength(3),
-                ]),
-              ),
-              FormBuilderChoiceChip<String>(
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: const InputDecoration(
-                    labelText:
-                        'Ok, if I had to choose one language, it would be:'),
-                name: 'languages_choice',
-                initialValue: 'Dart',
-                options: const [
-                  FormBuilderChipOption(
-                    value: 'Dart',
-                    avatar: CircleAvatar(child: Text('D')),
-                  ),
-                  FormBuilderChipOption(
-                    value: 'Kotlin',
-                    avatar: CircleAvatar(child: Text('K')),
-                  ),
-                  FormBuilderChipOption(
-                    value: 'Java',
-                    avatar: CircleAvatar(child: Text('J')),
-                  ),
-                  FormBuilderChipOption(
-                    value: 'Swift',
-                    avatar: CircleAvatar(child: Text('S')),
-                  ),
-                  FormBuilderChipOption(
-                    value: 'Objective-C',
-                    avatar: CircleAvatar(child: Text('O')),
-                  ),
-                ],
-                onChanged: _onChanged,
-              ),
-            ],
-          ),
-        ),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState?.saveAndValidate() ?? false) {
-                    debugPrint(
-                        " ANNAM ${_formKey.currentState?.value.toString()}");
-                  } else {
-                    debugPrint(_formKey.currentState?.value.toString());
-                    debugPrint('validation failed');
-                  }
-                },
-                child: const Text(
-                  'Submit',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  _formKey.currentState?.reset();
-                },
-                // color: Theme.of(context).colorScheme.secondary,
-                child: Text(
-                  'Reset',
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.secondary),
-                ),
-              ),
-            ),
-          ],
-        )
-      ],
+    for (var i = 0; i < testallBookedTimeSlotsInMinutes.length; i++) {
+      var currentEntry = testallBookedTimeSlotsInMinutes.entries.elementAt(i);
+      int firstMatchForStartIndex = 0, firstMatchForEndIndex = 0;
+      for (int convertedIndex = 0; convertedIndex < convertedTimesSet.length - 1; convertedIndex++) {
+        if (convertedTimesSet.elementAt(convertedIndex) <= currentEntry.value['BookingStart'] &&
+            convertedTimesSet.elementAt(convertedIndex + 1) >= currentEntry.value['BookingStart']) {
+          firstMatchForStartIndex = convertedIndex ~/ 2;
+        }
+
+        if (convertedTimesSet.elementAt(convertedIndex) <= currentEntry.value['BookingEnd'] &&
+            convertedTimesSet.elementAt(convertedIndex + 1) > currentEntry.value['BookingEnd']) {
+          firstMatchForEndIndex = convertedIndex ~/ 2;
+        }
+
+        correspondingStartandEndIndexes.addAll({
+          testallBookedTimeSlotsInMinutes.keys.elementAt(i): {
+            'startIndex': firstMatchForStartIndex,
+            'endIndex': firstMatchForEndIndex
+          }
+        });
+      }
+    }
+
+    debugPrint(
+        "allBookedTimeSlotsInMinutes $testallBookedTimeSlotsInMinutes ____ correspondingIndexes $correspondingStartandEndIndexes ");
+    return correspondingStartandEndIndexes;
+  }
+
+  void fetchSlotReservationInfoFromFB(Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
+    /* DateTime currentlySelectedDateForTimeSlotAvailability =
+        bookerFirstPageInfoMapped['Selected Day'];
+ */
+    var sameDayReservationAsUserList = slotsReservationsInfoFetchedAsMapWithData.entries.where(
+      (element) {
+        var res = slotsReservationsInfoFetchedAsMapWithData.entries.where((element1) {
+          var oj = element1.value as Map<String,
+              dynamic>; //fetching all the timeSlots that are booked for the selectedDay if USER HAS NOT CLICKED YET ON ANY PARKING SPOT
+          var timeST = oj['BookingStart'] as Timestamp;
+          return timeST.toDate().day == selectedDay.day &&
+              timeST.toDate().month == selectedDay.month &&
+              timeST.toDate().year == selectedDay.year &&
+              oj['ParkingID'] == widget.receivedID;
+        });
+        return res.any((element2) => element2.key == element.key);
+      },
     );
-  } */
-}
+
+    for (var singleReservationSameDayAsUserSelectedDay in sameDayReservationAsUserList) {
+      var singleReservationNoKeyCasted = singleReservationSameDayAsUserSelectedDay.value as Map<String, dynamic>;
+      var singleBookingStartTimeStamp = singleReservationNoKeyCasted['BookingStart'] as Timestamp;
+      var singleBookingEndTimeStamp = singleReservationNoKeyCasted['BookingEnd'] as Timestamp;
+
+      allReservationsSameDaySameParkingWithKey
+          .addAll({singleReservationSameDayAsUserSelectedDay.key: singleReservationNoKeyCasted});
+      debugPrint("singleReservationNoKeyCasted $singleReservationNoKeyCasted");
+
+      testallBookedTimeSlots.addAll({
+        singleReservationSameDayAsUserSelectedDay.key: {
+          'BookingStart': TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()),
+          'BookingEnd': TimeOfDay.fromDateTime(singleBookingEndTimeStamp.toDate()),
+        }
+      });
+      int bookedTimeStartInt = (TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()).hour * 60 +
+                  TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()).minute) *
+              60,
+          bookedTimeEndInt = (TimeOfDay.fromDateTime(singleBookingEndTimeStamp.toDate()).hour * 60 +
+                  TimeOfDay.fromDateTime(singleBookingEndTimeStamp.toDate()).minute) *
+              60;
+      testallBookedTimeSlotsInMinutes.addAll({
+        singleReservationSameDayAsUserSelectedDay.key: {
+          'BookingStart': bookedTimeStartInt,
+          'BookingEnd': bookedTimeEndInt,
+        }
+      });
+      debugPrint("testallBookedTimeSlotsInMinutes $testallBookedTimeSlotsInMinutes");
+    }
+  }
+
+  Iterable<MapEntry<String, dynamic>> getWithinXHoursAvailabalitySatus(int availabilityHoursInterval) {
+    int selectedDayPlusXHourToInt = ((selectedDay.hour + availabilityHoursInterval) * 60 + selectedDay.minute) * 60,
+        selectedDayToInt = ((selectedDay.hour) * 60 + selectedDay.minute) * 60;
+
+    var work = allReservationsSameDaySameParkingWithKey.entries.where((entry) {
+      var matchingTimeStampEntry = testallBookedTimeSlotsInMinutes.entries.where((element) => element.key == entry.key);
+      var matchingTSEntryFinal = matchingTimeStampEntry.first.value as Map<String, dynamic>;
+      return matchingTSEntryFinal['BookingStart'] >= selectedDayToInt &&
+              matchingTSEntryFinal['BookingStart'] <= selectedDayPlusXHourToInt ||
+          matchingTSEntryFinal['BookingEnd'] >= selectedDayToInt &&
+              matchingTSEntryFinal['BookingEnd'] <= selectedDayPlusXHourToInt;
+    });
+
+    return work;
+  }
+
+  batchWriteInsideParkingInfo() async {
+    currentlySignedInUser = firebaseService.auth.currentUser;
+    CollectionReference collectionRef = myDB.collection("locations/${widget.receivedID}/insideParkingInfo");
+    WriteBatch batch = myDB.batch();
+
+    batch.set(
+      collectionRef.doc(),
+      {
+        'Fee per 30 minutes': 500,
+        'Special': {
+          'Available': {
+            'IDs': ['A3', 'B6'],
+            'Total': 2
+          },
+          'Booked': {'IDs': [], 'Total': 0},
+          'Occupied': {
+            'From Real Parking': {
+              'IDs': ['B4', 'B5'],
+              'Total': 2
+            },
+            'From Booking': {'IDs': [], 'Total': 0},
+          },
+          'Total': 4,
+        },
+        'Regular': {
+          'Available': {
+            'IDs': ['A0', 'A1', 'A2', 'A4', 'B0', 'B2', 'B3'],
+            'Total': 7
+          },
+          'Booked': {
+            'IDs': ['B1'],
+            'Total': 1
+          },
+          'Occupied': {
+            'From Real Parking': {
+              'IDs': ['A6', 'A5'],
+              'Total': 2
+            },
+            'From Booking': {'IDs': [], 'Total': 0},
+          },
+          'Total': 10,
+        },
+        'Total': 14
+      },
+    );
+
+    await batch.commit().whenComplete(() => debugPrint("SUCCESSFULLY WRITTEN INSIDE PARKING TO FIREBASE"));
+  }
+
+  void fetchParkingSlotsInfoFromFB() {
+    if (insideParkingInfoFetched.isNotEmpty) {
+      var cast1 = insideParkingInfoFetched['Regular']['Available'] as Map<String, dynamic>;
+      var castedRAvailableSlotsItems = cast1['IDs'] as List;
+      rAvailableIDs.addAll(castedRAvailableSlotsItems);
+
+      var cast2 = insideParkingInfoFetched['Regular']['Booked'] as Map<String, dynamic>;
+      var castedRBookedSlotsList = cast2['IDs'] as List;
+      rBookedIDs.addAll(castedRBookedSlotsList);
+
+      var cast3 = insideParkingInfoFetched['Regular']['Occupied'] as Map<String, dynamic>;
+
+      var cast31 = cast3['From Booking'] as Map<String, dynamic>;
+      var castedROccupiedAfterBook = cast31['IDs'] as List;
+      rOccupiedAfterBookedIDs.addAll(castedROccupiedAfterBook);
+
+      var cast32 = cast3['From Real Parking'] as Map<String, dynamic>;
+      var castedROccupiedNoPriorBooking = cast32['IDs'] as List;
+      rOccupiedNoPriorBookingIDs.addAll(castedROccupiedNoPriorBooking);
+
+      var cast4 = insideParkingInfoFetched['Special']['Available'] as Map<String, dynamic>;
+      var castedSAvailable = cast4['IDs'] as List;
+      sAvailableIDs.addAll(castedSAvailable);
+
+      var cast5 = insideParkingInfoFetched['Special']['Booked'] as Map<String, dynamic>;
+      var castedSBookedSlotsList = cast5['IDs'] as List;
+      sBookedIDs.addAll(castedSBookedSlotsList);
+
+      var cast6 = insideParkingInfoFetched['Special']['Occupied'] as Map<String, dynamic>;
+
+      var cast61 = cast6['From Booking'] as Map<String, dynamic>;
+      var castedSOccupiedAfterBook = cast61['IDs'] as List;
+      sOccupiedAfterBookedIDs.addAll(castedSOccupiedAfterBook);
+
+      var cast62 = cast6['From Real Parking'] as Map<String, dynamic>;
+      var castedSOccupiedNoPriorBooking = cast62['IDs'] as List;
+      sOccupiedNoPriorBookingIDs.addAll(castedSOccupiedNoPriorBooking);
+
+      allSpecialSpotsIDs = [sBookedIDs, sAvailableIDs, sOccupiedAfterBookedIDs, sOccupiedNoPriorBookingIDs]
+          .expand((element) => element)
+          .toSet();
+
+      allRegularSpotsID = [
+        rBookedIDs,
+        rAvailableIDs,
+        rOccupiedAfterBookedIDs,
+        rOccupiedNoPriorBookingIDs,
+        sBookedIDs,
+      ].expand((element) => element).toSet();
+
+      specialTotal = allSpecialSpotsIDs.length;
+      specialAvailableTotal = sAvailableIDs.length;
+      regularTotal = allRegularSpotsID.length;
+      regularAvailableTotal = rAvailableIDs.length;
+      totalParkingCapacity = insideParkingInfoFetched['Total'];
+    }
+    debugPrint(
+        "rAvailable $rAvailableIDs \t rBooked $rBookedIDs \t rOccupiedAfterBook $rOccupiedAfterBookedIDs \t SPECIAL rOccupiedNoPriorBooking $rOccupiedNoPriorBookingIDs \n sAvailable $sAvailableIDs \t sBooked $sBookedIDs \t sOccupiedAfterBooked $sOccupiedAfterBookedIDs \t sOccupiedNoPriorBooking $sOccupiedNoPriorBookingIDs \n specialTotal $specialTotal \t specialAvailableTotal $specialAvailableTotal \t regularTotal $regularTotal \t regularAvailableTotal $regularAvailableTotal \t totalParkingCapacity $totalParkingCapacity");
+  }
+
+  void createAlleysMappingWithIDs(int alleyBindexStart, int j) {
+    for (var i = 0; i < parkingSlotsTotal; i++) {
+      (i < parkingSlotsTotal ~/ 2)
+          ? {
+              alleyA.add("A$i"),
+              mappedSelectedSlotAlley.add({
+                "alleyA_Id": alleyA.elementAt(i) /* "A$i" */,
+                "isSlotSelected": false,
+                "isSlotBooked": rBookedIDs.contains("A$i") || sBookedIDs.contains("A$i") ? true : false,
+                "isSlotOccupied": {
+                  'AfterBooked':
+                      rOccupiedAfterBookedIDs.contains("A$i") || sOccupiedAfterBookedIDs.contains("A$i") ? true : false,
+                  'NoPriorBooking':
+                      rOccupiedNoPriorBookingIDs.contains("A$i") || sOccupiedNoPriorBookingIDs.contains("A$i")
+                          ? true
+                          : false,
+                },
+                "isSlotFree": rAvailableIDs.contains("A$i") || sAvailableIDs.contains("A$i") ? true : false,
+                "isSpecialSpot": allSpecialSpotsIDs.contains("A$i") ? true : false,
+                "isBookedWithinXHours": withinXHoursParkingSpotIDsToShow.values.contains("A$i") ? true : false,
+                "highlightColor": Colors.transparent
+              })
+            }
+          : {
+              alleyB.add("B${j++}"),
+              mappedSelectedSlotAlley.add({
+                "alleyB_Id": alleyB
+                    .elementAt(i - alleyBindexStart), //3 because at this point, i = 3 and I need the counter to reset
+                "isSlotSelected": false,
+                "isSlotBooked":
+                    rBookedIDs.contains("B${i - alleyBindexStart}") || sBookedIDs.contains("B${i - alleyBindexStart}")
+                        ? true
+                        : false,
+                "isSlotOccupied": {
+                  'AfterBooked': rOccupiedAfterBookedIDs.contains("B${i - alleyBindexStart}") ||
+                          sOccupiedAfterBookedIDs.contains("B${i - alleyBindexStart}")
+                      ? true
+                      : false,
+                  'NoPriorBooking': rOccupiedNoPriorBookingIDs.contains("B${i - alleyBindexStart}") ||
+                          sOccupiedNoPriorBookingIDs.contains("B${i - alleyBindexStart}")
+                      ? true
+                      : false,
+                },
+                "isSlotFree": rAvailableIDs.contains("B${i - alleyBindexStart}") ||
+                        sAvailableIDs.contains("B${i - alleyBindexStart}")
+                    ? true
+                    : false,
+                "isSpecialSpot": allSpecialSpotsIDs.contains("B${i - alleyBindexStart}") ? true : false,
+                "isBookedWithinXHours":
+                    withinXHoursParkingSpotIDsToShow.values.contains("B${i - alleyBindexStart}") ? true : false,
+
+                "highlightColor": Colors.transparent
+              })
+            };
+    }
+
+    debugPrint("ALLEY A : $alleyA ______________ ALLEY B : $alleyB");
+    debugPrint("mappedAlleysAndSlotIdsStatus : \t $mappedSelectedSlotAlley ");
+    mappedAlleysAndSlotIds.addAll({
+      'Alley A': alleyA,
+      'Alley B': alleyB,
+    });
+  }
+} //CLSOGIN BRACKS
 
 //
 class DashedSeparatedBordersPainterLTRB extends CustomPainter {
   bool left = false, top = false, right = false, bottom = false;
 
-  DashedSeparatedBordersPainterLTRB(
-      this.left, this.top, this.right, this.bottom);
+  DashedSeparatedBordersPainterLTRB(this.left, this.top, this.right, this.bottom);
 
-  void drawDashedLeftBorder(
-      Canvas canvas,
-      Size size,
-      Paint paint,
-      int dashWidth,
-      int dashSpace,
-      double paintStartXmin,
+  void drawDashedLeftBorder(Canvas canvas, Size size, Paint paint, int dashWidth, int dashSpace, double paintStartXmin,
       double paintStartYmax) {
     double startX = paintStartXmin;
     double y = size.height; //final destination
@@ -2536,8 +2183,8 @@ class DashedSeparatedBordersPainterLTRB extends CustomPainter {
     }
   }
 
-  void drawDashedTopBorder(Canvas canvas, Size size, Paint paint, int dashWidth,
-      int dashSpace, double paintStartXmin, double paintStartYmax) {
+  void drawDashedTopBorder(Canvas canvas, Size size, Paint paint, int dashWidth, int dashSpace, double paintStartXmin,
+      double paintStartYmax) {
     double startX = paintStartXmin;
     double y = paintStartYmax;
     while (startX < size.width) {
@@ -2548,8 +2195,8 @@ class DashedSeparatedBordersPainterLTRB extends CustomPainter {
     }
   }
 
-  void drawDashedRightBorder(Canvas canvas, Size size, Paint paint,
-      int dashWidth, int dashSpace, double paintStartYmax) {
+  void drawDashedRightBorder(
+      Canvas canvas, Size size, Paint paint, int dashWidth, int dashSpace, double paintStartYmax) {
     double startX = size.width;
     double y = size.height; //final destination
     while (y > paintStartYmax) {
@@ -2558,14 +2205,8 @@ class DashedSeparatedBordersPainterLTRB extends CustomPainter {
     }
   }
 
-  void drawDashedBottomBorder(
-      Canvas canvas,
-      Size size,
-      Paint paint,
-      int dashWidth,
-      int dashSpace,
-      double paintStartXmin,
-      double paintStartYmin) {
+  void drawDashedBottomBorder(Canvas canvas, Size size, Paint paint, int dashWidth, int dashSpace,
+      double paintStartXmin, double paintStartYmin) {
     double startX = paintStartXmin;
     double y = paintStartYmin + 1;
     while (startX < size.width) {
@@ -2592,22 +2233,14 @@ class DashedSeparatedBordersPainterLTRB extends CustomPainter {
     double paintStartYmin = size.height;
 
     left == true
-        ? drawDashedLeftBorder(canvas, size, paint, dashWidth, dashSpace,
-            paintStartXmin, paintStartYmax)
+        ? drawDashedLeftBorder(canvas, size, paint, dashWidth, dashSpace, paintStartXmin, paintStartYmax)
         : null;
 
-    top == true
-        ? drawDashedTopBorder(canvas, size, paint, dashWidth, dashSpace,
-            paintStartXmin, paintStartYmax)
-        : null;
-    right == true
-        ? drawDashedRightBorder(
-            canvas, size, paint, dashWidth, dashSpace, paintStartYmax)
-        : null;
+    top == true ? drawDashedTopBorder(canvas, size, paint, dashWidth, dashSpace, paintStartXmin, paintStartYmax) : null;
+    right == true ? drawDashedRightBorder(canvas, size, paint, dashWidth, dashSpace, paintStartYmax) : null;
 
     bottom == true
-        ? drawDashedBottomBorder(canvas, size, paint, dashWidth, dashSpace,
-            paintStartXmin, paintStartYmin)
+        ? drawDashedBottomBorder(canvas, size, paint, dashWidth, dashSpace, paintStartXmin, paintStartYmin)
         : null;
   }
 
