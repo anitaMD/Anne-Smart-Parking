@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/booking_overview.dart';
@@ -35,7 +36,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       singleSpotWidth = 120,
       spaceBetweenSlots = 35.0,
       alleySpotWidthRatio = 1 / 4;
-  bool isSelected = false;
+  bool isSelected = false, anyReservationForSelectedDay = false;
 
   Transform occupiedSpotIconLegend = Transform.rotate(
       angle: 50.15,
@@ -58,8 +59,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       slotsReservationsInfoFetchedAsMapWithData = {};
   Map<String, Set> mappedAlleysAndSlotIds = {};
   late Map<String, dynamic> mappedInfoFromWidget = {};
-
-  bool test = true;
+  Map<String, dynamic> correspondingStartandEndIndexes = {};
+  List<Map<String, dynamic>> withinXHoursParkingSpotInfosNeeded = [];
+  bool test = true, rebuildIDLists = false;
 
 //RESERVATION VARS
   bool isReservationDayPicked = false,
@@ -87,7 +89,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       specialAvailableTotal = 0,
       regularTotal = 0,
       regularAvailableTotal = 0,
-      totalParkingCapacity = 0;
+      totalParkingCapacity = 0,
+      previouslyReachedStep = 0;
   //OccupiedNoPriorBooking for cars parked onlhy by interacting with the real parking and didn't use the app to book like taxis or whatever
   Set<String> spotIDsWithinXHoursList = {},
       spotIDsWithinXHoursBookedNotOccupied = {},
@@ -97,7 +100,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
 //BOOKER
 
-  Map<String, dynamic> testallBookedTimeSlotsInMinutes = {}, withinXHoursParkingSpotIDsToShow = {};
+  Map<String, dynamic> testallBookedTimeSlotsInMinutes = {};
   Set<TimeOfDay> allBookedTimeSlots = {};
   Map<String, dynamic> testallBookedTimeSlots = {}, allReservationsSameDaySameParkingWithKey = {};
   Set<TimeOfDay> timesOfDayFetched = {};
@@ -111,7 +114,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       timeSlotGridController = ScrollController(),
       infoListViewController = ScrollController(),
       bodyScrollBarController = ScrollController();
-  int activeStep = 0, upperBound = 2, stop = 0; //do not remove any of these
+  int activeStep = 0, upperBound = 2, stop = 0, selectedDayIndex = 0; //do not remove any of these
   var timeSlotAvailable = {}, timeSlotCurrentlyOccupied = {}, timeSlotbooked = {};
 
   @override
@@ -267,7 +270,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   if (!snapshot.hasData) {
                     return const Text('');
                   } else {
-                    String source = snapshot.data!.metadata.hasPendingWrites ? "Local" : "Server";
+                    //String source = snapshot.data!.metadata.hasPendingWrites ? "Local" : "Server";
                     // insideParkingInfoFetched.clear();
                     insideParkingInfoFetched = snapshot.data!.docs[0].data(); //PUT BACK 0
                     for (var element in widget.mappedParkingsGeneralInfo.entries) {
@@ -289,13 +292,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 //come back here and put whatever as Map<String, dynamic> and treat the data isntead of splitting
                         linkedParkingNameAndInsideInfo
                             .addAll({'Parking Name': currentlySelectedParkingsName, 'Info': insideParkingInfoFetched});
-                        /* snapshot.data!.docs[0]
-                            .data()
-                            .update('Occupied Slots', (value) => 2); */
                       }
                     }
                     parkingSlotsTotal = insideParkingInfoFetched["Total"];
-                    fetchParkingSlotsInfoFromFB();
+                    fetchParkingSlotsInfoFromFB(); //do not remove
+                    //allListeners();
                     debugPrint(
                         "DATA SNAP: linkedParkingNameAndInsideInfo $linkedParkingNameAndInsideInfo \t insideParkingInfoFetched $insideParkingInfoFetched");
 
@@ -316,7 +317,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     Set timeSlotCardBookedIndex = <int>{};
 
     for (var element in bookedIntervalsSlotColor.values) {
-      debugPrint("MALA : $element");
+      debugPrint("bookedIntervalsSlotColor : $element");
       index >= element['startIndex'] && index <= element['endIndex'] ? timeSlotCardBookedIndex.add(index) : null;
     }
     /*
@@ -365,15 +366,38 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 ? Colors.orange */
             
         */
-    debugPrint(" PFF ${bookedIntervalsSlotColor.values}");
-    return timesOfDayFetched.isEmpty
-        ? Colors.blue
-        : context.watch<StateManagement>().selectedTime == timesOfDayFetched.elementAt(index)
-            ? selectedTimeSlotColor
-            /*  : timeSlotCardBookedIndex.any((element) => element == index) == true
+    var indexesToDisplayWithnXHours = [];
+    debugPrint(" getSelectedTimeSlotColor ${bookedIntervalsSlotColor.values} __ $indexesToDisplayWithnXHours");
+
+    if (withinXHoursParkingSpotInfosNeeded.isNotEmpty) {
+      for (var element in withinXHoursParkingSpotInfosNeeded) {
+        var one = element.values;
+        var ok = one.last as List; //the indexes in question
+        debugPrint("THAT'S Ok $ok");
+        indexesToDisplayWithnXHours.add(ok);
+      }
+    } else {
+      indexesToDisplayWithnXHours.clear();
+    }
+
+    debugPrint("ALLEYS INFO ${mappedSelectedSlotAlley.elementAt(index ~/ 2)}");
+    debugPrint(
+        "getSelectedTimeSlotColor indexesToDisplayWithnXHours: $indexesToDisplayWithnXHours _ selectedDayToInt ${(selectedDay.hour * 60 + selectedDay.minute) * 60}");
+    return context.watch<StateManagement>().selectedTime == timesOfDayFetched.elementAt(index)
+        ? selectedTimeSlotColor
+        : previouslyReachedStep == 1 && anyReservationForSelectedDay == false
+            ? Colors.white
+            : indexesToDisplayWithnXHours.isNotEmpty &&
+                    indexesToDisplayWithnXHours.any((element) {
+                          element as List;
+                          return index >= element.first && index <= element.last && index >= selectedDayIndex;
+                        }) ==
+                        true
+                ? Colors.orange
+                : Colors.white; //ADD ANOTHER CONDITION FOR WHEN USER CLICKS ON PARKING SPOT
+
+    /*  : timeSlotCardBookedIndex.any((element) => element == index) == true
                 ? Colors.orange */ //ADD IF PARKING SPOT IS SELECTED TOO
-            : Colors.white;
-    //: Colors.white;
   }
 
   fetchAlleySelectedSlotId(int i, String alley) {
@@ -382,6 +406,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       // DO NOT MOVE OR REMOVE THE UPPER LINE CMD. It has to put everything to false before putting only the selected slot to true
       singleAlleyInfo.update('highlightColor', (value) => Colors.transparent);
       refreshSlotColorState(Colors.transparent);
+
       if (singleAlleyInfo.keys.first.contains('B') && alley.contains('B')) {
         mappedSelectedSlotAlley.elementAt(i + parkingSlotsTotal ~/ 2) ==
                 singleAlleyInfo //parkingSlotsTotal ~/ 2 = 3 needed to get to the B section because the received i in parameters is limited to half the total number of slots
@@ -473,11 +498,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                   :  */
                                               rOccupiedAfterBookedIDs.contains("A$i") ||
                                                       sOccupiedAfterBookedIDs.contains("A$i")
-                                                  ? occupiedSpotIconLegend
+                                                  ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
                                                   : spotIDsWithinXHoursBookedAndOccupied.contains("A$i") ||
                                                           rOccupiedNoPriorBookingIDs.contains("A$i") ||
                                                           sOccupiedNoPriorBookingIDs.contains("A$i")
-                                                      ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
+                                                      ? occupiedSpotIconLegend
                                                       : spotIDsWithinXHoursBookedThenFreed.contains("A$i") ||
                                                               sAvailableIDs.contains("A$i") ||
                                                               rAvailableIDs.contains("A$i")
@@ -540,25 +565,20 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                         Flexible(
                                           child: rOccupiedAfterBookedIDs.contains("B$i") ||
                                                   sOccupiedAfterBookedIDs.contains("B$i")
-                                              ? occupiedSpotIconLegend
+                                              ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
                                               : spotIDsWithinXHoursBookedAndOccupied.contains("B$i") ||
                                                       rOccupiedNoPriorBookingIDs.contains("B$i") ||
                                                       sOccupiedNoPriorBookingIDs.contains("B$i")
-                                                  ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
+                                                  ? occupiedSpotIconLegend
                                                   : spotIDsWithinXHoursBookedThenFreed.contains("B$i") ||
                                                           sAvailableIDs.contains("B$i") ||
                                                           rAvailableIDs.contains("B$i")
                                                       ? getParkingSpotIcon("insideSpot", 'available')
-                                                      : getParkingSpotIcon("insideSpot", 'booked'),
-                                          /* available.contains("B$i") ||
-                                                  specialAvailable.contains("B$i")
-                                              ? getParkingSpotIcon(
-                                                  "insideSpot", 'available')
-                                              : occupied.contains("B$i") ||
-                                                      specialOccupied.contains("B$i")
-                                                  ? occupiedSpotIconLegend
-                                                  : getParkingSpotIcon(
-                                                      "insideSpot", 'booked') */
+                                                      : mappedSelectedSlotAlley.elementAt(
+                                                                  i + parkingSlotsTotal ~/ 2)['isBookedWithinXHours'] ==
+                                                              true
+                                                          ? getParkingSpotIcon("insideSpot", 'booked')
+                                                          : getParkingSpotIcon("insideSpot", 'available'),
                                         ),
                                       ],
                                     ),
@@ -591,94 +611,23 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   }
 
   getAlleySlotsIdWithFBListeners(parkingSlotsTotal) {
-    var withinXHoursEntriesFetched = getWithinXHoursAvailabalitySatus(3);
-    FirebaseFirestore.instance
-        .collection("slotsReservations")
-        .where("ParkingID", isEqualTo: widget.receivedID)
-        .snapshots()
-        .listen((event) {
-      //by default, someone who books will not be parked yet. so VEHICULESTATUS will be not yet parked
-      for (var change in event.docChanges) {
-        switch (change.type) {
-          case DocumentChangeType.added:
-            debugPrint("Slots Reservations Document Just Loaded: ${change.doc.data()}");
-            break;
-          case DocumentChangeType.modified:
-            debugPrint("Slots Reservations Document Just EDITED: ${change.doc.data()}");
-            if (change.doc.data()!['VehiculeStatus'] == 'Parked') {
-              spotIDsWithinXHoursBookedNotOccupied.remove(change.doc.data()!['SlotID']);
-              spotIDsWithinXHoursBookedAndOccupied.add(change.doc.data()!['SlotID']);
-            }
-            if (change.doc.data()!['VehiculeStatus'] == 'Gone') {
-              spotIDsWithinXHoursBookedAndOccupied.remove(change.doc.data()!['SlotID']);
-              spotIDsWithinXHoursBookedThenFreed.add(change.doc.data()!['SlotID']);
-            }
-            break;
-          case DocumentChangeType.removed:
-            debugPrint("Reservation DONE SO Archived: ${change.doc.data()}");
-            break;
-        }
-      }
-    });
-    //FIND A WAY TO LINK THESE TWO EVENT LISTENERS TRHOUG BOOKED AND OCCUPIDETHENBOOKED. available will depen on these so no need to touch it
-    FirebaseFirestore.instance
-        .collection("locations/${widget.receivedID}/insideParkingInfo")
-        .where("Fee per 30 minutes", isGreaterThan: 400)
-        .snapshots()
-        .listen((event) {
-      for (var change in event.docChanges) {
-        switch (change.type) {
-          case DocumentChangeType.added:
-            debugPrint("Inside Parking Info Document Just Loaded: ${change.doc.data()}");
-            break;
-          case DocumentChangeType.modified:
-            debugPrint("Inside Parking Info Document Just EDITED: ${change.doc.data()}");
-
-            if (change.doc.data()!['Regular']['Available']['Booked'] == 'Parked') {
-              spotIDsWithinXHoursBookedNotOccupied.remove(change.doc.data()!['SlotID']);
-              spotIDsWithinXHoursBookedAndOccupied.add(change.doc.data()!['SlotID']);
-            }
-            if (change.doc.data()!['VehiculeStatus'] == 'Gone') {
-              spotIDsWithinXHoursBookedAndOccupied.remove(change.doc.data()!['SlotID']);
-              spotIDsWithinXHoursBookedThenFreed.add(change.doc.data()!['SlotID']);
-            }
-
-            break;
-          case DocumentChangeType.removed:
-            debugPrint("Reservation DONE SO Archived: ${change.doc.data()}");
-            break;
-        }
-      }
-    });
-
-    for (var element in withinXHoursEntriesFetched) {
-      var values = element.value as Map<String, dynamic>;
-      spotIDsWithinXHoursList.add(values['SlotID']);
-      values['VehiculeStatus'] == 'Parked'
-          ? spotIDsWithinXHoursBookedAndOccupied.add(values['SlotID'])
-          : values['VehiculeStatus'] == 'Not Yet Parked'
-              ? spotIDsWithinXHoursBookedNotOccupied.add(values['SlotID'])
-              : spotIDsWithinXHoursBookedThenFreed.add(values['SlotID']);
-    }
-    withinXHoursParkingSpotIDsToShow.addAll({
-      'All Spot IDs': spotIDsWithinXHoursList,
-      'WithinXHoursBookedNotOccupied': spotIDsWithinXHoursBookedNotOccupied,
-      'WithinXHoursBookedThenFree': spotIDsWithinXHoursBookedThenFreed,
-      'WithinXHoursBookedAndOccupied': spotIDsWithinXHoursBookedAndOccupied
-    });
-    debugPrint("WORKED $withinXHoursEntriesFetched ______ $withinXHoursParkingSpotIDsToShow");
-
+    listeningToInsideParkingRealTime();
     int alleyBindexStart = parkingSlotsTotal ~/ 2;
     var j = 0;
-    //fetchParkingSlotsInfoFromFB();
+    fetchParkingSlotsInfoFromFB();
     createAlleysMappingWithIDs(alleyBindexStart, j);
     debugPrint("mappedAlleysAndSlotIds : $mappedAlleysAndSlotIds");
   }
 
   insideParkingLayout(double alleyListViewMinHeightToDisplay) {
     double kindaWorkingContainerHeightForAlleys = ((parkingSlotsTotal ~/ 2) - 0.5) * 80;
-    //print("kindaWorkingContainerHeightForAlleys $kindaWorkingContainerHeightForAlleys");
+    //debugPrint("kindaWorkingContainerHeightForAlleys $kindaWorkingContainerHeightForAlleys");
     return GestureDetector(
+      onVerticalDragStart: (details) {
+        setState(() {
+          previouslyReachedStep = 5;
+        }); //just cto not have 2 for spot booking part
+      },
       onVerticalDragCancel: () async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         var status = prefs.getBool('dontShowAlleyAlertAgain') ?? true;
@@ -864,7 +813,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   //primary: false,
                   controller: timeSlotGridController,
                   shrinkWrap: true,
-                  itemCount: timesOfDayFetched.toList().isEmpty ? 10 : (timesOfDayFetched.toList().length ~/ 2),
+                  itemCount: timesOfDayFetched.toList().isEmpty ? 10 : ((timesOfDayFetched.toList().length - 1) ~/ 2),
 
                   ///becaause I used two items per bloc
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -888,7 +837,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                 child: timesOfDayFetched.toList().isEmpty
                                     ? null
                                     : Center(
-                                        child: (index + 1) == timesOfDayFetched.toList().length
+                                        child: (index * 2 + 1) == timesOfDayFetched.toList().length
                                             ? null
                                             : GridTile(
                                                 child: Padding(
@@ -1221,6 +1170,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         onPressed: () {
           activeStep > 0
               ? setState(() {
+                  previouslyReachedStep = activeStep;
+
                   activeStep -= 1;
                 })
               : null;
@@ -1468,15 +1419,22 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       case 1:
         debugPrint(
             "rAvailable $rAvailableIDs \t rBooked $rBookedIDs \t rOccupiedAfterBook $rOccupiedAfterBookedIDs \t SPECIAL rOccupiedNoPriorBooking $rOccupiedNoPriorBookingIDs \n sAvailable $sAvailableIDs \t sBooked $sBookedIDs \t sOccupiedAfterBooked $sOccupiedAfterBookedIDs \t sOccupiedNoPriorBooking $sOccupiedNoPriorBookingIDs \n specialTotal $specialTotal \t specialAvailableTotal $specialAvailableTotal \t regularTotal $regularTotal \t regularAvailableTotal $regularAvailableTotal \t totalParkingCapacity $totalParkingCapacity");
-
+        slotsReservationsInfoFetchedAsMapWithData.isNotEmpty == true
+            ? slotsReservationsInfoFetchedAsMapWithData.clear
+            : null;
+        debugPrint("IS CLEAR :$slotsReservationsInfoFetchedAsMapWithData");
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: FirebaseFirestore.instance.collection("slotsReservations").snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Text('');
               } else {
+                slotsReservationsInfoFetchedAsMapWithData.isNotEmpty == true
+                    ? slotsReservationsInfoFetchedAsMapWithData.clear
+                    : null;
                 slotsReservationsInfoFetchedList = snapshot.data!.docs;
                 //slotsReservationsInfoFetchedAsMapWithData.addAll(slotsReservationsInfoFetchedList.);
+
                 for (var element in slotsReservationsInfoFetchedList) {
                   slotsReservationsInfoFetchedAsMapWithData
                       .addAll({element.id: element.data()}); //lement id is key and value is the data
@@ -1893,12 +1851,18 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   Map<String, dynamic> testconvertAllTimesOfDayFetched(
       Map<String, dynamic> testallBookedTimeSlotsInMinutes, Set<TimeOfDay> timesOfDayFetched) {
     Set<int> convertedTimesSet = {};
-    Map<String, dynamic> correspondingStartandEndIndexes = {};
 
     for (var element in timesOfDayFetched) {
       convertedTimesSet.add((element.hour * 60 + element.minute) * 60);
     }
 
+    for (var i = 0; i < convertedTimesSet.length - 1; i++) {
+      int selectedDayToInt = (selectedDay.hour * 60 + selectedDay.minute) * 60;
+      convertedTimesSet.elementAt(i) < selectedDayToInt && convertedTimesSet.elementAt(i + 1) > selectedDayToInt
+          ? selectedDayIndex = (i + 1) ~/ 2
+          : null;
+    }
+    testallBookedTimeSlotsInMinutes.isEmpty ? correspondingStartandEndIndexes.clear() : null;
     for (var i = 0; i < testallBookedTimeSlotsInMinutes.length; i++) {
       var currentEntry = testallBookedTimeSlotsInMinutes.entries.elementAt(i);
       int firstMatchForStartIndex = 0, firstMatchForEndIndex = 0;
@@ -1912,7 +1876,6 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             convertedTimesSet.elementAt(convertedIndex + 1) > currentEntry.value['BookingEnd']) {
           firstMatchForEndIndex = convertedIndex ~/ 2;
         }
-
         correspondingStartandEndIndexes.addAll({
           testallBookedTimeSlotsInMinutes.keys.elementAt(i): {
             'startIndex': firstMatchForStartIndex,
@@ -1924,6 +1887,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
     debugPrint(
         "allBookedTimeSlotsInMinutes $testallBookedTimeSlotsInMinutes ____ correspondingIndexes $correspondingStartandEndIndexes ");
+    debugPrint(
+        "convertedTimesSet $convertedTimesSet \t ${(selectedDay.hour * 60 + selectedDay.minute) * 60} __ selectedDayiNDEX $selectedDayIndex");
+
     return correspondingStartandEndIndexes;
   }
 
@@ -1934,26 +1900,43 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     var sameDayReservationAsUserList = slotsReservationsInfoFetchedAsMapWithData.entries.where(
       (element) {
         var res = slotsReservationsInfoFetchedAsMapWithData.entries.where((element1) {
-          var oj = element1.value as Map<String,
-              dynamic>; //fetching all the timeSlots that are booked for the selectedDay if USER HAS NOT CLICKED YET ON ANY PARKING SPOT
+          var oj = element1.value as Map<String, dynamic>; //fetching all the timeSlots that are booked
+          debugPrint("OJ $oj");
           var timeST = oj['BookingStart'] as Timestamp;
           return timeST.toDate().day == selectedDay.day &&
               timeST.toDate().month == selectedDay.month &&
               timeST.toDate().year == selectedDay.year &&
-              oj['ParkingID'] == widget.receivedID;
+              oj['ParkingID'] ==
+                  widget
+                      .receivedID; //CHECKING all the timeSlots for the selectedDay if USER HAS NOT CLICKED YET ON ANY PARKING SPOT && for the current parking only
         });
+        /*   res.any((element2) => element2.key == element.key);
+        debugPrint("RES IS: $res"); */
         return res.any((element2) => element2.key == element.key);
       },
     );
+    sameDayReservationAsUserList.isEmpty
+        ? {
+            anyReservationForSelectedDay = false,
+            allReservationsSameDaySameParkingWithKey.clear(),
+            print("allReservationsSameDaySameParkingWithKey $allReservationsSameDaySameParkingWithKey"),
+            testallBookedTimeSlots.clear(),
+            testallBookedTimeSlotsInMinutes.clear()
+          }
+        : anyReservationForSelectedDay = true;
+    print("allReservationsSameDaySameParkingWithKey $testallBookedTimeSlots");
 
+    debugPrint("VAR IS: $sameDayReservationAsUserList");
     for (var singleReservationSameDayAsUserSelectedDay in sameDayReservationAsUserList) {
+      print("CHECK $singleReservationSameDayAsUserSelectedDay");
       var singleReservationNoKeyCasted = singleReservationSameDayAsUserSelectedDay.value as Map<String, dynamic>;
       var singleBookingStartTimeStamp = singleReservationNoKeyCasted['BookingStart'] as Timestamp;
       var singleBookingEndTimeStamp = singleReservationNoKeyCasted['BookingEnd'] as Timestamp;
 
       allReservationsSameDaySameParkingWithKey
           .addAll({singleReservationSameDayAsUserSelectedDay.key: singleReservationNoKeyCasted});
-      debugPrint("singleReservationNoKeyCasted $singleReservationNoKeyCasted");
+      debugPrint(
+          "singleReservationNoKeyCasted $singleReservationNoKeyCasted ______ allReservationsSameDaySameParkingWithKey $allReservationsSameDaySameParkingWithKey");
 
       testallBookedTimeSlots.addAll({
         singleReservationSameDayAsUserSelectedDay.key: {
@@ -1980,15 +1963,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   Iterable<MapEntry<String, dynamic>> getWithinXHoursAvailabalitySatus(int availabilityHoursInterval) {
     int selectedDayPlusXHourToInt = ((selectedDay.hour + availabilityHoursInterval) * 60 + selectedDay.minute) * 60,
         selectedDayToInt = ((selectedDay.hour) * 60 + selectedDay.minute) * 60;
-
+    debugPrint("SELECTEDDAYTOI_NT :$selectedDayToInt");
     var work = allReservationsSameDaySameParkingWithKey.entries.where((entry) {
       var matchingTimeStampEntry = testallBookedTimeSlotsInMinutes.entries.where((element) => element.key == entry.key);
       var matchingTSEntryFinal = matchingTimeStampEntry.first.value as Map<String, dynamic>;
-      return matchingTSEntryFinal['BookingStart'] >= selectedDayToInt &&
+      return matchingTSEntryFinal['BookingStart'] <= selectedDayToInt &&
               matchingTSEntryFinal['BookingStart'] <= selectedDayPlusXHourToInt ||
           matchingTSEntryFinal['BookingEnd'] >= selectedDayToInt &&
               matchingTSEntryFinal['BookingEnd'] <= selectedDayPlusXHourToInt;
     });
+    debugPrint("WORK $work ___ $selectedDayToInt _ ");
 
     return work;
   }
@@ -2089,7 +2073,6 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         rAvailableIDs,
         rOccupiedAfterBookedIDs,
         rOccupiedNoPriorBookingIDs,
-        sBookedIDs,
       ].expand((element) => element).toSet();
 
       specialTotal = allSpecialSpotsIDs.length;
@@ -2121,7 +2104,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 },
                 "isSlotFree": rAvailableIDs.contains("A$i") || sAvailableIDs.contains("A$i") ? true : false,
                 "isSpecialSpot": allSpecialSpotsIDs.contains("A$i") ? true : false,
-                "isBookedWithinXHours": withinXHoursParkingSpotIDsToShow.values.contains("A$i") ? true : false,
+                "isBookedWithinXHours": spotIDsWithinXHoursBookedNotOccupied.contains("A$i") ? true : false, // comeback
                 "highlightColor": Colors.transparent
               })
             }
@@ -2151,18 +2134,233 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     : false,
                 "isSpecialSpot": allSpecialSpotsIDs.contains("B${i - alleyBindexStart}") ? true : false,
                 "isBookedWithinXHours":
-                    withinXHoursParkingSpotIDsToShow.values.contains("B${i - alleyBindexStart}") ? true : false,
+                    spotIDsWithinXHoursBookedNotOccupied.contains("B${i - alleyBindexStart}") ? true : false,
 
                 "highlightColor": Colors.transparent
               })
             };
     }
-
     debugPrint("ALLEY A : $alleyA ______________ ALLEY B : $alleyB");
-    debugPrint("mappedAlleysAndSlotIdsStatus : \t $mappedSelectedSlotAlley ");
     mappedAlleysAndSlotIds.addAll({
       'Alley A': alleyA,
       'Alley B': alleyB,
+    });
+  }
+
+  void allListeners() {
+    listeningToSlotsReservationsRealTime();
+    listeningToInsideParkingRealTime();
+  }
+
+  void listeningToSlotsReservationsRealTime() {
+    FirebaseFirestore.instance
+        .collection("slotsReservations")
+        .where("ParkingID", isEqualTo: widget.receivedID)
+        .snapshots()
+        .listen((event) {
+      //by default, someone who books will not be parked yet. so VEHICULESTATUS will be not yet parked
+      for (var change in event.docChanges) {
+        switch (change.type) {
+          case DocumentChangeType.added:
+            //debugPrint("Slots Reservations Document Just Loaded: ${change.doc.data()}");
+            debugPrint("REAL TIME CHECK __ ${change.doc.data()!['BookingStart']} __ ${change.doc.id}");
+            break;
+          case DocumentChangeType.modified:
+            //debugPrint("Slots Reservations Document Just EDITED: ${change.doc.data()}");
+            var baba =
+                allReservationsSameDaySameParkingWithKey.entries.where((element) => element.key == change.doc.id);
+            debugPrint("THE KEY IS: ${baba.first.value['BookingStart']}");
+
+            debugPrint("CHECK BS ${change.doc.data()!['BookingStart']} _ __ ${change.doc.id}");
+            if (change.doc.data()!['BookingStart'] != baba.first.value['BookingStart']) {
+              debugPrint("NEED UPDATE");
+              baba.first.value['BookingStart'] = change.doc.data()!['BookingStart'];
+            }
+            /*  var lala = change.doc.id
+
+             
+            
+ */
+
+            if (change.doc.data()!['VehiculeStatus'] == 'Parked') {
+              spotIDsWithinXHoursBookedNotOccupied.remove(change.doc.data()!['SlotID']);
+              spotIDsWithinXHoursBookedAndOccupied.add(change.doc.data()!['SlotID']);
+            }
+            if (change.doc.data()!['VehiculeStatus'] == 'Gone') {
+              spotIDsWithinXHoursBookedAndOccupied.remove(change.doc.data()!['SlotID']);
+              spotIDsWithinXHoursBookedThenFreed.add(change.doc.data()!['SlotID']);
+            }
+            break;
+          case DocumentChangeType.removed:
+            debugPrint("Reservation DONE SO Archived: ${change.doc.data()}");
+            break;
+        }
+      }
+    });
+  }
+
+  void listeningToInsideParkingRealTime() {
+    FirebaseFirestore.instance
+        .collection("locations/${widget.receivedID}/insideParkingInfo")
+        .where("Fee per 30 minutes", isGreaterThan: 400)
+        .snapshots()
+        .listen((event) {
+//DO NOT REMOVE THIS WHOLE SECTION as it updates the "within x hours list"
+      var withinXHoursEntriesFetched = getWithinXHoursAvailabalitySatus(3);
+
+      print("MAGS $withinXHoursEntriesFetched ");
+      // ignore: avoid_function_literals_in_foreach_calls
+      correspondingStartandEndIndexes.entries.forEach((indexEntries) {
+        var count = 0;
+        var castIndexEntries = indexEntries.value as Map<String, dynamic>;
+        withinXHoursEntriesFetched.isNotEmpty
+            ? withinXHoursEntriesFetched.singleWhere((xHoursEntries) {
+                // ignore: prefer_typing_uninitialized_variables
+                var castXHoursValues;
+                xHoursEntries.key == indexEntries.key
+                    ? {
+                        castXHoursValues = xHoursEntries.value as Map<String, dynamic>,
+                        debugPrint("LOLO $castXHoursValues \t $castIndexEntries \t $count"),
+                        withinXHoursParkingSpotInfosNeeded.add({
+                          'SlotID': castXHoursValues['SlotID'],
+                          'indexes': [castIndexEntries['startIndex'], castIndexEntries['endIndex']],
+                        }),
+                        spotIDsWithinXHoursBookedNotOccupied.add(castXHoursValues['SlotID']),
+                      }
+                    : null;
+                count += 1;
+                return xHoursEntries.key == indexEntries.key;
+              })
+            : withinXHoursParkingSpotInfosNeeded.clear();
+      });
+      withinXHoursEntriesFetched.isEmpty ? withinXHoursParkingSpotInfosNeeded.clear() : null;
+      debugPrint("withinXHoursParkingSpotIDsToShow $withinXHoursParkingSpotInfosNeeded}");
+//DO NOT REMOVE THIS WHOLE SECTION ------------ END
+
+      for (var change in event.docChanges) {
+        switch (change.type) {
+          case DocumentChangeType.added:
+            debugPrint("Inside Parking Info Document Just Loaded: ${change.doc.data()}"); //rt for realTime
+            var rTrBookedIDs = change.doc.data()!['Regular']['Booked']['IDs'] as List;
+
+            // ignore: prefer_typing_uninitialized_variables
+            var theID;
+            listEquals(rTrBookedIDs, rBookedIDs.toList()) == true //need precisely this one
+                ? {
+                    for (var singleAlleyInfo in mappedSelectedSlotAlley)
+                      {
+                        theID = singleAlleyInfo.values.first as String,
+                        singleAlleyInfo.update(
+                          'isSlotBooked',
+                          (value) => rBookedIDs.contains('$theID') || sBookedIDs.contains('$theID') ? true : false,
+                        ),
+                        singleAlleyInfo["isSlotOccupied"] = {
+                          "AfterBooked":
+                              rOccupiedAfterBookedIDs.contains('$theID') || sOccupiedAfterBookedIDs.contains('$theID')
+                                  ? true
+                                  : false,
+                          'NoPriorBooking': rOccupiedNoPriorBookingIDs.contains('$theID') ||
+                                  sOccupiedNoPriorBookingIDs.contains('$theID')
+                              ? true
+                              : false,
+                        },
+                        singleAlleyInfo.update(
+                          "isSlotFree",
+                          (value) =>
+                              rAvailableIDs.contains('$theID') || sAvailableIDs.contains('$theID') ? true : false,
+                        ),
+                        singleAlleyInfo.update(
+                          "isSpecialSpot",
+                          (value) => allSpecialSpotsIDs.contains('$theID') ? true : false,
+                        ),
+                        singleAlleyInfo.update(
+                          "isBookedWithinXHours",
+                          (value) => spotIDsWithinXHoursBookedNotOccupied.contains('$theID') ? true : false,
+                        ),
+                      }
+                  }
+                : null;
+            debugPrint("IS IT EQUAL AFTER ADDED $rBookedIDs ______ $allRegularSpotsID");
+            break;
+
+          case DocumentChangeType.modified:
+            debugPrint("Inside Parking Info Document Just EDITED: ${change.doc.data()}");
+
+            var rTrAvailableIDs = change.doc.data()!['Regular']['Available']['IDs'] as List;
+            var rTrBookedIDs = change.doc.data()!['Regular']['Booked']['IDs'] as List;
+            var rTrOccupiedAfterBookedIDs = change.doc.data()!['Regular']['Occupied']['From Booking']['IDs'] as List;
+            var rTrOccupiedNoPriorBookingIDs =
+                change.doc.data()!['Regular']['Occupied']['From Real Parking']['IDs'] as List;
+
+            var rTsAvailableIDs = change.doc.data()!['Regular']['Available']['IDs'] as List;
+            var rTsBookedIDs = change.doc.data()!['Regular']['Available']['IDs'] as List;
+            var rTsOccupiedAfterBookedIDs = change.doc.data()!['Regular']['Available']['IDs'] as List;
+            var rTsOccupiedNoPriorBookingIDs = change.doc.data()!['Regular']['Available']['IDs'] as List;
+
+            Set itemToRemove = {}, concernedSet = {};
+            List rTconcernedSetAsList = [];
+
+            listEquals(rTrAvailableIDs, rAvailableIDs.toList()) == false
+                ? {concernedSet = rAvailableIDs, rTconcernedSetAsList = rTrAvailableIDs}
+                : listEquals(rTrBookedIDs, rBookedIDs.toList()) == false
+                    ? {concernedSet = rBookedIDs, rTconcernedSetAsList = rTrBookedIDs}
+                    : listEquals(rTrOccupiedAfterBookedIDs, rOccupiedAfterBookedIDs.toList()) == false
+                        ? {concernedSet = rOccupiedAfterBookedIDs, rTconcernedSetAsList = rTrOccupiedAfterBookedIDs}
+                        : listEquals(rTrOccupiedNoPriorBookingIDs, rOccupiedNoPriorBookingIDs.toList()) == false
+                            ? {
+                                concernedSet = rOccupiedNoPriorBookingIDs,
+                                rTconcernedSetAsList = rTrOccupiedNoPriorBookingIDs
+                              }
+                            : listEquals(rTrOccupiedNoPriorBookingIDs, rOccupiedNoPriorBookingIDs.toList()) == false
+                                ? {
+                                    concernedSet = rOccupiedNoPriorBookingIDs,
+                                    rTconcernedSetAsList = rTrOccupiedNoPriorBookingIDs
+                                  }
+                                : listEquals(rTsAvailableIDs, sAvailableIDs.toList()) == false
+                                    ? {concernedSet = sAvailableIDs, rTconcernedSetAsList = rTsAvailableIDs}
+                                    : listEquals(rTsBookedIDs, sBookedIDs.toList()) == false
+                                        ? {concernedSet = sBookedIDs, rTconcernedSetAsList = rTsBookedIDs}
+                                        : listEquals(rTsOccupiedAfterBookedIDs, sOccupiedAfterBookedIDs.toList()) ==
+                                                false
+                                            ? {
+                                                concernedSet = sOccupiedAfterBookedIDs,
+                                                rTconcernedSetAsList = rTsOccupiedAfterBookedIDs
+                                              }
+                                            : listEquals(rTsOccupiedNoPriorBookingIDs,
+                                                        sOccupiedNoPriorBookingIDs.toList()) ==
+                                                    false
+                                                ? {
+                                                    concernedSet = sOccupiedNoPriorBookingIDs,
+                                                    rTconcernedSetAsList = rTsOccupiedNoPriorBookingIDs
+                                                  }
+                                                : listEquals(rTsOccupiedNoPriorBookingIDs,
+                                                            sOccupiedNoPriorBookingIDs.toList()) ==
+                                                        false
+                                                    ? {
+                                                        concernedSet = sOccupiedNoPriorBookingIDs,
+                                                        rTconcernedSetAsList = rTsOccupiedNoPriorBookingIDs
+                                                      }
+                                                    : null;
+            listEquals(rTconcernedSetAsList, concernedSet.toList()) == false
+                ? {
+                    debugPrint("REBUILLIST $rebuildIDLists"),
+                    concernedSet.removeWhere((element) {
+                      itemToRemove = concernedSet.difference(rTconcernedSetAsList.toSet());
+                      //debugPrint ItemToRemove will only show the difference if the item is deleted from its location in fb. otherwise, it will edit it where it's supposed to be. Do not worry about it
+                      var equal = itemToRemove.isNotEmpty == true && element == itemToRemove.first ? true : false;
+
+                      return equal;
+                    }),
+                    debugPrint("IS concenerdSret $concernedSet _ rTconcernedSetAsList $rTconcernedSetAsList")
+                  }
+                : null;
+
+            break;
+          case DocumentChangeType.removed:
+            debugPrint("Reservation DONE SO Archived: ${change.doc.data()}");
+            break;
+        }
+      }
     });
   }
 } //CLSOGIN BRACKS

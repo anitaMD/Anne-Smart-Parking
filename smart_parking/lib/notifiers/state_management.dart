@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 class StateManagement with ChangeNotifier {
-  final initialDate =
-      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+  final initialDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
   var selectedTime = TimeOfDay.now();
   String openingHour = '06:00', closingHour = '18:00'; //to initialize
   Duration interval = const Duration(minutes: 30);
@@ -14,14 +13,12 @@ class StateManagement with ChangeNotifier {
     notifyListeners();
   }
 
-  updateOpeningAndClosingHours(
-      String openingHourFromFirebase, String closingHourFromFirebase) {
+  updateOpeningAndClosingHours(String openingHourFromFirebase, String closingHourFromFirebase) {
     openingHour = openingHourFromFirebase;
     closingHour = closingHourFromFirebase;
   }
 
-  Stream<TimeOfDay> getTimeSlotsIntervals(
-      TimeOfDay startTime, TimeOfDay endTime, Duration interval) async* {
+  Stream<TimeOfDay> getTimeSlotsIntervals(TimeOfDay startTime, TimeOfDay endTime, Duration interval) async* {
     var hour = startTime.hour;
     var minute = startTime.minute;
     yield TimeOfDay(hour: hour, minute: minute);
@@ -36,8 +33,8 @@ class StateManagement with ChangeNotifier {
       yield hour == endTime.hour && minute + 30 >= endTime.minute
           ? TimeOfDay(hour: endTime.hour - 1, minute: 60 - endTime.minute - 5)
           : TimeOfDay(hour: hour, minute: minute);
-      minute = minute + 5;
-      yield TimeOfDay(hour: hour, minute: minute);
+      minute += 5;
+      yield TimeOfDay(hour: minute == 60 ? hour + 1 : hour, minute: minute == 60 ? 00 : minute);
     } while (hour < endTime.hour || (hour == endTime.hour && minute <= endTime.minute));
     hour == endTime.hour && minute <= endTime.minute ? notifyListeners() : null;
     hour == endTime.hour + 2; //to break the loop
