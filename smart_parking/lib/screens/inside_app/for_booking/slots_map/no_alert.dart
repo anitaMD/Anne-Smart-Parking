@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_typing_uninitialized_variables, avoid_function_literals_in_foreach_calls, unused_local_variable
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
@@ -31,6 +33,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   User? currentlySignedInUser;
   int parkingSlotsTotal = 10;
   late String parkingNameToolBar;
+  String tappedOnAlley = '', previouslySelectedParkingSpotID = '';
   double alleyHeight = 200,
       singleSpotHeight = 50,
       singleSpotWidth = 120,
@@ -51,6 +54,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   final alleyA = <String>{}, alleyB = <String>{};
   var mappedAlleyASelectedCheck = {}, mappedAlleyBSelectedCheck = {};
   List<Map<String, dynamic>> mappedSelectedSlotAlley = [];
+  List<int> allDisabledTimeRangeIndexesForTimeSelection = [], outOfXhoursRangeIndexes = [];
   List<QueryDocumentSnapshot<Map<String, dynamic>>> slotsReservationsInfoFetchedList = [];
   Map<String, dynamic> linkedParkingNameAndInsideInfo = {},
       insideParkingInfoFetched = {},
@@ -60,7 +64,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   Map<String, Set> mappedAlleysAndSlotIds = {};
   late Map<String, dynamic> mappedInfoFromWidget = {};
   Map<String, dynamic> correspondingStartandEndIndexes = {};
-  List<Map<String, dynamic>> withinXHoursParkingSpotInfosNeeded = [];
+  List<Map<String, dynamic>> withinXHoursParkingSpotInfosNeeded = [], allHoursParkingSpotInfosNeeded = [];
   bool test = true, rebuildIDLists = false;
 
 //RESERVATION VARS
@@ -72,7 +76,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       removeMaterialBannerSizedBox = false,
       reShowSelectedCarCard = false,
       dontShowAlleyAlertAgainTemporairyly = false,
-      updatedClosingAndOpening = false;
+      updatedClosingAndOpening = false,
+      doDisplayAvailabilityForWholeDay = false;
 
   Set rAvailableIDs = {},
       rOccupiedAfterBookedIDs = {},
@@ -83,30 +88,40 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       sOccupiedNoPriorBookingIDs = {},
       sBookedIDs = {},
       allSpecialSpotsIDs = {},
-      allRegularSpotsID = {};
+      allRegularSpotsID = {},
+      allConvertedTimesOfDayToInt = {},
+      allFinallyBookedIndexes = {};
 
   int specialTotal = 0,
       specialAvailableTotal = 0,
       regularTotal = 0,
       regularAvailableTotal = 0,
       totalParkingCapacity = 0,
-      previouslyReachedStep = 0;
+      previouslyReachedStep = 0,
+      stopClearing = 0;
+
   //OccupiedNoPriorBooking for cars parked onlhy by interacting with the real parking and didn't use the app to book like taxis or whatever
-  Set<String> spotIDsWithinXHoursList = {},
-      spotIDsWithinXHoursBookedNotOccupied = {},
-      spotIDsWithinXHoursBookedAndOccupied = {},
+  List<Set<String>> spotIDsWithinXHoursList = [],
+      spotIDsWithinXHoursBookedNotOccupied = [],
+      allSpotIDsAllHoursBookedNotOccupied = [],
+      spotIDsWithinXHoursBookedAndOccupied = [],
       spotIDsWithinXHoursBookedThenFreed =
-          {}; //do not delete any because will need to update an eventuel is booking over value
+          []; //do not delete any because will need to update an eventuel is booking over value
 
 //BOOKER
 
   Map<String, dynamic> testallBookedTimeSlotsInMinutes = {};
   Set<TimeOfDay> allBookedTimeSlots = {};
-  Map<String, dynamic> testallBookedTimeSlots = {}, allReservationsSameDaySameParkingWithKey = {};
+  Map<String, dynamic> testallBookedTimeSlots = {},
+      allReservationsSameDaySameParkingWithKey = {},
+      allReservationsExistingSameTimeAsNowDifferentDay = {};
+  TimeOfDay selectedBookingEndTimeFromTSGrid = TimeOfDay.now(), selectedBookingStartTimeFromTSGrid = TimeOfDay.now();
+  TimeRange finallyBookedTimeRange =
+      TimeRange(startTime: const TimeOfDay(hour: 00, minute: 00), endTime: const TimeOfDay(hour: 01, minute: 00));
   Set<TimeOfDay> timesOfDayFetched = {};
   CalendarFormat format = CalendarFormat.week;
   Duration interval = const Duration(minutes: 30);
-  DateTime selectedDay = DateTime.now(), focusedDay = DateTime.now();
+  DateTime selectedDay = DateTime.now(), focusedDay = DateTime.now(), previouslySelectedDay = DateTime.now();
   Color selectedTimeSlotColor = Colors.blueGrey.shade500;
   ScrollController singleChildController = ScrollController(),
       leftAlleyController = ScrollController(),
@@ -114,12 +129,20 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       timeSlotGridController = ScrollController(),
       infoListViewController = ScrollController(),
       bodyScrollBarController = ScrollController();
-  int activeStep = 0, upperBound = 2, stop = 0, selectedDayIndex = 0; //do not remove any of these
+  int activeStep = 0,
+      upperBound = 2,
+      stop = 0,
+      selectedDayIndex = 0,
+      selectedDayPlusXHourToIntIndex = 0,
+      tappedOnParkingSpotID = 0,
+      selectedDayPlusXHourToInt = 0,
+      selectedDayToInt = 0; //do not remove any of these
   var timeSlotAvailable = {}, timeSlotCurrentlyOccupied = {}, timeSlotbooked = {};
 
   @override
   void dispose() {
     infoListViewController.dispose();
+
     super.dispose();
   }
 
@@ -311,7 +334,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     );
   }
 
-  Color getSelectedTimeSlotColor(int index, Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
+  getSelectedTimeSlotColor(int index, Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
     Map<String, dynamic> bookedIntervalsSlotColor =
         testconvertAllTimesOfDayFetched(testallBookedTimeSlotsInMinutes, timesOfDayFetched);
     Set timeSlotCardBookedIndex = <int>{};
@@ -320,84 +343,151 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       debugPrint("bookedIntervalsSlotColor : $element");
       index >= element['startIndex'] && index <= element['endIndex'] ? timeSlotCardBookedIndex.add(index) : null;
     }
-    /*
-    DO NOT DELETE
-    Set<int> allBookedTimeSlotsInMinutes = {};
-     /*  var sameDayReservationAsUserList =
-        slotsReservationsInfoFetchedAsMapWithData.values.where(
-      (element) {
-        //fetching all the timeSlots that are booked for the selectedDay if USER HAS NOT CLICKED YET ON ANY PARKING SPOT
-        var timeST = element['BookingStart'] as Timestamp;
 
-        //debugPrint("MTMT ${timeST.toDate()}");
-        return timeST.toDate().day == selectedDay.day &&
-            timeST.toDate().month == selectedDay.month &&
-            timeST.toDate().year == selectedDay.year;
-      },
-    ); */
-     for (var singleReservationSameDayAsUserSelectedDay
-        in sameDayReservationAsUserList) {
-      var singleReservationCasted =
-          singleReservationSameDayAsUserSelectedDay as Map<String, dynamic>;
-      var singleBookingStartTimeStamp =
-          singleReservationSameDayAsUserSelectedDay['BookingStart']
-              as Timestamp;
-      var singleBookingEndTimeStamp =
-          singleReservationSameDayAsUserSelectedDay['BookingEnd'] as Timestamp;
-      debugPrint("$singleReservationCasted");
-
-      allBookedTimeSlots
-          .add(TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()));
-      testallBookedTimeSlotsInMinutes.addAll({});
-
-      int bookedTimeInt =
-          (TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()).hour *
-                      60 +
-                  TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate())
-                      .minute) *
-              60;
-      allBookedTimeSlotsInMinutes.add(bookedTimeInt);
-    }
-  Set<int> bookedTimeSlotColor = convertAllTimesOfDayFetched(
-        allBookedTimeSlotsInMinutes, timesOfDayFetched); 
-        
-         /*FOR the return below : bookedTimeSlotColor.any((element) => element ~/ 2 == index) ==
-                    true
-                ? Colors.orange */
-            
-        */
     var indexesToDisplayWithnXHours = [];
-    debugPrint(" getSelectedTimeSlotColor ${bookedIntervalsSlotColor.values} __ $indexesToDisplayWithnXHours");
-
+    debugPrint(
+        " getSelectedTimeSlotColor ${bookedIntervalsSlotColor.values} __ $indexesToDisplayWithnXHours _____ $withinXHoursParkingSpotInfosNeeded ");
+    //debugPrint("VOILA ${mappedSelectedSlotAlley.elementAt(index ~/ 2)}");
     if (withinXHoursParkingSpotInfosNeeded.isNotEmpty) {
+      debugPrint("CHACHACHA $withinXHoursParkingSpotInfosNeeded");
       for (var element in withinXHoursParkingSpotInfosNeeded) {
-        var one = element.values;
-        var ok = one.last as List; //the indexes in question
-        debugPrint("THAT'S Ok $ok");
-        indexesToDisplayWithnXHours.add(ok);
+        var one = element.values.last as List; //the indexes in question
+        indexesToDisplayWithnXHours.add(one);
       }
     } else {
       indexesToDisplayWithnXHours.clear();
     }
-
-    debugPrint("ALLEYS INFO ${mappedSelectedSlotAlley.elementAt(index ~/ 2)}");
     debugPrint(
         "getSelectedTimeSlotColor indexesToDisplayWithnXHours: $indexesToDisplayWithnXHours _ selectedDayToInt ${(selectedDay.hour * 60 + selectedDay.minute) * 60}");
-    return context.watch<StateManagement>().selectedTime == timesOfDayFetched.elementAt(index)
-        ? selectedTimeSlotColor
-        : previouslyReachedStep == 1 && anyReservationForSelectedDay == false
-            ? Colors.white
-            : indexesToDisplayWithnXHours.isNotEmpty &&
-                    indexesToDisplayWithnXHours.any((element) {
-                          element as List;
-                          return index >= element.first && index <= element.last && index >= selectedDayIndex;
-                        }) ==
-                        true
-                ? Colors.orange
-                : Colors.white; //ADD ANOTHER CONDITION FOR WHEN USER CLICKS ON PARKING SPOT
 
-    /*  : timeSlotCardBookedIndex.any((element) => element == index) == true
-                ? Colors.orange */ //ADD IF PARKING SPOT IS SELECTED TOO
+    if (selectedDay.year == DateTime.now().year &&
+        selectedDay.month == DateTime.now().month &&
+        selectedDay.day > DateTime.now().day) {
+      allDisabledTimeRangeIndexesForTimeSelection.clear();
+      outOfXhoursRangeIndexes.clear();
+      return Container();
+    }
+    //
+    else {
+      if (selectedDayPlusXHourToInt <= allConvertedTimesOfDayToInt.last) {
+        if (indexesToDisplayWithnXHours.isNotEmpty) {
+          //if left sup closing time basically, show normal indexes that are still within X hours of the currentTime but also within parking closing time
+          var itdwxh = indexesToDisplayWithnXHours.any((element) {
+            element as List;
+            return index >= element.first;
+          });
+          if (mappedSelectedSlotAlley.any((element) =>
+                  element['isSlotOccupied']['NoPriorBooking'] == true &&
+                  (index >= selectedDayIndex &&
+                      allConvertedTimesOfDayToInt.elementAt(index * 2) <= selectedDayToInt &&
+                      allConvertedTimesOfDayToInt.elementAt((index * 2) + 1) >
+                          selectedDayToInt /* &&
+                      itdwxh == true */
+                  )) ==
+              true) {
+            // print("OUIOUI");
+            return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              //booked for certain parking spots and occuiped for others
+              getTimeSpotIcon('occupied'), const SizedBox(width: 5), getTimeSpotIcon('booked'),
+
+              // getTimeSpotIcon('available'),
+            ]);
+          }
+
+          if (indexesToDisplayWithnXHours.any((element) {
+                element as List;
+                return index >= element.first &&
+                    index <= element.last &&
+                    index >= selectedDayIndex &&
+                    index <= selectedDayPlusXHourToIntIndex;
+              }) ==
+              true) {
+            return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              //booked and available for certain parking spots
+              getTimeSpotIcon('booked'),
+              const SizedBox(width: 5),
+              getTimeSpotIcon('available'),
+            ]);
+          }
+
+          /*  if (indexesToDisplayWithnXHours.any((element) {
+                element as List;
+                return index >= element.first &&
+                        index <= element.last &&
+                        index >= selectedDayIndex &&
+                        index <= selectedDayPlusXHourToIntIndex ||
+                    index >= element.first && index <= element.last && index >= selectedDayIndex;
+              }) ==
+              true) {
+            return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+              getTimeSpotIcon('booked'),
+              getTimeSpotIcon('available'),
+            ]);
+          } */
+
+          if (indexesToDisplayWithnXHours.any((element) {
+                element as List;
+                index < selectedDayIndex ? allDisabledTimeRangeIndexesForTimeSelection.add(index) : null;
+                return index < selectedDayIndex;
+              }) ==
+              true) {
+            return getTimeSpotIcon('unbookable');
+          }
+        } else {
+          index < selectedDayIndex ? allDisabledTimeRangeIndexesForTimeSelection.add(index) : null;
+
+          return index < selectedDayIndex
+              ? getTimeSpotIcon('unbookable')
+              : index > selectedDayPlusXHourToIntIndex
+                  ? getTimeSpotIcon('outOfXHours')
+                  : getTimeSpotIcon('available');
+        }
+      } //
+      else {
+        //EVERYTHING ORNAGE WILL BE RELATED TO CURRENTLY BOOKEDNOTOCCUPED PLACES so only need THAT and unbookable.Everything else gree is FREE until the parking closes in less than 3 hours
+        //print("YOU'RE HERE HAHA $selectedDayPlusXHourToInt _ ${allConvertedTimesOfDayToInt.last}");
+        if (indexesToDisplayWithnXHours.isNotEmpty) {
+          return indexesToDisplayWithnXHours.any((element) {
+                    element as List;
+                    index >= selectedDayIndex == false ? allDisabledTimeRangeIndexesForTimeSelection.add(index) : null;
+                    return index >= element.first && index <= element.last && index >= selectedDayIndex;
+                  }) ==
+                  true
+              ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  //booked for certain parking spots and occuiped for others
+                  getTimeSpotIcon('booked'), const SizedBox(width: 5),
+                  sAvailableIDs.isNotEmpty == true || rAvailableIDs.isNotEmpty == true
+                      ? getTimeSpotIcon('available')
+                      : Container(),
+                  /* const SizedBox(width: 5),
+                  rOccupiedNoPriorBookingIDs.isNotEmpty == true || sOccupiedNoPriorBookingIDs.isNotEmpty == true
+                      ? getTimeSpotIcon('occupied')
+                      : Container(), */
+
+                  // getTimeSpotIcon('available'),
+                ])
+              : getTimeSpotIcon('unbookable');
+        }
+        //debugPrint("STILL HERE __ $index");
+      }
+    }
+    debugPrint(
+        "THESE ARE HE INDEXES $selectedDayPlusXHourToInt ____${allConvertedTimesOfDayToInt.last} _____ $outOfXhoursRangeIndexes");
+    selectedDayPlusXHourToInt <= allConvertedTimesOfDayToInt.last && index < selectedDayPlusXHourToIntIndex
+        ? null
+        : {
+            outOfXhoursRangeIndexes.add(index),
+            outOfXhoursRangeIndexes = outOfXhoursRangeIndexes.toSet().toList(),
+            debugPrint("THESE ARE HE INDEXES $index _________ $outOfXhoursRangeIndexes"),
+          };
+    return selectedDayPlusXHourToInt <= allConvertedTimesOfDayToInt.last && index < selectedDayPlusXHourToIntIndex
+        ? getTimeSpotIcon('available')
+        : getTimeSpotIcon('outOfXHoursRange'); //
+
+    /*   ? Colors.orange
+                    : Colors.white; */
+
+    /*  :  */ //ADD IF PARKING SPOT IS SELECTED TOO
   }
 
   fetchAlleySelectedSlotId(int i, String alley) {
@@ -449,6 +539,14 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 highlightColor: Colors.blueGrey.shade500,
                 onTap: () {
                   fetchAlleySelectedSlotId(i, "alleyA");
+                  setState(() {
+                    doDisplayAvailabilityForWholeDay = true;
+                    tappedOnParkingSpotID = i;
+                    tappedOnAlley = 'alleyA';
+                    previouslySelectedParkingSpotID = 'A$i';
+                  });
+                  context.read<StateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
+
                   //highlightSelectedSlot(isSelected, i);
                 },
                 splashColor: Colors.yellow,
@@ -488,26 +586,22 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                             ? Flexible(flex: 1, child: getParkingSpotIcon("insideSpot", 'accessible'))
                                             : Container(),
                                         Flexible(
-                                          child: /* available.contains("A$i") ||
-                                                  specialAvailable.contains("A$i")
-                                              ? getParkingSpotIcon(
-                                                  "insideSpot", 'available')
-                                              : occupied.contains("A$i") ||
-                                                      specialOccupied.contains("A$i")
+                                          child: rOccupiedAfterBookedIDs.contains("A$i") ||
+                                                  sOccupiedAfterBookedIDs.contains("A$i")
+                                              ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
+                                              : spotIDsWithinXHoursBookedAndOccupied
+                                                              .any((element) => element.contains("A$i")) ==
+                                                          true ||
+                                                      rOccupiedNoPriorBookingIDs.contains("A$i") ||
+                                                      sOccupiedNoPriorBookingIDs.contains("A$i")
                                                   ? occupiedSpotIconLegend
-                                                  :  */
-                                              rOccupiedAfterBookedIDs.contains("A$i") ||
-                                                      sOccupiedAfterBookedIDs.contains("A$i")
-                                                  ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
-                                                  : spotIDsWithinXHoursBookedAndOccupied.contains("A$i") ||
-                                                          rOccupiedNoPriorBookingIDs.contains("A$i") ||
-                                                          sOccupiedNoPriorBookingIDs.contains("A$i")
-                                                      ? occupiedSpotIconLegend
-                                                      : spotIDsWithinXHoursBookedThenFreed.contains("A$i") ||
-                                                              sAvailableIDs.contains("A$i") ||
-                                                              rAvailableIDs.contains("A$i")
-                                                          ? getParkingSpotIcon("insideSpot", 'available')
-                                                          : getParkingSpotIcon("insideSpot", 'booked'),
+                                                  : spotIDsWithinXHoursBookedThenFreed
+                                                                  .any((element) => element.contains("A$i")) ==
+                                                              true ||
+                                                          sAvailableIDs.contains("A$i") ||
+                                                          rAvailableIDs.contains("A$i")
+                                                      ? getParkingSpotIcon("insideSpot", 'available')
+                                                      : getParkingSpotIcon("insideSpot", 'booked'),
                                         ),
                                       ],
                                     )),
@@ -531,6 +625,13 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 onTap: () {
                   debugPrint("Click event on Container");
                   fetchAlleySelectedSlotId(i, "alleyB");
+                  setState(() {
+                    doDisplayAvailabilityForWholeDay = true;
+                    tappedOnParkingSpotID = i;
+                    tappedOnAlley = 'alleyB';
+                    previouslySelectedParkingSpotID = 'B$i';
+                  });
+                  context.read<StateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
                 },
                 highlightColor: Colors.blueGrey.shade500,
                 splashColor: Colors.yellow,
@@ -566,19 +667,19 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                           child: rOccupiedAfterBookedIDs.contains("B$i") ||
                                                   sOccupiedAfterBookedIDs.contains("B$i")
                                               ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
-                                              : spotIDsWithinXHoursBookedAndOccupied.contains("B$i") ||
+                                              : spotIDsWithinXHoursBookedAndOccupied
+                                                              .any((element) => element.contains("B$i")) ==
+                                                          true ||
                                                       rOccupiedNoPriorBookingIDs.contains("B$i") ||
                                                       sOccupiedNoPriorBookingIDs.contains("B$i")
                                                   ? occupiedSpotIconLegend
-                                                  : spotIDsWithinXHoursBookedThenFreed.contains("B$i") ||
+                                                  : spotIDsWithinXHoursBookedThenFreed
+                                                                  .any((element) => element.contains("B$i")) ==
+                                                              true ||
                                                           sAvailableIDs.contains("B$i") ||
                                                           rAvailableIDs.contains("B$i")
                                                       ? getParkingSpotIcon("insideSpot", 'available')
-                                                      : mappedSelectedSlotAlley.elementAt(
-                                                                  i + parkingSlotsTotal ~/ 2)['isBookedWithinXHours'] ==
-                                                              true
-                                                          ? getParkingSpotIcon("insideSpot", 'booked')
-                                                          : getParkingSpotIcon("insideSpot", 'available'),
+                                                      : getParkingSpotIcon("insideSpot", 'booked'),
                                         ),
                                       ],
                                     ),
@@ -624,6 +725,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     //debugPrint("kindaWorkingContainerHeightForAlleys $kindaWorkingContainerHeightForAlleys");
     return GestureDetector(
       onVerticalDragStart: (details) {
+        debugPrint("VERTICAL DRAG START");
         setState(() {
           previouslyReachedStep = 5;
         }); //just cto not have 2 for spot booking part
@@ -776,30 +878,166 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   }
 
   showUserRangePicker(int index, TimeOfDay parkingClosingHour, TimeOfDay parkingOpeningHour,
-      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) async {
-    TimeRange? result = await showTimeRangePicker(
+      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData, Set<int> timeSlotsDisabled) async {
+    TimeRange? result = await showDialog(
         context: context,
-        start: timesOfDayFetched.elementAt(index),
-        end: TimeOfDay(
-            hour: timesOfDayFetched.elementAt(index).hour + 3, minute: timesOfDayFetched.elementAt(index).minute),
-        disabledTime: TimeRange(startTime: parkingClosingHour, endTime: parkingOpeningHour),
-        disabledColor: Colors.red.withOpacity(0.5),
-        strokeWidth: 5,
-        ticks: 24,
-        ticksOffset: -12,
-        ticksLength: 15,
-        ticksColor: Colors.grey,
-        labels: ["24h", "3h", "6h", "9h", "12h", "15h", "18h", "21h"].asMap().entries.map((e) {
-          return ClockLabel.fromIndex(idx: e.key, length: 8, text: e.value);
-        }).toList(),
-        labelOffset: -30,
-        rotateLabels: false,
-        padding: 35);
+        builder: (context) {
+          TimeOfDay startTime = TimeOfDay.now();
+          TimeOfDay endTime = TimeOfDay.now();
+          /*  selectedBookingEndTimeFromTSGrid = timesOfDayFetched.elementAt(index * 2);
+          selectedBookingStartTimeFromTSGrid = TimeOfDay(
+              hour: timesOfDayFetched.elementAt(index * 2 + 1).hour,
+              minute: timesOfDayFetched.elementAt(index * 2 + 1).minute); //if error, put both = TimeOfDay.now */
+          return AlertDialog(
+            scrollable: true,
+            contentPadding: EdgeInsets.zero,
+            actionsAlignment: MainAxisAlignment.spaceEvenly,
+            //  title: const Text("Choose a nice timeframe"),
+            content: SizedBox(
+                width: MediaQuery.of(context).size.width,
+                height: 400,
+                child: TimeRangePicker(
+                    hideButtons: true,
+                    onStartChange: (p0) {
+                      setState(() {
+                        selectedBookingStartTimeFromTSGrid = p0;
+                      });
+                    },
+                    onEndChange: (p0) {
+                      setState(() {
+                        selectedBookingEndTimeFromTSGrid = p0;
+                      });
+                      print("THE CHANGE $p0 _____ $selectedBookingEndTimeFromTSGrid");
+                    },
+                    minDuration: const Duration(minutes: 30),
+                    handlerRadius: 7,
+                    start: timesOfDayFetched.elementAt(index * 2), //FROM
+                    end: TimeOfDay(
+                        hour: timesOfDayFetched.elementAt(index * 2 + 1).hour,
+                        minute: timesOfDayFetched.elementAt(index * 2 + 1).minute), //TO
+                    disabledTime: TimeRange(
+                      startTime: parkingClosingHour,
+                      endTime: TimeOfDay(
+                          hour: timesOfDayFetched.elementAt(index * 2).hour,
+                          minute: timesOfDayFetched.elementAt(index * 2).minute),
+                    ),
+                    disabledColor: Colors.red.withOpacity(0.5),
+                    strokeWidth: 5,
+                    ticks: 24,
+                    ticksOffset: -12,
+                    ticksLength: 15,
+                    ticksColor: Colors.grey,
+                    labels: ["24h", "3h", "6h", "9h", "12h", "15h", "18h", "21h"].asMap().entries.map((e) {
+                      return ClockLabel.fromIndex(idx: e.key, length: 8, text: e.value);
+                    }).toList(),
+                    labelOffset: -30,
+                    rotateLabels: false,
+                    padding: 35)),
+            actions: <Widget>[
+              TextButton(
+                  child: const Text('CANCEL'),
+                  onPressed: () {
+                    Navigator.of(context).pop('BOOKING TIME SELCTION CANCELED');
+                  }),
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  print(
+                      "selectedBookingStartTimeFromTSGrid $selectedBookingStartTimeFromTSGrid   selectedBookingENDTimeFromTSGrid $selectedBookingEndTimeFromTSGrid");
+                  var selectedEndIndex = timesOfDayFetched
+                          .toList()
+                          .indexWhere((element) => element == selectedBookingEndTimeFromTSGrid),
+                      selectedStartIndex = timesOfDayFetched
+                          .toList()
+                          .indexWhere((element) => element == selectedBookingStartTimeFromTSGrid);
+                  int matchingStartIndexForTSGrid = selectedStartIndex ~/ 2,
+                      matchingEndIndexForTSGrid = selectedEndIndex ~/ 2;
+                  debugPrint(
+                      "selectedStartIndex $selectedStartIndex \t selecteEndIndex $selectedEndIndex __ $index _ matchingStar : $matchingStartIndexForTSGrid matchingEnd $matchingEndIndexForTSGrid");
+
+                  if (selectedStartIndex >= 0 &&
+                      selectedStartIndex > index * 2 &&
+                      matchingStartIndexForTSGrid >= index &&
+                      selectedBookingStartTimeFromTSGrid == timesOfDayFetched.elementAt((selectedStartIndex))) {
+                    //if the selectedTimeIsIndeedInTheListOftIMeperiodsfetched, I have to check if that selectedTime is selectable. Can't book starting the endtimeof a slotinterval and a=can't end starting the timeofday of next slotinterval
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      backgroundColor: Colors.black.withOpacity(0.7),
+                      margin: const EdgeInsets.fromLTRB(20, 0, 20, 50),
+                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+                      behavior: SnackBarBehavior.floating,
+                      elevation: 15,
+                      //margin: EdgeInsets.only(bottom: 100, left: 30, right: 30),
+                      content: FittedBox(
+                        child: Text(/* ${TimeOfDay.now().hour}:${TimeOfDay.now().minute} and  */
+                            "Please Select A Time Start Past ${timesOfDayFetched.elementAt(selectedStartIndex).format(context)}."),
+                      ),
+                    ));
+                  } else if (selectedEndIndex >= 0 &&
+                      selectedEndIndex > index * 2 &&
+                      matchingEndIndexForTSGrid > index &&
+                      selectedBookingEndTimeFromTSGrid == timesOfDayFetched.elementAt((selectedEndIndex))) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      backgroundColor: Colors.black.withOpacity(0.7),
+                      margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+                      behavior: SnackBarBehavior.floating,
+                      elevation: 15,
+                      //margin: EdgeInsets.only(bottom: 100, left: 30, right: 30),
+                      content: FittedBox(
+                        child: Text(/* ${TimeOfDay.now().hour}:${TimeOfDay.now().minute} and  */
+                            "Please Select An End Time Before ${timesOfDayFetched.elementAt(selectedEndIndex).format(context)}."),
+                      ),
+                    ));
+                  } else {
+                    Navigator.of(context).pop(TimeRange(
+                        startTime: selectedBookingStartTimeFromTSGrid, endTime: selectedBookingEndTimeFromTSGrid));
+                  }
+                },
+              ),
+            ],
+          );
+        }).then((value) {
+      print("BOOKINGTIMESELCTIONSTATUS $value");
+      int valueStartToInt, valueEndToInt;
+      value == 'BOOKING TIME SELCTION CANCELED'
+          ? null
+          : {
+              value as TimeRange,
+              valueStartToInt = (value.startTime.hour * 60 + value.startTime.minute) * 60,
+              valueEndToInt = (value.endTime.hour * 60 + value.endTime.minute) * 60,
+              allConvertedTimesOfDayToInt.forEach(
+                (element) {
+                  //to chaneg the color of the selected timeranges based on the finallybookedtimerange
+                  var theindexindex;
+                  element >= valueStartToInt && element < valueEndToInt
+                      ? {
+                          theindexindex =
+                              allConvertedTimesOfDayToInt.toList().indexWhere((element1) => element1 == element),
+                          allFinallyBookedIndexes.add(theindexindex)
+                        }
+                      : null;
+                },
+              ),
+              /*  timesOfDayFetched.toList().forEach((element) {
+              
+              toDouble(element)  value.startTime 
+            },), */
+
+              setState(
+                () {
+                  finallyBookedTimeRange = value;
+                },
+              )
+            };
+    });
+
     debugPrint("resultTimeRange ${result.toString()}");
   }
 
   timeSlotsGrid(
       TimeOfDay startTime, TimeOfDay endTime, Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
+    Set<int> timeSlotsDisabled = allDisabledTimeRangeIndexesForTimeSelection.toSet();
+    debugPrint("GOT THIS ${allDisabledTimeRangeIndexesForTimeSelection.toSet()}");
     return Container(
       color: Colors.white,
       height: timesOfDayFetched.toList().length * 10,
@@ -821,41 +1059,119 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: () async {
-                        context
-                            .read<StateManagement>()
-                            .updateSelectedTime(timesOfDayFetched.elementAt(index)); //don't change
-                        debugPrint("MAMAMA ${focusedDay.hour}");
-                        showUserRangePicker(index, endTime, startTime, slotsReservationsInfoFetchedAsMapWithData);
+                        //don't change
+                        //debugPrint("MAMAMA ${focusedDay.hour}");
+                        timeSlotsDisabled.contains(index)
+                            ? ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Sorry, time interval already in the past!"),
+                                ),
+                              )
+                            : outOfXhoursRangeIndexes.contains(index)
+                                ? ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: Colors.black.withOpacity(0.7),
+                                      margin: const EdgeInsets.fromLTRB(20, 0, 20, 50),
+                                      shape: const RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(Radius.circular(20))),
+                                      behavior: SnackBarBehavior.floating,
+                                      elevation: 15,
+                                      //margin: EdgeInsets.only(bottom: 100, left: 30, right: 30),
+                                      content: const FittedBox(
+                                        child: Text(
+                                            "Please select a parking spot to see the \navailability status for this time interval. "),
+                                      ),
+                                    ),
+                                  )
+                                /* : mappedSelectedSlotAlley.any((element) =>
+                                            element['isSlotOccupied']['NoPriorBooking'] == true &&
+                                            index >= selectedDayIndex &&
+                                            allConvertedTimesOfDayToInt.elementAt(index * 2) <= selectedDayToInt &&
+                                            allConvertedTimesOfDayToInt.elementAt((index * 2) + 1) >=
+                                                selectedDayToInt) ==
+                                        true
+                                    ? ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                        backgroundColor: Colors.black.withOpacity(0.7),
+                                        margin: const EdgeInsets.fromLTRB(20, 0, 20, 50),
+                                        shape: const RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.all(Radius.circular(20))),
+                                        behavior: SnackBarBehavior.floating,
+                                        elevation: 15,
+                                        //margin: EdgeInsets.only(bottom: 100, left: 30, right: 30),
+                                        content: FittedBox(
+                                          child: Text(/* ${TimeOfDay.now().hour}:${TimeOfDay.now().minute} and  */
+                                              "Please select a time interval past ${timesOfDayFetched.elementAt((index * 2) + 1).format(context)}."),
+                                        ),
+                                      )) */
+                                : {
+                                    context
+                                        .read<StateManagement>()
+                                        .updateSelectedTime(timesOfDayFetched.elementAt(index)),
+                                    showUserRangePicker(index, endTime, startTime,
+                                        slotsReservationsInfoFetchedAsMapWithData, timeSlotsDisabled)
+                                  };
                       },
                       child: Row(
                         children: [
                           Flexible(
                             child: Card(
+                                elevation: allDisabledTimeRangeIndexesForTimeSelection.toSet().contains(index)
+                                    ? 25
+                                    : outOfXhoursRangeIndexes.toSet().contains(index)
+                                        ? 28
+                                        : 20,
                                 //margin:const EdgeInsets.only(left: 20, right: 10),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                                color: getSelectedTimeSlotColor(index, slotsReservationsInfoFetchedAsMapWithData),
+                                color: context.watch<StateManagement>().selectedTime ==
+                                        timesOfDayFetched.elementAt(index)
+                                    ? selectedTimeSlotColor
+                                    : /* previouslyReachedStep == 1 && anyReservationForSelectedDay == true //when there is no reservation for the day selected
+                                            ? Colors.yellow
+                                            :  */
+                                    allDisabledTimeRangeIndexesForTimeSelection.toSet().contains(index)
+                                        ? Colors.purple.withOpacity(0.3)
+                                        : outOfXhoursRangeIndexes.toSet().contains(index) &&
+                                                doDisplayAvailabilityForWholeDay == false
+                                            ? Colors.white.withOpacity(0.5)
+                                            : Colors.white,
+                                /*  doDisplayAvailabilityForWholeDay == true
+                                    ? displayAvailabilityForWholeDay(tappedOnParkingSpotID, "tappedOnAlley", index)
+                                    : getSelectedTimeSlotColor(index, slotsReservationsInfoFetchedAsMapWithData), */
                                 child: timesOfDayFetched.toList().isEmpty
                                     ? null
                                     : Center(
                                         child: (index * 2 + 1) == timesOfDayFetched.toList().length
                                             ? null
-                                            : GridTile(
-                                                child: Padding(
-                                                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                                                  child: FittedBox(
-                                                    alignment: Alignment.bottomCenter,
-                                                    child: Text(
-                                                        (index * 2) + 1 < timesOfDayFetched.length - 1
-                                                            ? "${timesOfDayFetched.elementAt(index * 2).format(context)} - ${timesOfDayFetched.elementAt(index * 2 + 1).format(context)}"
-                                                            : 'OK',
-                                                        style: TextStyle(
-                                                            color: context.watch<StateManagement>().selectedTime ==
-                                                                    timesOfDayFetched.elementAt(index)
-                                                                ? Colors.white
-                                                                : Colors.black,
-                                                            fontWeight: FontWeight.w400)),
+                                            : Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Flexible(
+                                                    child: GridTile(
+                                                      child: Padding(
+                                                        padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                                                        child: FittedBox(
+                                                          alignment: Alignment.bottomCenter,
+                                                          child: Text(
+                                                              (index * 2) + 1 < timesOfDayFetched.length - 1
+                                                                  ? "${timesOfDayFetched.elementAt(index * 2).format(context)} - ${timesOfDayFetched.elementAt(index * 2 + 1).format(context)}"
+                                                                  : 'OK',
+                                                              style: TextStyle(
+                                                                  color:
+                                                                      context.watch<StateManagement>().selectedTime ==
+                                                                              timesOfDayFetched.elementAt(index)
+                                                                          ? Colors.white
+                                                                          : Colors.black,
+                                                                  fontWeight: FontWeight.w400)),
+                                                        ),
+                                                      ),
+                                                    ),
                                                   ),
-                                                ),
+                                                  doDisplayAvailabilityForWholeDay == true
+                                                      ? displayAvailabilityForWholeDay(
+                                                          tappedOnParkingSpotID, tappedOnAlley, index)
+                                                      : getSelectedTimeSlotColor(
+                                                          index, slotsReservationsInfoFetchedAsMapWithData),
+                                                ],
                                               ),
                                       )),
                           ),
@@ -871,6 +1187,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   }
 
   tableCalendar() {
+    debugPrint(
+        "THAT'S SELECTED $selectedDay ${TimeOfDay(hour: int.parse(context.read<StateManagement>().closingHour.split(":")[0]), minute: int.parse(context.read<StateManagement>().closingHour.split(":")[1])).hour}");
     return Card(
       elevation: 5,
       shape: RoundedRectangleBorder(
@@ -897,20 +1215,41 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
           },
           onDaySelected: (newSelectedDay, newFocusedDay) {
             debugPrint("BEFORE  SELECTED $selectedDay FOCUSED $focusedDay");
-            setState(() {
-              /*  (newSelectedDay.weekday == DateTime.sunday ||
+            var ok = (DateTime(newSelectedDay.year, newSelectedDay.month, newSelectedDay.day, TimeOfDay.now().hour + 1,
+                TimeOfDay.now().minute));
+            debugPrint("PEPS $ok");
+
+            ok.year == DateTime.now().year &&
+                    ok.month == DateTime.now().month &&
+                    ok.day == DateTime.now().day &&
+                    ok.hour <
+                        TimeOfDay(
+                                hour: int.parse(context.read<StateManagement>().closingHour.split(":")[0]),
+                                minute: int.parse(context.read<StateManagement>().closingHour.split(":")[1]))
+                            .hour
+                ? {
+                    debugPrint(
+                        "IS SUPERIOR _ $ok  ${newSelectedDay.hour}__ ${TimeOfDay(hour: int.parse(context.read<StateManagement>().closingHour.split(":")[0]), minute: int.parse(context.read<StateManagement>().closingHour.split(":")[1])).hour}"),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Sorry, we're closed for the day!"),
+                      ),
+                    )
+                  }
+                /*  (newSelectedDay.weekday == DateTime.sunday || 
                       newSelectedDay.weekday == DateTime.saturday)
                   ? null
                   : //I'LL SUPPOSE THE PARKINGS ARE OPEN EVERYDAY */
 
-              selectedDay = DateTime(newSelectedDay.year, newSelectedDay.month, newSelectedDay.day, DateTime.now().hour,
-                  DateTime.now().minute, DateTime.now().second);
+                : setState(() {
+                    selectedDay = DateTime(newSelectedDay.year, newSelectedDay.month, newSelectedDay.day,
+                        DateTime.now().hour, DateTime.now().minute, DateTime.now().second);
+                    focusedDay = DateTime(newFocusedDay.year, newFocusedDay.month, newFocusedDay.day,
+                        DateTime.now().hour, DateTime.now().minute, DateTime.now().second);
 
-              focusedDay = DateTime(newFocusedDay.year, newFocusedDay.month, newFocusedDay.day, DateTime.now().hour,
-                  DateTime.now().minute, DateTime.now().second);
-              //selectedDay.hour = DateTime.now().
-              // update `_focusedDay` here as well
-            });
+                    //selectedDay.hour = DateTime.now().
+                    // update `_focusedDay` here as well
+                  });
             debugPrint("AFTERR SELECTED $selectedDay FOCUSED $focusedDay");
           },
           //STYLING OF CALENDAR
@@ -1063,8 +1402,27 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             shadowColor: MaterialStateProperty.all(const Color(0xff7986CB)),
             backgroundColor: MaterialStateProperty.all(const Color(0xff78909C))),
         onPressed: () {
+          if (previouslyReachedStep == 1) {
+            allDisabledTimeRangeIndexesForTimeSelection.clear();
+            outOfXhoursRangeIndexes.clear();
+            context.read<StateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
+            var ok =
+                mappedSelectedSlotAlley.where((element) => element.values.first == previouslySelectedParkingSpotID);
+            debugPrint("PREVIOUSLY ONPRESSED SELECTED PARKING spot: $ok");
+            ok.forEach(
+              (element) {
+                element.update('isSlotSelected', (value) => false);
+                element.update('highlightColor', (value) => Colors.transparent);
+              },
+            );
+            refreshSlotColorState(Colors.transparent);
+          }
+          var ok = (DateTime(
+              selectedDay.year, selectedDay.month, selectedDay.day, TimeOfDay.now().hour, TimeOfDay.now().minute));
+
           setState(() {
             nextPressedWithoutFirstPageAllInfoFetched = true;
+            stopClearing = 0;
           });
           var selectedVehiculeInfoEmptyTest =
               bookerFirstPageInfoMapped['Selected Vehicule Info'] as Map<String, dynamic>;
@@ -1139,10 +1497,24 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   ))
                  */
                 };
+
           activeStep < upperBound && selectedVehiculeInfoEmptyTest.isNotEmpty
-              ? setState(() {
-                  activeStep += 1;
-                })
+              ? ok.year == DateTime.now().year &&
+                      ok.month == DateTime.now().month &&
+                      ok.day == DateTime.now().day &&
+                      ok.hour >
+                          TimeOfDay(
+                                  hour: int.parse(context.read<StateManagement>().closingHour.split(":")[0]),
+                                  minute: int.parse(context.read<StateManagement>().closingHour.split(":")[1]))
+                              .hour
+                  ? ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Sorry, we're closed for the day!"),
+                      ),
+                    )
+                  : setState(() {
+                      activeStep += 1;
+                    })
               : null;
         },
         child: const Align(child: FittedBox(child: Text("Next"))),
@@ -1171,6 +1543,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
           activeStep > 0
               ? setState(() {
                   previouslyReachedStep = activeStep;
+                  previouslySelectedDay = selectedDay;
 
                   activeStep -= 1;
                 })
@@ -1422,7 +1795,6 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         slotsReservationsInfoFetchedAsMapWithData.isNotEmpty == true
             ? slotsReservationsInfoFetchedAsMapWithData.clear
             : null;
-        debugPrint("IS CLEAR :$slotsReservationsInfoFetchedAsMapWithData");
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: FirebaseFirestore.instance.collection("slotsReservations").snapshots(),
             builder: (context, snapshot) {
@@ -1446,297 +1818,386 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                        padding: const EdgeInsets.only(left: 5, right: 5),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    children: [
-                                      Row(
-                                        children: const [
-                                          CircleAvatar(
-                                            radius: 15,
-                                            backgroundColor: Colors.blueGrey,
-                                            foregroundColor: Colors.white,
-                                            child: Icon(
-                                              Icons.local_parking_sharp,
-                                              size: 20,
+                    GestureDetector(
+                      //ADD A TOGGLE SWITCH TO SHOW WITHIN XHOURS AVAILABILITY OR NOT. that wil handle the tap and vertical drag issues
+                      onVerticalDragStart: (details) {},
+                      onTap: () {
+                        debugPrint("TOGGLE tap HERE");
+                        Iterable<Map<String, dynamic>> ok = {};
+                        mappedSelectedSlotAlley.isNotEmpty
+                            ? {
+                                ok = mappedSelectedSlotAlley
+                                    .where((element) => element.values.first == previouslySelectedParkingSpotID),
+                                debugPrint("PREVIOUSLY ONPRESSED SELECTED PARKING spot: $ok"),
+                                ok.forEach(
+                                  (element) {
+                                    element.update('isSlotSelected', (value) => false);
+                                    element.update('highlightColor', (value) => Colors.transparent);
+                                  },
+                                ),
+                                refreshSlotColorState(Colors.transparent),
+                                setState(() {
+                                  doDisplayAvailabilityForWholeDay = false;
+                                })
+                              }
+                            : {};
+                        /*  debugPrint("PREVIOUSLY CILOUMN SELECTED PARKING spot: $ok");
+                        ok.isNotEmpty
+                            ? {
+                                ok.update('isSlotSelected', (value) => false),
+                                ok.update('highlightColor', (value) => Colors.transparent),
+                                setState(() => doDisplayAvailabilityForWholeDay = false),
+                              }
+                            : null;
+
+                        refreshSlotColorState(Colors.transparent); */
+                      },
+                      child: Padding(
+                          padding: const EdgeInsets.only(left: 5, right: 5),
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      children: [
+                                        Row(
+                                          children: const [
+                                            CircleAvatar(
+                                              radius: 15,
+                                              backgroundColor: Colors.blueGrey,
+                                              foregroundColor: Colors.white,
+                                              child: Icon(
+                                                Icons.local_parking_sharp,
+                                                size: 20,
+                                              ),
                                             ),
-                                          ),
-                                          SizedBox(
-                                            width: 10,
-                                          ),
-                                          Text(
-                                            'Select A Spot',
-                                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  Column(
-                                    children: [
-                                      Container(
-                                        margin: const EdgeInsets.only(top: 0, right: 10),
-                                        width: 100,
-                                        height: 78,
-                                        child: Card(
-                                          color: Colors.white,
-                                          elevation: 5,
-                                          child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              children: [
-                                                //FRIST LINE
-                                                Flexible(
-                                                  child: SizedBox(
-                                                    height: 15,
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      children: [
-                                                        Padding(
-                                                          padding: const EdgeInsets.only(left: 4.0),
-                                                          child: getParkingSpotIcon("legend", 'available'),
-                                                        ),
-                                                        const Flexible(
-                                                          child: FittedBox(
-                                                            child: Text(
-                                                              "Available",
-                                                              style:
-                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
-                                                            ),
+                                            SizedBox(
+                                              width: 10,
+                                            ),
+                                            Text(
+                                              'Select A Spot',
+                                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    Column(
+                                      children: [
+                                        Container(
+                                          margin: const EdgeInsets.only(top: 0, right: 10),
+                                          width: 100,
+                                          height: 78,
+                                          child: Card(
+                                            color: Colors.white,
+                                            elevation: 5,
+                                            child: Padding(
+                                              padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  //FRIST LINE
+                                                  Flexible(
+                                                    child: SizedBox(
+                                                      height: 15,
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          Padding(
+                                                            padding: const EdgeInsets.only(left: 4.0),
+                                                            child: getParkingSpotIcon("legend", 'available'),
                                                           ),
-                                                        )
-                                                      ],
+                                                          const Flexible(
+                                                            child: FittedBox(
+                                                              child: Text(
+                                                                "Available",
+                                                                style:
+                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                              ),
+                                                            ),
+                                                          )
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                                //SECOND LINE
-                                                Flexible(
-                                                  child: SizedBox(
-                                                    height: 15,
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      children: [
-                                                        Padding(
-                                                          padding: const EdgeInsets.only(left: 4.0),
-                                                          child: getParkingSpotIcon("legend", "booked"),
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 10,
-                                                        ),
-                                                        const Flexible(
-                                                          child: FittedBox(
-                                                            child: Text(
-                                                              "Booked",
-                                                              style:
-                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
-                                                            ),
+                                                  //SECOND LINE
+                                                  Flexible(
+                                                    child: SizedBox(
+                                                      height: 15,
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          Padding(
+                                                            padding: const EdgeInsets.only(left: 4.0),
+                                                            child: getParkingSpotIcon("legend", "booked"),
                                                           ),
-                                                        )
-                                                      ],
+                                                          const SizedBox(
+                                                            width: 10,
+                                                          ),
+                                                          const Flexible(
+                                                            child: FittedBox(
+                                                              child: Text(
+                                                                "Booked",
+                                                                style:
+                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                              ),
+                                                            ),
+                                                          )
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                                Flexible(
-                                                  child: SizedBox(
-                                                    height: 15,
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      children: [
-                                                        occupiedSpotIconLegend,
-                                                        const SizedBox(
-                                                          width: 10,
-                                                        ),
-                                                        const Flexible(
-                                                          child: FittedBox(
-                                                            child: Text(
-                                                              "Occupied",
-                                                              style:
-                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
-                                                            ),
+                                                  Flexible(
+                                                    child: SizedBox(
+                                                      height: 15,
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          occupiedSpotIconLegend,
+                                                          const SizedBox(
+                                                            width: 10,
                                                           ),
-                                                        )
-                                                      ],
+                                                          const Flexible(
+                                                            child: FittedBox(
+                                                              child: Text(
+                                                                "Occupied",
+                                                                style:
+                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                              ),
+                                                            ),
+                                                          )
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                                Flexible(
-                                                  child: SizedBox(
-                                                    height: 15,
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      children: [
-                                                        Padding(
-                                                          padding: const EdgeInsets.only(left: 3.0, bottom: 5),
-                                                          child: getParkingSpotIcon("legend", 'accessible'),
-                                                        ),
-                                                        const Flexible(
-                                                          child: FittedBox(
-                                                            child: Text(
-                                                              "Special",
-                                                              style:
-                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
-                                                            ),
+                                                  Flexible(
+                                                    child: SizedBox(
+                                                      height: 15,
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          Padding(
+                                                            padding: const EdgeInsets.only(left: 3.0, bottom: 5),
+                                                            child: getParkingSpotIcon("legend", 'accessible'),
                                                           ),
-                                                        )
-                                                      ],
+                                                          const Flexible(
+                                                            child: FittedBox(
+                                                              child: Text(
+                                                                "Special",
+                                                                style:
+                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                              ),
+                                                            ),
+                                                          )
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  )
-                                ],
+                                      ],
+                                    )
+                                  ],
+                                ),
                               ),
-                            ),
-                            insideParkingLayout(alleyListViewMinHeightToDisplay),
-                            addWhiteSpace(40),
-                            //
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    children: [
-                                      Row(
-                                        children: const [
-                                          CircleAvatar(
-                                            radius: 15,
-                                            backgroundColor: Colors.blueGrey,
-                                            foregroundColor: Colors.white,
-                                            child: Icon(
-                                              Icons.access_time_filled_outlined,
-                                              size: 20,
+                              insideParkingLayout(alleyListViewMinHeightToDisplay),
+                              addWhiteSpace(40),
+                              //
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      children: [
+                                        Row(
+                                          children: const [
+                                            CircleAvatar(
+                                              radius: 15,
+                                              backgroundColor: Colors.blueGrey,
+                                              foregroundColor: Colors.white,
+                                              child: Icon(
+                                                Icons.access_time_filled_outlined,
+                                                size: 20,
+                                              ),
                                             ),
-                                          ),
-                                          SizedBox(
-                                            width: 10,
-                                          ),
-                                          Text(
-                                            'Select A Time Slot',
-                                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  Column(
-                                    children: [
-                                      Container(
-                                        margin: const EdgeInsets.only(top: 0, right: 10),
-                                        width: 100,
-                                        height: 60,
-                                        child: Card(
-                                          color: Colors.white,
-                                          elevation: 5,
-                                          child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              children: [
-                                                //FRIST LINE
-                                                Flexible(
-                                                  child: SizedBox(
-                                                    height: 15,
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      children: [
-                                                        getTimeSpotIcon('available'),
-                                                        const Flexible(
-                                                          child: FittedBox(
-                                                            child: Text(
-                                                              "Available",
-                                                              style:
-                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                            SizedBox(
+                                              width: 10,
+                                            ),
+                                            Text(
+                                              'Select A Time Slot',
+                                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                            ),
+                                          ],
+                                        ),
+                                        /*   Row(
+                                          children: [
+                                            Container(
+                                              child: ToggleSwitch(
+                                                customWidths: [100.0, 50.0],
+                                                cornerRadius: 20.0,
+                                                activeBgColors: [
+                                                  [Colors.indigo],
+                                                  [Colors.redAccent]
+                                                ],
+                                                customTextStyles: [
+                                                  TextStyle(
+                                                    fontSize: 10,
+                                                  )
+                                                ],
+                                                activeFgColor: Colors.white,
+                                                inactiveBgColor: Colors.grey,
+                                                inactiveFgColor: Colors.white,
+                                                totalSwitches: 2,
+                                                labels: [
+                                                  'Availability \n until ${selectedDay.hour + 3}:${selectedDay.minute}',
+                                                  ''
+                                                ],
+                                                icons: [null, Icons.do_not_disturb_alt_sharp],
+                                                onToggle: (index) {
+                                                  debugPrint('switched to: $index');
+                                                },
+                                              ),
+                                            )
+                                          ],
+                                        )
+                                      */
+                                      ],
+                                    ),
+                                    Column(
+                                      children: [
+                                        Container(
+                                          margin: const EdgeInsets.only(top: 0, right: 10),
+                                          width: 100,
+                                          height: 70,
+                                          child: Card(
+                                            color: Colors.white,
+                                            elevation: 5,
+                                            child: Padding(
+                                              padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  //FRIST LINE
+                                                  Flexible(
+                                                    child: SizedBox(
+                                                      height: 10,
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          getTimeSpotIcon('available'),
+                                                          const Flexible(
+                                                            child: FittedBox(
+                                                              child: Text(
+                                                                "Available",
+                                                                style:
+                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                              ),
                                                             ),
-                                                          ),
-                                                        )
-                                                      ],
+                                                          )
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                                //SECOND LINE
-                                                Flexible(
-                                                  child: SizedBox(
-                                                    height: 15,
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      children: [
-                                                        getTimeSpotIcon('booked'),
-                                                        const SizedBox(
-                                                          width: 10,
-                                                        ),
-                                                        const Flexible(
-                                                          child: FittedBox(
-                                                            child: Text(
-                                                              "Booked",
-                                                              style:
-                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
-                                                            ),
+                                                  //SECOND LINE
+                                                  Flexible(
+                                                    child: SizedBox(
+                                                      height: 10,
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          getTimeSpotIcon('booked'),
+                                                          const SizedBox(
+                                                            width: 10,
                                                           ),
-                                                        )
-                                                      ],
+                                                          const Flexible(
+                                                            child: FittedBox(
+                                                              child: Text(
+                                                                "Booked",
+                                                                style:
+                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                              ),
+                                                            ),
+                                                          )
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                                Flexible(
-                                                  child: SizedBox(
-                                                    height: 15,
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      children: [
-                                                        Transform.rotate(
-                                                            angle: 50.15, child: getTimeSpotIcon('occupied')),
-                                                        const SizedBox(
-                                                          width: 10,
-                                                        ),
-                                                        const Flexible(
-                                                          child: FittedBox(
-                                                            child: Text(
-                                                              "Occupied",
-                                                              style:
-                                                                  TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
-                                                            ),
+                                                  Flexible(
+                                                    child: SizedBox(
+                                                      height: 10,
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          getTimeSpotIcon('occupied'),
+                                                          const SizedBox(
+                                                            width: 10,
                                                           ),
-                                                        )
-                                                      ],
+                                                          const Flexible(
+                                                            child: FittedBox(
+                                                              child: Text(
+                                                                "Occupied",
+                                                                style:
+                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                              ),
+                                                            ),
+                                                          )
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
-                                                ),
-                                              ],
+                                                  Flexible(
+                                                    child: SizedBox(
+                                                      height: 10,
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          getTimeSpotIcon('unbookable'),
+                                                          const SizedBox(
+                                                            width: 10,
+                                                          ),
+                                                          const Flexible(
+                                                            child: FittedBox(
+                                                              child: Text(
+                                                                "Disabled",
+                                                                style:
+                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                              ),
+                                                            ),
+                                                          )
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  )
-                                ],
+                                      ],
+                                    )
+                                  ],
+                                ),
                               ),
-                            ),
 
-                            addWhiteSpace(10), //edit height and shape of card
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
-                              child: Column(children: [
-                                timeSlotsGrid(startTime, endTime, slotsReservationsInfoFetchedAsMapWithData),
+                              addWhiteSpace(10), //edit height and shape of card
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
+                                child: Column(children: [
+                                  timeSlotsGrid(startTime, endTime, slotsReservationsInfoFetchedAsMapWithData),
 
-                                //test()
-                              ]),
-                            ),
-                          ],
-                        )),
+                                  //test()
+                                ]),
+                              ),
+                            ],
+                          )),
+                    )
                   ],
                 );
               }
@@ -1843,23 +2304,46 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               ? Colors.green
               : status == 'occupied'
                   ? Colors.red
-                  : Colors.orange.shade700,
+                  : status == 'booked'
+                      ? Colors.orange.shade700
+                      : status == 'unbookable'
+                          ? Colors.purple.shade700
+                          : Colors.white, //for unbookable as it's already past datetime.now
           shape: BoxShape.circle),
     );
   }
 
   Map<String, dynamic> testconvertAllTimesOfDayFetched(
       Map<String, dynamic> testallBookedTimeSlotsInMinutes, Set<TimeOfDay> timesOfDayFetched) {
-    Set<int> convertedTimesSet = {};
+    selectedDay.year == previouslySelectedDay.year &&
+            selectedDay.month == previouslySelectedDay.month &&
+            selectedDay.day == previouslySelectedDay.day
+        ? null
+        : {
+            stopClearing < 1
+                ? {
+                    testallBookedTimeSlots.clear(),
+                    testallBookedTimeSlotsInMinutes.clear(),
+                    spotIDsWithinXHoursBookedNotOccupied.clear(),
+                    spotIDsWithinXHoursBookedAndOccupied,
+                    stopClearing += 1
+                  }
+                : null
+          };
 
+    Set<int> convertedTimesSet = {};
     for (var element in timesOfDayFetched) {
       convertedTimesSet.add((element.hour * 60 + element.minute) * 60);
     }
-
+    allConvertedTimesOfDayToInt = convertedTimesSet;
     for (var i = 0; i < convertedTimesSet.length - 1; i++) {
       int selectedDayToInt = (selectedDay.hour * 60 + selectedDay.minute) * 60;
       convertedTimesSet.elementAt(i) < selectedDayToInt && convertedTimesSet.elementAt(i + 1) > selectedDayToInt
           ? selectedDayIndex = (i + 1) ~/ 2
+          : null;
+      convertedTimesSet.elementAt(i) < selectedDayPlusXHourToInt &&
+              convertedTimesSet.elementAt(i + 1) > selectedDayPlusXHourToInt
+          ? selectedDayPlusXHourToIntIndex = (i + 1) ~/ 2
           : null;
     }
     testallBookedTimeSlotsInMinutes.isEmpty ? correspondingStartandEndIndexes.clear() : null;
@@ -1897,11 +2381,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     /* DateTime currentlySelectedDateForTimeSlotAvailability =
         bookerFirstPageInfoMapped['Selected Day'];
  */
-    var sameDayReservationAsUserList = slotsReservationsInfoFetchedAsMapWithData.entries.where(
+    var allReservationsOnSelectedDayList = slotsReservationsInfoFetchedAsMapWithData.entries.where(
       (element) {
         var res = slotsReservationsInfoFetchedAsMapWithData.entries.where((element1) {
-          var oj = element1.value as Map<String, dynamic>; //fetching all the timeSlots that are booked
-          debugPrint("OJ $oj");
+          var oj = element1.value as Map<String, dynamic>; //fetching all the timeSlots that are booked for all parkings
+          //debugPrint("OJ $oj");
           var timeST = oj['BookingStart'] as Timestamp;
           return timeST.toDate().day == selectedDay.day &&
               timeST.toDate().month == selectedDay.month &&
@@ -1915,28 +2399,43 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         return res.any((element2) => element2.key == element.key);
       },
     );
-    sameDayReservationAsUserList.isEmpty
+    allReservationsOnSelectedDayList.isEmpty
         ? {
             anyReservationForSelectedDay = false,
             allReservationsSameDaySameParkingWithKey.clear(),
-            print("allReservationsSameDaySameParkingWithKey $allReservationsSameDaySameParkingWithKey"),
+            debugPrint("allReservationsSameDaySameParkingWithKey $allReservationsSameDaySameParkingWithKey"),
             testallBookedTimeSlots.clear(),
-            testallBookedTimeSlotsInMinutes.clear()
+            testallBookedTimeSlotsInMinutes.clear(),
+            spotIDsWithinXHoursBookedNotOccupied.clear(),
+            spotIDsWithinXHoursBookedAndOccupied
+                .clear() //clear the bookedwithinXhourslist by comapring what is in it and what is not
           }
         : anyReservationForSelectedDay = true;
-    print("allReservationsSameDaySameParkingWithKey $testallBookedTimeSlots");
+    //debugPrint("allReservationsSameDaySameParkingWithKey $testallBookedTimeSlots");
 
-    debugPrint("VAR IS: $sameDayReservationAsUserList");
-    for (var singleReservationSameDayAsUserSelectedDay in sameDayReservationAsUserList) {
-      print("CHECK $singleReservationSameDayAsUserSelectedDay");
+    debugPrint("VAR IS: $allReservationsOnSelectedDayList");
+    for (var singleReservationSameDayAsUserSelectedDay in allReservationsOnSelectedDayList) {
+      //debugPrint("CHECK $singleReservationSameDayAsUserSelectedDay");
+
       var singleReservationNoKeyCasted = singleReservationSameDayAsUserSelectedDay.value as Map<String, dynamic>;
       var singleBookingStartTimeStamp = singleReservationNoKeyCasted['BookingStart'] as Timestamp;
       var singleBookingEndTimeStamp = singleReservationNoKeyCasted['BookingEnd'] as Timestamp;
 
-      allReservationsSameDaySameParkingWithKey
-          .addAll({singleReservationSameDayAsUserSelectedDay.key: singleReservationNoKeyCasted});
+      if (selectedDay.year == DateTime.now().year &&
+          selectedDay.month == DateTime.now().month &&
+          selectedDay.day == DateTime.now().day) {
+        allReservationsExistingSameTimeAsNowDifferentDay.clear(); //do not delete
+        allReservationsSameDaySameParkingWithKey
+            .addAll({singleReservationSameDayAsUserSelectedDay.key: singleReservationNoKeyCasted});
+      } else {
+        allReservationsSameDaySameParkingWithKey.clear(); //do not delete
+
+        allReservationsExistingSameTimeAsNowDifferentDay
+            .addAll({singleReservationSameDayAsUserSelectedDay.key: singleReservationNoKeyCasted});
+      }
+
       debugPrint(
-          "singleReservationNoKeyCasted $singleReservationNoKeyCasted ______ allReservationsSameDaySameParkingWithKey $allReservationsSameDaySameParkingWithKey");
+          "singleReservationNoKeyCasted $singleReservationNoKeyCasted ______ $allReservationsExistingSameTimeAsNowDifferentDay ");
 
       testallBookedTimeSlots.addAll({
         singleReservationSameDayAsUserSelectedDay.key: {
@@ -1961,19 +2460,42 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   }
 
   Iterable<MapEntry<String, dynamic>> getWithinXHoursAvailabalitySatus(int availabilityHoursInterval) {
-    int selectedDayPlusXHourToInt = ((selectedDay.hour + availabilityHoursInterval) * 60 + selectedDay.minute) * 60,
-        selectedDayToInt = ((selectedDay.hour) * 60 + selectedDay.minute) * 60;
+    selectedDayPlusXHourToInt = ((selectedDay.hour + availabilityHoursInterval) * 60 + selectedDay.minute) *
+        60; //closinghour to int , if selectedDayPlusXhours sup to closnghours to int, (fetchedTimes.last) then
+    selectedDayToInt = ((selectedDay.hour) * 60 + selectedDay.minute) * 60;
+    Set<int> convertedTimesSet = {};
+
+    for (var element in timesOfDayFetched) {
+      convertedTimesSet.add((element.hour * 60 + element.minute) * 60);
+    }
     debugPrint("SELECTEDDAYTOI_NT :$selectedDayToInt");
     var work = allReservationsSameDaySameParkingWithKey.entries.where((entry) {
       var matchingTimeStampEntry = testallBookedTimeSlotsInMinutes.entries.where((element) => element.key == entry.key);
-      var matchingTSEntryFinal = matchingTimeStampEntry.first.value as Map<String, dynamic>;
-      return matchingTSEntryFinal['BookingStart'] <= selectedDayToInt &&
-              matchingTSEntryFinal['BookingStart'] <= selectedDayPlusXHourToInt ||
-          matchingTSEntryFinal['BookingEnd'] >= selectedDayToInt &&
-              matchingTSEntryFinal['BookingEnd'] <= selectedDayPlusXHourToInt;
+      var matchingTSEntryFinal =
+          matchingTimeStampEntry.isNotEmpty ? matchingTimeStampEntry.first.value as Map<String, dynamic> : {};
+      return selectedDayPlusXHourToInt > convertedTimesSet.last && matchingTimeStampEntry.isNotEmpty
+          ? matchingTSEntryFinal['BookingEnd'] >= selectedDayToInt &&
+              matchingTSEntryFinal['BookingEnd'] <= selectedDayPlusXHourToInt
+          : selectedDayPlusXHourToInt <= convertedTimesSet.last && matchingTimeStampEntry.isNotEmpty
+              ? matchingTSEntryFinal['BookingEnd'] >= selectedDayToInt &&
+                  matchingTSEntryFinal['BookingEnd'] >= selectedDayPlusXHourToInt
+              : false;
     });
     debugPrint("WORK $work ___ $selectedDayToInt _ ");
+    for (var element in work) {
+      Set<String> ok = {element.value['SlotID']};
+      spotIDsWithinXHoursBookedNotOccupied.any((element) {
+        debugPrint("DIFF IS $element _______ ${element.difference(ok)}");
+        return false;
+      });
 
+      /* spotIDsWithinXHoursBookedNotOccupied.remove(spotIDsWithinXHoursBookedNotOccupied.where((element) =>
+          element ==
+          element.difference(
+              ok))); */ //check if Spot is booked many times in the same day like A5 8H10H and then 10H20 11H   AND YOU SELECT DAY AT 8H
+      //withinXHoursParkingSpotIDsToShow []} may need to remove that entry from here too
+    }
+    debugPrint("HERE YOU GO $spotIDsWithinXHoursBookedNotOccupied");
     return work;
   }
 
@@ -2104,7 +2626,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 },
                 "isSlotFree": rAvailableIDs.contains("A$i") || sAvailableIDs.contains("A$i") ? true : false,
                 "isSpecialSpot": allSpecialSpotsIDs.contains("A$i") ? true : false,
-                "isBookedWithinXHours": spotIDsWithinXHoursBookedNotOccupied.contains("A$i") ? true : false, // comeback
+                "isBookedWithinXHours": spotIDsWithinXHoursBookedNotOccupied.any((element) => element.contains("A$i"))
+                    ? true
+                    : false, // comeback
                 "highlightColor": Colors.transparent
               })
             }
@@ -2133,8 +2657,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     ? true
                     : false,
                 "isSpecialSpot": allSpecialSpotsIDs.contains("B${i - alleyBindexStart}") ? true : false,
-                "isBookedWithinXHours":
-                    spotIDsWithinXHoursBookedNotOccupied.contains("B${i - alleyBindexStart}") ? true : false,
+                "isBookedWithinXHours": spotIDsWithinXHoursBookedNotOccupied
+                        .any((element) => element.contains(("B${i - alleyBindexStart}")))
+                    ? true
+                    : false,
 
                 "highlightColor": Colors.transparent
               })
@@ -2176,11 +2702,6 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               debugPrint("NEED UPDATE");
               baba.first.value['BookingStart'] = change.doc.data()!['BookingStart'];
             }
-            /*  var lala = change.doc.id
-
-             
-            
- */
 
             if (change.doc.data()!['VehiculeStatus'] == 'Parked') {
               spotIDsWithinXHoursBookedNotOccupied.remove(change.doc.data()!['SlotID']);
@@ -2207,34 +2728,91 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         .listen((event) {
 //DO NOT REMOVE THIS WHOLE SECTION as it updates the "within x hours list"
       var withinXHoursEntriesFetched = getWithinXHoursAvailabalitySatus(3);
+      debugPrint("MAGS $withinXHoursEntriesFetched ");
 
-      print("MAGS $withinXHoursEntriesFetched ");
-      // ignore: avoid_function_literals_in_foreach_calls
       correspondingStartandEndIndexes.entries.forEach((indexEntries) {
-        var count = 0;
         var castIndexEntries = indexEntries.value as Map<String, dynamic>;
-        withinXHoursEntriesFetched.isNotEmpty
-            ? withinXHoursEntriesFetched.singleWhere((xHoursEntries) {
-                // ignore: prefer_typing_uninitialized_variables
-                var castXHoursValues;
-                xHoursEntries.key == indexEntries.key
+
+        allReservationsExistingSameTimeAsNowDifferentDay.entries.isNotEmpty
+            ? allReservationsExistingSameTimeAsNowDifferentDay.entries.any((allHoursEntries) {
+                var castAllHoursValues;
+                allHoursEntries.key ==
+                        indexEntries.key //AND THE of withinXhours IDS ARE DIFF then update withinXhoursParking
                     ? {
-                        castXHoursValues = xHoursEntries.value as Map<String, dynamic>,
-                        debugPrint("LOLO $castXHoursValues \t $castIndexEntries \t $count"),
-                        withinXHoursParkingSpotInfosNeeded.add({
-                          'SlotID': castXHoursValues['SlotID'],
-                          'indexes': [castIndexEntries['startIndex'], castIndexEntries['endIndex']],
-                        }),
-                        spotIDsWithinXHoursBookedNotOccupied.add(castXHoursValues['SlotID']),
+                        castAllHoursValues = allHoursEntries.value as Map<String, dynamic>,
+                        //debugPrint("LOLO $castXHoursValues \t $castIndexEntries \t $count"),
+                        if (allHoursParkingSpotInfosNeeded.length < correspondingStartandEndIndexes.length)
+                          {
+                            allHoursParkingSpotInfosNeeded.add({
+                              'SlotID': castAllHoursValues['SlotID'],
+                              'indexes': [castIndexEntries['startIndex'], castIndexEntries['endIndex']],
+                            }),
+                            //withinXHoursParkingSpotInfosNeeded FIND A WQAY TO UPDATE THE LIST TH THE NEWLY ADDED VALUE WHICH IS B1 IN THIS CASE
+                            allSpotIDsAllHoursBookedNotOccupied.add({castAllHoursValues['SlotID']}),
+                          }
+                        else if (allHoursParkingSpotInfosNeeded.length == correspondingStartandEndIndexes.length)
+                          {
+                            allHoursParkingSpotInfosNeeded.forEach((element) {
+                              debugPrint("WOODZ: ${listEquals(element.values.last, [
+                                    castIndexEntries['startIndex'],
+                                    castIndexEntries['endIndex']
+                                  ])}");
+                              listEquals(element.values.last,
+                                              [castIndexEntries['startIndex'], castIndexEntries['endIndex']]) ==
+                                          true &&
+                                      element.values.first != castAllHoursValues['SlotID']
+                                  ? element.update('SlotID', (value) => castAllHoursValues['SlotID'])
+                                  : null;
+                            })
+                          }
                       }
                     : null;
-                count += 1;
+                return allHoursEntries.key == indexEntries.key;
+              })
+            : allHoursParkingSpotInfosNeeded.clear();
+
+        withinXHoursEntriesFetched.isNotEmpty
+            ? withinXHoursEntriesFetched.any((xHoursEntries) {
+                var castXHoursValues;
+                xHoursEntries.key ==
+                        indexEntries.key //AND THE of withinXhours IDS ARE DIFF then update withinXhoursParking
+                    ? {
+                        castXHoursValues = xHoursEntries.value as Map<String, dynamic>,
+                        //debugPrint("LOLO $castXHoursValues \t $castIndexEntries \t $count"),
+                        if (withinXHoursParkingSpotInfosNeeded.length < correspondingStartandEndIndexes.length)
+                          {
+                            withinXHoursParkingSpotInfosNeeded.add({
+                              'SlotID': castXHoursValues['SlotID'],
+                              'indexes': [castIndexEntries['startIndex'], castIndexEntries['endIndex']],
+                            }),
+                            //withinXHoursParkingSpotInfosNeeded FIND A WQAY TO UPDATE THE LIST TH THE NEWLY ADDED VALUE WHICH IS B1 IN THIS CASE
+                            spotIDsWithinXHoursBookedNotOccupied.add({castXHoursValues['SlotID']}),
+                          }
+                        else if (withinXHoursParkingSpotInfosNeeded.length == correspondingStartandEndIndexes.length)
+                          {
+                            withinXHoursParkingSpotInfosNeeded.forEach((element) {
+                              debugPrint("WOODZ: ${listEquals(element.values.last, [
+                                    castIndexEntries['startIndex'],
+                                    castIndexEntries['endIndex']
+                                  ])}");
+                              listEquals(element.values.last,
+                                              [castIndexEntries['startIndex'], castIndexEntries['endIndex']]) ==
+                                          true &&
+                                      element.values.first != castXHoursValues['SlotID']
+                                  ? element.update('SlotID', (value) => castXHoursValues['SlotID'])
+                                  : null;
+                            })
+                          }
+                      }
+                    : null;
                 return xHoursEntries.key == indexEntries.key;
               })
             : withinXHoursParkingSpotInfosNeeded.clear();
       });
+
       withinXHoursEntriesFetched.isEmpty ? withinXHoursParkingSpotInfosNeeded.clear() : null;
-      debugPrint("withinXHoursParkingSpotIDsToShow $withinXHoursParkingSpotInfosNeeded}");
+      debugPrint(
+          "withinXHoursParkingSpotIDsToShow $withinXHoursParkingSpotInfosNeeded __ $allHoursParkingSpotInfosNeeded }");
 //DO NOT REMOVE THIS WHOLE SECTION ------------ END
 
       for (var change in event.docChanges) {
@@ -2243,7 +2821,6 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             debugPrint("Inside Parking Info Document Just Loaded: ${change.doc.data()}"); //rt for realTime
             var rTrBookedIDs = change.doc.data()!['Regular']['Booked']['IDs'] as List;
 
-            // ignore: prefer_typing_uninitialized_variables
             var theID;
             listEquals(rTrBookedIDs, rBookedIDs.toList()) == true //need precisely this one
                 ? {
@@ -2275,7 +2852,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                         ),
                         singleAlleyInfo.update(
                           "isBookedWithinXHours",
-                          (value) => spotIDsWithinXHoursBookedNotOccupied.contains('$theID') ? true : false,
+                          (value) => spotIDsWithinXHoursBookedNotOccupied.any((element) => element.contains('$theID'))
+                              ? true
+                              : false, //NO NEED TP ADD BOOKEDANDOCCUPIED BECAUSE IT'S IN SLOT OCCUPIED ALREADY
                         ),
                       }
                   }
@@ -2362,6 +2941,143 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         }
       }
     });
+  }
+
+  displayAvailabilityForWholeDay(int tappedOnSpotIndex, String whichAlley, int timeSlotIndex) {
+    debugPrint(
+        "THE INDEX $tappedOnSpotIndex _____ alley: $whichAlley ${mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex)} _ $doDisplayAvailabilityForWholeDay __ $tappedOnParkingSpotID");
+
+    whichAlley.contains('B') ? tappedOnSpotIndex = tappedOnSpotIndex + parkingSlotsTotal ~/ 2 : null;
+    if (selectedDay.year == DateTime.now().year &&
+        selectedDay.month == DateTime.now().month &&
+        selectedDay.day == DateTime.now().day) {
+      if (mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex)['isBookedWithinXHours'] == true ||
+          mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex)['isSlotOccupied']['AfterBooked'] == true) {
+        List<List> wholeDayStatusForSpecificSpot = [];
+        testallBookedTimeSlotsInMinutes.isEmpty ? wholeDayStatusForSpecificSpot.clear() : null;
+        debugPrint("castIndexEntries $testallBookedTimeSlotsInMinutes");
+
+        correspondingStartandEndIndexes.entries.forEach((indexEntries) {
+          var castIndexEntries = indexEntries.value as Map<String, dynamic>;
+          testallBookedTimeSlotsInMinutes.isNotEmpty
+              ? testallBookedTimeSlotsInMinutes.entries.any((allBookedHoursEntries) {
+                  var castAllHoursValues;
+                  Iterable<Map<String, dynamic>> babs = {};
+                  allBookedHoursEntries.key == indexEntries.key
+                      ? {
+                          withinXHoursParkingSpotInfosNeeded.isNotEmpty
+                              ? babs = withinXHoursParkingSpotInfosNeeded.where((element) {
+                                  var ok = element['indexes'] as List;
+                                  return castIndexEntries.values.first == ok.first;
+                                })
+                              : null,
+                          castAllHoursValues = allBookedHoursEntries.value as Map<String, dynamic>,
+                          //debugPrint("LOLOI $castAllHoursValues \t $castIndexEntries \t $babs"),
+                          babs.isNotEmpty
+                              ? babs.forEach((element) {
+                                  element['SlotID'] == mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex).values.first
+                                      ? {
+                                          wholeDayStatusForSpecificSpot += ([
+                                            [castIndexEntries['startIndex'], castIndexEntries['endIndex']]
+                                          ])
+                                        }
+                                      : null;
+                                })
+                              : null,
+                        }
+                      : null;
+                  return allBookedHoursEntries.key == indexEntries.key;
+                })
+              : wholeDayStatusForSpecificSpot.clear();
+        });
+        debugPrint(" wholeDayStatus $wholeDayStatusForSpecificSpot");
+        return wholeDayStatusForSpecificSpot.any((element) {
+                  return element.first <= timeSlotIndex &&
+                      element.last >= timeSlotIndex &&
+                      timeSlotIndex >= selectedDayIndex;
+                }) ==
+                true
+            ? getTimeSpotIcon('booked')
+            : wholeDayStatusForSpecificSpot.any((element) {
+                      return timeSlotIndex < selectedDayIndex;
+                    }) ==
+                    true
+                ? getTimeSpotIcon('unbookable')
+                : getTimeSpotIcon('available'); /*  ? Colors.orange
+          : Colors.green; */
+      } else if (mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex)['isSlotOccupied']['NoPriorBooking'] == true) {
+        return timeSlotIndex >= selectedDayIndex &&
+                allConvertedTimesOfDayToInt.elementAt(timeSlotIndex * 2) <= selectedDayToInt &&
+                allConvertedTimesOfDayToInt.elementAt((timeSlotIndex * 2) + 1) >= selectedDayToInt
+            ? getTimeSpotIcon('occupied')
+            : timeSlotIndex < selectedDayIndex == true
+                ? getTimeSpotIcon('unbookable')
+                : getTimeSpotIcon('available'); //getTimeSpotIcon('unBookable') if today'sdateis = selectedDay
+        /*   ? Color.fromARGB(255, 202, 24, 21)
+          : Colors.green; */
+      } else {
+        return timeSlotIndex < selectedDayIndex == true
+            ? getTimeSpotIcon('unbookable')
+            : getTimeSpotIcon('available'); //Container(width: 15, height: 15, color: Colors.amber);
+      }
+    } else {
+      //OCCUPIED CANNOT BE SHOWN BECAUSE THE DAY HAS NOT COME YET! JUST TAKE CARE OF BOOKED AND AVAILABLE
+      if (mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex)['isSlotBooked'] == true) {
+        List<List> wholeDayStatusForSpecificSpotSelectedDaySupToToday = [];
+        testallBookedTimeSlotsInMinutes.isEmpty ? wholeDayStatusForSpecificSpotSelectedDaySupToToday.clear() : null;
+
+        correspondingStartandEndIndexes.entries.forEach((indexEntries) {
+          var castIndexEntries = indexEntries.value as Map<String, dynamic>;
+          testallBookedTimeSlotsInMinutes.isNotEmpty
+              ? testallBookedTimeSlotsInMinutes.entries.any((allBookedHoursEntries) {
+                  var castAllHoursValues;
+                  Iterable<Map<String, dynamic>> babs = {};
+                  allBookedHoursEntries.key == indexEntries.key
+                      ? {
+                          allHoursParkingSpotInfosNeeded.isNotEmpty
+                              ? babs = allHoursParkingSpotInfosNeeded.where((element) {
+                                  var ok = element['indexes'] as List;
+                                  return castIndexEntries.values.first == ok.first;
+                                })
+                              : null,
+                          castAllHoursValues = allBookedHoursEntries.value as Map<String, dynamic>,
+                          //debugPrint("MALADADA $castAllHoursValues \t $castIndexEntries \t $babs"),
+                          babs.isNotEmpty
+                              ? babs.forEach((element) {
+                                  element['SlotID'] == mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex).values.first
+                                      ? {
+                                          wholeDayStatusForSpecificSpotSelectedDaySupToToday += ([
+                                            [castIndexEntries['startIndex'], castIndexEntries['endIndex']]
+                                          ])
+                                        }
+                                      : null;
+                                })
+                              : null,
+                        }
+                      : null;
+                  return allBookedHoursEntries.key == indexEntries.key;
+                })
+              : wholeDayStatusForSpecificSpotSelectedDaySupToToday.clear();
+        });
+        debugPrint(" wholeDayStatusSUP $wholeDayStatusForSpecificSpotSelectedDaySupToToday");
+
+        return wholeDayStatusForSpecificSpotSelectedDaySupToToday.any((element) {
+                  return element.first <= timeSlotIndex && element.last >= timeSlotIndex
+                      /* &&
+                      timeSlotIndex >= selectedDayIndex */
+                      ;
+                }) ==
+                true
+            ? getTimeSpotIcon('booked')
+            : wholeDayStatusForSpecificSpotSelectedDaySupToToday.any((element) {
+                      return timeSlotIndex > selectedDayIndex;
+                    }) ==
+                    true
+                ? getTimeSpotIcon('available')
+                : getTimeSpotIcon('available');
+      }
+      return getTimeSpotIcon('available');
+    }
   }
 } //CLSOGIN BRACKS
 

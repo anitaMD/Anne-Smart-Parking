@@ -7,13 +7,14 @@
         {
             "name": "smart_parking",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "console": "debugConsole", 
         },
         {
             "name": "smart_parking (profile mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "flutterMode": "profile", "console": "debugConsole", 
         }
     ]
 }

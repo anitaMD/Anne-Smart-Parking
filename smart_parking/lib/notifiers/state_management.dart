@@ -5,7 +5,6 @@ class StateManagement with ChangeNotifier {
   var selectedTime = TimeOfDay.now();
   String openingHour = '06:00', closingHour = '18:00'; //to initialize
   Duration interval = const Duration(minutes: 30);
-  var updatedSelected = TimeOfDay.now();
   List<TimeOfDay> timeSlotsParsed = [];
 
   updateSelectedTime(TimeOfDay timeofday) {
