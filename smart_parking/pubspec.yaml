@@ -64,6 +64,7 @@ dependencies:
   table_calendar: ^3.0.6
   im_stepper: ^1.0.1+1
   time_range_picker : any
+  intl: any
   flag: ^6.0.0
   flutter_form_builder: ^7.6.0
   form_builder_validators: ^8.3.0
@@ -71,10 +72,6 @@ dependencies:
     git:
       url: https://github.com/anitaMD/country_state_city_picker
   flutter_emoji: ^2.4.0
-
-
-  
-
   
 
 dev_dependencies:
@@ -103,31 +100,8 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/mapstyle/mapstyle.txt
+    - assets/icons/
     - assets/images/
-    - assets/images/logo.png
-    - assets/images/logo_without_text.png
-    - assets/images/location_time.jpg
-    - assets/images/location_time_colorful.jpg
-    - assets/images/assisted_parking.jpg
-    - assets/images/book_now.jpg
-    - assets/images/time.jpg
-    - assets/images/handshake.jpg
-    - assets/images/facebook.png
-    - assets/images/gmail.png
-    - assets/images/instagram.png
-    - assets/images/profile_picture.png
-    - assets/images/no_profile_picture.png
-    - assets/images/no_profile_picture_grey.png
-    - assets/icons/checklist.png
-    - assets/icons/pulse.png
-    - assets/icons/sad_smiley.png
-    - assets/images/parking_marker_icon.png
-    - assets/images/car1.jpg
-    - assets/images/car2.jpg
-    - assets/images/car3.jpg
-    - assets/images/car4.jpg
-    - assets/images/car5.jpg
-    - assets/images/car6.jpg
     - assets/images/carLogos/acura.png
     - assets/images/carLogos/bmw.png
     - assets/images/carLogos/chevrolet.png
@@ -144,6 +118,23 @@ flutter:
     - assets/images/carLogos/peugeot.png
     - assets/images/carLogos/toyota.png
     - assets/images/carLogos/volkswagen.png
+
+    - assets/images/carRep/acura.png
+    - assets/images/carRep/bmw.png
+    - assets/images/carRep/chevrolet.png
+    - assets/images/carRep/dacia.png
+    - assets/images/carRep/ferrari.png
+    - assets/images/carRep/ford.png
+    - assets/images/carRep/honda.png
+    - assets/images/carRep/hyundai.png
+    - assets/images/carRep/isuzu.png
+    - assets/images/carRep/kia.png
+    - assets/images/carRep/mercedes.png
+    - assets/images/carRep/nissan.png
+    - assets/images/carRep/opel.png
+    - assets/images/carRep/peugeot.png
+    - assets/images/carRep/toyota.png
+    - assets/images/carRep/volkswagen.png
  
 
 
