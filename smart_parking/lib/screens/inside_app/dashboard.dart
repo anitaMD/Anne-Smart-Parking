@@ -27,25 +27,14 @@ class _DashboardPageState extends State<DashboardPage> {
   bool isDropped = false;
   bool isToggleDragStarted = false;
   double dragEndOffsetX = 0.0, dragEndOffsetY = 0.0;
-  Velocity initialVelocity =
-      VelocityTracker.withKind(PointerDeviceKind.touch).getVelocity();
+  Velocity initialVelocity = VelocityTracker.withKind(PointerDeviceKind.touch).getVelocity();
 
-  double toggleContainerWidth = 55,
-      toggleContainerHeight = 105,
-      mapTopRightIconBoxHeightDeducted = 50;
+  double toggleContainerWidth = 55, toggleContainerHeight = 105, mapTopRightIconBoxHeightDeducted = 50;
 
-  double previousPositionX = 0.0,
-      previousPositionY = 0.0,
-      appBarHeightFinal = 0.0,
-      totalScreenHeightFinal = 0.0;
+  double previousPositionX = 0.0, previousPositionY = 0.0, appBarHeightFinal = 0.0, totalScreenHeightFinal = 0.0;
 
   Widget getBodyNoEffect() {
-    List<Widget> pages = [
-      const DashboardHomePage(),
-      const BookingPage(),
-      const HistoryPage(),
-      const NotifsPage()
-    ];
+    List<Widget> pages = [const DashboardHomePage(), const BookingPage(), const HistoryPage(), const NotifsPage()];
     return IndexedStack(
       index: _currentIndex,
       children: pages,
@@ -53,12 +42,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget getBodyWFadedEffect() {
-    List<Widget> pages = [
-      const DashboardHomePage(),
-      const BookingPage(),
-      const HistoryPage(),
-      const NotifsPage()
-    ];
+    List<Widget> pages = [const DashboardHomePage(), const BookingPage(), const HistoryPage(), const NotifsPage()];
     return FadeIndexedStack(index: _currentIndex, children: pages);
   }
 
@@ -91,8 +75,7 @@ class _DashboardPageState extends State<DashboardPage> {
             child: ToggleButtons(
               splashColor: Colors.yellow,
               renderBorder: true,
-              selectedBorderColor:
-                  const Color.fromARGB(255, 95, 91, 91).withOpacity(0),
+              selectedBorderColor: const Color.fromARGB(255, 95, 91, 91).withOpacity(0),
               borderColor: const Color.fromARGB(255, 95, 91, 91).withOpacity(0),
               selectedColor: isIconSelected,
               color: Colors.white,
@@ -154,21 +137,15 @@ class _DashboardPageState extends State<DashboardPage> {
           previousPositionY = dragEndOffsetY; */
           dragEndOffsetX = details.offset.dx;
           dragEndOffsetY = details.offset.dy;
-          if (dragEndOffsetY <
-              appBarHeightFinal + mapTopRightIconBoxHeightDeducted) {
+          if (dragEndOffsetY < appBarHeightFinal + mapTopRightIconBoxHeightDeducted) {
             print("YOU WENT TOO FAR UP!");
             dragEndOffsetY = appBarHeightFinal +
                 15 +
                 mapTopRightIconBoxHeightDeducted; //15 to not touch the appbar and see it clearly
           }
-          if (dragEndOffsetY >
-              totalScreenHeightFinal -
-                  appBarHeightFinal -
-                  toggleContainerHeight) {
+          if (dragEndOffsetY > totalScreenHeightFinal - appBarHeightFinal - toggleContainerHeight) {
             print("YOU WENT TOO FAR DOWN!");
-            dragEndOffsetY = totalScreenHeightFinal -
-                appBarHeightFinal -
-                toggleContainerHeight;
+            dragEndOffsetY = totalScreenHeightFinal - appBarHeightFinal - toggleContainerHeight;
           }
         });
       },
@@ -184,16 +161,13 @@ class _DashboardPageState extends State<DashboardPage> {
     double totalScreenHeightFetched = MediaQuery.of(context).size.height;
     totalScreenHeightFinal = totalScreenHeightFetched;
     //
-    double dragTargetContainerHeight = totalScreenHeightFinal -
-        totalScreenHeightFinal * 0.25 -
-        mapTopRightIconBoxHeightDeducted;
+    double dragTargetContainerHeight =
+        totalScreenHeightFinal - totalScreenHeightFinal * 0.25 - mapTopRightIconBoxHeightDeducted;
 
     print(
         "CURRENT OFFSETS :  dragEndOffsetX $dragEndOffsetX ____  dragEndOffsetY $dragEndOffsetY ____  previousOffset $previousPositionX ________TESTING ${totalScreenHeightFinal - appBarHeightFinal - toggleContainerHeight}");
-    print(
-        "MediaQuery.of(context).size.height ${MediaQuery.of(context).size.height}");
-    print(
-        "APPBAR.height $fetchedAppBarHeight ___________ test : $appBarHeightFinal");
+    print("MediaQuery.of(context).size.height ${MediaQuery.of(context).size.height}");
+    print("APPBAR.height $fetchedAppBarHeight ___________ test : $appBarHeightFinal");
     return Scaffold(
       body: Stack(
           //
@@ -203,16 +177,13 @@ class _DashboardPageState extends State<DashboardPage> {
             //Positioned(left: 30, child: mapDashboardToggleSwitch()),
             isDropped == true ? Container() : dragMapDashToggleSwitch(),
             Positioned(
-              top:
-                  mapTopRightIconBoxHeightDeducted, //to not hide the map location icon en haut à droite
+              top: mapTopRightIconBoxHeightDeducted, //to not hide the map location icon en haut à droite
               child: DragTarget(
                 builder: ((context, data, rejectedData) {
                   return DottedBorder(
                     borderType: BorderType.RRect,
                     radius: const Radius.circular(12),
-                    color: isToggleDragStarted
-                        ? Colors.blueGrey
-                        : Colors.white.withOpacity(0),
+                    color: isToggleDragStarted ? Colors.blueGrey : Colors.white.withOpacity(0),
                     strokeWidth: 2,
                     dashPattern: [6],
                     child: ClipRRect(
@@ -220,9 +191,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Container(
                         height: isDropped == true
                             ? dragTargetContainerHeight
-                            : dragTargetContainerHeight -
-                                toggleContainerHeight +
-                                10,
+                            : dragTargetContainerHeight - toggleContainerHeight + 10,
                         /* dragTargetContainerHeight +
                             toggleContainerHeight -
                              -
@@ -232,12 +201,8 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: Stack(
                           children: [
                             Positioned(
-                              top: dragEndOffsetY -
-                                  toggleContainerHeight -
-                                  toggleContainerHeight / 2,
-                              child: isDropped == true
-                                  ? dragMapDashToggleSwitch()
-                                  : Container(),
+                              top: dragEndOffsetY - toggleContainerHeight - toggleContainerHeight / 2,
+                              child: isDropped == true ? dragMapDashToggleSwitch() : Container(),
                             ),
                           ],
                         ),

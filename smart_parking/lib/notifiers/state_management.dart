@@ -6,6 +6,7 @@ class StateManagement with ChangeNotifier {
   String openingHour = '06:00', closingHour = '18:00'; //to initialize
   Duration interval = const Duration(minutes: 30);
   List<TimeOfDay> timeSlotsParsed = [];
+  String buildingBookingText = 'Checking your wallet... ';
 
   updateSelectedTime(TimeOfDay timeofday) {
     selectedTime = timeofday;
@@ -15,6 +16,11 @@ class StateManagement with ChangeNotifier {
   updateOpeningAndClosingHours(String openingHourFromFirebase, String closingHourFromFirebase) {
     openingHour = openingHourFromFirebase;
     closingHour = closingHourFromFirebase;
+  }
+
+  updateBuildingBookingText(String newText) {
+    buildingBookingText = newText;
+    notifyListeners();
   }
 
   Stream<TimeOfDay> getTimeSlotsIntervals(TimeOfDay startTime, TimeOfDay endTime, Duration interval) async* {

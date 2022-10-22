@@ -10,14 +10,11 @@ import 'package:smart_parking/screens/inside_app/settings.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/screens/authenticate/login_register.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
-
 import 'profile_info.dart';
 import 'wallet.dart';
 import 'my_drawer_header.dart';
 import 'faq.dart';
 import 'notifications.dart';
-/* import 'privacy_policy.dart';
-import 'send_feedback.dart'; */
 
 class Home extends StatefulWidget {
   final bool fromLoginView;
@@ -55,9 +52,7 @@ class HomeState extends State<Home> {
     if (widget.fromLoginView) {
       //will be false if not from signup view
       print("INITSTATE IS FROM LOGVIEW ${widget.fromLoginView}");
-      firestoreService
-          .getUserFullName(currentUser!)
-          .then((value) => setState(() => logInDispName = value.toString()));
+      firestoreService.getUserFullName(currentUser!).then((value) => setState(() => logInDispName = value.toString()));
 
       firestoreService
           .getUserProfileImage(currentUser!)
@@ -66,8 +61,7 @@ class HomeState extends State<Home> {
       currentUser!.updateDisplayName(logInDispName);
       currentUser!.updatePhotoURL(profilePicture);
 
-      print(
-          'INIT STATE CURRENT USER NO PROFILE PIC GREY : ${currentUser!.photoURL} ');
+      print('INIT STATE CURRENT USER NO PROFILE PIC GREY : ${currentUser!.photoURL} ');
     } else {
       print("INITSTATE IS NOT FROM LOG VIEW ${widget.fromLoginView}");
       firestoreService
@@ -151,17 +145,13 @@ class HomeState extends State<Home> {
       child: Column(
         // shows the list of menu drawer
         children: [
-          menuItem(1, "Dashboard", Icons.dashboard_outlined,
-              currentPage == DrawerSections.dashboard ? true : false),
-          menuItem(2, "Profile", Icons.person,
-              currentPage == DrawerSections.profileInfo ? true : false),
-          menuItem(3, "Wallet", Icons.account_balance_wallet_outlined,
-              currentPage == DrawerSections.wallet ? true : false),
-          menuItem(4, "FAQs", Icons.question_answer_outlined,
-              currentPage == DrawerSections.faq ? true : false),
+          menuItem(1, "Dashboard", Icons.dashboard_outlined, currentPage == DrawerSections.dashboard ? true : false),
+          menuItem(2, "Profile", Icons.person, currentPage == DrawerSections.profileInfo ? true : false),
+          menuItem(
+              3, "Wallet", Icons.account_balance_wallet_outlined, currentPage == DrawerSections.wallet ? true : false),
+          menuItem(4, "FAQs", Icons.question_answer_outlined, currentPage == DrawerSections.faq ? true : false),
           const Divider(),
-          menuItem(5, "Settings", Icons.settings_outlined,
-              currentPage == DrawerSections.settings ? true : false),
+          menuItem(5, "Settings", Icons.settings_outlined, currentPage == DrawerSections.settings ? true : false),
           menuItem(6, "Notifications", Icons.notifications_outlined,
               currentPage == DrawerSections.notifications ? true : false),
           const Divider(),
@@ -180,9 +170,7 @@ class HomeState extends State<Home> {
       print('THIS RESULT IS FROM SIGNUP VIEW ${widget.fromLoginView}');
       appBarText = '${widget.theUserProfile!.fullName}REG';
     } else {
-      firestoreService
-          .getUserFullName(currentUser!)
-          .then((value) => logInDispName = value.toString());
+      firestoreService.getUserFullName(currentUser!).then((value) => logInDispName = value.toString());
 
       currentUser?.updateDisplayName(logInDispName);
       if (currentUser != null) {
@@ -192,9 +180,7 @@ class HomeState extends State<Home> {
       print(
           'THIS IS RESULT IS FROM LOGIN VIEW ${widget.fromLoginView} and the user ${currentUser!.displayName}___ ${currentUser!.email} _______ ${currentUser!.uid} _______ ${currentUser!.photoURL}');
 
-      currentUser != null
-          ? appBarText = currentUser!.displayName.toString()
-          : appBarText = "Feed";
+      currentUser != null ? appBarText = currentUser!.displayName.toString() : appBarText = "Feed";
     }
     return appBarText;
   }
@@ -218,8 +204,7 @@ class HomeState extends State<Home> {
         setState(() {
           widget.theUserProfile!.profileImage = imagePath; //PROBLEM HERE
           currentUser!.updatePhotoURL(imagePath);
-          print(
-              "SET STATE FROM GETPROFILEPIC FUNC ELSE : ${widget.theUserProfile!.profileImage}");
+          print("SET STATE FROM GETPROFILEPIC FUNC ELSE : ${widget.theUserProfile!.profileImage}");
           barProfilePic = imagePath;
           MyHeaderDrawerState().headerProfilePic2 = barProfilePic;
         });
@@ -261,32 +246,37 @@ class HomeState extends State<Home> {
 
   assetOrNetworkImageBar(String barProfilePic) {
     if (barProfilePic.contains('assets/images')) {
-      return DecorationImage(
-          image: AssetImage(barProfilePic), fit: BoxFit.cover);
+      return DecorationImage(image: AssetImage(barProfilePic), fit: BoxFit.cover);
     } else {
-      return DecorationImage(
-          image: NetworkImage(barProfilePic), fit: BoxFit.cover);
+      return DecorationImage(image: NetworkImage(barProfilePic), fit: BoxFit.cover);
     }
   }
 
   showAppBar() {
-    if (currentPage != DrawerSections.profileInfo &&
-        currentPage != DrawerSections.notifications) {
+    if (currentPage != DrawerSections.profileInfo && currentPage != DrawerSections.notifications) {
       Color notificationColor;
       String countNumberFormatDisplay;
-      counter != 0
-          ? notificationColor = Colors.red
-          : notificationColor = Colors.red.withOpacity(0.0);
-      counter > 9
-          ? countNumberFormatDisplay = '9+'
-          : countNumberFormatDisplay = '$counter';
+      counter != 0 ? notificationColor = Colors.red : notificationColor = Colors.red.withOpacity(0.0);
+      counter > 9 ? countNumberFormatDisplay = '9+' : countNumberFormatDisplay = '$counter';
       return AppBar(
-        backgroundColor: Colors.amber,
+        elevation: 1,
+        toolbarHeight: kToolbarHeight,
+        backgroundColor: currentPage == DrawerSections.wallet ? Colors.white : Colors.blueGrey,
+        /* shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(40),
+          ),
+        ), */
         title: Text(
           appBarText,
+          style: currentPage != DrawerSections.wallet
+              ? const TextStyle(color: Colors.white)
+              : const TextStyle(color: Colors.black),
         ),
+        //flexibleSpace: currentPage != DrawerSections.wallet ? null : Wallet(),
         actions: <Widget>[
           // Using Stack to show Notification Badge
+
           Stack(
             children: <Widget>[
               InkWell(
@@ -296,15 +286,14 @@ class HomeState extends State<Home> {
                   });
                 },
                 child: SizedBox(
-                  width: 82,
+                  width: 96,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Stack(
                         children: [
                           IconButton(
-                              icon:
-                                  const Icon(Icons.notifications_none_outlined),
+                              icon: const Icon(Icons.notifications_none_outlined),
                               iconSize: 30,
                               color: Colors.white,
                               onPressed: () {
@@ -320,21 +309,17 @@ class HomeState extends State<Home> {
                                 minHeight: 26,
                                 minWidth: 26,
                               ),
-                              decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: notificationColor),
+                              decoration: BoxDecoration(shape: BoxShape.circle, color: notificationColor),
                               alignment: Alignment.center,
                               child: Text(
                                 countNumberFormatDisplay,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'OpenSans'),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'OpenSans'),
                                 textAlign: TextAlign.center,
                               ),
                             ),
                           )
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -371,12 +356,9 @@ class HomeState extends State<Home> {
     if (currentPage == DrawerSections.dashboard) {
       container = const DashboardPage();
     } else if (currentPage == DrawerSections.profileInfo) {
-      container = ProfileInfo(
-          profilePic: barProfilePic,
-          customFunction: getProfilePic,
-          status: widget.fromLoginView);
+      container = ProfileInfo(profilePic: barProfilePic, customFunction: getProfilePic, status: widget.fromLoginView);
     } else if (currentPage == DrawerSections.wallet) {
-      container = const EventsPage();
+      container = const Wallet();
     } else if (currentPage == DrawerSections.faq) {
       container = const NotesPage();
     } else if (currentPage == DrawerSections.settings) {
@@ -412,22 +394,17 @@ class HomeState extends State<Home> {
           child: Column(
             children: [
               MyHeaderDrawer(
-                headerProfilePic:
-                    barProfilePic, //barProfilePic already checked whether this is the login or signupview
+                headerProfilePic: barProfilePic, //barProfilePic already checked whether this is the login or signupview
               ),
               myDrawerList(),
               Material(
                 child: InkWell(
                   onTap: () async {
                     parkingUserAuthService.signOutUser();
-                    SharedPreferences prefs =
-                        await SharedPreferences.getInstance();
+                    SharedPreferences prefs = await SharedPreferences.getInstance();
                     prefs.setBool("isLoggedIn", true);
                     if (!mounted) return;
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const LoginRegister()));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginRegister()));
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(15.0),

@@ -26,13 +26,23 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
     ));
+
+    getDirectory().then((value) {
+      debugPrint(" LALILA $value");
+      for (var asset in value) {
+        String brandName = asset.split('/').last.split('.').first;
+        if (brandName.toLowerCase() ==
+            widget.bookerFirstPageInfoFetched['Selected Vehicule Info']['Specs']['Brand'].toString().toLowerCase()) {
+          debugPrint("FOUND IT");
+          setState(() => currentCarPath = asset);
+        }
+      }
+    });
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    getDirectory().then((value) => print(" LALILA $value"));
-
     //print("LALILA ${");
     const TextStyle titleTextStyle = TextStyle(
       color: Colors.black,
@@ -93,9 +103,6 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          /*  const SizedBox(
-            height: 10,
-          ), */
           const FittedBox(
             child: Text(
               "BOOKING OVERVIEW",
@@ -117,12 +124,13 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white54),
                 ),
               ),
-              const SizedBox(
-                height: 19,
-              ),
-              const Image(image: AssetImage('assets/images/carRep/ford.png')),
-              const SizedBox(
-                height: 27,
+              Image(
+                image: AssetImage(currentCarPath.isEmpty ? 'assets/images/carRep/acura.png' : currentCarPath),
+                width: 400,
+                height: MediaQuery.of(context).size.height / 3 -
+                    50 -
+                    15, //50 is toolbar height and 10 is the padding above bottombar
+                fit: BoxFit.scaleDown,
               ),
               Row(
                 children: [

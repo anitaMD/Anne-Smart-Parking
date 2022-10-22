@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +34,14 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   @override
+  void initState() {
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+    ));
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
@@ -58,9 +67,7 @@ class _MyAppState extends State<MyApp> {
             primaryColor: Colors.indigo,
             // Define the default font family.
           ),
-          home: widget.status == true
-              ? const LoginRegister()
-              : const Home(fromLoginView: true),
+          home: widget.status == true ? const LoginRegister() : const Home(fromLoginView: true),
         );
       },
     );
