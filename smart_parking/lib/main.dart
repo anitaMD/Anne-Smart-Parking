@@ -1,4 +1,6 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -11,13 +13,41 @@ import 'package:smart_parking/screens/inside_app/home.dart';
 import 'screens/authenticate/login_register.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  debugPrint("Handling a background message...: ${message.notification!.body}");
+}
+
+const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'high_importance_channel', // id
+    'High Importance Notifications', // title
+    description: 'This channel is used for important notifications.', // description
+    importance: Importance.high,
+    playSound: true);
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   SharedPreferences prefs = await SharedPreferences.getInstance();
   var status = prefs.getBool('isLoggedIn') ??
       true; //true means user logged OUT and false means he's already logged in. could rename to 'userHasToLogIn
   debugPrint("PREF STATUS $status");
-  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+// Firebase local notification plugin
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+
+//Firebase messaging
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
   runApp(MyApp(status: status));
 }
 
@@ -67,7 +97,14 @@ class _MyAppState extends State<MyApp> {
             primaryColor: Colors.indigo,
             // Define the default font family.
           ),
-          home: widget.status == true ? const LoginRegister() : const Home(fromLoginView: true),
+          home: widget.status == true
+              ? const LoginRegister()
+              : const Home(
+                  fromLoginView: true,
+                  parkingToNavigateTo: {},
+                  newIndex: 0,
+                  timeUntilResStarts: 0,
+                ),
         );
       },
     );

@@ -5,25 +5,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/models/user.dart';
-import 'package:smart_parking/screens/inside_app/dashboard.dart';
+import 'package:smart_parking/screens/inside_app/dashboard_wrapper.dart';
 import 'package:smart_parking/screens/inside_app/settings.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/screens/authenticate/login_register.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
 import 'profile_info.dart';
 import 'wallet.dart';
-import 'my_drawer_header.dart';
+import 'drawer/my_drawer_header.dart';
 import 'faq.dart';
 import 'notifications.dart';
 
 class Home extends StatefulWidget {
   final bool fromLoginView;
   final UserProfile? theUserProfile;
-
+  final Map<String, dynamic> parkingToNavigateTo;
+  final int newIndex;
   const Home({
     Key? key,
     required this.fromLoginView,
     this.theUserProfile,
+    required this.parkingToNavigateTo,
+    required this.newIndex,
+    required int timeUntilResStarts,
   }) : super(key: key);
 
   @override
@@ -354,7 +358,10 @@ class HomeState extends State<Home> {
     Widget container;
     container = Container();
     if (currentPage == DrawerSections.dashboard) {
-      container = const DashboardPage();
+      container = DashboardWrapperPage(
+        parkingToNavigateTo: widget.parkingToNavigateTo,
+        newIndex: widget.newIndex,
+      );
     } else if (currentPage == DrawerSections.profileInfo) {
       container = ProfileInfo(profilePic: barProfilePic, customFunction: getProfilePic, status: widget.fromLoginView);
     } else if (currentPage == DrawerSections.wallet) {

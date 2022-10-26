@@ -28,6 +28,15 @@ class UserProfile {
         phoneNumber = data['phoneNumber'],
         profileImage = data['profileImage'];
 
+/*   UserProfile.fromData(Map<String, dynamic> data)
+      : id = data['ID'],
+        fullName = data['Full Name'],
+        email = data['Email'],
+        //userRole = data['userRole'],
+        timeStamp = data['TimeStamp'],
+        phoneNumber = data['Phone Number'],
+        profileImage = data['Profile Image']; */
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -39,4 +48,16 @@ class UserProfile {
       'profileImage': profileImage,
     };
   }
+
+  /*  Map<String, dynamic> toJson() {
+    return {
+      'ID': id,
+      'Full Name': fullName,
+      'Email': email,
+      //'userRole': userRole,
+      'Phone Number': phoneNumber,
+      'TimeStamp': timeStamp,
+      'Profile Image': profileImage,
+    };
+  } */
 }

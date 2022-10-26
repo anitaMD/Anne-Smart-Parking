@@ -5,10 +5,9 @@ import 'package:smart_parking/screens/inside_app/for_wallet/light_color.dart';
 
 class ShowOperationDetails extends StatelessWidget {
   final Map<String, dynamic> transactionData;
-  final String transactionType, newBalance;
+  final String transactionType;
 
-  const ShowOperationDetails(
-      {Key? key, required this.transactionData, required this.transactionType, required this.newBalance})
+  const ShowOperationDetails({Key? key, required this.transactionData, required this.transactionType})
       : super(key: key);
 
   @override
@@ -19,6 +18,9 @@ class ShowOperationDetails extends StatelessWidget {
       decimalDigits: 0,
     );
     Map<String, dynamic> transactionDataValues = transactionData.values.first;
+    String newBalance = transactionType == 'TopUp'
+        ? transactionDataValues['New Balance'].toString()
+        : transactionDataValues['New Balance'].toString();
     var ok = transactionDataValues['TimeStamp'] as Timestamp;
     var timeStampToDate = ok.toDate();
     const TextStyle opID =

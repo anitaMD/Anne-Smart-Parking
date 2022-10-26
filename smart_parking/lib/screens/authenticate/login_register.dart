@@ -8,7 +8,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:phone_number/phone_number.dart';
 import 'package:smart_parking/screens/inside_app/home.dart';
-import 'package:smart_parking/screens/inside_app/landingpage.dart';
+import 'package:smart_parking/screens/inside_app/googgle_si_landingpage.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/screens/authenticate/reset_password.dart';
 import 'package:smart_parking/models/textfield.dart';
@@ -48,12 +48,7 @@ class LoginRegisterState extends State<LoginRegister> {
   }
 
   UserProfile userProfile = UserProfile(
-      id: '',
-      fullName: '',
-      email: '',
-      phoneNumber: '',
-      timeStamp: FieldValue.serverTimestamp(),
-      profileImage: '');
+      id: '', fullName: '', email: '', phoneNumber: '', timeStamp: FieldValue.serverTimestamp(), profileImage: '');
   final formKey = GlobalKey<FormState>();
   FormType _formType = FormType.login;
   //UserType _userType = UserType.normalUser;
@@ -65,8 +60,7 @@ class LoginRegisterState extends State<LoginRegister> {
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController _numberController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
 
@@ -81,8 +75,7 @@ class LoginRegisterState extends State<LoginRegister> {
     isLogView = true;
 
     try {
-      await _auth.signInWithEmailAndPassword(
-          email: _emailController.text, password: _passwordController.text);
+      await _auth.signInWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
 
       Fluttertoast.showToast(
           msg: 'Successfully logged in',
@@ -97,6 +90,9 @@ class LoginRegisterState extends State<LoginRegister> {
         MaterialPageRoute(
             builder: (context) => const Home(
                   fromLoginView: true,
+                  parkingToNavigateTo: {},
+                  newIndex: 0,
+                  timeUntilResStarts: 0,
                 )),
       );
       _auth.idTokenChanges().listen((user) async {
@@ -138,12 +134,10 @@ class LoginRegisterState extends State<LoginRegister> {
   myValidateNumber() async {
     bool validSnPhoneNumber = false;
     String fetchedNumber = _numberController.text;
-    RegionInfo region =
-        const RegionInfo(name: 'Senegal', code: 'SN', prefix: 221);
+    RegionInfo region = const RegionInfo(name: 'Senegal', code: 'SN', prefix: 221);
 
     try {
-      validSnPhoneNumber = await PhoneNumberUtil()
-          .validate(fetchedNumber, regionCode: region.code);
+      validSnPhoneNumber = await PhoneNumberUtil().validate(fetchedNumber, regionCode: region.code);
       if (!validSnPhoneNumber) {
         Fluttertoast.showToast(
             msg: 'Please check number format.',
@@ -175,8 +169,8 @@ class LoginRegisterState extends State<LoginRegister> {
 
     //UserProfile fetchedUP = userProfile;
     try {
-      UserCredential user = await _auth.createUserWithEmailAndPassword(
-          email: _emailController.text, password: _passwordController.text);
+      UserCredential user =
+          await _auth.createUserWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
 
       await firestoreService.createUser(UserProfile(
         id: user.user!.uid,
@@ -204,6 +198,9 @@ class LoginRegisterState extends State<LoginRegister> {
           builder: (context) => Home(
             fromLoginView: false,
             theUserProfile: userProfile,
+            parkingToNavigateTo: const {},
+            newIndex: 0,
+            timeUntilResStarts: 0,
           ),
         ),
       );
@@ -264,16 +261,13 @@ class LoginRegisterState extends State<LoginRegister> {
     if (_formType == FormType.login) {
       if (form!.validate()) {
         form.save();
-        print(
-            'Form is valid. Email: $_emailController , Password: $_passwordController');
+        print('Form is valid. Email: $_emailController , Password: $_passwordController');
         return true;
       }
       return false;
     } else {
       myValidateNumber();
-      if (form!.validate() &&
-          checkedValidNumber &&
-          _passwordController.text == _confirmPasswordController.text) {
+      if (form!.validate() && checkedValidNumber && _passwordController.text == _confirmPasswordController.text) {
         form.save();
         print(
             'Form is valid. Full Name : $_fullNameController, Email: $_emailController , Password: $_passwordController, Phone number: $_numberController');
@@ -333,11 +327,9 @@ class LoginRegisterState extends State<LoginRegister> {
     // link : https://github.com/flutter/flutter/issues/44431
     try {
       GoogleSignInAccount? googleSignInAccount = await _myGoogleSignIn.signIn();
-      GoogleSignInAuthentication googleSingInAuthentication =
-          await googleSignInAccount!.authentication;
+      GoogleSignInAuthentication googleSingInAuthentication = await googleSignInAccount!.authentication;
       AuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleSingInAuthentication.accessToken,
-          idToken: googleSingInAuthentication.idToken);
+          accessToken: googleSingInAuthentication.accessToken, idToken: googleSingInAuthentication.idToken);
       await FirebaseAuth.instance.signInWithCredential(credential);
       _auth.authStateChanges().listen((user) {
         currentUser = FirebaseAuth.instance.currentUser;
@@ -349,7 +341,7 @@ class LoginRegisterState extends State<LoginRegister> {
       });
       if (mounted) {
         return Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const LandingPage()),
+          MaterialPageRoute(builder: (context) => const GoogleSignInLandingPage()),
         );
       }
     } catch (e) {
@@ -448,15 +440,12 @@ class LoginRegisterState extends State<LoginRegister> {
                 ],
               ),
               TextButton(
-                onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const ResetPassword())),
+                onPressed: () =>
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ResetPassword())),
                 style: ButtonStyle(
                   backgroundColor: MaterialStateProperty.all(Colors.white12),
                   shape: MaterialStateProperty.all(
-                    RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0)),
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
                   ),
                 ),
                 child: const Text(
@@ -485,11 +474,8 @@ class LoginRegisterState extends State<LoginRegister> {
               ),
               child: const Text(
                 "LOGIN",
-                style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 18,
-                    fontFamily: 'OpenSans',
-                    fontWeight: FontWeight.bold),
+                style:
+                    TextStyle(color: Colors.black, fontSize: 18, fontFamily: 'OpenSans', fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -779,11 +765,8 @@ class LoginRegisterState extends State<LoginRegister> {
               ),
               child: const Text(
                 "SIGN UP",
-                style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 18,
-                    fontFamily: 'OpenSans',
-                    fontWeight: FontWeight.bold),
+                style:
+                    TextStyle(color: Colors.black, fontSize: 18, fontFamily: 'OpenSans', fontWeight: FontWeight.bold),
               ),
             ),
           ),

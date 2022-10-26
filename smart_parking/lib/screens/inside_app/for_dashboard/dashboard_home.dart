@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, prefer_typing_uninitialized_variables
+// ignore_for_file: avoid_print, prefer_typing_uninitialized_variables, avoid_function_literals_in_foreach_calls
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,9 +11,9 @@ import 'package:smart_parking/services/firebase/firestore_service.dart';
 import '../../../services/firebase/firebase_service.dart';
 
 class DashboardHomePage extends StatefulWidget {
-  const DashboardHomePage({
-    Key? key,
-  }) : super(key: key);
+  final Function(bool canShow) canShowToggle;
+  final void Function(int selectedIndex) getIndex;
+  const DashboardHomePage({Key? key, required this.canShowToggle, required this.getIndex}) : super(key: key);
 
   @override
   DashboardHomePageState createState() => DashboardHomePageState();
@@ -28,7 +28,11 @@ class DashboardHomePageState extends State<DashboardHomePage> {
   String walletFirstAndOnlyDocID = '';
   User? currentlySignedInUser;
   bool canUpdateFields = false;
-  int count = 0;
+  int count = 0, setStateCount = 0;
+  List<Map<String, dynamic>> allUserBookings = [], allBookedParkingsDetails = [], allUserVehiculesUsedForBooking = [];
+  Map<String, dynamic> allReservationInfoNeeded = {}, ok = {};
+
+  Set allParkingIDsConcerned = {};
 
   @override
   void initState() {
@@ -73,6 +77,80 @@ class DashboardHomePageState extends State<DashboardHomePage> {
             }
           : debugPrint('XROTE WRITE');
     });
+
+    myDB.collection("slotsReservations").get().then(
+      (value) {
+        if (value.docChanges.isNotEmpty) {
+          //
+          var userBookings =
+              value.docChanges.where((element) => element.doc.data()!['ClientID'] == currentlySignedInUser?.uid);
+          userBookings.isNotEmpty && allUserBookings.length < userBookings.length
+              ? userBookings.forEach((element) {
+                  // debugPrint("FOUND ONE :${element.doc.id}");
+                  allUserBookings.add({element.doc.id: element.doc.data()!});
+                })
+              : null;
+
+          allUserBookings.sort(
+            (aData, bData) {
+              var a = aData.values.first as Map<String, dynamic>;
+              var b = bData.values.first as Map<String, dynamic>;
+
+              var aBookingStart = a['BookingStart'] as Timestamp;
+              var bBookingStart = b['BookingStart'] as Timestamp;
+              return aBookingStart.compareTo(bBookingStart);
+            },
+          );
+
+          if (allParkingIDsConcerned.length < allUserBookings.length) {
+            for (var element in allUserBookings) {
+              var reservationData = element.values.first as Map<String, dynamic>;
+              allParkingIDsConcerned.add(reservationData['ParkingID']);
+              DocumentReference parkingsCollection = myDB.collection("locations").doc(reservationData['ParkingID']);
+              parkingsCollection.get().then((value) {
+                allBookedParkingsDetails.add({value.id: value.data()});
+                //debugPrint("SORTED : ____ ${value.data()} ____ ${allBookedParkingsDetails.length}");
+              }).whenComplete(() => setState(() {}));
+            }
+          }
+          Set allVehiculesUsedIDs = {};
+          for (var element in value.docChanges) {
+            allVehiculesUsedIDs.add(element.doc.data()!['VehiculeID']);
+          }
+
+          myDB.collection('users/${currentlySignedInUser?.uid}/vehicules').get().then((vehiculesDocs) {
+            if (vehiculesDocs.size != 0) {
+              for (var vehiculeID in allVehiculesUsedIDs) {
+                var matchingVehiculeDocList = vehiculesDocs.docChanges.where((element) => element.doc.id == vehiculeID);
+                allUserVehiculesUsedForBooking
+                    .add({matchingVehiculeDocList.first.doc.id: matchingVehiculeDocList.first.doc.data()});
+              }
+            }
+
+            allReservationInfoNeeded = {
+              'allUserBookings': allUserBookings,
+              'allBookedParkingsDetails': allBookedParkingsDetails,
+              'allUserVehiculesUsedForBooking': allUserVehiculesUsedForBooking
+            };
+
+            debugPrint(" allReservationInfoNeeded $allReservationInfoNeeded ");
+          }).whenComplete(() {
+            setStateCount < 1
+                ? {
+                    setState(
+                      () {},
+                    ),
+                    setStateCount += 1
+                  }
+                : null;
+          });
+          //
+        }
+
+        return allReservationInfoNeeded;
+      },
+    );
+
     FocusNode();
     super.initState();
   }
@@ -167,131 +245,121 @@ class DashboardHomePageState extends State<DashboardHomePage> {
         body: dashBSlidingUpPanel(panelHeightClosed, panelHeightOpened));
   }
 
-  Future<QuerySnapshot<Map<String, dynamic>>> addDebitTopUp(User? currentlySIUser, String walletCollId) {
-    //creating debits collection
-    CollectionReference walletDebitCollection =
-        myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits");
-    WriteBatch batchDebit = myDB.batch(), batchTopUp = myDB.batch();
+  /*  Future<Map<String, dynamic>> getUserReservationDetails(User? currentlySignedInUser, FirebaseFirestore myDB,
+      List<DocumentChange<Map<String, dynamic>>> allVehiculesTypesLogosFetched) async {
+    //debugPrint("SLOTSRES :${value.docs.length}");
+    if (allVehiculesTypesLogosFetched.isNotEmpty) {
+      //
+      var userBookings = allVehiculesTypesLogosFetched
+          .where((element) => element.doc.data()!['ClientID'] == currentlySignedInUser?.uid);
+      userBookings.isNotEmpty && allUserBookings.length < userBookings.length
+          ? userBookings.forEach((element) {
+              // debugPrint("FOUND ONE :${element.doc.id}");
+              allUserBookings.add({element.doc.id: element.doc.data()!});
+            })
+          : null;
 
-    myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits").get().then((value) async {
-      if (value.docs.isEmpty) {
-        myDB.doc("users/${currentlySIUser?.uid}/wallet/$walletCollId").collection("debits").add({'initialized': true});
+      allUserBookings.sort(
+        (aData, bData) {
+          var a = aData.values.first as Map<String, dynamic>;
+          var b = bData.values.first as Map<String, dynamic>;
+
+          var aBookingStart = a['BookingStart'] as Timestamp;
+          var bBookingStart = b['BookingStart'] as Timestamp;
+          return bBookingStart.compareTo(aBookingStart);
+        },
+      );
+
+      if (allParkingIDsConcerned.length < allUserBookings.length) {
+        for (var element in allUserBookings) {
+          var reservationData = element.values.first as Map<String, dynamic>;
+          allParkingIDsConcerned.add(reservationData['ParkingID']);
+          DocumentReference parkingsCollection = myDB.collection("locations").doc(reservationData['ParkingID']);
+          parkingsCollection.get().then((value) {
+            allBookedParkingsDetails.add({value.id: value.data()});
+            //debugPrint("SORTED : ____ ${value.data()} ____ ${allBookedParkingsDetails.length}");
+          }).whenComplete(() => debugPrint("SORTEDLENGTH ${allBookedParkingsDetails.length}"));
+        }
+      }
+      Set allVehiculesUsedIDs = {};
+      for (var element in allVehiculesTypesLogosFetched) {
+        allVehiculesUsedIDs.add(element.doc.data()!['VehiculeID']);
       }
 
-      batchDebit.set(
-          //maybe add timestamp later to know when the car was added
-          walletDebitCollection.doc(),
-          {
-            'Debit Amount': 0,
-            'RecipientParking ID': '',
-            'TimeStamp': FieldValue.serverTimestamp()
-          }); //{'Debit Amount': 0, 'RecipientParking ID': '', 'TimeStamp': FieldValue.serverTimestamp()});
-      await batchDebit.commit().whenComplete(() => debugPrint("DEBIT SUCCESSFULLY ADDED"));
-      await myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits").get().then((value) async {
-        var firstInitializedDoc = value.docs.where((element) => element.data().keys.contains('initialized'));
-        firstInitializedDoc.isNotEmpty ? await walletDebitCollection.doc(firstInitializedDoc.first.id).delete() : null;
-      });
-    });
-
-    //CreatingTopUp collection
-
-    CollectionReference walletTopUpCollection =
-        myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps");
-    myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps").get().then((value) async {
-      if (value.docs.isEmpty) {
-        myDB.doc("users/${currentlySIUser?.uid}/wallet/$walletCollId").collection("topUps").add({'initialized': true});
-      }
-
-      batchTopUp.set(
-          //maybe add timestamp later to know when the car was added
-          walletTopUpCollection.doc(),
-          {
-            'TopUp Amount': 5000,
-            'From': 'Your Smart Parking',
-            'Type': 'Welcome Gift',
-            'TimeStamp': FieldValue.serverTimestamp()
+      myDB.collection('users/${currentlySignedInUser?.uid}/vehicules').get().then((vehiculesDocs) {
+        if (vehiculesDocs.size != 0) {
+          allVehiculesUsedIDs.forEach((vehiculeID) {
+            var matchingVehiculeDocList = vehiculesDocs.docChanges.where((element) => element.doc.id == vehiculeID);
+            allUserVehiculesUsedForBooking
+                .add({matchingVehiculeDocList.first.doc.id: matchingVehiculeDocList.first.doc.data()});
           });
+        }
 
-      await batchTopUp.commit().whenComplete(() => debugPrint("DEBIT SUCCESSFULLY ADDED"));
-
-      await myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps").get().then((value) async {
-        var firstInitializedDoc = value.docs.where((element) => element.data().keys.contains('initialized'));
-        firstInitializedDoc.isNotEmpty ? await walletTopUpCollection.doc(firstInitializedDoc.first.id).delete() : null;
+        allReservationInfoNeeded = {
+          'allUserBookings': allUserBookings,
+          'allBookedParkingsDetails': allBookedParkingsDetails,
+          'allUserVehiculesUsedForBooking': allUserVehiculesUsedForBooking
+        };
+      }).whenComplete(() {
+        setStateCount < 1
+            ? {
+                setState(
+                  () {},
+                ),
+                setStateCount += 1
+              }
+            : null;
       });
-    });
+      //
+    }
 
-    return myDB.collection("users/${currentlySIUser?.uid}/wallet").get();
-  }
+    debugPrint(" allReservationInfoNeeded $allReservationInfoNeeded ");
 
-  /*  Future<QuerySnapshot<Map<String, dynamic>>> test(User? currentlySIUser, String walletID) {
-    CollectionReference walletCollection = myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletID/debit");
-    WriteBatch batchWallet = myDB.batch();
-
-    myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletID/debit").get().then((value) async {
-      if (value.docs.isEmpty) {
-        myDB.doc("users/${currentlySIUser?.uid}/wallet/$walletID").collection("debit").add({'initialized': true});
-      }
-
-      batchWallet.set(
-          //maybe add timestamp later to know when the car was added
-          walletCollection.doc(),
-          {
-            'DebitsTest': {'Total Entries': 0, 'Items': {}},
-          });
-      await batchWallet.commit().whenComplete(() => debugPrint("WALLET SUCCESSFULLY ADDED"));
-      await myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletID/debit").get().then((value) async {
-        var firstInitializedDoc = value.docs.where((element) => element.data().keys.contains('initialized'));
-
-        firstInitializedDoc.isNotEmpty ? await walletCollection.doc(firstInitializedDoc.first.id).delete() : null;
-      });
-    });
-
-    return myDB.collection("users/${currentlySIUser?.uid}/wallet").get();
+    return allReservationInfoNeeded;
   }
  */
-  Future<QuerySnapshot<Map<String, dynamic>>> addUserWalletInfoToFirebase(User? currentlySIUser) {
-    myDB.collection("users/${currentlySIUser?.uid}/wallet").get().then((value) async {
-      if (value.docs.isEmpty) {
-        myDB.doc("users/${currentlySIUser?.uid}").collection("wallet").add({
-          'Balance': 5000,
-          'Transactions': {
-            'Top Ups': {'Total Entries': 1, 'IDs': <String>[]},
-            'Debits': {'Total Entries': 0, 'IDs': <String>[]},
-          },
+
+  dashBSlidingUpPanel(double panelHeightClosed, double panelHeightOpened) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance.collection("slotsReservations").snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Text(''); //Text('Loading brand logos');
+          } else {
+            List<DocumentChange<Map<String, dynamic>>> allReservationsForUserFetched = snapshot.data!.docChanges;
+            //getUserReservationDetails(currentlySignedInUser, myDB, allVehiculesTypesLogosFetched);
+            debugPrint("FOUND ONE :$allUserBookings");
+            debugPrint("FOUND TWO :$allBookedParkingsDetails");
+            debugPrint("FOUND THREE :$allUserVehiculesUsedForBooking");
+            debugPrint("FOUND 4 :$allReservationInfoNeeded");
+
+            return SlidingUpPanel(
+              renderPanelSheet: true,
+              margin: EdgeInsets.zero,
+              panel: DashBoardPanel(
+                  panelScrollController: panelScrollController, dragHandlePanelController: dragHandlePanelController),
+              minHeight: panelHeightClosed,
+              maxHeight: panelHeightOpened,
+              /* parallaxEnabled: true,
+              parallaxOffset: .5, */
+              panelBuilder: (panelScrollController) => DashBoardPanel(
+                panelScrollController: panelScrollController,
+                dragHandlePanelController: dragHandlePanelController,
+              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              body: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  ReservationCountdown(
+                      allReservationInfoNeeded: allReservationInfoNeeded,
+                      currentlySignedInUser: currentlySignedInUser,
+                      canShowToggle: widget.canShowToggle,
+                      getIndex: widget.getIndex)
+                ],
+              ),
+            );
+          }
         });
-      }
-    });
-
-    return myDB.collection("users/${currentlySIUser?.uid}/wallet").get();
-  }
-
-  SlidingUpPanel dashBSlidingUpPanel(double panelHeightClosed, double panelHeightOpened) {
-    return SlidingUpPanel(
-      renderPanelSheet: true,
-      margin: EdgeInsets.zero,
-      panel: DashBoardPanel(
-          panelScrollController: panelScrollController, dragHandlePanelController: dragHandlePanelController),
-      minHeight: panelHeightClosed,
-      maxHeight: panelHeightOpened,
-      parallaxEnabled: true,
-      parallaxOffset: .5,
-      panelBuilder: (panelScrollController) => DashBoardPanel(
-        panelScrollController: panelScrollController,
-        dragHandlePanelController: dragHandlePanelController,
-      ),
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      /*   panelBuilder: (panelScrollController) => RefreshAndSlideUp(
-                    notifyParent: refresh,
-                    mappedMarkers: myMapMarkers,
-                    panelScrollController: panelScrollController,
-                    dragHandlePanelController: drangHandlePanelController,
-                  ), */ //MAKE THE BLACK CONTAINER The draggable tiroir hand icon
-      body: Column(
-        children: const [
-          ReservationCountdown(),
-        ],
-      ),
-    );
   }
 }
 

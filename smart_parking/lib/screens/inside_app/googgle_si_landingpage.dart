@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/screens/authenticate/login_register.dart';
 
-class LandingPage extends StatefulWidget {
-  const LandingPage({Key? key}) : super(key: key);
+class GoogleSignInLandingPage extends StatefulWidget {
+  const GoogleSignInLandingPage({Key? key}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -15,10 +15,10 @@ class LandingPage extends StatefulWidget {
   // always marked "final".
 
   @override
-  State<LandingPage> createState() => _LandingPageState();
+  State<GoogleSignInLandingPage> createState() => _GoogleSignInLandingPageState();
 }
 
-class _LandingPageState extends State<LandingPage> {
+class _GoogleSignInLandingPageState extends State<GoogleSignInLandingPage> {
   final FirebaseService _service = FirebaseService();
 
   @override

@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, prefer_typing_uninitialized_variables
+// ignore_for_file: avoid_print, prefer_typing_uninitialized_variables,, avoid_function_literals_in_foreach_calls
 
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -320,7 +320,8 @@ class FirestoreWalletService {
             'Debit Amount': 0,
             'RecipientParking ID': '',
             'RecipientParking Name': '',
-            'TimeStamp': FieldValue.serverTimestamp()
+            'TimeStamp': FieldValue.serverTimestamp(),
+            'New Balance': 5000
           }); //{'Debit Amount': 0, 'RecipientParking ID': '', 'TimeStamp': FieldValue.serverTimestamp()});
       await batchDebit.commit().whenComplete(() => debugPrint("DEBIT SUCCESSFULLY ADDED"));
       await myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits").get().then((value) async {
@@ -345,7 +346,8 @@ class FirestoreWalletService {
             'TopUp Amount': 5000,
             'From': 'Your Smart Parking',
             'Type': 'Welcome Gift',
-            'TimeStamp': FieldValue.serverTimestamp()
+            'TimeStamp': FieldValue.serverTimestamp(),
+            'New Balance': 5000
           });
 
       await batchTopUp.commit().whenComplete(() => debugPrint("DEBIT SUCCESSFULLY ADDED"));
@@ -386,7 +388,12 @@ class FirestoreWalletService {
       if (value.docs.isEmpty) {
         myDB.doc("users/${currentlySIUser?.uid}/wallet/$walletCollId").collection("debits").add({'initialized': true});
       }
-
+      int balance = 0;
+      await myDB
+          .doc("users/${currentlySIUser?.uid}")
+          .collection("wallet")
+          .get()
+          .then((value) => balance = value.docs.first.data()['Balance']);
       batchDebit.set(
           //maybe add timestamp later to know when the car was added
           walletDebitCollection.doc(),
@@ -394,7 +401,8 @@ class FirestoreWalletService {
             'Debit Amount': bookingTotalToPay,
             'RecipientParking ID': receivedID,
             'RecipientParking Name': linkedParkingNameAndInsideInfo,
-            'TimeStamp': FieldValue.serverTimestamp()
+            'TimeStamp': FieldValue.serverTimestamp(),
+            'New Balance': balance - bookingTotalToPay
           }); //{'Debit Amount': 0, 'RecipientParking ID': '', 'TimeStamp': FieldValue.serverTimestamp()});
       await batchDebit.commit().whenComplete(() => debugPrint("WALLET SUCCESSFULLY DEBITED"));
       await myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits").get().then((value) async {
@@ -437,5 +445,14 @@ class FirestoreWalletService {
     });
 
     return myDB.collection("users/${currentlySIUser?.uid}/wallet").get();
+  }
+}
+
+class FirestoreReservationService {
+  var myDB = FirebaseFirestore.instance;
+  var currentlySignedInUser = FirebaseService().currentlySignedInUser;
+//listeningtofbchangeswon'twork here so I moved getUserReservationDetails to reservationCountdown direectly
+  archiveReservation(User? currentlySIUser) {
+    myDB.collection('slotsReservations').get().then((value) => null);
   }
 }

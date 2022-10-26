@@ -3,7 +3,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_parking/screens/inside_app/home.dart';
-import 'package:smart_parking/screens/inside_app/send_feedback.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
 import 'package:smart_parking/styling/styling.dart';
 
@@ -16,11 +15,7 @@ class ProfileInfo extends StatefulWidget {
   String profilePic;
   final Function customFunction;
   bool status;
-  ProfileInfo(
-      {Key? key,
-      required this.profilePic,
-      required this.customFunction,
-      required this.status})
+  ProfileInfo({Key? key, required this.profilePic, required this.customFunction, required this.status})
       : super(key: key);
 
   @override
@@ -62,13 +57,11 @@ class _ProfileInfoState extends State<ProfileInfo> {
     test() {
       if (widget.status == false) {
         print("HOMESTATE STSTUS FALSE ");
-        if (paramProfilePic == '' &&
-            widget.profilePic != "assets/images/no_profile_picture_grey.png") {
+        if (paramProfilePic == '' && widget.profilePic != "assets/images/no_profile_picture_grey.png") {
           print("THIS IS FROM TEST 1: ${widget.profilePic}");
           currentUser!.updatePhotoURL(widget.profilePic);
           return widget.profilePic;
-        } else if (paramProfilePic == '' &&
-            widget.profilePic == "assets/images/no_profile_picture_grey.png") {
+        } else if (paramProfilePic == '' && widget.profilePic == "assets/images/no_profile_picture_grey.png") {
           print(
               "THIS IS FROM TEST 2: widget profile pic ${widget.profilePic} ________ curreUSERPP ${currentUser!.photoURL.toString()}");
           return currentUser!.photoURL.toString();
@@ -100,9 +93,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
                 flex: 4,
                 child: Stack(
                   children: <Widget>[
-                    OpaqueImage(
-                        imageUrl: test(),
-                        customFunction: opaqueImageStateSetter),
+                    OpaqueImage(imageUrl: test(), customFunction: opaqueImageStateSetter),
                     SafeArea(
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 16),
@@ -110,20 +101,17 @@ class _ProfileInfoState extends State<ProfileInfo> {
                           children: [
                             Align(
                               alignment: Alignment.centerLeft,
-                              child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.arrow_back),
-                                      color: Colors.white,
-                                      onPressed: () =>
-                                          Scaffold.of(context).openDrawer(),
-                                    ),
-                                    const Text(
-                                      "My Profile",
-                                      style: headingTextStyle,
-                                    ),
-                                  ]),
+                              child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_back),
+                                  color: Colors.white,
+                                  onPressed: () => Scaffold.of(context).openDrawer(),
+                                ),
+                                const Text(
+                                  "My Profile",
+                                  style: headingTextStyle,
+                                ),
+                              ]),
                             ),
                             UserInfoHeader(
                               avatarImage: paramProfilePic,
@@ -200,14 +188,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const SendFeedbackPage(),
-                                ),
-                              );
-                            },
+                            onTap: () {},
                             child: const ProfileInfoBodyCard(
                               firstText: "42",
                               secondText: "Super likes",
@@ -236,8 +217,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 mainAxisSize: MainAxisSize.max,
                 children: const <Widget>[
-                  ProfileInfoMiniCards(
-                      firstText: "54%", secondText: "Progress"),
+                  ProfileInfoMiniCards(firstText: "54%", secondText: "Progress"),
                   SizedBox(
                     width: 10,
                   ),
@@ -263,9 +243,7 @@ class OpaqueImage extends StatelessWidget {
   final String imageUrl;
   final Function customFunction;
 
-  const OpaqueImage(
-      {Key? key, required this.imageUrl, required this.customFunction})
-      : super(key: key);
+  const OpaqueImage({Key? key, required this.imageUrl, required this.customFunction}) : super(key: key);
   assetOrNetworkImageOpaque(String imageUrl) {
     if (imageUrl.contains('assets/images')) {
       return Image.asset(

@@ -10,7 +10,6 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:smart_parking/screens/inside_app/for_wallet/light_color.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../../services/firebase/firebase_service.dart';
 import 'for_wallet/operation_details.dart';
@@ -144,11 +143,16 @@ class WalletState extends State<Wallet> {
                     .where((event) {
                   return event.docs.any((element) => element.data()['Debit Amount'] != 0);
                 });
+                int debitEntriesTotal = 0;
+
                 okDebit.first.then((value) => value.docs.forEach((element) {
                       allTransactionsWithIDs.length < value.docs.length
-                          ? allTransactionsWithIDs.addAll([
-                              {element.id: element.data()}
-                            ])
+                          ? {
+                              allTransactionsWithIDs.addAll([
+                                {element.id: element.data()}
+                              ]),
+                              debitEntriesTotal += 1
+                            }
                           : null;
                       /*  allTransactionsWithIDs.length == allTransactionsTStampsNotSorted .length
                           ? null
@@ -161,8 +165,9 @@ class WalletState extends State<Wallet> {
                     .where((event) {
                   return event.docs.any((element) => element.data().containsKey('TopUp Amount'));
                 });
+
                 okTopUp.first.then((value) => value.docs.forEach((element) {
-                      allTransactionsWithIDs.length < value.docs.length
+                      allTransactionsWithIDs.length < value.docs.length + debitEntriesTotal
                           ? allTransactionsWithIDs.addAll([
                               {element.id: element.data()}
                             ])
@@ -202,8 +207,9 @@ class WalletState extends State<Wallet> {
                     ),
                     getWalletCard(),
                     ElevatedButton(
-                        onPressed: () => firestoreWalletService.topUp(currentlySignedInUser,
-                            walletFirstAndOnlyDocID), //topUp(currentlySignedInUser, walletFirstAndOnlyDocID),
+                        onPressed: () => topUp(currentlySignedInUser, walletFirstAndOnlyDocID),
+                        /* firestoreWalletService.topUp(currentlySignedInUser,
+                            walletFirstAndOnlyDocID), */ //topUp(currentlySignedInUser, walletFirstAndOnlyDocID),
                         child: const Text('Top Up'))
                   ]),
                 );
@@ -506,9 +512,9 @@ class WalletState extends State<Wallet> {
                             context,
                             MaterialPageRoute(
                                 builder: (context) => ShowOperationDetails(
-                                    transactionData: allTransactionsWithIDs.elementAt(i),
-                                    transactionType: isTopUpOperation ? 'TopUp' : 'Debit',
-                                    newBalance: balanceInCFA)),
+                                      transactionData: allTransactionsWithIDs.elementAt(i),
+                                      transactionType: isTopUpOperation ? 'TopUp' : 'Debit',
+                                    )),
                           );
                         },
                         child: Column(
@@ -536,7 +542,7 @@ class WalletState extends State<Wallet> {
     );
   }
 
-  /*  Future<QuerySnapshot<Map<String, dynamic>>> topUp(User? currentlySIUser, String walletCollId) {
+  Future<QuerySnapshot<Map<String, dynamic>>> topUp(User? currentlySIUser, String walletCollId) {
     WriteBatch batchTopUp = myDB.batch();
 
     CollectionReference walletTopUpCollection =
@@ -553,10 +559,11 @@ class WalletState extends State<Wallet> {
             'TopUp Amount': 8500,
             'From': 'Agent',
             'Type': 'Top Up From Agent',
-            'TimeStamp': FieldValue.serverTimestamp()
+            'TimeStamp': FieldValue.serverTimestamp(),
+            'New Balance': int.parse(balanceInCFA) + 8500
           });
 
-      await batchTopUp.commit().whenComplete(() => debugPrint("DEBIT SUCCESSFULLY ADDED"));
+      await batchTopUp.commit().whenComplete(() => debugPrint("TOP UP SUCCESSFULLY ADDED"));
 
       await myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps").get().then((value) async {
         var firstInitializedDoc = value.docs.where((element) => element.data().keys.contains('initialized'));
@@ -566,7 +573,7 @@ class WalletState extends State<Wallet> {
 
     return myDB.collection("users/${currentlySIUser?.uid}/wallet").get();
   }
- */
+
   void listeningToWalletsRT(String walletIDTest) {
     List allWalletTopUpIDs = [], allWalletDebitIDs = [];
     int totalEntriesTopUps = 0, totalEntriesDebit = 0;

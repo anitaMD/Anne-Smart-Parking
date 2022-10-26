@@ -8,17 +8,22 @@ import 'package:smart_parking/screens/inside_app/for_dashboard/history.dart';
 import 'package:smart_parking/screens/inside_app/for_dashboard/notifs.dart';
 import 'package:smart_parking/styling/faded_indexed_stacked.dart';
 
-class DashboardPage extends StatefulWidget {
-  const DashboardPage({Key? key}) : super(key: key);
+import 'home.dart';
+
+class DashboardWrapperPage extends StatefulWidget {
+  final Map<String, dynamic> parkingToNavigateTo;
+  final int newIndex;
+  const DashboardWrapperPage({Key? key, required this.parkingToNavigateTo, required this.newIndex}) : super(key: key);
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  State<DashboardWrapperPage> createState() => _DashboardWrapperPageState();
 }
 
 //CHECK THE FILE IN THE ONEDRIVE PROJECT FOLDER TO GET BACK THE ORIGINAL ONE FOR THIS FILE with the hidebottombar option
 //filters for debug console !HTTPLog, !Ignoring, !token
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardWrapperPageState extends State<DashboardWrapperPage> {
   int _currentIndex = 0;
+  bool goBack = false;
   Color inactivebgColor = Colors.black.withAlpha(20);
   Color activebgColor = Colors.white;
   Color isIconSelected = Colors.red;
@@ -34,7 +39,17 @@ class _DashboardPageState extends State<DashboardPage> {
   double previousPositionX = 0.0, previousPositionY = 0.0, appBarHeightFinal = 0.0, totalScreenHeightFinal = 0.0;
 
   Widget getBodyNoEffect() {
-    List<Widget> pages = [const DashboardHomePage(), const BookingPage(), const HistoryPage(), const NotifsPage()];
+    List<Widget> pages = [
+      DashboardHomePage(
+        canShowToggle: canShowToggle,
+        getIndex: (int selectedIndex) {},
+      ),
+      BookingPage(
+        parkingToNavigateTo: widget.parkingToNavigateTo,
+      ),
+      const HistoryPage(),
+      const NotifsPage()
+    ];
     return IndexedStack(
       index: _currentIndex,
       children: pages,
@@ -42,11 +57,34 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget getBodyWFadedEffect() {
-    List<Widget> pages = [const DashboardHomePage(), const BookingPage(), const HistoryPage(), const NotifsPage()];
+    widget.newIndex == 1 && goBack == false
+        ? {
+            _currentIndex = 0,
+            getIndex(0),
+            goBack = true,
+          }
+        : null;
+    //_currentIndex = widget.newIndex + 1;
+    debugPrint(" currentindex $_currentIndex  __ widgetnewindex ${widget.newIndex} _ goB $goBack");
+    List<Widget> pages = [
+      DashboardHomePage(canShowToggle: canShowToggle, getIndex: getIndex),
+      BookingPage(
+        parkingToNavigateTo: widget.parkingToNavigateTo,
+      ),
+      const HistoryPage(),
+      const NotifsPage()
+    ];
     return FadeIndexedStack(index: _currentIndex, children: pages);
   }
 
+  canShowToggle(bool canShow) {
+    if (mounted) showToggle = canShow;
+
+    //do not remove this as it made the flickering STOP
+  }
+
   List<bool> isSelected = [false, true];
+  bool showToggle = false;
   //
 
   Widget mapDashboardToggleSwitch() {
@@ -84,7 +122,20 @@ class _DashboardPageState extends State<DashboardPage> {
               direction: Axis.vertical,
               isSelected: isSelected,
               onPressed: (int selectedIndex) {
-                setState(() {
+                goBack == true && widget.newIndex == 1
+                    ? {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const Home(
+                                      fromLoginView: true,
+                                      parkingToNavigateTo: {},
+                                      newIndex: 0,
+                                      timeUntilResStarts: 0,
+                                    ))),
+                      }
+                    : getIndex(selectedIndex);
+                /*   setState(() {
                   for (int index = 0; index < isSelected.length; index++) {
                     if (index == selectedIndex) {
                       isSelected[index] = true;
@@ -97,6 +148,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     }
                   }
                 });
+              */
               },
               children: const [
                 Icon(
@@ -156,6 +208,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     double? fetchedAppBarHeight = Scaffold.of(context).appBarMaxHeight;
+
     appBarHeightFinal = fetchedAppBarHeight!;
     //
     double totalScreenHeightFetched = MediaQuery.of(context).size.height;
@@ -168,70 +221,102 @@ class _DashboardPageState extends State<DashboardPage> {
         "CURRENT OFFSETS :  dragEndOffsetX $dragEndOffsetX ____  dragEndOffsetY $dragEndOffsetY ____  previousOffset $previousPositionX ________TESTING ${totalScreenHeightFinal - appBarHeightFinal - toggleContainerHeight}");
     print("MediaQuery.of(context).size.height ${MediaQuery.of(context).size.height}");
     print("APPBAR.height $fetchedAppBarHeight ___________ test : $appBarHeightFinal");
+    debugPrint("CAN SHOW TOGGLE: $showToggle ____ isDropped $isDropped");
     return Scaffold(
-      body: Stack(
-          //
-          alignment: const Alignment(1.00, 0.70),
-          children: [
-            getBodyWFadedEffect(),
-            //Positioned(left: 30, child: mapDashboardToggleSwitch()),
-            isDropped == true ? Container() : dragMapDashToggleSwitch(),
-            Positioned(
-              top: mapTopRightIconBoxHeightDeducted, //to not hide the map location icon en haut à droite
-              child: DragTarget(
-                builder: ((context, data, rejectedData) {
-                  return DottedBorder(
-                    borderType: BorderType.RRect,
-                    radius: const Radius.circular(12),
-                    color: isToggleDragStarted ? Colors.blueGrey : Colors.white.withOpacity(0),
-                    strokeWidth: 2,
-                    dashPattern: [6],
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.all(Radius.circular(12)),
-                      child: Container(
-                        height: isDropped == true
-                            ? dragTargetContainerHeight
-                            : dragTargetContainerHeight - toggleContainerHeight + 10,
-                        /* dragTargetContainerHeight +
-                            toggleContainerHeight -
-                             -
-                            2, // */ //deduct stroke width
-                        width: toggleContainerWidth - 2,
-                        color: isDropped ? null : null,
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              top: dragEndOffsetY - toggleContainerHeight - toggleContainerHeight / 2,
-                              child: isDropped == true ? dragMapDashToggleSwitch() : Container(),
-                            ),
-                          ],
+      body: GestureDetector(
+        onTapUp: (details) {
+          setState(() {
+            showToggle = true;
+          });
+          /*   LocalPushNotificationsService.sendNotification(); */
+        },
+        onVerticalDragStart: (details) {
+          setState(() {
+            showToggle = true;
+          });
+        },
+        child: Stack(
+            //
+            alignment: const Alignment(1.00, 0.70),
+            children: [
+              getBodyWFadedEffect(),
+              //Positioned(left: 30, child: mapDashboardToggleSwitch()),
+              showToggle == false || isDropped == true ? Container() : dragMapDashToggleSwitch(),
+              Positioned(
+                top: mapTopRightIconBoxHeightDeducted, //to not hide the map location icon en haut à droite
+                child: DragTarget(
+                  builder: ((context, data, rejectedData) {
+                    return DottedBorder(
+                      borderType: BorderType.RRect,
+                      radius: const Radius.circular(12),
+                      color: isToggleDragStarted ? Colors.blueGrey : Colors.white.withOpacity(0),
+                      strokeWidth: 2,
+                      dashPattern: [6],
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.all(Radius.circular(12)),
+                        child: Container(
+                          height: isDropped == true
+                              ? dragTargetContainerHeight
+                              : dragTargetContainerHeight - toggleContainerHeight + 10,
+                          /* dragTargetContainerHeight +
+                              toggleContainerHeight -
+                               -
+                              2, // */ //deduct stroke width
+                          width: toggleContainerWidth - 2,
+                          color: isDropped ? null : null,
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                top: dragEndOffsetY - toggleContainerHeight - toggleContainerHeight / 2,
+                                child: isDropped == true ? dragMapDashToggleSwitch() : Container(),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                }),
-                onWillAccept: (data) => true,
-                onAccept: (data) {
-                  /* ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Dropped successfully'),
-                    ),
-                  ); */
-                  setState(() {
-                    isDropped = true;
-                  });
-                },
+                    );
+                  }),
+                  onWillAccept: (data) => true,
+                  onAccept: (data) {
+                    /* ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Dropped successfully'),
+                      ),
+                    ); */
+                    setState(() {
+                      isDropped = true;
+                    });
+                  },
+                ),
               ),
-            ),
-            /*  /* WOULD WORK IF I DIDNT WANT TO MAKE IT ALIGN TO THE VERTICAL CONTAINER ON THE LEFT SO KEEP THIS */
-            isDropped == true 
-                ? Positioned(
-                    left: dragEndOffsetX,
-                    top: dragEndOffsetY - toggleContainerHeight,
-                    child: dragMapDashToggleSwitch(),
-                  )
-                : Container(), */
-          ]),
+              /*  /* WOULD WORK IF I DIDNT WANT TO MAKE IT ALIGN TO THE VERTICAL CONTAINER ON THE LEFT SO KEEP THIS */
+              isDropped == true 
+                  ? Positioned(
+                      left: dragEndOffsetX,
+                      top: dragEndOffsetY - toggleContainerHeight,
+                      child: dragMapDashToggleSwitch(),
+                    )
+                  : Container(), */
+            ]),
+      ),
     );
+  }
+
+  void getIndex(int selectedIndex) {
+    debugPrint('ISLENGTHSELECETD __ $selectedIndex _ goBack $goBack');
+
+    setState(() {
+      for (int index = 0; index < isSelected.length; index++) {
+        if (index == selectedIndex) {
+          isSelected[index] = true;
+
+          index == 0 //had to do this to get the right page
+              ? _currentIndex = index + 1
+              : _currentIndex = index - 1;
+        } else {
+          isSelected[index] = false;
+        }
+      }
+    });
   }
 }
