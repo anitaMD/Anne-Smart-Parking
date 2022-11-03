@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class StateManagement with ChangeNotifier {
+class BookingStateManagement with ChangeNotifier {
   final initialDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
   var selectedTime = TimeOfDay.now();
   String openingHour = '06:00', closingHour = '18:00'; //to initialize

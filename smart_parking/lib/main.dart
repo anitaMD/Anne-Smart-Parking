@@ -8,10 +8,12 @@ import 'package:form_builder_validators/localization/l10n.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/notifiers/location_notifier.dart';
-import 'package:smart_parking/notifiers/state_management.dart';
-import 'package:smart_parking/screens/inside_app/home.dart';
-import 'screens/authenticate/login_register.dart';
+import 'package:smart_parking/notifiers/booking_state_management.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'screens/authenticate/testlogin.dart';
+import 'package:get/get.dart';
+import 'l10n/l10n.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -79,33 +81,35 @@ class _MyAppState extends State<MyApp> {
           create: (_) => CurrentLocationNotifier(),
         ),
         ChangeNotifierProvider(
-          create: (_) => StateManagement(),
+          create: (_) => BookingStateManagement(),
         )
       ],
       builder: (context, child) {
-        return MaterialApp(
-          supportedLocales: FormBuilderLocalizations.delegate.supportedLocales,
-          localizationsDelegates: const [
-            FormBuilderLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-          ],
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            // Define the default brightness and colors.
-            brightness: Brightness.light,
-            primaryColor: Colors.indigo,
-            // Define the default font family.
-          ),
-          home: widget.status == true
+        return GetMaterialApp(
+            locale: const Locale('fr', 'FR'),
+            theme: ThemeData(
+              brightness: Brightness.light,
+              primaryColor: Colors.indigo,
+            ),
+            supportedLocales: L10n.all,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              FormBuilderLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+            ],
+            debugShowCheckedModeBanner: false,
+            home:
+                const TestLogin() /* widget.status == true
               ? const LoginRegister()
               : const Home(
                   fromLoginView: true,
                   parkingToNavigateTo: {},
                   newIndex: 0,
                   timeUntilResStarts: 0,
-                ),
-        );
+                ), */
+            );
       },
     );
   }

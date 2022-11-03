@@ -1,11 +1,13 @@
 // ignore_for_file: avoid_print
 
+import 'package:badges/badges.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/models/user.dart';
 import 'package:smart_parking/screens/inside_app/dashboard_wrapper.dart';
+import 'package:smart_parking/screens/inside_app/for_dashboard/badges_notifications.dart';
 import 'package:smart_parking/screens/inside_app/settings.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/screens/authenticate/login_register.dart';
@@ -20,14 +22,14 @@ class Home extends StatefulWidget {
   final bool fromLoginView;
   final UserProfile? theUserProfile;
   final Map<String, dynamic> parkingToNavigateTo;
-  final int newIndex;
+  final int newIndex, timeUntilResStarts;
   const Home({
     Key? key,
     required this.fromLoginView,
     this.theUserProfile,
     required this.parkingToNavigateTo,
     required this.newIndex,
-    required int timeUntilResStarts,
+    required this.timeUntilResStarts,
   }) : super(key: key);
 
   @override
@@ -46,16 +48,22 @@ enum DrawerSections {
 }
 
 class HomeState extends State<Home> {
-  int counter = 0;
+  int notificationsBadgeCounter = 0;
+  User? currentUser = FirebaseAuth.instance.currentUser;
+  FirestoreUserService firestoreService = FirestoreUserService();
+  String appBarText = '', logInDispName = '', profilePicture = '', barProfilePic = '', test = '';
+  var currentPage;
+  bool takeWalletQrScreenshot = false;
+
   @override
   void initState() {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
     ));
-
+    super.initState();
     if (widget.fromLoginView) {
       //will be false if not from signup view
-      print("INITSTATE IS FROM LOGVIEW ${widget.fromLoginView}");
+      print("INITSTATE IS FROM LOGVIEW ${widget.fromLoginView} _ ${widget.newIndex}");
       firestoreService.getUserFullName(currentUser!).then((value) => setState(() => logInDispName = value.toString()));
 
       firestoreService
@@ -64,7 +72,17 @@ class HomeState extends State<Home> {
 
       currentUser!.updateDisplayName(logInDispName);
       currentUser!.updatePhotoURL(profilePicture);
-
+      widget.newIndex == 6
+          ? setState(
+              () {
+                currentPage == DrawerSections.notifications;
+              },
+            )
+          : setState(
+              () {
+                currentPage = DrawerSections.dashboard;
+              },
+            );
       print('INIT STATE CURRENT USER NO PROFILE PIC GREY : ${currentUser!.photoURL} ');
     } else {
       print("INITSTATE IS NOT FROM LOG VIEW ${widget.fromLoginView}");
@@ -73,18 +91,7 @@ class HomeState extends State<Home> {
           .then((value) => setState(() => profilePicture = value.toString()));
       currentUser!.updatePhotoURL(profilePicture);
     }
-
-    super.initState();
   }
-
-  User? currentUser = FirebaseAuth.instance.currentUser;
-  FirestoreUserService firestoreService = FirestoreUserService();
-  String appBarText = '';
-  String logInDispName = '';
-  var currentPage = DrawerSections.dashboard;
-  String profilePicture = '';
-  String barProfilePic = '';
-  String test = '';
 
   Widget menuItem(int id, String title, IconData icon, bool selected) {
     return Material(
@@ -96,6 +103,9 @@ class HomeState extends State<Home> {
             if (id == 1) {
               currentPage = DrawerSections.dashboard;
             } else if (id == 2) {
+              /*  widget.newIndex == 6
+                  ? {currentPage = DrawerSections.profileInfo, }
+                  :  */
               currentPage = DrawerSections.profileInfo;
             } else if (id == 3) {
               currentPage = DrawerSections.wallet;
@@ -142,6 +152,7 @@ class HomeState extends State<Home> {
 
   //
   Widget myDrawerList() {
+    print('THIS IS THE CURRENT PAGE $currentPage  _ ${widget.newIndex}');
     return Container(
       padding: const EdgeInsets.only(
         top: 15,
@@ -257,11 +268,13 @@ class HomeState extends State<Home> {
   }
 
   showAppBar() {
-    if (currentPage != DrawerSections.profileInfo && currentPage != DrawerSections.notifications) {
+    if (currentPage != DrawerSections.profileInfo /*  && currentPage != DrawerSections.notifications */) {
       Color notificationColor;
       String countNumberFormatDisplay;
-      counter != 0 ? notificationColor = Colors.red : notificationColor = Colors.red.withOpacity(0.0);
-      counter > 9 ? countNumberFormatDisplay = '9+' : countNumberFormatDisplay = '$counter';
+      notificationsBadgeCounter != 0 ? notificationColor = Colors.red : notificationColor = Colors.red.withOpacity(0.0);
+      notificationsBadgeCounter > 9
+          ? countNumberFormatDisplay = '9+'
+          : countNumberFormatDisplay = '$notificationsBadgeCounter';
       return AppBar(
         elevation: 1,
         toolbarHeight: kToolbarHeight,
@@ -281,55 +294,24 @@ class HomeState extends State<Home> {
         actions: <Widget>[
           // Using Stack to show Notification Badge
 
-          Stack(
-            children: <Widget>[
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    counter = 0;
-                  });
-                },
-                child: SizedBox(
+          currentPage != DrawerSections.wallet
+              ? SizedBox(
                   width: 96,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Stack(
-                        children: [
-                          IconButton(
-                              icon: const Icon(Icons.notifications_none_outlined),
-                              iconSize: 30,
-                              color: Colors.white,
-                              onPressed: () {
-                                setState(() {
-                                  counter = 0;
-                                });
-                              }),
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: Container(
-                              constraints: const BoxConstraints(
-                                minHeight: 26,
-                                minWidth: 26,
-                              ),
-                              decoration: BoxDecoration(shape: BoxShape.circle, color: notificationColor),
-                              alignment: Alignment.center,
-                              child: Text(
-                                countNumberFormatDisplay,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'OpenSans'),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                    ],
+                    children: const [BadgesNotifications()],
                   ),
-                ),
-              ),
-            ],
-          ),
+                )
+              : IconButton(
+                  onPressed: () {
+                    setState(() {
+                      takeWalletQrScreenshot = true;
+                    });
+                  },
+                  icon: const Icon(
+                    Icons.qr_code_scanner_outlined,
+                    color: Colors.black,
+                  )),
         ],
         leading: Builder(builder: (BuildContext context1) {
           return Padding(
@@ -357,15 +339,22 @@ class HomeState extends State<Home> {
     //FirestoreService parkingUserFirestoreService = FirestoreService();
     Widget container;
     container = Container();
+    /*   ADDED THIS FOR NOTIFCATIONSPAGE
+  
+  if (widget.newIndex == 6) {
+      container = const NotificationsPage();
+      currentPage = DrawerSections.notifications;
+    }
+ */
     if (currentPage == DrawerSections.dashboard) {
       container = DashboardWrapperPage(
-        parkingToNavigateTo: widget.parkingToNavigateTo,
-        newIndex: widget.newIndex,
-      );
+          parkingToNavigateTo: widget.parkingToNavigateTo,
+          newIndex: widget.newIndex,
+          timeUntilResStartsFromBookingOverview: widget.timeUntilResStarts);
     } else if (currentPage == DrawerSections.profileInfo) {
       container = ProfileInfo(profilePic: barProfilePic, customFunction: getProfilePic, status: widget.fromLoginView);
     } else if (currentPage == DrawerSections.wallet) {
-      container = const Wallet();
+      container = Wallet(takescreenshot: takeWalletQrScreenshot);
     } else if (currentPage == DrawerSections.faq) {
       container = const NotesPage();
     } else if (currentPage == DrawerSections.settings) {
@@ -448,6 +437,8 @@ class HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    currentPage != DrawerSections.wallet ? takeWalletQrScreenshot = false : null;
+
     return buildNormalUserView();
   }
 }

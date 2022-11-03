@@ -1,0 +1,72 @@
+{
+    "language": "Français",
+
+    "verifyInternetConnection": "Vérifiez votre connexion internet!",
+   
+    
+    "welcomeToApp": "Bienvenu dans votre application Your Smart Parking!",
+
+    "login": "Connectez-vous à votre compte.",
+    "loginEmailLabel": "E-mail",
+    "loginEmailPlaceholder": "Saisissez votre email",
+
+    "loginPasswordLabel": "Mot de passe",
+    "loginPasswordPlaceholder": "Saisissez votre mot de passe",
+
+    "forgotPassword": "Mot de passe oublié?",
+
+    "signin": "Se connecter",
+
+    "noAccount": "Pas encore de compte? ",
+    "createAccount": "Créez-en un!",
+    "logIncorrectEmailOrPass": "Email ou mot de passe incorrect!",
+
+
+
+
+    "regFullNameLabel": "Prénom & Nom",
+    "regFullNamePlaceholder": "Votre nom complet",
+   
+    "regEmailLabel": "E-mail",
+    "regEmailPlaceholder": "Votre email",
+    
+    "regNumberLabel": "Téléphone",
+    "regNumberPlaceholder": "Votre numéro de téléphone",
+    "regNumberError": "Format incorrect.",
+    
+    "regPasswordLabel": "Mot de passe",
+    "regPasswordHelper": "*Au moins 8 char. [majuscule, chiffre, symbol]",
+    "regPasswordPlaceholder": "Votre mot de passe",
+    
+    "regConfirmPassLabel": "Confirmation",
+    "regConfirmPassPlaceholder": "Confirmez mot de password",
+    "regConfirmPassError": "Le mot de passe est mal formaté.",
+    "regPasswordsNoMatch": "Les mots de passe ne correspondent pas.",
+
+    "regNextButton": "Suivant",
+   
+    "alreadyHaveAccount": "Déjà inscrit? ",
+    "regGoToLogInLink": "Connectez-vous!",
+
+    "logErrorBadEmailFormat": "L'email est mal formaté.",
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+    "noParkingSpotSelected": "Il semble que vous n'avez pas sélectionné une place de parking. Il vous sera donc attribué une parmi celles présentement disponibles.",
+
+    "creatingBooking": "Validation de votre réservation...",
+
+    "selectLanguage": "Selectionner la langue par défaut."
+
+
+}

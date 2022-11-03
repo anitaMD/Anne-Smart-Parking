@@ -1,7 +1,14 @@
 // ignore_for_file: avoid_unnecessary_containers, avoid_function_literals_in_foreach_calls
+import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:carousel_slider/carousel_slider.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+//import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:device_apps/device_apps.dart';
+import 'package:encrypt/encrypt.dart' as prefix;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,29 +17,38 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:smart_parking/screens/inside_app/for_wallet/light_color.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
-
 import '../../services/firebase/firebase_service.dart';
+import 'for_wallet/encrypter.dart';
 import 'for_wallet/operation_details.dart';
+import 'package:screenshot/screenshot.dart';
 
 class Wallet extends StatefulWidget {
-  const Wallet({Key? key}) : super(key: key);
+  final bool takescreenshot;
+  const Wallet({Key? key, required this.takescreenshot}) : super(key: key);
 
   @override
   WalletState createState() => WalletState();
 }
 
 class WalletState extends State<Wallet> {
+  int screenshotCount = 0;
   var myDB = FirebaseFirestore.instance;
   var firebaseService = FirebaseService();
   var firestoreWalletService = FirestoreWalletService();
-  final CarouselController _controller = CarouselController();
+  var encryption = AESEncryption();
+  //final CarouselController _controller = CarouselController();
+  final screenshotController = ScreenshotController();
   User? currentlySignedInUser;
   int current = 0, currentIndex = 0, oneSMP = 500;
   double dragExtent = 0;
   bool revealBalance = false, areTimesStampsSorted = false;
-  String swipeDirection = '', walletFirstAndOnlyDocID = '', balanceInCFA = '', balanceInSPM = '';
-  Map<String, dynamic> initiallyLoadedTransactions = {'TopUps': {}, 'Debits': {}}, walletData = {};
+  String swipeDirection = '', walletFirstAndOnlyDocID = '', balanceInCFA = '', balanceInSPM = '', qrCodeEncrypted = '';
+  Map<String, dynamic> initiallyLoadedTransactions = {'TopUps': {}, 'Debits': {}},
+      walletData = {},
+      usersSoonestReservationToVerify = {};
+
   List<Map<String, dynamic>> allTransactionsWithIDs = [];
+
   //List allTransactionsTStampsNotSorted = [], sortedAllTransactionsTStamps = <Timestamp>[];
 
   // Set allTransactionsSortedSet = {};
@@ -107,6 +123,21 @@ class WalletState extends State<Wallet> {
           )
         });
 
+    getUsersReservationHappeningSoon().then((value) {
+      value.keys.contains('empty')
+          ? null
+          : {
+              setState(() {
+                usersSoonestReservationToVerify = value;
+                qrCodeEncrypted = usersSoonestReservationToVerify.isNotEmpty
+                    ? startEncryption(usersSoonestReservationToVerify).base16
+                    : 'no reservation';
+              }),
+            };
+
+      // debugPrint("ENCRYPTED ${startEncryption(usersSoonestReservationToVerify).base16}");
+    });
+
     super.initState();
   }
 
@@ -118,7 +149,11 @@ class WalletState extends State<Wallet> {
     double panelHeightOpened = MediaQuery.of(context).size.height * 0.5;
     currentlySignedInUser = firebaseService.auth.currentUser;
     //initiallyLoadedTransactions.values.where
-    debugPrint("TOLISTED $walletFirstAndOnlyDocID");
+    //encryption.decryptMsg(encryption.getCode(qrCodeEncrypted)).toString();
+    qrCodeEncrypted.isNotEmpty
+        ? debugPrint("TOLISTED $walletFirstAndOnlyDocID _________ $qrCodeEncrypted  ______ ${widget.takescreenshot}")
+        : null;
+    //encryption.getCode(qrCodeEncrypted);
     return Scaffold(
         backgroundColor: Colors.white,
         body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -340,6 +375,12 @@ class WalletState extends State<Wallet> {
   }
 
   getContainerRight() {
+    //  widget.takescreenshot == true ? currentIndex = 1 : null;
+    widget.takescreenshot == true
+        ? Future.delayed(const Duration(seconds: 2))
+            .then((value) => screenshotCount < 1 ? {takeQrScreenshot(), screenshotCount += 1} : null)
+        : null;
+
     return Container(
         child: ClipRRect(
             borderRadius: const BorderRadius.all(Radius.circular(25)),
@@ -351,15 +392,20 @@ class WalletState extends State<Wallet> {
                 fit: StackFit.expand,
                 children: <Widget>[
                   Center(
-                    child: QrImage(
-                      gapless: true,
-                      padding: const EdgeInsets.all(20),
-                      embeddedImage: const AssetImage('assets/images/logo.png'),
-                      embeddedImageStyle: QrEmbeddedImageStyle(color: Colors.yellow, size: const Size(130, 130)),
-                      data: "1234567890",
-                      version: QrVersions.auto,
-                      //size: 200.0,
-                      foregroundColor: const Color.fromARGB(187, 255, 255, 255),
+                    child: Screenshot(
+                      controller: screenshotController,
+                      child: QrImage(
+                        gapless: true,
+                        padding: const EdgeInsets.all(20),
+                        /*  embeddedImage: const AssetImage('assets/images/logo.png'),
+                        embeddedImageStyle: QrEmbeddedImageStyle(color: Colors.yellow, size: const Size(130, 130)),
+                       */
+                        errorCorrectionLevel: QrErrorCorrectLevel.H,
+                        data: qrCodeEncrypted,
+                        version: QrVersions.auto,
+                        //size: 200.0,
+                        foregroundColor: const Color.fromARGB(187, 255, 255, 255),
+                      ),
                     ),
                   ),
                   const Positioned(
@@ -447,7 +493,7 @@ class WalletState extends State<Wallet> {
                 debugPrint("SWIPE DIRECTION: $swipeDirection _ _ currentIndex $currentIndex");
               }
             },
-            child: swipeDirection == 'next' ? getContainerRight() : getContainerLeft()
+            child: widget.takescreenshot == true || swipeDirection == 'next' ? getContainerRight() : getContainerLeft()
 
             /* SlidableWalletCard(
             childLeft: getContainerLeft(),
@@ -526,7 +572,7 @@ class WalletState extends State<Wallet> {
                                 Text(isTopUpOperation ? 'Received' : "Paid"),
                                 Text(isTopUpOperation
                                     ? '${values['TopUp Amount']} CFA'
-                                    : "-${values['TopUp Amount']} CFA"),
+                                    : "-${values['Debit Amount']} CFA"),
                               ],
                             ),
                             Text(DateFormat.yMMMd().format(timeStampToDate)),
@@ -662,8 +708,106 @@ class WalletState extends State<Wallet> {
     });
   }
 
-//
-}
+  Future<Map<String, dynamic>> getUsersReservationHappeningSoon() async {
+    List<Map<String, dynamic>> allUserBookings = [];
+    Map<String, dynamic> theResToVerify = {};
+    var check = myDB.collection("slotsReservations").get().then((value) {
+      if (value.docChanges.isNotEmpty) {
+        //
+        var userBookings =
+            value.docChanges.where((element) => element.doc.data()!['ClientID'] == currentlySignedInUser?.uid);
+        userBookings.isNotEmpty && allUserBookings.length < userBookings.length
+            ? userBookings.forEach((element) {
+                // debugPrint("FOUND ONE :${element.doc.id}");
+                allUserBookings.add({element.doc.id: element.doc.data()!});
+              })
+            : null;
+
+        allUserBookings.sort(
+          (aData, bData) {
+            var a = aData.values.first as Map<String, dynamic>;
+            var b = bData.values.first as Map<String, dynamic>;
+
+            var aBookingStart = a['BookingStart'] as Timestamp;
+            var bBookingStart = b['BookingStart'] as Timestamp;
+            return aBookingStart.compareTo(bBookingStart);
+          },
+        );
+
+        setState(() {
+          theResToVerify = allUserBookings.isNotEmpty ? allUserBookings.first : {'empty': true};
+        });
+      }
+
+      return theResToVerify;
+    });
+    return check;
+  }
+
+  prefix.Encrypted startEncryption(Map<String, dynamic> usersSoonestReservationToVerify) {
+    var reservationValues = usersSoonestReservationToVerify.values.first as Map<String, dynamic>;
+
+    var resID = usersSoonestReservationToVerify.keys.first;
+    var clientID = reservationValues['ClientID'];
+    var parkingID = reservationValues['ParkingID'];
+    var slotID = reservationValues['SlotID'];
+    var theMap = {'resID': resID, 'clientID': clientID, 'parkingID': parkingID, 'slotID': slotID};
+
+    var dataToVerify = theMap.toString();
+
+    return encryption.encryptMsg(dataToVerify);
+  }
+
+  takeQrScreenshot() async {
+    final image = await screenshotController.capture();
+    if (image == null) return;
+    await saveImage(image);
+    // LaunchApp.openApp(androidPackageName: 'com.example.testing', openStore: false);
+  }
+
+  saveImage(Uint8List imageBytes) async {
+    final temp = await getTemporaryDirectory();
+    final path = '${temp.path}/smartParkingQRForCurrentReservation.jpg';
+    debugPrint('IN THE PATH $path');
+    await File(path).writeAsBytes(imageBytes);
+
+    // ignore: deprecated_member_use
+    await Share.shareFiles([path], text: 'HERE');
+    // await Share.shareFiles([path]);
+
+    /*  shareXFiles([ok], text: 'HERE').then((value) => print('this should be printed after the sharing process')); */
+
+    /* await [Permission.storage].request();
+    final result = await ImageGallerySaver.saveImage(imageBytes, name: 'smartParkingQRForCurrentReservation');
+    XFile theDoc = XFile(result['filePath']);
+    debugPrint("CEHCK FILE ${theDoc.path}");
+    // openAnotherApp(result['filePath']);
+    
+    debugPrint("THE PATH IS :${result['filePath']}");
+    return result['filePath']; */
+  }
+
+  openAnotherApp(data) async {
+    String dt = data;
+    bool isInstalled = await DeviceApps.isAppInstalled('com.example.testing');
+    debugPrint("IS IT INSTALLED? : $isInstalled");
+    if (isInstalled != false) {
+      final intent = AndroidIntent(action: 'action_send', data: dt, package: 'com.example.testing', type: 'plain/text');
+
+      await intent.launch();
+    }
+/* else
+  {
+  String url = dt;
+  if (await canLaunch(url)) 
+    await launch(url);
+   else 
+    throw 'Could not launch $url';
+} */
+  }
+
+  //
+}//CLSOING BRACKS
   /*   return Container(
         margin: const EdgeInsets.fromLTRB(10, 50, 10, 50),
         color: Theme.of(context).scaffoldBackgroundColor,

@@ -14,7 +14,7 @@ import 'package:smart_parking/services/firebase/firestore_service.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_parking/notifiers/state_management.dart';
+import 'package:smart_parking/notifiers/booking_state_management.dart';
 import 'package:im_stepper/stepper.dart';
 import 'package:time_range_picker/time_range_picker.dart';
 
@@ -110,9 +110,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   //OccupiedNoPriorBooking for cars parked onlhy by interacting with the real parking and didn't use the app to book like taxis or whatever
   List<Set<String>> spotIDsWithinXHoursList = [],
       spotIDsWithinXHoursBookedNotOccupied = [],
-      allSpotIDsAllHoursBookedNotOccupied = [],
-      spotIDsWithinXHoursBookedAndOccupied = [],
-      spotIDsWithinXHoursBookedThenFreed =
+      allSpotIDsAllHoursBookedNotOccupied =
           []; //do not delete any because will need to update an eventuel is booking over value
   List indexesToDisplayWithnXHours = [];
 
@@ -203,17 +201,17 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     double alleyListViewMinHeightToDisplay =
         alleyHeight + (spaceBetweenSlots * (parkingSlotsTotal ~/ (parkingSlotsTotal ~/ 2) - 1));
 
-    var stateManagerRead = context.read<StateManagement>();
+    var stateManagerRead = context.read<BookingStateManagement>();
 
     debugPrint(
-        "OK LISTENING: ${stateManagerRead.updateOpeningAndClosingHours(mappedInfoFromWidget['Opening Hour'], mappedInfoFromWidget['Closing Hour'])} __________ ${context.watch<StateManagement>().openingHour} ______ ${context.watch<StateManagement>().closingHour}");
+        "OK LISTENING: ${stateManagerRead.updateOpeningAndClosingHours(mappedInfoFromWidget['Opening Hour'], mappedInfoFromWidget['Closing Hour'])} __________ ${context.watch<BookingStateManagement>().openingHour} ______ ${context.watch<BookingStateManagement>().closingHour}");
     //TIMESLOTSELECTION
     TimeOfDay startTime = TimeOfDay(
-            hour: int.parse(context.watch<StateManagement>().openingHour.split(":")[0]),
-            minute: int.parse(context.watch<StateManagement>().openingHour.split(":")[1])),
+            hour: int.parse(context.watch<BookingStateManagement>().openingHour.split(":")[0]),
+            minute: int.parse(context.watch<BookingStateManagement>().openingHour.split(":")[1])),
         endTime = TimeOfDay(
-            hour: int.parse(context.watch<StateManagement>().closingHour.split(":")[0]),
-            minute: int.parse(context.watch<StateManagement>().closingHour.split(":")[1]));
+            hour: int.parse(context.watch<BookingStateManagement>().closingHour.split(":")[0]),
+            minute: int.parse(context.watch<BookingStateManagement>().closingHour.split(":")[1]));
 
     debugPrint("OK LISTENING TIME OF  DAY $startTime ___ $endTime");
     stateManagerRead.getTimeSlotsIntervals(startTime, endTime, interval).toList().then((value) {
@@ -222,12 +220,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
           ? setState(() {
               timesOfDayFetched.clear;
               timesOfDayFetched.addAll(value);
-              context.read<StateManagement>().timeSlotsParsed = value;
+              context.read<BookingStateManagement>().timeSlotsParsed = value;
             })
           : null;
 
       debugPrint(
-          "VOIR $timesOfDayFetched ____ context.readtimeSlotsParsed ${context.read<StateManagement>().timeSlotsParsed}");
+          "VOIR $timesOfDayFetched ____ context.readtimeSlotsParsed ${context.read<BookingStateManagement>().timeSlotsParsed}");
     });
     stop += 1;
     Map<String, dynamic> selectedVehiculeInfoEmptyTest;
@@ -367,6 +365,15 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                           borderRadius:
                               const BorderRadius.only(topLeft: Radius.circular(15), bottomLeft: Radius.circular(15)),
                           onTap: () async {
+                            /*        var bookingStartDate = Timestamp.fromDate(DateTime(
+                                    selectedDay.year,
+                                    selectedDay.month,
+                                    selectedDay.day,
+                                    finallyBookedTimeRange.startTime.hour,
+                                    finallyBookedTimeRange.startTime.minute))
+                                .toDate();
+                            var timeUntilResStarts = (bookingStartDate.difference(DateTime.now())).inSeconds;
+                            debugPrint("TIME UNTIL RES BOOK OVERV :$timeUntilResStarts"); */
                             await myDB
                                 .collection("users/${currentlySignedInUser?.uid}/wallet")
                                 .get()
@@ -412,6 +419,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                       finallyBookedTimeRange.startTime.minute))
                                   .toDate();
                               var timeUntilResStarts = (bookingStartDate.difference(DateTime.now())).inSeconds;
+                              debugPrint("TIME UNTIL RES BOOK OVERV :$timeUntilResStarts");
                               Future.delayed(const Duration(seconds: 20));
                               if (!mounted) return;
                               Navigator.pop(context);
@@ -771,7 +779,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     tappedOnAlley = 'alleyA';
                     previouslySelectedParkingSpotID = 'A$i';
                   });
-                  context.read<StateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
+                  context.read<BookingStateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
 
                   //highlightSelectedSlot(isSelected, i);
                 },
@@ -815,17 +823,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                           child: rOccupiedAfterBookedIDs.contains("A$i") ||
                                                   sOccupiedAfterBookedIDs.contains("A$i")
                                               ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
-                                              : spotIDsWithinXHoursBookedAndOccupied
-                                                              .any((element) => element.contains("A$i")) ==
-                                                          true ||
-                                                      rOccupiedNoPriorBookingIDs.contains("A$i") ||
+                                              : rOccupiedNoPriorBookingIDs.contains("A$i") ||
                                                       sOccupiedNoPriorBookingIDs.contains("A$i")
                                                   ? occupiedSpotIconLegend
-                                                  : spotIDsWithinXHoursBookedThenFreed
-                                                                  .any((element) => element.contains("A$i")) ==
-                                                              true ||
-                                                          sAvailableIDs.contains("A$i") ||
-                                                          rAvailableIDs.contains("A$i")
+                                                  : sAvailableIDs.contains("A$i") || rAvailableIDs.contains("A$i")
                                                       ? getParkingSpotIcon("insideSpot", 'available')
                                                       : getParkingSpotIcon("insideSpot", 'booked'),
                                         ),
@@ -857,7 +858,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     tappedOnAlley = 'alleyB';
                     previouslySelectedParkingSpotID = 'B$i';
                   });
-                  context.read<StateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
+                  context.read<BookingStateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
                 },
                 highlightColor: Colors.blueGrey.shade500,
                 splashColor: Colors.yellow,
@@ -893,17 +894,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                           child: rOccupiedAfterBookedIDs.contains("B$i") ||
                                                   sOccupiedAfterBookedIDs.contains("B$i")
                                               ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
-                                              : spotIDsWithinXHoursBookedAndOccupied
-                                                              .any((element) => element.contains("B$i")) ==
-                                                          true ||
-                                                      rOccupiedNoPriorBookingIDs.contains("B$i") ||
+                                              : rOccupiedNoPriorBookingIDs.contains("B$i") ||
                                                       sOccupiedNoPriorBookingIDs.contains("B$i")
                                                   ? occupiedSpotIconLegend
-                                                  : spotIDsWithinXHoursBookedThenFreed
-                                                                  .any((element) => element.contains("B$i")) ==
-                                                              true ||
-                                                          sAvailableIDs.contains("B$i") ||
-                                                          rAvailableIDs.contains("B$i")
+                                                  : sAvailableIDs.contains("B$i") || rAvailableIDs.contains("B$i")
                                                       ? getParkingSpotIcon("insideSpot", 'available')
                                                       : getParkingSpotIcon("insideSpot", 'booked'),
                                         ),
@@ -1373,7 +1367,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                       )) */
                                 : {
                                     context
-                                        .read<StateManagement>()
+                                        .read<BookingStateManagement>()
                                         .updateSelectedTime(timesOfDayFetched.elementAt(index)),
                                     showUserRangePicker(index, endTime, startTime,
                                         slotsReservationsInfoFetchedAsMapWithData, timeSlotsDisabled)
@@ -1390,7 +1384,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                         : 20,
                                 //margin:const EdgeInsets.only(left: 20, right: 10),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                                color: context.watch<StateManagement>().selectedTime ==
+                                color: context.watch<BookingStateManagement>().selectedTime ==
                                             timesOfDayFetched.elementAt(index) &&
                                         allFinallyBookedIndexes.isEmpty
                                     ? selectedTimeSlotColor
@@ -1463,7 +1457,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
   tableCalendar() {
     debugPrint(
-        "THAT'S SELECTED $selectedDay ${TimeOfDay(hour: int.parse(context.read<StateManagement>().closingHour.split(":")[0]), minute: int.parse(context.read<StateManagement>().closingHour.split(":")[1])).hour}");
+        "THAT'S SELECTED $selectedDay ${TimeOfDay(hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]), minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1])).hour}");
     return Card(
       elevation: 5,
       shape: RoundedRectangleBorder(
@@ -1499,12 +1493,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     ok.day == DateTime.now().day &&
                     ok.hour ==
                         TimeOfDay(
-                                hour: int.parse(context.read<StateManagement>().closingHour.split(":")[0]),
-                                minute: int.parse(context.read<StateManagement>().closingHour.split(":")[1]))
+                                hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]),
+                                minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1]))
                             .hour
                 ? {
                     debugPrint(
-                        "IS SUPERIOR _ $ok  ${newSelectedDay.hour}__ ${TimeOfDay(hour: int.parse(context.read<StateManagement>().closingHour.split(":")[0]), minute: int.parse(context.read<StateManagement>().closingHour.split(":")[1])).hour}"),
+                        "IS SUPERIOR _ $ok  ${newSelectedDay.hour}__ ${TimeOfDay(hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]), minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1])).hour}"),
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text("Sorry, we're closed for the day!"),
@@ -1684,7 +1678,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             // allDisabledTimeRangeIndexesForTimeSelection.clear();
             outOfXhoursRangeIndexes.clear();
             allFinallyBookedIndexes.clear();
-            context.read<StateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
+            context.read<BookingStateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
             var ok =
                 mappedSelectedSlotAlley.where((element) => element.values.first == previouslySelectedParkingSpotID);
             debugPrint("PREVIOUSLY ONPRESSED SELECTED PARKING spot: $ok");
@@ -1778,8 +1772,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                       ok.day == DateTime.now().day &&
                       ok.hour >=
                           TimeOfDay(
-                                  hour: int.parse(context.read<StateManagement>().closingHour.split(":")[0]),
-                                  minute: int.parse(context.read<StateManagement>().closingHour.split(":")[1]))
+                                  hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]),
+                                  minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1]))
                               .hour
                   ? ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -2714,7 +2708,6 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     testallBookedTimeSlots.clear(),
                     testallBookedTimeSlotsInMinutes.clear(),
                     spotIDsWithinXHoursBookedNotOccupied.clear(),
-                    spotIDsWithinXHoursBookedAndOccupied,
                     stopClearing += 1
                   }
                 : null
@@ -2796,8 +2789,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             testallBookedTimeSlots.clear(),
             testallBookedTimeSlotsInMinutes.clear(),
             spotIDsWithinXHoursBookedNotOccupied.clear(),
-            spotIDsWithinXHoursBookedAndOccupied
-                .clear() //clear the bookedwithinXhourslist by comapring what is in it and what is not
+//clear the bookedwithinXhourslist by comapring what is in it and what is not
           }
         : anyReservationForSelectedDay = true;
     //debugPrint("allReservationsSameDaySameParkingWithKey $testallBookedTimeSlots");
@@ -3146,13 +3138,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               baba.first.value['BookingStart'] = change.doc.data()!['BookingStart'];
             }
 
-            if (change.doc.data()!['VehiculeStatus'] == 'Parked') {
+            if (change.doc.data()!['VehiculeStatus']['Status'] == 'Parked') {
               spotIDsWithinXHoursBookedNotOccupied.remove(change.doc.data()!['SlotID']);
-              spotIDsWithinXHoursBookedAndOccupied.add(change.doc.data()!['SlotID']);
             }
-            if (change.doc.data()!['VehiculeStatus'] == 'Gone') {
-              spotIDsWithinXHoursBookedAndOccupied.remove(change.doc.data()!['SlotID']);
-              spotIDsWithinXHoursBookedThenFreed.add(change.doc.data()!['SlotID']);
+            if (change.doc.data()!['VehiculeStatus']['Status'] == 'Gone') {
+              //Deal with the car leaving
+
             }
             break;
           case DocumentChangeType.removed:
@@ -3536,7 +3527,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     }
   }
 
-  checkWallet(num bookingTotalToPay, StateManagement stateManagerRead) {
+  checkWallet(num bookingTotalToPay, BookingStateManagement stateManagerRead) {
     String content = stateManagerRead.buildingBookingText;
     showDialog(
         barrierDismissible: false,
@@ -3626,7 +3617,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         },
         'SlotID': bookerTimeAndSpotInfoMapped['Selected Parking Spot'],
         'VehiculeID': value.docs.first.id,
-        'VehiculeStatus': 'Not Yet Parked',
+        'VehiculeStatus': <String, dynamic>{
+          'Status': 'Not Yet Parked',
+        },
         'TimeStamp': FieldValue.serverTimestamp()
       });
       await slotsResBatch.commit().whenComplete(() => debugPrint("RESERVATION SUCCESSFULLY ADDED"));

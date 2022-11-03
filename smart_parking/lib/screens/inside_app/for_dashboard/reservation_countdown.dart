@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:maps_launcher/maps_launcher.dart';
-import 'package:smart_parking/screens/inside_app/home.dart';
+import 'package:smart_parking/screens/inside_app/for_dashboard/badges_notifications.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
 import 'package:time_range_picker/time_range_picker.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -18,13 +18,17 @@ class ReservationCountdown extends StatefulWidget {
   final Map<String, dynamic> allReservationInfoNeeded;
   final Function(bool canShow) canShowToggle;
   final void Function(int selectedIndex) getIndex;
+  final bool userHasVehicules;
+  final int timeUntilResFetchedFromBookingOverview;
 
   const ReservationCountdown(
       {Key? key,
       required this.currentlySignedInUser,
       required this.allReservationInfoNeeded,
       required this.canShowToggle,
-      required this.getIndex})
+      required this.getIndex,
+      required this.userHasVehicules,
+      required this.timeUntilResFetchedFromBookingOverview})
       : super(key: key);
 
   @override
@@ -41,60 +45,10 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
   Timer? countdownTimer;
   final CountDownController _controller = CountDownController();
   int bookingDuration = -1;
-  /*  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  AndroidNotificationChannel channel = const AndroidNotificationChannel(
-      'high_importance_channel', // id
-      'High Importance Notifications', // title
-      description: 'This channel is used for important notifications.', // description
-      importance: Importance.high,
-      playSound: true); */
+  bool minutes5BeforeStartReached = false, bookingHasEnded = false, bookingHasStarted = false;
 
   @override
   void initState() {
-    // startTimer();
-
-    /*  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      RemoteNotification? notification = message.notification;
-      AndroidNotification? android = message.notification?.android;
-      if (notification != null && android != null) {
-        flutterLocalNotificationsPlugin.show(
-            notification.hashCode,
-            notification.title,
-            notification.body,
-            NotificationDetails(
-              android: AndroidNotificationDetails(
-                channel.id,
-                channel.name,
-                channelDescription: channel.description,
-                color: Colors.blue,
-                playSound: true,
-                //icon: '@mipmap/ic_lancher',
-              ),
-            ));
-      }
-    }); */
-
-    /*  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('A new messageopen app event was published');
-      RemoteNotification? notification = message.notification;
-      AndroidNotification? android = message.notification?.android;
-      if (notification != null && android != null) {
-        showDialog(
-            context: context,
-            builder: (_) {
-              return AlertDialog(
-                title: Text("${notification.title}"),
-                content: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [Text("${notification.body}")],
-                  ),
-                ),
-              );
-            });
-      }
-    });
- */
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => widget.canShowToggle(true));
     NotificationListenerProvider().getMessage(context);
@@ -107,10 +61,10 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
     debugPrint("THE TOKEN $token");
   }
 
-  void showNotification() {
-    setState(() {});
+  void showNotification(String title, String messagebody) {
+    //setState(() {});
 
-    sendNotification(title: "Hello Maguy!", body: "Notifications finally working haha! from SMART PARKING");
+    sendNotification(title: title, body: messagebody);
   }
 
   @override
@@ -161,11 +115,24 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
 
         return ok == moreUrgentReservationInfo['ParkingID'];
       });
-      moreUrgentParkingInfo = moreUrentResMatchingParkingIDInfo.first;
-      // ignore: unnecessary_brace_in_string_interps
-      debugPrint("AZERTY ${moreUrgentParkingInfo} _ ${moreUrgentReservationInfo['ParkingID']}");
-      //
 
+      moreUrgentParkingInfo =
+          moreUrentResMatchingParkingIDInfo.isNotEmpty ? moreUrentResMatchingParkingIDInfo.first : {};
+      // ignore: unnecessary_brace_in_string_interps
+      debugPrint(
+          "AZERTY ${moreUrgentParkingInfo} _ ${moreUrgentReservationInfo['ParkingID']}  ___ ${widget.currentlySignedInUser?.displayName}");
+      //
+      timeUntilBookingEnds == 1150 ? debugPrint("28 MINUTES LEFT") : null;
+      /* timeUntilResStarts == const Duration(seconds: 20).inSeconds && timeUntilBookingEnds == 0
+          ? {
+              debugPrint('starts soon'),
+              showNotification('Booking starting soon.',
+                  'Hello ${widget.currentlySignedInUser?.displayName}, Your booking in ${moreUrgentParkingInfo.values.first['Name']} starts in 5 minutes!')
+            }
+          : timeUntilResStarts == 0 && timeUntilBookingEnds == 500
+              ? showNotification('Booking ends soon.',
+                  'Hello ${widget.currentlySignedInUser?.displayName}, Your booking in ${moreUrgentParkingInfo.values.first['Name']} ends in 5 minutes!')
+              : null; */
       //
       if (mounted) {
         setState(
@@ -180,11 +147,15 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
     return SingleChildScrollView(
       child: Column(children: [
         bookingDuration == -1
-            ? Container() //noBookingSoFar() //
-            : bookingDuration > 0 && timeUntilResStarts > 0
+            ? Container()
+            : /* widget.allReservationInfoNeeded.isEmpty
+                ? noBookingSoFar()
+                : */
+            bookingDuration > 0 && timeUntilResStarts > 0
                 ? bookingStartsIn(
                     bookingDuration, durationToString(bookingDuration), timeUntilResStarts, moreUrgentParkingInfo)
-                : bookingDuration > 0 && timeUntilBookingEnds > 0 && timeUntilResStarts == 0
+                : bookingHasStarted == true ||
+                        bookingDuration > 0 && timeUntilBookingEnds > 0 && timeUntilResStarts == 0
                     ? bookingTimeLeft(
                         timeUntilBookingEnds, bookingDuration, durationToString(bookingDuration), moreUrgentParkingInfo)
                     : noBookingSoFar(),
@@ -225,7 +196,7 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
           ),
         */
         FloatingActionButton(
-          onPressed: showNotification,
+          onPressed: () => showNotification('Hello Maguy', 'Notifications Finally working'),
           tooltip: 'Increment',
           child: const Icon(Icons.add),
         )
@@ -252,7 +223,8 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
     const timeLeftHeaderText =
         TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, fontFamily: 'OpenSans');
 
-    debugPrint("TIME UNTIL STARTS $timeUntilResStarts");
+    debugPrint(
+        "TIME UNTIL STARTS $timeUntilResStarts _______ ${widget.timeUntilResFetchedFromBookingOverview}  ___ minutes5Reached $minutes5BeforeStartReached");
     return Padding(
       padding: const EdgeInsets.only(left: 22, right: 20),
       child: Stack(
@@ -260,7 +232,12 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
         fit: StackFit.passthrough,
         children: [
           CircularCountDownTimer(
-            duration: timeUntilResStarts,
+            duration: //timeUntilResStarts,
+                timeUntilResStarts < widget.timeUntilResFetchedFromBookingOverview
+                    ? timeUntilResStarts
+                    : widget.timeUntilResFetchedFromBookingOverview == 0
+                        ? timeUntilResStarts
+                        : widget.timeUntilResFetchedFromBookingOverview,
             isReverse: true,
             initialDuration: 0,
             controller: _controller,
@@ -284,9 +261,33 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
             },
             onComplete: () {
               debugPrint('Countdown Ended');
+              minutes5BeforeStartReached == true
+                  ? {
+                      showNotification('Booking just started!',
+                          'Hello ${widget.currentlySignedInUser?.displayName}, Your booking in ${moreUrgentParkingInfo.values.first['Name']} just started!'),
+                      bookingHasStarted = true,
+                      debugPrint('just started'),
+                      BadgesNotifications(),
+                    }
+                  : null;
             },
             onChange: (String timeStamp) {
-              debugPrint('Countdown Changed $timeStamp');
+              debugPrint('Countdown Changed $timeStamp ______ ${timeStamp.split(':').elementAt(0).trim()}');
+              (int.parse(timeStamp.split(':').elementAt(0).trim()) * 3600 +
+                          int.parse(timeStamp.split(':').elementAt(1).trim()) * 60 +
+                          int.parse(timeStamp.split(':').elementAt(2).trim())) ==
+                      300
+                  ? {
+                      debugPrint('starts soon'),
+                      minutes5BeforeStartReached = true,
+                      minutes5BeforeStartReached == true
+                          ? showNotification('Booking starting soon.',
+                              'Hello ${widget.currentlySignedInUser?.displayName}, Your booking in ${moreUrgentParkingInfo.values.first['Name']} starts in 5 minutes!')
+                          : null,
+                      /*   showNotification('Booking starting soon.',
+                          'Hello ${widget.currentlySignedInUser?.displayName}, Your booking in ${moreUrgentParkingInfo.values.first['Name']} starts in 5 minutes!') */
+                    }
+                  : null;
             },
           ),
           Column(
@@ -342,10 +343,10 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                                             newIndex: 1,
                                           ))); */
                             },
-                            label: const SizedBox(
+                            label: SizedBox(
                               width: 100,
-                              child: Text('Navigate to ECPI Smart Parking',
-                                  style: TextStyle(
+                              child: Text('Navigate to ${moreUrgentParkingInfo.values.first['Name']}',
+                                  style: const TextStyle(
                                       overflow: TextOverflow.fade,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w900,
@@ -456,7 +457,7 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
       Map<String, dynamic> moreUrgentParkingInfo) {
     const timeLeftHeaderText =
         TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, fontFamily: 'OpenSans');
-    debugPrint("TIME UNTIL ENDS $timeUntilBookingEnds");
+    debugPrint("TIME UNTIL ENDS $timeUntilBookingEnds  ___ ");
     return Padding(
       padding: const EdgeInsets.only(left: 22, right: 20),
       child: Stack(
@@ -488,9 +489,26 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
             },
             onComplete: () {
               debugPrint('Countdown Ended');
+              showNotification('Booking just ended!',
+                  'Hello ${widget.currentlySignedInUser?.displayName}, Your booking in ${moreUrgentParkingInfo.values.first['Name']} has just ended!');
+              bookingHasEnded = true;
+              debugPrint('just ended');
             },
             onChange: (String timeStamp) {
-              debugPrint('Countdown Changed $timeStamp');
+              debugPrint('Countdown Changed $timeStamp  ______ ${timeStamp.split(':').elementAt(0).trim()}');
+              (int.parse(timeStamp.split(':').elementAt(0).trim()) * 3600 +
+                          int.parse(timeStamp.split(':').elementAt(1).trim()) * 60 +
+                          int.parse(timeStamp.split(':').elementAt(2).trim())) ==
+                      300
+                  ? {
+                      debugPrint('ends soon'),
+                      minutes5BeforeStartReached = true,
+                      minutes5BeforeStartReached == true
+                          ? showNotification('Booking ends soon.',
+                              'Hello ${widget.currentlySignedInUser?.displayName}, Your booking in ${moreUrgentParkingInfo.values.first['Name']} ends in 5 minutes!')
+                          : null,
+                    }
+                  : null;
             },
           ),
           Column(
@@ -681,7 +699,7 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                      children: const [
                         /*      TextButton.icon(
                             style: TextButton.styleFrom(backgroundColor: Colors.black.withOpacity(0.5), elevation: 5),
                             onPressed: () {
@@ -759,7 +777,7 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                                           style: const TextStyle(
                                               color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
                                           children: [
-                                            TextSpan(
+                                            const TextSpan(
                                               text: "00",
                                             ),
                                             WidgetSpan(
@@ -772,7 +790,7 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                                                 ),
                                               ),
                                             ),
-                                            TextSpan(
+                                            const TextSpan(
                                               text: '00',
                                             ),
                                           ],

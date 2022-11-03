@@ -11,7 +11,7 @@ class NotificationListenerProvider {
 
     FirebaseMessaging.onMessage.listen((RemoteMessage event) {
       RemoteNotification notification = event.notification!;
-      debugPrint('Yay, new notification foreground: ${notification.title}');
+      debugPrint('Yay, new notification FROM FIREBASE TEST foreground: ${notification.title}');
 
       // ignore: unused_local_variable
       AndroidNotification androidNotification = event.notification!.android!;

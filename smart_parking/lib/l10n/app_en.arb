@@ -1,0 +1,187 @@
+{
+    "language": "English",
+    "@language": {
+        "description": "The currrent Language"
+    },
+
+    "welcomeToApp": "Welcome to Your Smart Parking!",
+    "@welcomeToApp": {
+        "description": "Login Welcome Text"
+    },
+
+    "verifyInternetConnection": "Please check your network connectivity!",
+    "@verifyInternetConnection": {
+        "description": ""
+    },
+
+
+    "login": "Sign in to your account.",
+    "@login": {
+        "description": "Login to account text"
+    },
+
+    "loginEmailLabel": "Your Email",
+    "@loginEmailLabel": {
+        "description": "User email field label"
+    },
+
+    "loginEmailPlaceholder": "Enter your email",
+    "@loginEmailPlaceholder": {
+        "description": "Email field placeholder"
+    },
+
+    "loginPasswordLabel": "Your Password",
+    "@loginPasswordLabel": {
+        "description": "Password field placeholder"
+    },
+
+
+    "loginPasswordPlaceholder": "Enter your password",
+    "@loginPasswordPlaceholder": {
+        "description": "Password placeholder"
+    },
+
+    "forgotPassword": "Forgot your password?",
+    "@forgotPassword": {
+        "description": "Password forgotten"
+    },
+
+    "signin": "Sign in",
+    "@signin": {
+        "description": "Sign in button label"
+    },
+
+    "noAccount": "Don't have an account? ",
+    "@noAccount": {
+        "description": "No account label text"
+    },
+
+    "createAccount": "Create now!",
+    "@createAccount": {
+        "description": "Create account button label"
+    },
+    "logErrorBadEmailFormat": "Please check email format.",
+    "@logErrorBadEmailFormat": {
+        "description": ""
+    },
+    "logIncorrectEmailOrPass": "Email or password incorrect!",
+    "@logIncorrectEmailOrPass": {
+        "description": ""
+    },
+
+
+
+
+
+    "regFullNameLabel": "Full Name",
+    "@regFullNameLabel": {
+        "description": "Register form full name label"
+    },
+     "regFullNamePlaceholder": "Enter your full name",
+    "@regFullNamePlaceholder": {
+        "description": "Register form full name placeholder"
+    },
+    "regEmailLabel": "E-mail",
+    "@regEmailLabel": {
+        "description": "Register form email label"
+    },
+    "regEmailPlaceholder": "Enter your email",
+    "@regEmailPlaceholder": {
+        "description": ""
+    },
+    "regNumberLabel": "Phone Number",
+    "@regNumberLabel": {
+        "description": ""
+    },
+    "regNumberPlaceholder": "Enter your number",
+    "@regNumberPlaceholder": {
+        "description": ""
+    },
+    "regNumberError": "Invalid number format.",
+    "@regNumberError": {
+        "description": ""
+    },
+    "regPasswordLabel": "Password",
+    "@regPasswordLabel": {
+        "description": ""
+    },
+    "regPasswordPlaceholder": "Enter your password",
+    "@regPasswordPlaceholder": {
+        "description": ""
+    },
+    "regPasswordHelper": "At least 8 [uppercase, number, symbol].",
+    "@regPasswordHelper": {
+        "description": ""
+    },
+    "regConfirmPassLabel": "Confirm Password",
+    "@regConfirmPassLabel": {
+        "description": ""
+    },
+    "regConfirmPassError": "Check password format",
+    "@regConfirmPassError": {
+        "description": ""
+    },
+    "regConfirmPassPlaceholder": "Re-enter your password",
+    "@regConfirmPassPlaceholder": {
+        "description": ""
+    },
+    "regPasswordsNoMatch": "Passwords don't match.",
+    "@regPasswordsNoMatch": {
+        "description": ""
+    },
+
+    "regNextButton": "Next",
+    "@regNextButton": {
+        "description": ""
+    },
+    "alreadyHaveAccount": "Already have an account? ",
+    "@alreadyHaveAccount": {
+        "description": ""
+    },
+    "regGoToLogInLink": "Sign In",
+    "@regGoToLogInLink": {
+        "description": ""
+    },
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    "noParkingSpotSelected": "As you have not selected a specific parking spot, you will be assigned a random available one.",
+    "@noParkingSpotSelected": {
+        "description": "The user is asked if he wants to continue the booking without selecting a parking spot."
+    },
+
+    "creatingBooking": "Registering Your Booking ...",
+    "@creatingBooking": {
+        "description": "The user's booking is being processed."
+    },
+
+    "selectLanguage": "Select the app language",
+    "@selectLanguage": {
+        "description": "Select App Language"
+    }
+
+    
+
+}

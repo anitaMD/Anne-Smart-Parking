@@ -13,26 +13,31 @@ import '../../../services/firebase/firebase_service.dart';
 class DashboardHomePage extends StatefulWidget {
   final Function(bool canShow) canShowToggle;
   final void Function(int selectedIndex) getIndex;
-  const DashboardHomePage({Key? key, required this.canShowToggle, required this.getIndex}) : super(key: key);
+  final int timeUntilResStartsFromBookingOverview;
+  const DashboardHomePage(
+      {Key? key,
+      required this.canShowToggle,
+      required this.getIndex,
+      required this.timeUntilResStartsFromBookingOverview})
+      : super(key: key);
 
   @override
   DashboardHomePageState createState() => DashboardHomePageState();
 }
 
 class DashboardHomePageState extends State<DashboardHomePage> {
+  String walletFirstAndOnlyDocID = '';
+  User? currentlySignedInUser;
+  Set allParkingIDsConcerned = {};
+  int count = 0, setStateCount = 0;
   final panelScrollController = ScrollController();
   final dragHandlePanelController = PanelController();
   var myDB = FirebaseFirestore.instance;
   var firebaseService = FirebaseService();
   var firestoreWalletService = FirestoreWalletService();
-  String walletFirstAndOnlyDocID = '';
-  User? currentlySignedInUser;
-  bool canUpdateFields = false;
-  int count = 0, setStateCount = 0;
+  bool canUpdateFields = false, userHasNoVehicules = false;
   List<Map<String, dynamic>> allUserBookings = [], allBookedParkingsDetails = [], allUserVehiculesUsedForBooking = [];
   Map<String, dynamic> allReservationInfoNeeded = {}, ok = {};
-
-  Set allParkingIDsConcerned = {};
 
   @override
   void initState() {
@@ -80,14 +85,13 @@ class DashboardHomePageState extends State<DashboardHomePage> {
 
     myDB.collection("slotsReservations").get().then(
       (value) {
-        if (value.docChanges.isNotEmpty) {
+        if (value.docs.isNotEmpty) {
           //
-          var userBookings =
-              value.docChanges.where((element) => element.doc.data()!['ClientID'] == currentlySignedInUser?.uid);
+          var userBookings = value.docs.where((element) => element.data()['ClientID'] == currentlySignedInUser?.uid);
           userBookings.isNotEmpty && allUserBookings.length < userBookings.length
               ? userBookings.forEach((element) {
                   // debugPrint("FOUND ONE :${element.doc.id}");
-                  allUserBookings.add({element.doc.id: element.doc.data()!});
+                  allUserBookings.add({element.id: element.data()});
                 })
               : null;
 
@@ -109,28 +113,29 @@ class DashboardHomePageState extends State<DashboardHomePage> {
               DocumentReference parkingsCollection = myDB.collection("locations").doc(reservationData['ParkingID']);
               parkingsCollection.get().then((value) {
                 allBookedParkingsDetails.add({value.id: value.data()});
-                //debugPrint("SORTED : ____ ${value.data()} ____ ${allBookedParkingsDetails.length}");
+                debugPrint("SORTED : ____ ${value.data()} ____ ${allBookedParkingsDetails.length}");
               }).whenComplete(() => setState(() {}));
             }
           }
           Set allVehiculesUsedIDs = {};
-          for (var element in value.docChanges) {
-            allVehiculesUsedIDs.add(element.doc.data()!['VehiculeID']);
+          for (var element in value.docs) {
+            allVehiculesUsedIDs.add(element.data()['VehiculeID']);
           }
 
           myDB.collection('users/${currentlySignedInUser?.uid}/vehicules').get().then((vehiculesDocs) {
             if (vehiculesDocs.size != 0) {
               for (var vehiculeID in allVehiculesUsedIDs) {
-                var matchingVehiculeDocList = vehiculesDocs.docChanges.where((element) => element.doc.id == vehiculeID);
+                var matchingVehiculeDocList = vehiculesDocs.docs.where((element) => element.id == vehiculeID);
                 allUserVehiculesUsedForBooking
-                    .add({matchingVehiculeDocList.first.doc.id: matchingVehiculeDocList.first.doc.data()});
+                    .add({matchingVehiculeDocList.first.id: matchingVehiculeDocList.first.data()});
               }
+            } else {
+              userHasNoVehicules = true;
             }
-
             allReservationInfoNeeded = {
               'allUserBookings': allUserBookings,
               'allBookedParkingsDetails': allBookedParkingsDetails,
-              'allUserVehiculesUsedForBooking': allUserVehiculesUsedForBooking
+              'allUserVehiculesUsedForBooking': allUserVehiculesUsedForBooking,
             };
 
             debugPrint(" allReservationInfoNeeded $allReservationInfoNeeded ");
@@ -163,6 +168,7 @@ class DashboardHomePageState extends State<DashboardHomePage> {
   }
 
   updateWalletFields(QuerySnapshot<Map<String, dynamic>> walletCollection, String walletFirstAndOnlyDocID) {
+    // ignore: unused_local_variable
     CollectionReference debitsCollection =
         myDB.collection("users/${currentlySignedInUser?.uid}/wallet/$walletFirstAndOnlyDocID/debits");
     CollectionReference topUpsCollection =
@@ -326,12 +332,12 @@ class DashboardHomePageState extends State<DashboardHomePage> {
           if (!snapshot.hasData) {
             return const Text(''); //Text('Loading brand logos');
           } else {
-            List<DocumentChange<Map<String, dynamic>>> allReservationsForUserFetched = snapshot.data!.docChanges;
             //getUserReservationDetails(currentlySignedInUser, myDB, allVehiculesTypesLogosFetched);
             debugPrint("FOUND ONE :$allUserBookings");
             debugPrint("FOUND TWO :$allBookedParkingsDetails");
             debugPrint("FOUND THREE :$allUserVehiculesUsedForBooking");
             debugPrint("FOUND 4 :$allReservationInfoNeeded");
+            debugPrint("FOUND 5 :$userHasNoVehicules");
 
             return SlidingUpPanel(
               renderPanelSheet: true,
@@ -353,6 +359,8 @@ class DashboardHomePageState extends State<DashboardHomePage> {
                   ReservationCountdown(
                       allReservationInfoNeeded: allReservationInfoNeeded,
                       currentlySignedInUser: currentlySignedInUser,
+                      userHasVehicules: !userHasNoVehicules,
+                      timeUntilResFetchedFromBookingOverview: widget.timeUntilResStartsFromBookingOverview,
                       canShowToggle: widget.canShowToggle,
                       getIndex: widget.getIndex)
                 ],

@@ -12,8 +12,13 @@ import 'home.dart';
 
 class DashboardWrapperPage extends StatefulWidget {
   final Map<String, dynamic> parkingToNavigateTo;
-  final int newIndex;
-  const DashboardWrapperPage({Key? key, required this.parkingToNavigateTo, required this.newIndex}) : super(key: key);
+  final int newIndex, timeUntilResStartsFromBookingOverview;
+  const DashboardWrapperPage(
+      {Key? key,
+      required this.parkingToNavigateTo,
+      required this.newIndex,
+      required this.timeUntilResStartsFromBookingOverview})
+      : super(key: key);
 
   @override
   State<DashboardWrapperPage> createState() => _DashboardWrapperPageState();
@@ -41,9 +46,9 @@ class _DashboardWrapperPageState extends State<DashboardWrapperPage> {
   Widget getBodyNoEffect() {
     List<Widget> pages = [
       DashboardHomePage(
-        canShowToggle: canShowToggle,
-        getIndex: (int selectedIndex) {},
-      ),
+          canShowToggle: canShowToggle,
+          getIndex: (int selectedIndex) {},
+          timeUntilResStartsFromBookingOverview: widget.timeUntilResStartsFromBookingOverview),
       BookingPage(
         parkingToNavigateTo: widget.parkingToNavigateTo,
       ),
@@ -67,7 +72,10 @@ class _DashboardWrapperPageState extends State<DashboardWrapperPage> {
     //_currentIndex = widget.newIndex + 1;
     debugPrint(" currentindex $_currentIndex  __ widgetnewindex ${widget.newIndex} _ goB $goBack");
     List<Widget> pages = [
-      DashboardHomePage(canShowToggle: canShowToggle, getIndex: getIndex),
+      DashboardHomePage(
+          canShowToggle: canShowToggle,
+          getIndex: getIndex,
+          timeUntilResStartsFromBookingOverview: widget.timeUntilResStartsFromBookingOverview),
       BookingPage(
         parkingToNavigateTo: widget.parkingToNavigateTo,
       ),

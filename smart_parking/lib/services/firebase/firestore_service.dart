@@ -173,78 +173,7 @@ class FirestoreParkingLocationService {
     }
   } // */
 
-  /*  Stream<List<InsideInfo>> getInsideParkingInfoData() {
-    //FIND A WAY TO GET THE INSIDE PARKING INFO COLLECTION'S DOCUMENT FOR EACH PARKING
-
-    _locationsCollectionReference.get().then((value) {
-      for (var docum in value.docs) {
-        final CollectionReference insideParkingInfoCollection =
-            FirebaseFirestore.instance
-                .collection("${docum.id}/insideParkingInformation");
-        try {
-          insideParkingInfSnapshot = insideParkingInfoCollection.snapshots();
-
-          /* insideParkingInfoCollection.doc().get().then(
-                (subcolletcion) => allParkingsInsideInfo
-                    .addAll({docum.id: subcolletcion.data()}));
-            return allParkingsInsideInfo; */
-        } catch (e) {
-          print(e);
-          return {};
-        }
-      }
-    });
-    print(
-        "INSIDEPARKINGINFOMAP RESULT MESSAGE FROM FIRESETORE SERVICE: $allParkingsInsideInfo");
-    return insideParkingInfSnapshot.map((snapshot) => snapshot.docs
-        .map((doc) =>
-            InsideInfo.fromFirestore(doc.data() as Map<String, dynamic>))
-        .toList());
-    // return allParkingsInsideInfo;
-  }
-
-  */
-
-  /*  Stream<List<InsideInfo>> insideParkingInfoStream() {
-    CollectionReference insideParkingInfoCollection =
-        _locationsCollectionReference;
-    try {
-      _locationsCollectionReference.get().then((value) {
-        //Map<String, dynamic> testing = {};
-        for (var docum in value.docs) {
-          if (selectedParkingID == docum.id) {
-            insideParkingInfoCollection = FirebaseFirestore.instance
-                .collection("locations/${docum.id}/insideParkingInfo");
-            insideParkingInfSnapshot = insideParkingInfoCollection.snapshots();
-            print("SNAPSHOTS HERE $insideParkingInfSnapshot");
-            return insideParkingInfSnapshot.map((snapshot) => snapshot.docs
-                .map((doc) => InsideInfo.fromFirestore(
-                    doc.data() as Map<String, dynamic>))
-                .toList());
-          }
-          return {};
-          /* insideParkingInfoCollection.doc().get().then(
-                (subcolletcion) => allParkingsInsideInfo
-                    .addAll({docum.id: subcolletcion.data()}));
-            return allParkingsInsideInfo; */
-          /* insideParkingInfoCollection
-              .get()
-              .then((value) => {
-                    testing.addAll({
-                      docum.id: value.docs
-                          .map((singleParkingInfo) => singleParkingInfo.data())
-                    }),
-                    print("THIS IS THE TEST : ${testing.length}"),
-                    print("THIS IS THE TEST LIST : $testing"),
-                  }); */
-        }
-      });
-    } catch (e) {
-      print(e);
-      return;
-    }
-  }
- */
+  
   Future<Map<String, dynamic>> getParkingInfoData() async {
     try {
       await _locationsCollectionReference.get().then((value) {
