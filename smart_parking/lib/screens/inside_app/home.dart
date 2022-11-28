@@ -1,6 +1,5 @@
 // ignore_for_file: avoid_print
 
-import 'package:badges/badges.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -52,7 +51,7 @@ class HomeState extends State<Home> {
   User? currentUser = FirebaseAuth.instance.currentUser;
   FirestoreUserService firestoreService = FirestoreUserService();
   String appBarText = '', logInDispName = '', profilePicture = '', barProfilePic = '', test = '';
-  var currentPage;
+  var currentPage = DrawerSections.dashboard;
   bool takeWalletQrScreenshot = false;
 
   @override
@@ -269,12 +268,6 @@ class HomeState extends State<Home> {
 
   showAppBar() {
     if (currentPage != DrawerSections.profileInfo /*  && currentPage != DrawerSections.notifications */) {
-      Color notificationColor;
-      String countNumberFormatDisplay;
-      notificationsBadgeCounter != 0 ? notificationColor = Colors.red : notificationColor = Colors.red.withOpacity(0.0);
-      notificationsBadgeCounter > 9
-          ? countNumberFormatDisplay = '9+'
-          : countNumberFormatDisplay = '$notificationsBadgeCounter';
       return AppBar(
         elevation: 1,
         toolbarHeight: kToolbarHeight,

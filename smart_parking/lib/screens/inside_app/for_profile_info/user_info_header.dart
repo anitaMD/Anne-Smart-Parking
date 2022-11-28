@@ -17,11 +17,7 @@ class UserInfoHeader extends StatefulWidget {
   final String avatarImage;
   final Function customFunction;
   final bool status;
-  const UserInfoHeader(
-      {Key? key,
-      required this.avatarImage,
-      required this.customFunction,
-      required this.status})
+  const UserInfoHeader({Key? key, required this.avatarImage, required this.customFunction, required this.status})
       : super(key: key);
 
   @override
@@ -44,17 +40,14 @@ class _UserInfoHeaderState extends State<UserInfoHeader> {
       var image = await ImagePicker().pickImage(source: ImageSource.gallery);
       print(image!.path);
       file = File(image.path);
-      uploaded = await firebaseStorage
-          .updloadFile(file!)
-          .then((value) => avatarImageUploaded = value.toString());
+      uploaded =
+          await firebaseStorage.updloadProfilePicture(file!).then((value) => avatarImageUploaded = value.toString());
 
 //
-      firestoreService.setUserProfileImage(
-          currentUser!, avatarImageUploaded); //STOPPED HERE
+      firestoreService.setUserProfileImage(currentUser!, avatarImageUploaded); //STOPPED HERE
       print('AVATAR UPLOADED : $avatarImageUploaded');
       currentUser!.updatePhotoURL(avatarImageUploaded);
-      print(
-          'CURRENT USER AVATAR UPLOADED : ${currentUser!.photoURL.toString()}');
+      print('CURRENT USER AVATAR UPLOADED : ${currentUser!.photoURL.toString()}');
 
 //
       widget.customFunction(avatarImageUploaded);
@@ -131,8 +124,7 @@ class _UserInfoHeaderState extends State<UserInfoHeader> {
         children: [
           Stack(
             children: [
-              RadialProgress(
-                  width: 4, goalCompleted: 0.9, child: whichRoundedImage()),
+              RadialProgress(width: 4, goalCompleted: 0.9, child: whichRoundedImage()),
               Positioned(
                 bottom: 2,
                 right: 2,
@@ -140,8 +132,7 @@ class _UserInfoHeaderState extends State<UserInfoHeader> {
                   width: 35.0,
                   height: 35.0,
                   decoration: const BoxDecoration(
-                      color: Colors.deepOrange,
-                      borderRadius: BorderRadius.all(Radius.circular(20))),
+                      color: Colors.deepOrange, borderRadius: BorderRadius.all(Radius.circular(20))),
                   child: IconButton(
                     icon: const Icon(Icons.add_a_photo),
                     color: Colors.white,

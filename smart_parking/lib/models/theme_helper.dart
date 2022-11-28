@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:hexcolor/hexcolor.dart';
 
 class ThemeHelper {
@@ -65,7 +66,7 @@ class ThemeHelper {
     );
   }
 
-  ButtonStyle buttonStyle() {
+  ButtonStyle buttonStyle([String scanner = '']) {
     return ButtonStyle(
       shape: MaterialStateProperty.all<RoundedRectangleBorder>(
         RoundedRectangleBorder(
@@ -73,8 +74,10 @@ class ThemeHelper {
         ),
       ),
       minimumSize: MaterialStateProperty.all(const Size(50, 50)),
-      backgroundColor: MaterialStateProperty.all(Colors.transparent),
-      shadowColor: MaterialStateProperty.all(Colors.transparent),
+      backgroundColor:
+          scanner == '' ? MaterialStateProperty.all(Colors.transparent) : MaterialStateProperty.all(Colors.brown),
+      shadowColor:
+          scanner == '' ? MaterialStateProperty.all(Colors.transparent) : MaterialStateProperty.all(Colors.brown),
     );
   }
 
@@ -95,6 +98,36 @@ class ThemeHelper {
         ),
       ],
     );
+  }
+
+  AlertDialog waitingBackgoundProcessDialog(BuildContext context) {
+    return AlertDialog(
+        backgroundColor: Colors.white.withOpacity(0.4),
+        scrollable: true,
+        content: Padding(
+          padding: const EdgeInsets.only(top: 20, bottom: 20),
+          child: SpinKitFadingCircle(
+              size: 50,
+              itemBuilder: (BuildContext context, int index) {
+                return const DecoratedBox(
+                  decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                );
+              }),
+        )
+
+        /* actions: [
+        TextButton(
+          style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black38)),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text(
+            "OK",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ], */
+        );
   }
 }
 

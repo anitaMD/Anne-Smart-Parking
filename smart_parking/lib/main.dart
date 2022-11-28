@@ -10,16 +10,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/notifiers/location_notifier.dart';
 import 'package:smart_parking/notifiers/booking_state_management.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'screens/authenticate/testlogin.dart';
 import 'package:get/get.dart';
+import 'package:smart_parking/screens/authenticate/testlogin.dart';
 import 'l10n/l10n.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  //await init;
   debugPrint("Handling a background message...: ${message.notification!.body}");
 }
+
+final init = Firebase.initializeApp();
 
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'high_importance_channel', // id
@@ -29,9 +31,10 @@ const AndroidNotificationChannel channel = AndroidNotificationChannel(
     playSound: true);
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await init;
   SharedPreferences prefs = await SharedPreferences.getInstance();
   var status = prefs.getBool('isLoggedIn') ??
       true; //true means user logged OUT and false means he's already logged in. could rename to 'userHasToLogIn
@@ -82,26 +85,26 @@ class _MyAppState extends State<MyApp> {
         ),
         ChangeNotifierProvider(
           create: (_) => BookingStateManagement(),
-        )
+        ),
       ],
       builder: (context, child) {
         return GetMaterialApp(
-            locale: const Locale('fr', 'FR'),
-            theme: ThemeData(
-              brightness: Brightness.light,
-              primaryColor: Colors.indigo,
-            ),
-            supportedLocales: L10n.all,
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              FormBuilderLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-            ],
-            debugShowCheckedModeBanner: false,
-            home:
-                const TestLogin() /* widget.status == true
+          locale: const Locale('fr', 'FR'),
+          theme: ThemeData(
+            brightness: Brightness.light,
+            primaryColor: Colors.indigo,
+          ),
+          supportedLocales: L10n.all,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            FormBuilderLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          debugShowCheckedModeBanner: false,
+          home:
+              const TestLogin(), /* widget.status == true
               ? const LoginRegister()
               : const Home(
                   fromLoginView: true,
@@ -109,7 +112,7 @@ class _MyAppState extends State<MyApp> {
                   newIndex: 0,
                   timeUntilResStarts: 0,
                 ), */
-            );
+        );
       },
     );
   }

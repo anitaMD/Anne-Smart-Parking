@@ -1,11 +1,12 @@
 {
     "language": "Français",
 
-    "verifyInternetConnection": "Vérifiez votre connexion internet!",
-   
+    "noInternetError": "Vérifiez votre connexion internet!",
+
+
+
     
     "welcomeToApp": "Bienvenu dans votre application Your Smart Parking!",
-
     "login": "Connectez-vous à votre compte.",
     "loginEmailLabel": "E-mail",
     "loginEmailPlaceholder": "Saisissez votre email",
@@ -42,6 +43,10 @@
     "regConfirmPassPlaceholder": "Confirmez mot de password",
     "regConfirmPassError": "Le mot de passe est mal formaté.",
     "regPasswordsNoMatch": "Les mots de passe ne correspondent pas.",
+    "regEgaliteDesChances": "Possédez-vous la Carte d'Egalité des Chances?",
+    "regRadioYes": "Oui",
+    "regRadioNo": "Non",
+    "regEgaliteChancesDescription": "Cette carte vous concerne si vous avez une perte d'autonomie importante (handicap) et vous permet de bénéficier de droits et avantages en matière de transport, d’accès aux soins de santé, de réadaptation, d’aide technique et financière, d’éducation, etc.Elle est délivrée par le Ministère chargé de l’Action sociale sur proposition des commissions techniques départementales.",
 
     "regNextButton": "Suivant",
    
@@ -49,12 +54,29 @@
     "regGoToLogInLink": "Connectez-vous!",
 
     "logErrorBadEmailFormat": "L'email est mal formaté.",
+
     
-    
+
+    "otpAuthCompleted": "Authentification réussie!",
+    "otpAuthFailed": "L'authentification a échoué",
+    "otpCodeSent": "Code OTP envoyé!",
+    "otpCodeRetrievalTimeout": "Timeout!",
+
+
+
+    "numVerifHeader": "Vérification",
+    "numVerifBody": "Saisissez le code de vérification envoyé au",
+    "numVerifDidntReceiveCode": "Pas reçu de code? ",
+    "numVerifResendCode": "Renvoyer code",
+    "numVerifButtonLabel": "Vérifier",
 
 
 
 
+    "scanCECrectoError": "Veuillez soumettre de nouveau la partie 'recto' de votre carte!",
+    "scanCECversoError": "Veuillez soumettre de nouveau la partie 'verso' de votre carte!",
+    "scanCECbothRectoVersoError": "Veuillez soumettre de nouveau les parties recto et verso de votre carte!",
+ 
 
 
 

@@ -4,17 +4,19 @@
         "description": "The currrent Language"
     },
 
-    "welcomeToApp": "Welcome to Your Smart Parking!",
-    "@welcomeToApp": {
-        "description": "Login Welcome Text"
-    },
-
-    "verifyInternetConnection": "Please check your network connectivity!",
-    "@verifyInternetConnection": {
+    "noInternetError": "Please check your network connectivity!",
+    "@noInternetError": {
         "description": ""
     },
 
 
+
+
+    "welcomeToApp": "Welcome to Your Smart Parking!",
+    "@welcomeToApp": {
+        "description": "Login Welcome Text"
+    },
+    
     "login": "Sign in to your account.",
     "@login": {
         "description": "Login to account text"
@@ -129,11 +131,28 @@
     "@regPasswordsNoMatch": {
         "description": ""
     },
+    "regEgaliteDesChances": "De you have an Equality Of Chances card?",
+    "@regEgaliteDesChances": {
+        "description": ""
+    },
+    "regRadioYes": "Yes",
+    "@regRadioYes": {
+        "description": ""
+    },
+    "regRadioNo": "No",
+    "@regRadioYes": {
+        "description": ""
+    },
+    "regEgaliteChancesDescription": "This card concerns you if you have a significant loss of autonomy (disability) and allows you to benefit from rights and advantages in terms of transportation, access to health care, rehabilitation, technical and financial assistance, education, etc. It is issued by the Ministry of Social Action on the proposal of departmental technical commissions.",
+    "@regEgaliteChancesDescription": {
+        "description": ""
+    },
 
     "regNextButton": "Next",
     "@regNextButton": {
         "description": ""
     },
+   
     "alreadyHaveAccount": "Already have an account? ",
     "@alreadyHaveAccount": {
         "description": ""
@@ -142,13 +161,64 @@
     "@regGoToLogInLink": {
         "description": ""
     },
+
+
+
+
+    "otpAuthCompleted": "Auth Completed!",
+    "@otpAuthCompleted": {
+        "description": ""
+    },
+    "otpAuthFailed": "Auth Failed",
+    "@otpAuthFailed": {
+        "description": ""
+    },
+    "otpCodeSent": "OTP Sent!",
+    "@otpCodeSent": {
+        "description": ""
+    },
+    "otpCodeRetrievalTimeout": "Timeout!",
+    "@otpCodeRetrievalTimeout": {
+        "description": ""
+    },
     
 
     
+    "numVerifHeader": "Verification",
+    "@numVerifHeader": {
+        "description": ""
+    },
+    "numVerifBody": "Enter the verification code we just sent to",
+    "@numVerifBody": {
+        "description": ""
+    },
+    "numVerifDidntReceiveCode": "If you didn't receive a code, ",
+    "@numVerifDidntReceiveCode": {
+        "description": ""
+    },
+    "numVerifResendCode": "Resend!",
+    "@numVerifResendCode": {
+        "description": ""
+    },
+    "numVerifButtonLabel": "Verify",
+    "@numVerifButtonLabel": {
+        "description": ""
+    },
 
 
 
-
+    "scanCECrectoError": "Please re-submit the recto part of your card!",
+    "@scanCECrectoError": {
+        "description": ""
+    },
+    "scanCECversoError": "Please re-submit the verso part of your card!",
+    "@scanCECversoError": {
+        "description": ""
+    },
+    "scanCECbothRectoVersoError": "Please re-submit both recto and verso parts of your card!",
+    "@scanCECbothRectoVersoError": {
+        "description": ""
+    },
 
 
 

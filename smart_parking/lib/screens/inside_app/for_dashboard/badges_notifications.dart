@@ -4,8 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_parking/screens/inside_app/home.dart';
 
-import '../for_notifications/display_notifs.dart';
-
 class BadgesNotifications extends StatefulWidget {
   const BadgesNotifications({Key? key}) : super(key: key);
 
@@ -40,7 +38,6 @@ class _BadgesNotificationsState extends State<BadgesNotifications> {
               allNotifications.addAll(element.doc.data()!);
             });
     }); */
-    print("ALL NOTIFS :${allNotifications.length}");
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
             .collection("users/${FirebaseAuth.instance.currentUser?.uid}/notifications")
@@ -61,10 +58,10 @@ class _BadgesNotificationsState extends State<BadgesNotifications> {
                 elevation: 3,
                 badgeColor: Colors.red.shade500,
                 showBadge: notificationsBadgeCounter == 0 ? false : true,
-                padding: EdgeInsets.all(7),
+                padding: const EdgeInsets.all(7),
                 badgeContent: Text(
                   '$notificationsBadgeCounter',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 child: IconButton(
                     icon: const Icon(Icons.notifications_none_outlined),

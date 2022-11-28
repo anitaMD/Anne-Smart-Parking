@@ -120,7 +120,7 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
           moreUrentResMatchingParkingIDInfo.isNotEmpty ? moreUrentResMatchingParkingIDInfo.first : {};
       // ignore: unnecessary_brace_in_string_interps
       debugPrint(
-          "AZERTY ${moreUrgentParkingInfo} _ ${moreUrgentReservationInfo['ParkingID']}  ___ ${widget.currentlySignedInUser?.displayName}");
+          "AZERTY $moreUrgentParkingInfo _ ${moreUrgentReservationInfo['ParkingID']}  ___ ${widget.currentlySignedInUser?.displayName}");
       //
       timeUntilBookingEnds == 1150 ? debugPrint("28 MINUTES LEFT") : null;
       /* timeUntilResStarts == const Duration(seconds: 20).inSeconds && timeUntilBookingEnds == 0
@@ -267,7 +267,7 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                           'Hello ${widget.currentlySignedInUser?.displayName}, Your booking in ${moreUrgentParkingInfo.values.first['Name']} just started!'),
                       bookingHasStarted = true,
                       debugPrint('just started'),
-                      BadgesNotifications(),
+                      const BadgesNotifications(),
                     }
                   : null;
             },

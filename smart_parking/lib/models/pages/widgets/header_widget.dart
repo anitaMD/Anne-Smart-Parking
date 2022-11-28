@@ -2,16 +2,19 @@
 
 import 'package:flutter/material.dart';
 
+// ignore: must_be_immutable
 class HeaderWidget extends StatefulWidget {
   final double height;
   final bool showIcon;
   final IconData icon;
+  bool fromScanner = false;
 
-  const HeaderWidget({
+  HeaderWidget({
     Key? key,
     required this.height,
     required this.showIcon,
     required this.icon,
+    this.fromScanner = false,
   }) : super(key: key);
 
   @override
@@ -39,8 +42,12 @@ class _HeaderWidgetState extends State<HeaderWidget> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).primaryColor.withOpacity(0.4),
-                    Theme.of(context).colorScheme.secondary.withOpacity(0.4),
+                    widget.fromScanner == false
+                        ? Theme.of(context).primaryColor.withOpacity(0.4)
+                        : Colors.grey.shade900,
+                    widget.fromScanner == false
+                        ? Theme.of(context).colorScheme.secondary.withOpacity(0.4)
+                        : Colors.grey.shade800, //this one do not touch
                   ],
                   begin: const FractionalOffset(0.0, 0.0),
                   end: const FractionalOffset(1.0, 0.0),
@@ -60,8 +67,10 @@ class _HeaderWidgetState extends State<HeaderWidget> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).primaryColor.withOpacity(0.4),
-                    Theme.of(context).colorScheme.secondary.withOpacity(0.4),
+                    widget.fromScanner == false ? Theme.of(context).primaryColor.withOpacity(0.4) : Colors.brown,
+                    widget.fromScanner == false
+                        ? Theme.of(context).colorScheme.secondary.withOpacity(0.4)
+                        : Colors.grey.shade700,
                   ],
                   begin: const FractionalOffset(0.0, 0.0),
                   end: const FractionalOffset(1.0, 0.0),
@@ -81,8 +90,12 @@ class _HeaderWidgetState extends State<HeaderWidget> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).primaryColor,
-                    Theme.of(context).colorScheme.secondary,
+                    widget.fromScanner == false ? Theme.of(context).primaryColor : Colors.grey.shade900,
+                    widget.fromScanner == false
+                        ? Theme.of(context).colorScheme.secondary
+                        : widget.fromScanner == false
+                            ? Theme.of(context).primaryColor
+                            : Colors.grey.shade900,
                   ],
                   begin: const FractionalOffset(0.0, 0.0),
                   end: const FractionalOffset(1.0, 0.0),
@@ -91,38 +104,47 @@ class _HeaderWidgetState extends State<HeaderWidget> {
             ),
           ),
         ),
-        Visibility(
-          visible: showIcon,
-          child: SizedBox(
-            height: height - 40,
-            child: Center(
-              child: Container(
-                margin: const EdgeInsets.all(20),
-                padding: const EdgeInsets.only(
-                  left: 5.0,
-                  top: 20.0,
-                  right: 5.0,
-                  bottom: 20.0,
-                ),
-                decoration: BoxDecoration(
-                  // borderRadius: BorderRadius.circular(20),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(100),
-                    topRight: Radius.circular(100),
-                    bottomLeft: Radius.circular(60),
-                    bottomRight: Radius.circular(60),
+        widget.fromScanner
+            ? Container(
+                margin: const EdgeInsets.fromLTRB(25, 50, 25, 10),
+                padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                child: Icon(widget.icon,
+                    size: 30,
+                    color: Colors.white,
+                    shadows: const [Shadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 5.0)]),
+              )
+            : Visibility(
+                visible: showIcon,
+                child: SizedBox(
+                  height: height - 40,
+                  child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.only(
+                        left: 5.0,
+                        top: 20.0,
+                        right: 5.0,
+                        bottom: 20.0,
+                      ),
+                      decoration: BoxDecoration(
+                        // borderRadius: BorderRadius.circular(20),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(100),
+                          topRight: Radius.circular(100),
+                          bottomLeft: Radius.circular(60),
+                          bottomRight: Radius.circular(60),
+                        ),
+                        border: Border.all(width: 5, color: Colors.white),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: Colors.white,
+                        size: 40.0,
+                      ),
+                    ),
                   ),
-                  border: Border.all(width: 5, color: Colors.white),
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 40.0,
                 ),
               ),
-            ),
-          ),
-        ),
       ],
     );
   }

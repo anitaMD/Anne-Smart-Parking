@@ -55,7 +55,7 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.example.smart_parking"
-        minSdkVersion 20
+        minSdkVersion 21
         targetSdkVersion 30
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -82,4 +82,9 @@ dependencies {
     implementation 'com.android.support:multidex:2.0.1'
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.android.gms:play-services-auth:20.3.0'
+    implementation 'com.google.android.gms:play-services-auth-api-phone:18.0.1'
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+    
+
 }

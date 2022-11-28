@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_parking/models/new_user.dart';
 //import 'package:smart_parking/models/inside_parking_info.dart';
 import 'package:smart_parking/models/user.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
@@ -12,6 +13,15 @@ class FirestoreUserService {
   final CollectionReference _usersCollectionReference = FirebaseFirestore.instance.collection("users");
 
   Future createUser(UserProfile user) async {
+    try {
+      await _usersCollectionReference.doc(user.id).set(user.toJson());
+      print('USER CREATED FROM FIRESTORE SERVICE');
+    } catch (e) {
+      return e;
+    }
+  }
+
+  Future createNewUser(NewUserProfile user) async {
     try {
       await _usersCollectionReference.doc(user.id).set(user.toJson());
       print('USER CREATED FROM FIRESTORE SERVICE');
@@ -127,6 +137,52 @@ class FirestoreUserService {
 
   getUserVehicules() {}
 
+  Future<bool> doesPhoneNumberAlreadyExist({required String phoneNumber}) async {
+    var result;
+    try {
+      await _usersCollectionReference.snapshots().any((element) {
+        var matchingPhone = element.docs.any((element1) {
+          Map<String, dynamic> data = element1.data() as Map<String, dynamic>;
+          //print("NUMBER EXISTSZSZ ${data['Phone Number'] == phoneNumber} ________ $phoneNumber");
+
+          return data['Phone Number'] == phoneNumber;
+        });
+        matchingPhone
+            ? print("NUMBER EXISTS IN THE DATABASE FROM FIRESTORE")
+            : print("NUMBER DOES NOT EXISTS IN THE DATABASE FROM FIRESTORE");
+        return matchingPhone;
+      }).then((value) => result = value);
+
+      return result;
+    } catch (e) {
+      print("EXCEPTION OCCURED");
+      return false;
+    }
+  }
+
+  Future<dynamic> doesEmailAlreadyExist({required String email}) async {
+    bool result = false;
+    try {
+      await _usersCollectionReference.snapshots().any((element) {
+        var matchingEmail = element.docs.any((element1) {
+          Map<String, dynamic> data = element1.data() as Map<String, dynamic>;
+          // print("NUMBER EXISTSZSZ ${data['Phone Number'] == phoneNumber}");
+
+          return data['Email'] == email;
+        });
+        matchingEmail
+            ? print("EMAIL EXISTS IN THE DATABASE FROM FIRESTORE")
+            : print("EMAIL DOES NOT EXISTS IN THE DATABASE FROM FIRESTORE");
+        return matchingEmail;
+      }).then((value) => result = value);
+
+      return result;
+    } catch (e) {
+      print("EXCEPTION OCCURED");
+      return false;
+    }
+  }
+
   Future updateUserData(
     String uid,
     String fullName,
@@ -173,7 +229,6 @@ class FirestoreParkingLocationService {
     }
   } // */
 
-  
   Future<Map<String, dynamic>> getParkingInfoData() async {
     try {
       await _locationsCollectionReference.get().then((value) {

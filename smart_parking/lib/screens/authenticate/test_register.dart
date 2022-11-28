@@ -1,25 +1,34 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, unused_local_variable, avoid_function_literals_in_foreach_calls
+import 'dart:async';
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
+import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:otp_text_field/otp_field.dart';
 import 'package:otp_text_field/style.dart';
 import 'package:phone_number/phone_number.dart' as prefix;
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:smart_parking/models/new_user.dart';
 import 'package:smart_parking/models/pages/widgets/header_widget.dart';
 import 'package:smart_parking/models/theme_helper.dart';
-import 'package:smart_parking/screens/inside_app/home.dart';
+import 'package:smart_parking/screens/authenticate/testlogin.dart';
+import 'package:smart_parking/screens/inside_app/testhome.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
+import 'package:smart_parking/services/firebase/firebase_storage.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
-import 'package:smart_parking/models/user.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
@@ -30,10 +39,34 @@ class TestRegister extends StatefulWidget {
   TestRegisterState createState() => TestRegisterState();
 }
 
-enum FormType { login, register }
-//enum UserType { normalUser, owner }
+class TestRegisterState extends State<TestRegister> with SingleTickerProviderStateMixin {
+  User? currentUser;
+  XFile? profilePicture;
+  List<XFile?> equalityCardRectoVerso = [];
+  List<String> equalityCardUploadedStoragePath = [];
+  final ImagePicker cardImagePicker = ImagePicker();
+  String? appSignature;
+  String? otpCode;
 
-class TestRegisterState extends State<TestRegister> {
+  final List<BarcodeFormat> formats = [BarcodeFormat.qrCode];
+  final TextRecognizer _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+  String? theCardRecognizedText;
+
+  ConnectivityResult _connectionStatus = ConnectivityResult.none;
+  final Connectivity _connectivity = Connectivity();
+  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
+
+  double headerHeight = 300;
+
+  // ignore: unused_field
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseService service = FirebaseService();
+  FirestoreUserService firestoreService = FirestoreUserService();
+  AuthCredential? theCredential;
+
+  late AnimationController _animationController;
+  final rectoScreenshotController = ScreenshotController(), versoScreenshotController = ScreenshotController();
+
   List<Map<String, dynamic>> countries = [
     {"name": "Afghanistan", "flag": "🇦🇫", "code": "AF", "dial_code": "+93"},
     {"name": "Åland Islands", "flag": "🇦🇽", "code": "AX", "dial_code": "+358"},
@@ -283,22 +316,49 @@ class TestRegisterState extends State<TestRegister> {
     {"name": "Zimbabwe", "flag": "🇿🇼", "code": "ZW", "dial_code": "+263"}
   ];
 
-  int activeStep = 0, previouslyReachedStep = 0;
-  late FocusNode myFocusNode;
-  final _formKey = GlobalKey<FormState>();
-  bool checkedValue = false, checkboxValue = false, isProfilePicturePicked = false;
-  XFile? imageFile;
-  UserProfile userProfile = UserProfile(
-      id: '', fullName: '', email: '', phoneNumber: '', timeStamp: FieldValue.serverTimestamp(), profileImage: '');
-  final formKey = GlobalKey<FormState>();
-  //UserType _userType = UserType.normalUser;
-  bool checkedValidNumber = false,
-      isParkingOwner = false,
-      fromLoginForm = false,
-      isLogView = true,
+  TextStyle errorTextStle = const TextStyle(color: Colors.red, fontSize: 15, fontWeight: FontWeight.w600);
+
+  String otpPin = '',
+      verID = " ",
+      dialCode = '',
+      result = '',
+      savedNumber = '',
+      theCodeForPhone = 'ok',
+      equalityCardID = "",
+      userId = '',
+      profilePictureStoragePath = '';
+
+  int activeStep = 0, previouslyReachedStep = 0, indicatorCount = 2, secondsRemaining = 40, updateAndVerifNumCount = 0;
+  int? resentToken;
+  late Timer timer;
+
+  bool isProfilePicturePicked = false,
       obscurText = true,
       obscurTextConfPass = true,
-      isPhoneNumberValidated = false;
+      isPhoneNumberValidated = false,
+      pinSuccess = false,
+      isSpecialAccessUser = false,
+      textScanning = false,
+      addedRectoCardImage = false,
+      addedVersoCardImage = false,
+      isEqualityCardValid = false,
+      canShowCameraButtons = false,
+      createdUserWithEmailAndPass = false,
+      numberAutoVerfiedComplete = false,
+      listeningForOTP = false,
+      enableResend = false,
+      backgroundWaiting = false;
+
+  PhoneNumber initializedNumber = PhoneNumber(
+        isoCode: 'US',
+        dialCode: '+1',
+        phoneNumber: '',
+      ),
+      finalTest = PhoneNumber(
+        isoCode: 'US',
+        dialCode: '+1',
+        phoneNumber: '',
+      );
 
   final TextEditingController _emailController = TextEditingController(),
       _passwordController = TextEditingController(),
@@ -306,246 +366,151 @@ class TestRegisterState extends State<TestRegister> {
       _numberController = TextEditingController(),
       _fullNameController = TextEditingController();
 
-  final GoogleSignIn _myGoogleSignIn = GoogleSignIn();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  var theCodeForPhone = 'ok';
-  String savedFullName = '', savedEmail = '', savedNumber = '';
-  FirebaseService service = FirebaseService();
-  FirestoreUserService firestoreService = FirestoreUserService();
-  User? currentUser;
-  double headerHeight = 300;
-  final _pin_formKey = GlobalKey<FormState>();
-  bool _pinSuccess = false;
+  final OtpFieldController otpFieldController = OtpFieldController();
+
+  final _pinMobileFormKey = GlobalKey<FormState>(),
+      internatKey = GlobalKey<FormState>(),
+      formKey = GlobalKey<FormState>(),
+      regFormKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
     ));
-    myFocusNode = FocusNode();
-    getCarrierCode(countries).then((value) => setState(
-          () => theCodeForPhone = value,
-        ));
-
     super.initState();
+
+    getCarrierCode(countries).then((value) {
+      setState(() {
+        var ok = countries.where((element) => element['code'] == value.toUpperCase());
+        initializedNumber =
+            PhoneNumber(isoCode: value.toUpperCase(), dialCode: ok.first['dial_code'], phoneNumber: ' ');
+      });
+    });
+    _animationController = AnimationController(vsync: this, duration: const Duration(seconds: 2));
+    _animationController.repeat(reverse: true);
+    setState(() {});
+    initConnectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+
+    timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (listeningForOTP) {
+        if (secondsRemaining != 0) {
+          setState(() {
+            secondsRemaining--;
+          });
+        } else {
+          setState(() {
+            enableResend = true;
+          });
+        }
+      }
+    });
+
+    /*  SmsAutoFill().getAppSignature.then((signature) {
+      setState(() {
+        appSignature = signature;
+      });
+    }); */
   }
 
   @override
   void dispose() {
     // Clean up the focus node when the Form is disposed.
-    myFocusNode.dispose();
+    //_numberController.dispose();
+    _animationController.dispose();
     _numberController.dispose();
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _confirmPasswordController.dispose();
+    _passwordController.dispose();
+    _connectivitySubscription.cancel();
+    _textRecognizer.close();
+    //SmsAutoFill().unregisterListener();
+
     super.dispose();
+  }
+
+  Future<String> getCarrierCode(List<Map<String, dynamic>> countries) async {
+    String code = await prefix.PhoneNumberUtil().carrierRegionCode();
+    return code;
+  }
+
+  Future<void> initConnectivity() async {
+    late ConnectivityResult result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      result = await _connectivity.checkConnectivity();
+    } on PlatformException catch (e) {
+      print('Couldn\'t check connectivity status $e');
+      return;
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) {
+      return Future.value(null);
+    }
+
+    return _updateConnectionStatus(result);
+  }
+
+  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
+    setState(() {
+      _connectionStatus = result;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    //previouslyReachedStep == 1 ? _numberController.clear() : null;
+    currentUser = _auth.currentUser;
+    //currentUser?.reload();
+    currentUser != null ? print("CURRENTLY SIGNED IN USER $currentUser") : null;
+    _auth.setLanguageCode(Get.locale!.languageCode);
+    equalityCardUploadedStoragePath.isEmpty
+        ? null
+        : equalityCardUploadedStoragePath.length == 2
+            ? {
+                print("equalityCardUploadedStoragePathYES $equalityCardUploadedStoragePath"),
+                updateAndVerifNumCount < 1 ? updateEqualityCardStorageAndVerifyPhone() : null,
+                updateAndVerifNumCount += 1,
+              }
+            : null;
+
     var localLnSetting = AppLocalizations.of(context)!;
-    print("PREVIOUSLY REACHEDSTEP $previouslyReachedStep");
+    var theCountry = countries.where((element) => element['code'].toString().toLowerCase() == theCodeForPhone);
+    theCountry.isNotEmpty
+        ? {
+            print('HA ${theCountry.first} ${theCountry.first['flag'].runtimeType}'),
+          }
+        : null;
+    PhoneNumber finalNumber = PhoneNumber(
+      isoCode: theCountry.isNotEmpty ? theCountry.first['code'] : 'SN',
+    );
 
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).requestFocus(FocusNode());
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SingleChildScrollView(child: bodySwitch(localLnSetting)),
+        backgroundColor: activeStep == 1 && isSpecialAccessUser ? Colors.grey.shade900 : Colors.white,
+        body: SingleChildScrollView(child: bodySwitch(localLnSetting, finalNumber)),
       ),
     );
   }
 
-  myValidateNumber() async {
-    bool validSnPhoneNumber = false;
-    String fetchedNumber = _numberController.text;
-    prefix.RegionInfo region = const prefix.RegionInfo(name: 'Senegal', code: 'SN', prefix: 221);
+  bodySwitch(AppLocalizations localLnSetting, PhoneNumber finalNum) {
+    print("THE DIALCODE: $dialCode ___ Connection Status: ${_connectionStatus.toString()}");
+    var yesNoRadio = isSpecialAccessUser ? localLnSetting.regRadioYes : localLnSetting.regRadioNo;
+    //email-already-exists add this case to register form ********************
 
-    try {
-      validSnPhoneNumber = await prefix.PhoneNumberUtil().validate(fetchedNumber, regionCode: region.code);
-      if (!validSnPhoneNumber) {
-        Fluttertoast.showToast(
-            msg: 'Please check number format.',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.CENTER,
-            timeInSecForIosWeb: 1,
-            fontSize: 16.0);
-
-        return validSnPhoneNumber;
-      }
-    } catch (e) {
-      Fluttertoast.showToast(
-          msg: 'Please enter a phone number.',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 1,
-          fontSize: 16.0);
-    }
-    if (validSnPhoneNumber) {
-      checkedValidNumber = true;
-    } else {
-      checkedValidNumber = false;
-    }
-    print(' CHECKED VALID NUMBER IS $checkedValidNumber');
-  }
-
-  registerWithEmailPassword() async {
-    isLogView = false;
-
-    //UserProfile fetchedUP = userProfile;
-    try {
-      UserCredential user =
-          await _auth.createUserWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
-
-      await firestoreService.createUser(UserProfile(
-        id: user.user!.uid,
-        fullName: _fullNameController.text,
-        email: _emailController.text,
-        phoneNumber: _numberController.text,
-        /*userRole: _userType.toString()*/
-        timeStamp: FieldValue.serverTimestamp(),
-        profileImage: "assets/images/no_profile_picture_grey.png",
-      ));
-
-      userProfile = UserProfile(
-        id: user.user!.uid,
-        fullName: _fullNameController.text,
-        email: _emailController.text,
-        phoneNumber: _numberController.text,
-        /* userRole: _userType.toString()*/
-        timeStamp: FieldValue.serverTimestamp(),
-        profileImage: "assets/images/no_profile_picture_grey.png",
-      );
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => Home(
-            fromLoginView: false,
-            theUserProfile: userProfile,
-            parkingToNavigateTo: const {},
-            newIndex: 0,
-            timeUntilResStarts: 0,
-          ),
-        ),
-      );
-      Fluttertoast.showToast(
-          msg: 'Sucessfully registered. Welcome.',
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 1,
-          fontSize: 16.0);
-
-      _auth.authStateChanges().listen((user) async {
-        if (user != null && isLogView == false) {
-/*           user.reload();
- */
-          currentUser = user;
-          User? thisCurrently = FirebaseAuth.instance.currentUser;
-          //displayname and photoURL will be null at first because we are signing in with password and email and because we are not signing in with google or a known provider.
-          print(
-              'USER IS REGISTERED PERFECT! ------------- USER ID :${user.uid} '); //this is for me to view on the debugging console};
-          print(
-              'CURRENT USERS DISPLAYNAME : ${currentUser!.displayName} ---- Users DN ${user.displayName}----- EMAIL: ${currentUser!.email}------  ID ${currentUser!.uid} ');
-
-          thisCurrently?.updateDisplayName(userProfile.fullName);
-          thisCurrently?.updatePhotoURL(userProfile.profileImage);
-          print(
-              'CURRENT USERS DISPLAYNAME AFTER UPDATE: ${thisCurrently?.displayName} ____ DISPLAYNAME ${userProfile.fullName}  ____ ProfileIMAGE ${thisCurrently?.photoURL} ');
-        } else {
-          print('USER IS SIGNED OUT PERFECT! FROM SIGN UP WITH EMAIL');
-        }
-      });
-    } //
-    on FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case "invalid-email":
-        case "user-not-found":
-          {
-            Fluttertoast.showToast(
-                msg: e.message!,
-                toastLength: Toast.LENGTH_LONG,
-                gravity: ToastGravity.CENTER,
-                timeInSecForIosWeb: 1,
-                fontSize: 16.0);
-            print(e.code); //for me to see on the debugging console
-          }
-          break;
-
-        default:
-          {}
-      }
-      print('Error: $e');
-    }
-  } //closing brackets
-
-  /* ------------- FETCH AND SAVE FIELDS DATA -------------*/
-  bool savedFormFields() {
-    final form = formKey.currentState;
-    myValidateNumber();
-    if (form!.validate() && checkedValidNumber && _passwordController.text == _confirmPasswordController.text) {
-      form.save();
-      print(
-          'Form is valid. Full Name : $_fullNameController, Email: $_emailController , Password: $_passwordController, Phone number: $_numberController');
-      return true;
-    } else if (_passwordController.text != _confirmPasswordController.text) {
-      Fluttertoast.showToast(
-          msg: 'The passwords do not match!',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 1,
-          fontSize: 16.0);
-      return false;
-    }
-    return false;
-  }
-
-  void submitForm() async {
-    if (savedFormFields()) {
-      //In the newest version of firebase_auth, the class FirebaseUser was changed to User, and the class AuthResult was changed to UserCredential.
-
-      registerWithEmailPassword();
-    }
-  }
-
-  void moveToRegister() {
-    formKey.currentState!.reset();
-    setState(() {});
-
-    super.deactivate();
-  }
-
-  void moveToLogIn() {
-    formKey.currentState!.reset();
-
-    setState(() {});
-    super.deactivate();
-  }
-
-  void getImage(ImageSource source) async {
-    try {
-      final pickedImage = await ImagePicker().pickImage(source: source);
-      if (pickedImage != null) {
-        imageFile = pickedImage;
-        isProfilePicturePicked = true;
-        setState(() {});
-      }
-    } catch (e) {
-      print("error $e");
-    }
-  }
-
-  bodySwitch(AppLocalizations localLnSetting) {
-    var ha = countries.where((element) => element['code'].toString().toLowerCase() == theCodeForPhone);
-    ha.isNotEmpty
-        ? {
-            print('HA ${ha.first} ${ha.first['flag'].runtimeType}'),
-          }
-        : null;
-    PhoneNumber number = PhoneNumber(isoCode: ha.isNotEmpty ? ha.first['code'] : 'SN');
     switch (activeStep) {
       case 0:
         return Stack(
           children: [
-            const SizedBox(
+            SizedBox(
               height: 150,
               child: HeaderWidget(
                 height: 150,
@@ -560,9 +525,10 @@ class TestRegisterState extends State<TestRegister> {
               child: Column(
                 children: [
                   Form(
-                    key: _formKey,
+                    key: regFormKey,
                     onChanged: () {
-                      _formKey.currentState!.save();
+                      regFormKey.currentState!.save();
+                      //print("THIS IS THE CURRENT STATE: ${regFormKey.currentState}");
                     },
                     child: Column(
                       children: [
@@ -588,7 +554,7 @@ class TestRegisterState extends State<TestRegister> {
                                 child: isProfilePicturePicked
                                     ? ClipOval(
                                         child: Image.file(
-                                          File(imageFile!.path),
+                                          File(profilePicture!.path),
                                           fit: BoxFit.cover,
                                         ),
                                       )
@@ -602,7 +568,7 @@ class TestRegisterState extends State<TestRegister> {
                                 padding: const EdgeInsets.fromLTRB(80, 80, 0, 0),
                                 child: IconButton(
                                     onPressed: () {
-                                      getImage(ImageSource.gallery);
+                                      getProfileOrCardImage('profilePicture', '', localLnSetting);
                                     },
                                     icon: Icon(
                                       Icons.add_circle,
@@ -652,33 +618,16 @@ class TestRegisterState extends State<TestRegister> {
                           ),
                         ),
                         const SizedBox(height: 20.0),
-                        /*   Container(
-                          decoration: ThemeHelper().inputBoxDecorationShaddow(),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 50,
-                                height: 50,
-                                color: Colors.red,
-                              ),
-                              Container(
-                                width: 100,
-                                height: 50,
-                                color: Colors.green,
-                              )
-                            ],
-                          ),
-                        ),
-                       */
                         InternationalPhoneNumberInput(
-                          onInputChanged: (PhoneNumber number) {
-                            print(number.phoneNumber);
+                          key: internatKey,
+                          onInputChanged: (PhoneNumber changingNumber) {
+                            print("changingNumber ${changingNumber.phoneNumber}");
                           },
                           onInputValidated: (bool value) {
                             setState(() {
-                              isPhoneNumberValidated = true;
+                              isPhoneNumberValidated = value;
                             });
-                            print('VALIDATED $value');
+                            print('VALIDATED $value ______ $finalNum');
                           },
                           locale: Get.locale!.languageCode,
                           selectorConfig: const SelectorConfig(
@@ -709,12 +658,15 @@ class TestRegisterState extends State<TestRegister> {
                           errorMessage: localLnSetting.regNumberError,
                           autoValidateMode: AutovalidateMode.disabled,
                           selectorTextStyle: const TextStyle(color: Colors.black),
-                          initialValue: number,
+                          initialValue: initializedNumber,
                           textFieldController: _numberController,
                           formatInput: false,
                           keyboardType: const TextInputType.numberWithOptions(),
-                          onSaved: (PhoneNumber number) {
-                            print('On Saved: $number');
+                          onSaved: (PhoneNumber thenumber) {
+                            print('On Saved: $thenumber');
+                            setState(() {
+                              finalTest = thenumber;
+                            });
                           },
                         ),
                         const SizedBox(height: 20.0),
@@ -818,11 +770,56 @@ class TestRegisterState extends State<TestRegister> {
                                     borderSide: const BorderSide(color: Colors.red, width: 2.0)),
                               )),
                         ),
+                        FormBuilderRadioGroup(
+                          initialValue: yesNoRadio,
+                          wrapSpacing: 10,
+                          wrapAlignment: WrapAlignment.center,
+                          decoration: InputDecoration(
+                            prefixIcon: FadeTransition(
+                              opacity: _animationController,
+                              child: GestureDetector(
+                                  onTap: () async {
+                                    await showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return ThemeHelper().alartDialog(
+                                              'Description', localLnSetting.regEgaliteChancesDescription, context);
+                                        });
+                                  },
+                                  child: const Icon(
+                                    Icons.accessible,
+                                    size: 30,
+                                    color: Colors.blue,
+                                  )),
+                            ),
+                            alignLabelWithHint: true,
+                            labelText: localLnSetting.regEgaliteDesChances,
+                            labelStyle: const TextStyle(height: 2),
+                            contentPadding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+                          ),
+                          name: 'egaliteDesChances',
+                          validator: FormBuilderValidators.required(),
+                          onSaved: (newValue) {
+                            setState(() {
+                              newValue == localLnSetting.regRadioYes
+                                  ? isSpecialAccessUser = true
+                                  : isSpecialAccessUser = false;
+                            });
+                            print("ISSPECIALACCESS $isSpecialAccessUser");
+                          },
+                          options: [localLnSetting.regRadioYes, localLnSetting.regRadioNo]
+                              .map((lang) => FormBuilderFieldOption(
+                                    value: lang,
+                                  ))
+                              .toList(growable: false),
+                        ),
                         const SizedBox(height: 55.0),
-                        AnimatedSmoothIndicator(
+                        nextAndAnimatedSmoothIndic(localLnSetting, localLnSetting.regNextButton.toUpperCase())
+
+                        /* AnimatedSmoothIndicator(
                           activeIndex: activeStep,
                           duration: const Duration(milliseconds: 400),
-                          count: 2,
+                          count: isSpecialAccessUser ? indicatorCount = 3 : indicatorCount = 2,
                           effect: const WormEffect(
                               type: WormType.normal,
                               spacing: 5.0,
@@ -841,6 +838,7 @@ class TestRegisterState extends State<TestRegister> {
                               style: ThemeHelper().buttonStyle(),
                               child: Padding(
                                 padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
+
                                 child: Text(
                                   localLnSetting.regNextButton.toUpperCase(),
                                   style: const TextStyle(
@@ -853,14 +851,17 @@ class TestRegisterState extends State<TestRegister> {
                               onPressed: () {
                                 var matchingPasswords =
                                     toastValidationMessages(_confirmPasswordController.text, localLnSetting).toString();
-                                matchingPasswords.isEmpty && _formKey.currentState!.validate()
-                                    ? setState(() {
-                                        previouslyReachedStep = 1;
-                                        savedNumber = _numberController.text;
-                                        _numberController.clear();
-                                        activeStep = 1;
-                                      })
-                                    : null;
+                                if (_connectionStatus.toString() == 'ConnectivityResult.none') {
+                                  showSnackBarText(localLnSetting.noInternetError);
+                                } else {
+                                  matchingPasswords.isEmpty && regFormKey.currentState!.validate()
+                                      ? {
+                                          print("PREVIOUSLY REACHEDSTEP $result _ finalNum $finalTest"),
+                                          verifyPhone('${finalTest.dialCode.toString()} ${_numberController.text}')
+                                        }
+                                      : null;
+                                }
+
                                 /* if (_formKey.currentState!.validate()) {
                                 setState(() {
                                   activeStep = 1;
@@ -869,7 +870,8 @@ class TestRegisterState extends State<TestRegister> {
                                       MaterialPageRoute(builder: (context) => const ProfilePage()),
                                       (Route<dynamic> route) => false); */
                               }),
-                        ),
+                        ), */
+                        ,
                         Container(
                           margin: const EdgeInsets.fromLTRB(10, 20, 10, 20),
                           //child: Text('Don\'t have an account? Create'),
@@ -879,8 +881,8 @@ class TestRegisterState extends State<TestRegister> {
                               text: localLnSetting.regGoToLogInLink,
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
-                                  /*  Navigator.push(context,
-                                                    MaterialPageRoute(builder: (context) => const TestRegister())); */
+                                  Navigator.pushReplacement(
+                                      context, MaterialPageRoute(builder: (context) => const TestLogin()));
                                 },
                               style: TextStyle(
                                   fontWeight: FontWeight.bold,
@@ -900,11 +902,489 @@ class TestRegisterState extends State<TestRegister> {
         );
 
       case 1:
+        const republiqueSenegalStyle = TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
+        const cardContentForLabel = TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w500,
+        );
+        const cardlabelName =
+            TextStyle(fontSize: 15, fontWeight: FontWeight.w500, decoration: TextDecoration.underline);
+        return isSpecialAccessUser == false
+            ? Stack(children: [
+                SizedBox(
+                  height: 300,
+                  child: HeaderWidget(
+                    height: 300,
+                    icon: Icons.person_add_alt_1_rounded,
+                    showIcon: false,
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.fromLTRB(25, 50, 25, 10),
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                  alignment: Alignment.center,
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            //color: Colors.white,
+                            //padding: EdgeInsets.all(1),
+                            onPressed: () {
+                              backgroundWaiting
+                                  ? null
+                                  : setState(() {
+                                      previouslyReachedStep = 1;
+                                      backgroundWaiting = false;
+                                      _numberController.clear();
+                                      activeStep = 0;
+                                    });
+                            },
+                            icon: const Icon(
+                              Icons.keyboard_backspace_rounded,
+                              size: 30,
+                              color: Colors.white,
+                              shadows: [Shadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 5.0)],
+                            ),
+                            splashRadius: 20,
+                          ),
+                        ],
+                      ),
+                      CircleAvatar(
+                        backgroundColor: Colors.white.withOpacity(0.5),
+                        radius: 70,
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: 200,
+                        ),
+                      ),
+                      SafeArea(
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 50),
+                          padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                alignment: Alignment.topLeft,
+                                margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      localLnSetting.numVerifHeader,
+                                      style: const TextStyle(
+                                          fontSize: 35, fontWeight: FontWeight.bold, color: Colors.black54),
+                                      // textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(
+                                      height: 10,
+                                    ),
+                                    Text(
+                                      '${localLnSetting.numVerifBody} ${finalTest.phoneNumber}',
+                                      style: const TextStyle(
+                                          // fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black54),
+                                      // textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 40.0),
+                              /*  Padding(
+                          padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
+                          child: Text(
+                            "This is the current app signature: $appSignature",
+                          ),
+                        ),
+                        const Spacer(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Builder(
+                            builder: (_) {
+                              if (otpCode == null) {
+                                return Text("Listening for code...");
+                              }
+                              return Text("Code Received: $otpCode");
+                            },
+                          ),
+                        ),
+                        */
+
+                              Form(
+                                key: _pinMobileFormKey,
+                                child: Column(
+                                  children: <Widget>[
+                                    SizedBox(
+                                      width: 200,
+                                      child: Row(
+                                        children: [
+                                          Flexible(
+                                            child: OTPTextField(
+                                              length: 6,
+                                              width: 200,
+                                              controller: otpFieldController,
+                                              fieldWidth: 30,
+                                              style: const TextStyle(fontSize: 30),
+                                              textFieldAlignment: MainAxisAlignment.spaceAround,
+                                              fieldStyle: FieldStyle.underline,
+                                              onChanged: (value) {
+                                                setState(
+                                                  () {
+                                                    otpPin = value;
+                                                  },
+                                                );
+                                              },
+                                              onCompleted: (pin) {
+                                                setState(() {
+                                                  pinSuccess = true;
+                                                });
+                                              },
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 50.0),
+                                    Text.rich(
+                                      TextSpan(
+                                        children: [
+                                          TextSpan(
+                                            text: localLnSetting.numVerifDidntReceiveCode,
+                                            style: const TextStyle(
+                                              color: Colors.black38,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: localLnSetting.numVerifResendCode,
+                                            recognizer: TapGestureRecognizer()
+                                              ..onTap = () {
+                                                enableResend
+                                                    ? resendCode(
+                                                        "${finalTest.dialCode.toString()} ${_numberController.text}")
+                                                    : null;
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (BuildContext context) {
+                                                    return ThemeHelper().alartDialog(
+                                                        "Successful", "Verification code resend successful.", context);
+                                                  },
+                                                );
+                                              },
+                                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 40.0),
+                                    nextAndAnimatedSmoothIndic(
+                                        localLnSetting, localLnSetting.numVerifButtonLabel.toUpperCase()),
+
+                                    /*    AnimatedSmoothIndicator(
+                                activeIndex: activeStep,
+                                duration: const Duration(milliseconds: 400),
+                                count: isSpecialAccessUser ? indicatorCount = 3 : indicatorCount = 2,
+                                effect: const WormEffect(
+                                    type: WormType.normal,
+                                    spacing: 5.0,
+                                    radius: 20.0,
+                                    dotWidth: 10.0,
+                                    dotHeight: 10.0,
+                                    paintStyle: PaintingStyle.stroke,
+                                    strokeWidth: 1.5,
+                                    dotColor: Colors.black,
+                                    activeDotColor: Colors.indigo),
+                              ),
+                              const SizedBox(height: 40.0),
+                              Container(
+                                decoration: _pinSuccess
+                                    ? ThemeHelper().buttonBoxDecoration(context)
+                                    : ThemeHelper().buttonBoxDecoration(context, "#AAAAAA", "#757575"),
+                                child: ElevatedButton(
+                                  style: ThemeHelper().buttonStyle(),
+                                  onPressed: _pinSuccess
+                                      ? () {
+                                          if (otpPin.length >= 6) {
+                                            /*  onAutoVerify(
+                                                PhoneAuthProvider.credential(verificationId: verID, smsCode: otpPin)); */
+                                            //  verifyOTP();
+                                          }
+                                          /*  Navigator.of(context).pushAndRemoveUntil(
+                                            MaterialPageRoute(builder: (context) => const ProfilePage()),
+                                            (Route<dynamic> route) => false); */
+                                        }
+                                      : null,
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
+                                    child: Text(
+                                      localLnSetting.numVerifButtonLabel.toUpperCase(),
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                           */
+                                  ],
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              ])
+            : Column(
+                children: [
+                  SizedBox(
+                    height: 150,
+                    child: GestureDetector(
+                      onTap: () {
+                        print("JUST TAPPED ON BACK _ backgriundwaiitng $backgroundWaiting");
+                        backgroundWaiting
+                            ? null
+                            : setState(() {
+                                previouslyReachedStep = 1;
+                                _numberController.clear();
+                                backgroundWaiting = false;
+                                activeStep = 0;
+                              });
+                      },
+                      child: HeaderWidget(
+                        height: 150,
+                        icon: Icons.keyboard_backspace_rounded,
+                        showIcon: true,
+                        fromScanner: true,
+                      ),
+                    ),
+                  ),
+                  SafeArea(
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                      padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(5),
+                            height: 300,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              color: Colors.grey.shade800,
+                            ),
+                            /*   child: Container(
+                        decoration: BoxDecoration(
+                            // borderRadius: BorderRadius.circular(25),
+                            /* boxShadow: [
+                                BoxShadow(
+                                    color: Color.fromARGB(70, 255, 255, 255),
+                                    blurRadius: 5.0, // soften the shadow
+                                    spreadRadius: 3.0, //extend the shadow
+                                    offset: Offset(
+                                      5.0, // Move to right 5  horizontally
+                                      5.0, // Move to bottom 5 Vertically
+                                    )),
+                              ],  */
+                            color: Colors.grey[500]!,
+                            border: Border.all(color: Colors.black, width: 2)),
+                        padding: const EdgeInsets.all(10),
+                        width: 400,
+                        height: 300, */
+                            child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Flexible(
+                                      child: equalityCardRectoVerso.isNotEmpty
+                                          ? Image.file(
+                                              File(equalityCardRectoVerso.first!.path),
+                                            )
+                                          : Container(),
+                                    ),
+                                    const SizedBox(width: 30),
+                                    Flexible(
+                                      child: equalityCardRectoVerso.length == 2
+                                          ? Image.file(
+                                              File(equalityCardRectoVerso.last!.path),
+                                            )
+                                          : Container(),
+                                    )
+                                  ],
+                                )),
+                            //),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              canShowCameraButtons == false
+                                  ? Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.grey,
+                                          backgroundColor: Colors.white,
+                                          shadowColor: Colors.grey[400],
+                                          elevation: 10,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                        ),
+                                        onPressed: () {
+                                          getProfileOrCardImage('cardGallery', '', localLnSetting);
+                                        },
+                                        child: Container(
+                                          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.image,
+                                                size: 30,
+                                              ),
+                                              Text(
+                                                "Gallery",
+                                                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      ))
+                                  : Container(),
+                              canShowCameraButtons == true
+                                  ? Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.grey,
+                                          backgroundColor: Colors.white,
+                                          shadowColor: Colors.grey[400],
+                                          elevation: 10,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                        ),
+                                        onPressed: () {
+                                          getProfileOrCardImage('camera', 'recto', localLnSetting);
+                                        },
+                                        child: Container(
+                                          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.camera_front,
+                                                size: 30,
+                                              ),
+                                              Text(
+                                                "Recto",
+                                                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      ))
+                                  : Container(),
+                              canShowCameraButtons == true
+                                  ? Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.grey,
+                                          backgroundColor: Colors.white,
+                                          shadowColor: Colors.grey[400],
+                                          elevation: 10,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                        ),
+                                        onPressed: () {
+                                          getProfileOrCardImage('camera', 'verso', localLnSetting);
+                                        },
+                                        child: Container(
+                                          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.photo_camera_back,
+                                                size: 30,
+                                              ),
+                                              Text(
+                                                "Verso",
+                                                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      ))
+                                  : Container(),
+                              canShowCameraButtons == false
+                                  ? Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.grey,
+                                          backgroundColor: Colors.white,
+                                          shadowColor: Colors.yellow[400],
+                                          elevation: 10,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            canShowCameraButtons = true;
+                                            addedRectoCardImage = false;
+                                            addedVersoCardImage = false;
+                                          });
+                                        },
+                                        child: Container(
+                                          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.camera_alt,
+                                                size: 30,
+                                              ),
+                                              Text(
+                                                "Camera",
+                                                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      ))
+                                  : Container(),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 40,
+                          ),
+                          nextAndAnimatedSmoothIndic(localLnSetting, localLnSetting.regNextButton.toUpperCase()),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+
+      case 2:
+        const republiqueSenegalStyle = TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
+        const cardContentForLabel = TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w500,
+        );
+        const cardlabelName =
+            TextStyle(fontSize: 15, fontWeight: FontWeight.w500, decoration: TextDecoration.underline);
         return Stack(children: [
-          const SizedBox(
-            height: 150,
+          SizedBox(
+            height: 300,
             child: HeaderWidget(
-              height: 150,
+              height: 300,
               icon: Icons.person_add_alt_1_rounded,
               showIcon: false,
             ),
@@ -915,19 +1395,42 @@ class TestRegisterState extends State<TestRegister> {
             alignment: Alignment.center,
             child: Column(
               children: [
-                SizedBox(
-                  height: headerHeight,
-                  child: HeaderWidget(
-                    height: headerHeight,
-                    icon: Icons.privacy_tip_outlined,
-                    showIcon: true,
+                /* Row(
+                  children: [
+                    IconButton(
+                      //color: Colors.white,
+                      //padding: EdgeInsets.all(1),
+                      onPressed: () {
+                        setState(() {
+                          previouslyReachedStep = 1;
+                          _numberController.clear();
+                          activeStep = 0;
+                        });
+                      },
+                      icon: const Icon(
+                        Icons.keyboard_backspace_rounded,
+                        size: 30,
+                        color: Colors.white,
+                        shadows: [Shadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 5.0)],
+                      ),
+                      splashRadius: 20,
+                    ),
+                  ],
+                ), */
+                CircleAvatar(
+                  backgroundColor: Colors.white.withOpacity(0.5),
+                  radius: 70,
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 200,
                   ),
                 ),
                 SafeArea(
                   child: Container(
-                    //margin: const EdgeInsets.fromLTRB(25, 10, 25, 10),
+                    margin: const EdgeInsets.only(top: 50),
                     padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
                           alignment: Alignment.topLeft,
@@ -935,18 +1438,19 @@ class TestRegisterState extends State<TestRegister> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
+                            children: [
                               Text(
-                                'Verification',
-                                style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color: Colors.black54),
+                                localLnSetting.numVerifHeader,
+                                style:
+                                    const TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color: Colors.black54),
                                 // textAlign: TextAlign.center,
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 height: 10,
                               ),
                               Text(
-                                'Enter the verification code we just sent you on your email address.',
-                                style: TextStyle(
+                                '${localLnSetting.numVerifBody} ${finalTest.phoneNumber}',
+                                style: const TextStyle(
                                     // fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black54),
@@ -956,11 +1460,30 @@ class TestRegisterState extends State<TestRegister> {
                           ),
                         ),
                         const SizedBox(height: 40.0),
+                        /*  Padding(
+                          padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
+                          child: Text(
+                            "This is the current app signature: $appSignature",
+                          ),
+                        ),
+                        const Spacer(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Builder(
+                            builder: (_) {
+                              if (otpCode == null) {
+                                return Text("Listening for code...");
+                              }
+                              return Text("Code Received: $otpCode");
+                            },
+                          ),
+                        ),
+                        */
                         Form(
-                          key: _pin_formKey,
+                          key: _pinMobileFormKey,
                           child: Column(
                             children: <Widget>[
-                              Container(
+                              SizedBox(
                                 width: 200,
                                 child: Row(
                                   children: [
@@ -968,13 +1491,21 @@ class TestRegisterState extends State<TestRegister> {
                                       child: OTPTextField(
                                         length: 6,
                                         width: 200,
+                                        controller: otpFieldController,
                                         fieldWidth: 30,
                                         style: const TextStyle(fontSize: 30),
                                         textFieldAlignment: MainAxisAlignment.spaceAround,
                                         fieldStyle: FieldStyle.underline,
+                                        onChanged: (value) {
+                                          setState(
+                                            () {
+                                              otpPin = value;
+                                            },
+                                          );
+                                        },
                                         onCompleted: (pin) {
                                           setState(() {
-                                            _pinSuccess = true;
+                                            pinSuccess = true;
                                           });
                                         },
                                       ),
@@ -986,16 +1517,19 @@ class TestRegisterState extends State<TestRegister> {
                               Text.rich(
                                 TextSpan(
                                   children: [
-                                    const TextSpan(
-                                      text: "If you didn't receive a code! ",
-                                      style: TextStyle(
+                                    TextSpan(
+                                      text: localLnSetting.numVerifDidntReceiveCode,
+                                      style: const TextStyle(
                                         color: Colors.black38,
                                       ),
                                     ),
                                     TextSpan(
-                                      text: 'Resend',
+                                      text: localLnSetting.numVerifResendCode,
                                       recognizer: TapGestureRecognizer()
                                         ..onTap = () {
+                                          enableResend
+                                              ? resendCode("${finalTest.dialCode.toString()} ${_numberController.text}")
+                                              : null;
                                           showDialog(
                                             context: context,
                                             builder: (BuildContext context) {
@@ -1010,6 +1544,25 @@ class TestRegisterState extends State<TestRegister> {
                                 ),
                               ),
                               const SizedBox(height: 40.0),
+                              nextAndAnimatedSmoothIndic(
+                                  localLnSetting, localLnSetting.numVerifButtonLabel.toUpperCase()),
+
+                              /*    AnimatedSmoothIndicator(
+                                activeIndex: activeStep,
+                                duration: const Duration(milliseconds: 400),
+                                count: isSpecialAccessUser ? indicatorCount = 3 : indicatorCount = 2,
+                                effect: const WormEffect(
+                                    type: WormType.normal,
+                                    spacing: 5.0,
+                                    radius: 20.0,
+                                    dotWidth: 10.0,
+                                    dotHeight: 10.0,
+                                    paintStyle: PaintingStyle.stroke,
+                                    strokeWidth: 1.5,
+                                    dotColor: Colors.black,
+                                    activeDotColor: Colors.indigo),
+                              ),
+                              const SizedBox(height: 40.0),
                               Container(
                                 decoration: _pinSuccess
                                     ? ThemeHelper().buttonBoxDecoration(context)
@@ -1018,6 +1571,11 @@ class TestRegisterState extends State<TestRegister> {
                                   style: ThemeHelper().buttonStyle(),
                                   onPressed: _pinSuccess
                                       ? () {
+                                          if (otpPin.length >= 6) {
+                                            /*  onAutoVerify(
+                                                PhoneAuthProvider.credential(verificationId: verID, smsCode: otpPin)); */
+                                            //  verifyOTP();
+                                          }
                                           /*  Navigator.of(context).pushAndRemoveUntil(
                                             MaterialPageRoute(builder: (context) => const ProfilePage()),
                                             (Route<dynamic> route) => false); */
@@ -1026,7 +1584,7 @@ class TestRegisterState extends State<TestRegister> {
                                   child: Padding(
                                     padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
                                     child: Text(
-                                      "Verify".toUpperCase(),
+                                      localLnSetting.numVerifButtonLabel.toUpperCase(),
                                       style: const TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
@@ -1036,6 +1594,7 @@ class TestRegisterState extends State<TestRegister> {
                                   ),
                                 ),
                               ),
+                           */
                             ],
                           ),
                         )
@@ -1043,63 +1602,544 @@ class TestRegisterState extends State<TestRegister> {
                     ),
                   ),
                 ),
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        activeStep = 0;
-                      });
-                    },
-                    child: Text('back')),
-                AnimatedSmoothIndicator(
-                  activeIndex: activeStep,
-                  duration: const Duration(milliseconds: 400),
-                  count: 2,
-                  effect: const WormEffect(
-                      type: WormType.normal,
-                      spacing: 5.0,
-                      radius: 20.0,
-                      dotWidth: 10.0,
-                      dotHeight: 10.0,
-                      paintStyle: PaintingStyle.stroke,
-                      strokeWidth: 1.5,
-                      dotColor: Colors.black,
-                      activeDotColor: Colors.indigo),
-                ),
-                Container(
-                    decoration: ThemeHelper().buttonBoxDecoration(context),
-                    child: ElevatedButton(
-                      style: ThemeHelper().buttonStyle(),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
-                        child: Text(
-                          localLnSetting.regNextButton.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      onPressed: () {
-                        var matchingPasswords =
-                            toastValidationMessages(_confirmPasswordController.text, localLnSetting).toString();
-                        matchingPasswords.isEmpty && _pin_formKey.currentState!.validate()
-                            ? setState(() {
-                                previouslyReachedStep = 1;
-                                savedNumber = _numberController.text;
-                                _numberController.clear();
-                                activeStep = 1;
-                              })
-                            : null;
-                      },
-                    ))
               ],
             ),
           )
         ]);
+    }
+  }
 
-      case 2:
-        return Container();
+  nextAndAnimatedSmoothIndic(AppLocalizations localLnSetting, String buttonLabel) {
+    return Column(
+      children: [
+        AnimatedSmoothIndicator(
+          activeIndex: activeStep,
+          duration: const Duration(milliseconds: 400),
+          count: isSpecialAccessUser ? indicatorCount = 3 : indicatorCount = 2,
+          effect: WormEffect(
+              type: WormType.normal,
+              spacing: 5.0,
+              radius: 20.0,
+              dotWidth: 10.0,
+              dotHeight: 10.0,
+              paintStyle: PaintingStyle.stroke,
+              strokeWidth: 1.5,
+              dotColor: activeStep == 1 && isSpecialAccessUser ? Colors.white : Colors.black,
+              activeDotColor: activeStep == 1 && isSpecialAccessUser ? Colors.brown : Colors.indigo),
+        ),
+        const SizedBox(height: 25.0),
+        Container(
+          decoration: listeningForOTP
+              ? ThemeHelper().buttonBoxDecoration(context, '808080', '7393B3')
+              : ThemeHelper().buttonBoxDecoration(context),
+          child: activeStep != 2
+              ? ElevatedButton(
+                  style: activeStep == 1 && isSpecialAccessUser
+                      ? ThemeHelper().buttonStyle('scanner')
+                      : ThemeHelper().buttonStyle(),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
+                    child: Text(
+                      buttonLabel, //  localLnSetting.regNextButton.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  onPressed: () {
+                    activeStep == 0 && isSpecialAccessUser
+                        ? nextButtonGoToCardScanner(localLnSetting, regFormKey)
+                        : {
+                            print("BACKGROUND WAITING? $backgroundWaiting"),
+                            !backgroundWaiting
+                                ? {
+                                    nextButtonSendOTP(localLnSetting, regFormKey),
+                                    /* setState(() {
+                                      backgroundWaiting = true;
+                                    }), */
+                                  }
+                                : null,
+                          };
+
+                    /* if (_formKey.currentState!.validate()) {
+                                setState(() {
+                                  activeStep = 1;
+                                }); */
+                    /*  Navigator.of(context).pushAndRemoveUntil(
+                                      MaterialPageRoute(builder: (context) => const ProfilePage()),
+                                      (Route<dynamic> route) => false); */
+                  })
+              : Container(),
+        ),
+      ],
+    );
+  }
+
+  void nextButtonSendOTP(AppLocalizations localLnSetting, GlobalKey<FormState> regFormKey) async {
+    if (_connectionStatus.toString() == 'ConnectivityResult.none') {
+      showSnackBarText(localLnSetting.noInternetError);
+    } else {
+      var proceed = false;
+
+      formFieldsValidationAndAction(localLnSetting, regFormKey, action: 'sendOTP').then((value) {
+        proceed = value;
+        print("VALIDATION FOR OTP: $value");
+        value
+            ? setState(() {
+                backgroundWaiting = true;
+              })
+            : null;
+      });
+      print("BACKGROUND WAITING OTP? $backgroundWaiting");
+      backgroundWaiting
+          ? {
+              await showDialog(
+                  barrierColor: Colors.black87,
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) {
+                    print("PROCEED OTP? $proceed");
+                    return waitingBackgoundProcessDialog(context);
+                  }),
+              proceed ? {await registerUserWithMailPass(localLnSetting), Navigator.pop(context)} : null,
+            }
+          : Container();
+    }
+  }
+
+  AlertDialog waitingBackgoundProcessDialog(BuildContext context) {
+    return AlertDialog(
+        backgroundColor: Colors.white.withOpacity(0.4),
+        scrollable: true,
+        content: Padding(
+          padding: const EdgeInsets.only(top: 20, bottom: 20),
+          child: SpinKitFadingCircle(
+              size: 50,
+              itemBuilder: (BuildContext context, int index) {
+                return const DecoratedBox(
+                  decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                );
+              }),
+        )
+
+        /* actions: [
+        TextButton(
+          style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black38)),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text(
+            "OK",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ], */
+        );
+  }
+
+  Future<bool> formFieldsValidationAndAction(AppLocalizations localLnSetting, GlobalKey<FormState> regFormKey,
+      {required String action}) async {
+    print("formFieldsValidationAndAction CALLED FIRST");
+    var proceed = false, emailInDatabase = false, numberInDatabase = false;
+
+    action == 'goToScanner'
+        ? print("THIS IS THE CURRENT STATE GO SCANNER: ${_emailController.text}")
+        : print("THIS IS THE CURRENT STATE SEND OTP}");
+
+    var matchingPasswords = toastValidationMessages(_confirmPasswordController.text, localLnSetting).toString();
+
+    if (activeStep == 0) {
+      /* MEANING action == 'goToScanner' || (action == 'sendOTP' &&  */
+      await Future.delayed(Duration.zero, () {
+        if (matchingPasswords.isEmpty && regFormKey.currentState!.validate()) {
+          findMatchingPhoneAndEmailInDatabase();
+        }
+      });
+    }
+
+    if (action != 'goToScanner' && activeStep == 1) {
+      proceed = true;
+      setState(() {
+        activeStep = 2;
+      }); //no need to specify here as the incremeent will be done after registerUser is called
+    }
+
+    return proceed;
+  }
+
+  void nextButtonGoToCardScanner(
+    AppLocalizations localLnSetting,
+    GlobalKey<FormState> regFormKey,
+  ) {
+    if (_connectionStatus.toString() == 'ConnectivityResult.none') {
+      showSnackBarText(localLnSetting.noInternetError);
+    } else {
+      formFieldsValidationAndAction(localLnSetting, regFormKey, action: 'goToScanner');
+    }
+  }
+
+  updateEqualityCardStorageAndVerifyPhone() async {
+    print("UPDATING EQUALITY CARD");
+    if (currentUser != null) {
+      print("ID OF USER ${currentUser!.uid}");
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser!.uid)
+          .update({'Equality Card Images': equalityCardUploadedStoragePath}).whenComplete(() {
+        setState(
+          () {
+            backgroundWaiting = false;
+            isSpecialAccessUser ? activeStep = 2 : activeStep = 1;
+          },
+        );
+        verifyPhone('${finalTest.dialCode.toString()} ${_numberController.text}');
+      });
+    } else {
+      print("NOT EQUAL TO TWO");
+    }
+  }
+
+  registerUserWithMailPass(AppLocalizations localLnSetting) async {
+    backgroundWaiting = true;
+    //print("THE USER $currentUser");
+    List<String> testEquality = [];
+    if (_connectionStatus.toString() != 'ConnectivityResult.none') {
+      isProfilePicturePicked
+          ? await StorageService()
+              .updloadProfilePicture(File(profilePicture!.path))
+              .then((value) => profilePictureStoragePath = value)
+          : null;
+      await registerWithEmailPassword().then((value) {
+        setState(() {
+          value != null ? currentUser = value.user : null;
+        });
+      });
+      if (isSpecialAccessUser) {
+        if (isEqualityCardValid) {
+          equalityCardRectoVerso.forEach((element) async {
+            await StorageService().updloadEqualityCard(File(element!.path), element.hashCode.toString()).then((value) {
+              print("RESULT FROM UPLOAD :$value");
+              equalityCardUploadedStoragePath.length < 2
+                  ? equalityCardUploadedStoragePath.add(value)
+                  : equalityCardUploadedStoragePath.length == 2
+                      ? updateEqualityCardStorageAndVerifyPhone()
+                      : null;
+              print("testEquality.length :${equalityCardUploadedStoragePath.length}");
+              setState(() {});
+            });
+          });
+        } else {
+          showSnackBarText("The card needs to be valid to proceed");
+        }
+      } else {
+        setState(
+          () {
+            backgroundWaiting = false;
+            isSpecialAccessUser ? activeStep = 2 : activeStep = 1;
+          },
+        );
+        verifyPhone('${finalTest.dialCode.toString()} ${_numberController.text}');
+      }
+    } else {
+      showSnackBarText(localLnSetting.noInternetError);
+    }
+  }
+
+  takeQrScreenshot() async {
+    final rectoScreenshot = await rectoScreenshotController.capture();
+    if (rectoScreenshot == null) return;
+    await saveImage(rectoScreenshot);
+    final versoScreenshot = await versoScreenshotController.capture();
+    if (versoScreenshot == null) return;
+    await saveImage(versoScreenshot);
+  }
+
+  saveImage(Uint8List imageBytes) async {
+    final result = await ImageGallerySaver.saveImage(imageBytes, name: 'cardScreenshot');
+    return result['filePath'];
+  }
+
+  displayEqualityCard(String codeBarQrPathImage, String wheelchairEmergentPathImage, TextStyle republiqueSenegalStyle,
+      TextStyle cardContentForLabel, TextStyle cardlabelName) {
+    return Container(
+      width: 400,
+      height: 600,
+      decoration: BoxDecoration(boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1), //color of shadow
+          spreadRadius: 5, //spread radius
+          blurRadius: 7, // blur radius
+          offset: const Offset(0, 5), // changes position of shadow
+          //first paramerter of offset is left-right
+          //second parameter is top to down
+        )
+      ]),
+      child: Card(
+        elevation: 2,
+        color: Colors.white24,
+        shadowColor: Colors.black,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25), side: const BorderSide(color: Colors.white)),
+        child: Column(children: [
+          Container(
+            decoration: const BoxDecoration(
+                color: Colors.white, //Colors.red,
+                borderRadius: BorderRadius.only(topRight: Radius.circular(25), topLeft: Radius.circular(25))),
+            height: 40,
+            child: Align(child: Text('République du Sénégal', style: republiqueSenegalStyle)),
+          ),
+          Container(
+            height: 100,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: const AssetImage('assets/images/mayneed.png'),
+                fit: BoxFit.fitWidth,
+                colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.25), BlendMode.dstATop),
+              ),
+              gradient: const LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  Colors.orange,
+                  Color.fromARGB(255, 255, 201, 39),
+                  Colors.orange,
+                  Color.fromARGB(255, 255, 201, 39),
+                  Colors.red,
+                ],
+              ),
+            ),
+            child: Row(
+              children: [
+                const Text(
+                  'DGAS',
+                  style: TextStyle(fontSize: 55, fontWeight: FontWeight.w900),
+                ),
+                Flexible(
+                    child: Container(
+                        margin: const EdgeInsets.only(left: 15, right: 15),
+                        child: const Text("Direction Générale de l'Action Sociale",
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))))
+              ],
+            ),
+          ),
+          Flexible(
+              child: Container(
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.only(bottomRight: Radius.circular(25), bottomLeft: Radius.circular(25)),
+              color: Colors.white,
+            ),
+            child: Row(
+              children: [
+                Flexible(
+                  child: Column(
+                    children: [
+                      Flexible(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    image: const DecorationImage(
+                                        image: AssetImage('assets/images/no_profile_picture_grey.png'),
+                                        fit: BoxFit.contain),
+                                    color: Colors.grey.shade200 //Colors.blue,
+                                    ),
+                              ),
+                            ),
+                            Flexible(
+                              child: Container(
+                                padding: kTabLabelPadding,
+                                //color: Colors.brown,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Flexible(
+                                      child: FittedBox(
+                                        child: Text(
+                                          'Nom',
+                                          style: cardlabelName,
+                                        ),
+                                      ),
+                                    ),
+                                    FittedBox(
+                                      child: Text(
+                                        'NOM',
+                                        style: cardContentForLabel,
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: 10,
+                                    ),
+                                    FittedBox(
+                                      child: Text('Prénom', style: cardlabelName),
+                                    ),
+                                    FittedBox(
+                                      child: Text('PRENOM', style: cardContentForLabel),
+                                    ),
+                                    const SizedBox(
+                                      height: 10,
+                                    ),
+                                    FittedBox(
+                                        child: Text(
+                                      'Date de naissance',
+                                      style: cardlabelName,
+                                    )),
+                                    FittedBox(
+                                      child: Text('JJ/MM/AAAA', style: cardContentForLabel),
+                                    ),
+                                    const SizedBox(
+                                      height: 10,
+                                    ),
+                                    FittedBox(
+                                      child: Text(
+                                        'Lieu de naissance',
+                                        style: cardlabelName,
+                                      ),
+                                    ),
+                                    FittedBox(child: Text('LIEU', style: cardContentForLabel)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Flexible(
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Column(
+                                children: [
+                                  Flexible(
+                                      // ignore: avoid_unnecessary_containers
+                                      child: Container(
+                                    // color: Colors.pinkAccent,
+                                    padding: const EdgeInsets.only(top: 10.0, left: 10, bottom: 10),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: wheelchairEmergentPathImage == 'assets/images/wheelchair.png'
+                                          ? [
+                                              const RotatedBox(quarterTurns: -1, child: Text('0000000000')),
+                                              SizedBox(
+                                                  width: 100,
+                                                  child: QrImage(
+                                                    data: '00000000000000000000',
+                                                    padding: const EdgeInsets.only(left: 10.0),
+                                                  ))
+                                            ]
+                                          : [
+                                              const RotatedBox(quarterTurns: -1, child: Text('12345678')),
+                                              Flexible(
+                                                child: Padding(
+                                                  padding: const EdgeInsets.fromLTRB(15, 10, 0, 10),
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                        image: DecorationImage(
+                                                      image: AssetImage(codeBarQrPathImage),
+                                                      fit: BoxFit.fitWidth,
+                                                    )),
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                    ),
+                                  )),
+                                  Flexible(
+                                      child: Container(
+                                    width: 200,
+                                    decoration: const BoxDecoration(
+                                      borderRadius: BorderRadius.only(bottomLeft: Radius.circular(25)),
+                                      color: Colors.black87,
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Text(
+                                          'ME',
+                                          style: cardContentForLabel.copyWith(
+                                              fontSize: 25, fontWeight: FontWeight.w900, color: Colors.white),
+                                        ),
+                                        Text('00000',
+                                            style: cardContentForLabel.copyWith(
+                                                color: Colors.white, fontWeight: FontWeight.w700)),
+                                        Text('LIEU DELIVRANCE',
+                                            style: cardContentForLabel.copyWith(
+                                                color: Colors.white, fontWeight: FontWeight.w600)),
+                                      ],
+                                    ),
+                                  ))
+                                ],
+                              ),
+                            ),
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.only(left: 10),
+                                decoration: const BoxDecoration(
+                                    //color: Colors.orange,
+                                    ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      image: DecorationImage(
+                                    //  colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.25), BlendMode.dstATop),
+                                    image: AssetImage(wheelchairEmergentPathImage), fit: BoxFit.contain,
+                                  )),
+                                ),
+
+                                //width: 172,
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 30,
+                  decoration: const BoxDecoration(
+                      // borderRadius: BorderRadius.only(bottomRight: Radius.circular(25)),
+                      // color: Colors.black,
+                      color: Colors.white),
+                  child: const RotatedBox(
+                    quarterTurns: -1,
+                    child: Text(
+                      'Certification de handicap',
+                      style: TextStyle(color: Colors.black, wordSpacing: 2, letterSpacing: 2, fontSize: 18),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          )),
+        ]),
+      ),
+    );
+  }
+
+  void getProfileOrCardImage(String purpose, String cardRectoOrVerso, AppLocalizations localLnSetting) async {
+    purpose == 'profilePicture'
+        ? getProfilePicture(ImageSource.gallery)
+        : purpose == 'cardGallery'
+            ? getEqualityCardImage(ImageSource.gallery, '', localLnSetting)
+            : getEqualityCardImage(ImageSource.camera, cardRectoOrVerso, localLnSetting);
+  }
+
+  void showSnackBarText(String text, [TextStyle snackStyle = const TextStyle(color: Colors.white, fontSize: 15)]) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          elevation: 50,
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            text,
+            style: snackStyle,
+          ),
+        ),
+      );
     }
   }
 
@@ -1118,10 +2158,446 @@ class TestRegisterState extends State<TestRegister> {
     return theMessage;
   }
 
-  Future<String> getCarrierCode(List<Map<String, dynamic>> countries) async {
-    String code = await prefix.PhoneNumberUtil().carrierRegionCode();
-    return code;
+  Future<void> verifyPhone(String number) async {
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: number,
+      timeout: const Duration(seconds: 40),
+      verificationCompleted: (phoneAuthCredential) async {
+        listeningForOTP = false;
+        numberAutoVerfiedComplete = true;
+        showSnackBarText("VERIFICATION COMPLETED!");
+        //phoneAuthCredential = (PhoneAuthProvider.credential(verificationId: verID, smsCode: otpPin));
+        print("COMPLETED AUTH: ${phoneAuthCredential.smsCode}");
+        int i = 0;
+        for (var digit in phoneAuthCredential.smsCode.toString().characters) {
+          print("DIGIT : $digit");
+          otpFieldController.setValue(digit, i++);
+        }
+        setState(
+          () {},
+        );
+        await _auth.currentUser!.linkWithCredential(phoneAuthCredential);
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const TestHome()), (Route<dynamic> route) => false);
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        showSnackBarText("Auth Failed! ${e.message}");
+        if (e.code == 'invalid-phone-number') {
+          showSnackBarText('The provided phone number is not valid.');
+        }
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        backgroundWaiting = false;
+        showSnackBarText("OTP Sent!");
+        setState(() {
+          verID = verificationId;
+          savedNumber = _numberController.text;
+          listeningForOTP = true;
+          resentToken = resendToken;
+          // _numberController.clear();
+          //isSpecialAccessUser ? activeStep = 2 : activeStep = 1;
+        });
+      },
+      forceResendingToken: resentToken,
+      codeAutoRetrievalTimeout: (String verificationId) {
+        showSnackBarText("Timeout!"); // : showSnackBarText("Auth Completed!");
+      },
+    );
   }
-}///ending crochet
 
+  Future<UserCredential?> registerWithEmailPassword() async {
+    //UserProfile fetchedUP = userProfile;
+    UserCredential? user;
+    try {
+      user =
+          await _auth.createUserWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
+      user.user != null
+          ? {
+              user.user!.updateDisplayName(_fullNameController.text),
+              user.user!.updatePhotoURL(profilePictureStoragePath),
+              await firestoreService.createNewUser(NewUserProfile(
+                  id: user.user!.uid,
+                  fullName: _fullNameController.text,
+                  email: _emailController.text,
+                  phoneNumber: finalTest.phoneNumber.toString(),
+                  profileImage: !isProfilePicturePicked ? 'none' : profilePictureStoragePath,
+                  isSpecialAccessUser: isSpecialAccessUser,
+                  equalityCardUploadedStoragePath: equalityCardUploadedStoragePath))
+            }
+          : null;
 
+      setState(
+        () {
+          createdUserWithEmailAndPass = true;
+        },
+      );
+      // _auth.signOut();
+
+      Fluttertoast.showToast(
+          msg: 'Sucessfully registered. Welcome.',
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.CENTER,
+          timeInSecForIosWeb: 1,
+          fontSize: 16.0);
+
+      _auth.authStateChanges().listen((user) async {
+        if (user != null) {
+          print("THE CURRENT USER ${FirebaseAuth.instance.currentUser}");
+          user.updateDisplayName(_fullNameController.text);
+          user.updatePhotoURL(profilePictureStoragePath);
+          //user.displayName
+          //displayname and photoURL will be null at first because we are signing in with password and email and because we are not signing in with google or a known provider.
+          /*     print(
+              'USER IS REGISTERED PERFECT! ------------- USER ID :${user.uid} '); //this is for me to view on the debugging console};
+          print(
+              'CURRENT USERS DISPLAYNAME : ${currentUser!.displayName} ---- Users DN ${user.displayName}----- EMAIL: ${currentUser!.email}------  ID ${currentUser!.uid} ');
+
+          print(
+              'CURRENT USERS DISPLAYNAME AFTER UPDATE: ${thisCurrently?.displayName} ____ DISPLAYNAME ${userProfile.fullName}  ____ ProfileIMAGE ${thisCurrently?.photoURL} '); */
+        } else {
+          currentUser?.reload();
+          print('USER IS SIGNED OUT PERFECT! FROM SIGN UP WITH EMAIL');
+        }
+      });
+    } //
+    on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case "invalid-email":
+        case "user-not-found":
+          {
+            Fluttertoast.showToast(
+                msg: e.message!,
+                toastLength: Toast.LENGTH_LONG,
+                gravity: ToastGravity.CENTER,
+                timeInSecForIosWeb: 1,
+                fontSize: 16.0);
+            print(e.code); //for me to see on the debugging console
+          }
+          break;
+
+        case 'email-already-exists':
+          {
+            Fluttertoast.showToast(
+                msg: e.message!,
+                toastLength: Toast.LENGTH_LONG,
+                gravity: ToastGravity.CENTER,
+                timeInSecForIosWeb: 1,
+                fontSize: 16.0);
+            print(e.code); //for me to see on the debugging console
+          }
+          break;
+
+        default:
+          {}
+      }
+      print('Error: $e');
+    }
+    return user;
+  } //closing brackets
+
+  bool savedFormFields() {
+    final form = formKey.currentState;
+
+    if (form!.validate() && _passwordController.text == _confirmPasswordController.text) {
+      form.save();
+      print(
+          'Form is valid. Full Name : $_fullNameController, Email: $_emailController , Password: $_passwordController, Phone number: ${finalTest.phoneNumber.toString()}');
+      return true;
+    } else if (_passwordController.text != _confirmPasswordController.text) {
+      Fluttertoast.showToast(
+          msg: 'The passwords do not match!',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          timeInSecForIosWeb: 1,
+          fontSize: 16.0);
+      return false;
+    }
+    return false;
+  }
+
+  void moveToRegister() {
+    formKey.currentState!.reset();
+    setState(() {});
+
+    super.deactivate();
+  }
+
+  void moveToLogIn() {
+    formKey.currentState!.reset();
+
+    setState(() {});
+    super.deactivate();
+  }
+
+  getEqualityCardImage(ImageSource cameraOrGallery, String rectoOrVerso, AppLocalizations localLnSetting) async {
+    try {
+      final cardImage = await ImagePicker().pickImage(source: cameraOrGallery);
+      if (cameraOrGallery == ImageSource.camera) {
+        if (rectoOrVerso == 'recto' && cardImage != null) {
+          if (equalityCardRectoVerso.isEmpty) {
+            equalityCardRectoVerso.add(cardImage);
+            setState(() {
+              addedRectoCardImage = true;
+            });
+          }
+          if (equalityCardRectoVerso.length == 1 && addedRectoCardImage == false) {
+            equalityCardRectoVerso.insert(0, cardImage);
+            setState(() {
+              addedRectoCardImage = true;
+            });
+          }
+
+          if (equalityCardRectoVerso.length == 1 && addedRectoCardImage == true) {
+            equalityCardRectoVerso.first = cardImage;
+            // getBarCodeText(equalityCardRectoVerso.first!, 'camera');
+
+            setState(() {});
+          }
+          if (equalityCardRectoVerso.length == 2) {
+            equalityCardRectoVerso.first = cardImage;
+            getBarCodeText(equalityCardRectoVerso.first!, 'camera', localLnSetting);
+            setState(() {
+              canShowCameraButtons == true ? addedRectoCardImage = true : addedRectoCardImage = false;
+            });
+          }
+        }
+
+        if (rectoOrVerso == 'verso' && cardImage != null) {
+          if (equalityCardRectoVerso.isEmpty) {
+            equalityCardRectoVerso.add(cardImage);
+            setState(() {
+              addedVersoCardImage = true;
+            });
+          }
+          if (equalityCardRectoVerso.length == 1 && addedVersoCardImage == false) {
+            equalityCardRectoVerso.add(cardImage);
+
+            setState(() {
+              addedVersoCardImage = true;
+            });
+          }
+
+          if (equalityCardRectoVerso.length == 1 && addedVersoCardImage == true) {
+            equalityCardRectoVerso.first = cardImage;
+            setState(() {});
+          }
+          if (equalityCardRectoVerso.length == 2) {
+            equalityCardRectoVerso.last = cardImage;
+            getBarCodeText(equalityCardRectoVerso.first!, 'camera', localLnSetting);
+            setState(() {
+              canShowCameraButtons == true ? addedVersoCardImage = true : addedVersoCardImage = false;
+            });
+          }
+        }
+        print("CAN YOU SHOW CAMERA BUTTONS $addedRectoCardImage _______ $addedVersoCardImage");
+        addedRectoCardImage && addedVersoCardImage
+            ? setState(() {
+                canShowCameraButtons = false;
+              })
+            : null;
+      } else {
+        final List<XFile?> selectedImages = await cardImagePicker.pickMultiImage();
+        if (selectedImages.isNotEmpty && selectedImages.length == 2) {
+          equalityCardRectoVerso = selectedImages;
+          setState(() {});
+          getBarCodeText(equalityCardRectoVerso.first!, 'gallery', localLnSetting, equalityCardRectoVerso);
+        }
+        //print("Image List Length:" + imageFileList!.length.toString());
+
+      }
+    } catch (e) {
+      print("error $e");
+    }
+  }
+
+  getProfilePicture(ImageSource gallery) async {
+    try {
+      final pickedImage = await ImagePicker().pickImage(source: gallery);
+      if (pickedImage != null) {
+        profilePicture = pickedImage;
+        isProfilePicturePicked = true;
+        setState(() {});
+      }
+    } catch (e) {
+      print("error $e");
+    }
+  }
+
+  void getBarCodeText(XFile image, String fromGalleryOrCamera, AppLocalizations localLnSetting,
+      [List<XFile?> localEqualityCardRectoVersoList = const []]) async {
+    InputImage rectoInputImage, versoInputImage;
+    int theRightGalleryCardImageIndex = -1;
+    final barcodeScanner = BarcodeScanner(formats: formats);
+    List<Barcode> barcodesList = [];
+    debugPrint("image.path^equalityCardRectoVersoList${localEqualityCardRectoVersoList.length}");
+    if (fromGalleryOrCamera == 'gallery') {
+      for (XFile? element in localEqualityCardRectoVersoList) {
+        rectoInputImage = InputImage.fromFilePath(element!.path);
+        debugPrint("image.path^${image.path}");
+        barcodesList = await barcodeScanner.processImage(rectoInputImage);
+        barcodesList.isNotEmpty
+            ? {
+                setState(() {
+                  theRightGalleryCardImageIndex = localEqualityCardRectoVersoList.indexOf(element);
+                }),
+              }
+            : print("DEFINITELY EMPYT");
+        print("THE RIGHT IMAGE: $theRightGalleryCardImageIndex");
+      }
+      rectoInputImage = theRightGalleryCardImageIndex != -1
+          ? InputImage.fromFilePath(localEqualityCardRectoVersoList.elementAt(theRightGalleryCardImageIndex)!.path)
+          : InputImage.fromFilePath(localEqualityCardRectoVersoList.first!.path);
+      versoInputImage = theRightGalleryCardImageIndex != -1
+          ? InputImage.fromFilePath(localEqualityCardRectoVersoList
+              .elementAt(localEqualityCardRectoVersoList.length - 1 - theRightGalleryCardImageIndex)!
+              .path)
+          : InputImage.fromFilePath(localEqualityCardRectoVersoList.last!.path);
+    } else {
+      rectoInputImage = InputImage.fromFilePath(image.path);
+      versoInputImage = InputImage.fromFilePath(equalityCardRectoVerso.last!.path);
+      barcodesList = await barcodeScanner.processImage(rectoInputImage);
+      debugPrint("SOURCE IS :$barcodesList ___ ${barcodesList.length}");
+    }
+    await barcodeScanner.close();
+
+    final textDetector = GoogleMlKit.vision.textRecognizer();
+    RecognizedText recognisedTextRecto = await textDetector.processImage(rectoInputImage);
+    await textDetector.close();
+
+    RecognizedText recognisedTextVerso = await textDetector.processImage(versoInputImage);
+    await textDetector.close();
+
+    String textFetchedCardRecto = "", textFetchedCardVerso = '';
+
+    for (TextBlock block in recognisedTextRecto.blocks) {
+      for (TextLine line in block.lines) {
+        textFetchedCardRecto = "$textFetchedCardRecto${line.text}\n";
+      }
+    }
+
+    for (TextBlock block in recognisedTextVerso.blocks) {
+      for (TextLine line in block.lines) {
+        textFetchedCardVerso = "$textFetchedCardVerso${line.text}\n";
+      }
+    }
+
+    debugPrint("recognisedText recto $textFetchedCardRecto");
+    debugPrint("recognisedText verso $textFetchedCardVerso");
+
+    bool rectoContainsAll = textFetchedCardRecto.isCaseInsensitiveContains('DGAS') &&
+        textFetchedCardRecto.isCaseInsensitiveContains('Certification de handicap') &&
+        textFetchedCardRecto.isCaseInsensitiveContains('Direction Générale') &&
+        textFetchedCardRecto.isCaseInsensitiveContains("de l'action sociale");
+
+    bool versoContainsAll = rectoContainsAll &&
+        textFetchedCardVerso.isCaseInsensitiveContains('SENEGAL') &&
+        textFetchedCardVerso.isCaseInsensitiveContains('EMERGENT');
+
+    rectoContainsAll && versoContainsAll ? isEqualityCardValid = true : isEqualityCardValid = false;
+    print("CONTAINS ALL? $versoContainsAll");
+
+    /* !rectoContainsAll
+        ? ThemeHelper().alartDialog('Incorrect Image Format', 'Please re-submit the recto part of your card', context)
+        : null; */
+    !rectoContainsAll && versoContainsAll
+        ? showSnackBarText(localLnSetting.scanCECrectoError, errorTextStle)
+        : !versoContainsAll && rectoContainsAll
+            ? showSnackBarText(localLnSetting.scanCECversoError, errorTextStle)
+            : !rectoContainsAll && !versoContainsAll
+                ? showSnackBarText(localLnSetting.scanCECbothRectoVersoError, errorTextStle)
+                : null;
+
+    debugPrint("containsAll $rectoContainsAll __________ $versoContainsAll");
+
+    for (Barcode barcode in barcodesList) {
+      final BarcodeType type = barcode.type;
+      final Rect? boundingBox = barcode.boundingBox;
+      final String? displayValue = barcode.displayValue;
+      final String? rawValue = barcode.rawValue;
+
+      switch (type) {
+        case BarcodeType.unknown:
+          //  scannedText = 'ENCRYPTED';
+          print("UNKNOWN BACRODE type}");
+          break;
+
+        case BarcodeType.text:
+          print("THE SCANNED BARCODE ${barcode.displayValue.toString()}");
+          equalityCardID = barcode.displayValue.toString();
+          break;
+
+        default:
+          print("THE SCANNED BARCODE IS ENCRYPTED ${barcode.displayValue.toString()}");
+          break;
+      }
+    }
+
+    setState(() {});
+  }
+
+  void resendCode(String userPhoneNumber) {
+    verifyPhone(userPhoneNumber);
+    /* _auth.verifyPhoneNumber(
+        forceResendingToken: resentToken,
+        phoneNumber: userPhoneNumber,
+        codeAutoRetrievalTimeout: (String verificationId) {
+          showSnackBarText("Request Timed Out");
+        },
+        codeSent: (String verificationId, int? forceResendingToken) {},
+        verificationFailed: (FirebaseAuthException error) {},
+        verificationCompleted: (PhoneAuthCredential phoneAuthCredential) {
+          showSnackBarText("COMPLETED");
+        }); */
+  }
+
+  void findMatchingPhoneAndEmailInDatabase() async {
+    try {
+      await FirebaseFirestore.instance.collection("users").snapshots().any((element) {
+        var matchingEmail = element.docs.any((element1) {
+          Map<String, dynamic> data = element1.data();
+          // print("NUMBER EXISTSZSZ ${data['Phone Number'] == phoneNumber}");
+
+          return data['Email'] == _emailController.text;
+        });
+        matchingEmail
+            ? {print("EMAIL EXISTS IN THE DATABASE FROM FIRESTORE")}
+            : print("EMAIL DOES NOT EXISTS IN THE DATABASE FROM FIRESTORE");
+
+        var matchingPhone = element.docs.any((element1) {
+          Map<String, dynamic> data = element1.data();
+          //print("NUMBER EXISTSZSZ ${data['Phone Number'] == phoneNumber} ________ $phoneNumber");
+
+          return data['Phone Number'] == finalTest.phoneNumber.toString();
+        });
+        matchingPhone
+            ? print("NUMBER EXISTS IN THE DATABASE FROM FIRESTORE")
+            : print("NUMBER DOES NOT EXISTS IN THE DATABASE FROM FIRESTORE");
+
+        if (matchingPhone && !matchingEmail) /*  if (numberAlreadyRegistered && !emailAlreadyRegistered) */ {
+          showSnackBarText('Number already in use.');
+        }
+        if (matchingEmail && !matchingPhone) /*if (emailAlreadyRegistered && !numberAlreadyRegistered)  */ {
+          showSnackBarText('Email already in use.');
+        }
+        if (matchingEmail && matchingPhone) /*if (emailAlreadyRegistered && numberAlreadyRegistered)  */ {
+          showSnackBarText('Email and number already in use.');
+        }
+        if (!matchingEmail && !matchingPhone) {
+          print("PREVIOUSLY REACHEDSTEP $result _ finalNum $finalTest");
+          /* proceed = true;
+            setState(() {
+              activeStep = 1;
+            }); */
+        }
+
+        return matchingPhone;
+      });
+    } catch (e) {
+      print("EXCEPTION OCCURED");
+    }
+  }
+}
+
+///ending crochet
+///
