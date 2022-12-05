@@ -7,7 +7,7 @@ class HeaderWidget extends StatefulWidget {
   final double height;
   final bool showIcon;
   final IconData icon;
-  bool fromScanner = false;
+  bool fromScanner = false, fromLoginVerif = false;
 
   HeaderWidget({
     Key? key,
@@ -15,6 +15,7 @@ class HeaderWidget extends StatefulWidget {
     required this.showIcon,
     required this.icon,
     this.fromScanner = false,
+    this.fromLoginVerif = false,
   }) : super(key: key);
 
   @override
@@ -104,7 +105,7 @@ class _HeaderWidgetState extends State<HeaderWidget> {
             ),
           ),
         ),
-        widget.fromScanner
+        widget.fromScanner || widget.fromLoginVerif
             ? Container(
                 margin: const EdgeInsets.fromLTRB(25, 50, 25, 10),
                 padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),

@@ -91,39 +91,41 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
       //widget.canShowToggle(true);
 
       userResEntries = widget.allReservationInfoNeeded.entries.first.value;
-      moreUrgentReservationInfo = userResEntries.first.values.first as Map<String, dynamic>;
-      bookingEndTS = moreUrgentReservationInfo['BookingEnd'] as Timestamp;
-      bookingStartTS = moreUrgentReservationInfo['BookingStart'] as Timestamp;
-      selectedTimeInterval = TimeRange(
-          startTime: TimeOfDay.fromDateTime(bookingStartTS.toDate()),
-          endTime: TimeOfDay.fromDateTime(bookingEndTS.toDate()));
-      bookingDuration = (selectedTimeInterval.endTime.hour * 60 + selectedTimeInterval.endTime.minute) -
-          (selectedTimeInterval.startTime.hour * 60 + selectedTimeInterval.startTime.minute);
-      (bookingStartTS.toDate().difference(DateTime.now())).inSeconds > 0
-          ? timeUntilResStarts = (bookingStartTS.toDate().difference(DateTime.now())).inSeconds
-          : null;
-      (bookingEndTS.toDate().difference(DateTime.now())).inSeconds > 0
-          ? timeUntilBookingEnds = (bookingEndTS.toDate().difference(DateTime.now())).inSeconds
-          : null;
+      moreUrgentReservationInfo =
+          userResEntries.isNotEmpty ? userResEntries.first.values.first as Map<String, dynamic> : {};
+      if (moreUrgentReservationInfo.isNotEmpty) {
+        bookingEndTS = moreUrgentReservationInfo['BookingEnd'] as Timestamp;
+        bookingStartTS = moreUrgentReservationInfo['BookingStart'] as Timestamp;
+        selectedTimeInterval = TimeRange(
+            startTime: TimeOfDay.fromDateTime(bookingStartTS.toDate()),
+            endTime: TimeOfDay.fromDateTime(bookingEndTS.toDate()));
+        bookingDuration = (selectedTimeInterval.endTime.hour * 60 + selectedTimeInterval.endTime.minute) -
+            (selectedTimeInterval.startTime.hour * 60 + selectedTimeInterval.startTime.minute);
+        (bookingStartTS.toDate().difference(DateTime.now())).inSeconds > 0
+            ? timeUntilResStarts = (bookingStartTS.toDate().difference(DateTime.now())).inSeconds
+            : null;
+        (bookingEndTS.toDate().difference(DateTime.now())).inSeconds > 0
+            ? timeUntilBookingEnds = (bookingEndTS.toDate().difference(DateTime.now())).inSeconds
+            : null;
 
-      userCarsEntries = widget.allReservationInfoNeeded.entries.elementAt(1).value;
-      //userCarsEntries.first.values.where((element) => element)
-      // moreUrgentReservationInfo
-      Iterable<Map<String, dynamic>> moreUrentResMatchingParkingIDInfo = userCarsEntries.where((element) {
-        var ok = element.keys.first;
-        ok == userResEntries.first.keys.first;
+        userCarsEntries = widget.allReservationInfoNeeded.entries.elementAt(1).value;
+        //userCarsEntries.first.values.where((element) => element)
+        // moreUrgentReservationInfo
+        Iterable<Map<String, dynamic>> moreUrentResMatchingParkingIDInfo = userCarsEntries.where((element) {
+          var ok = element.keys.first;
+          ok == userResEntries.first.keys.first;
 
-        return ok == moreUrgentReservationInfo['ParkingID'];
-      });
+          return ok == moreUrgentReservationInfo['ParkingID'];
+        });
 
-      moreUrgentParkingInfo =
-          moreUrentResMatchingParkingIDInfo.isNotEmpty ? moreUrentResMatchingParkingIDInfo.first : {};
-      // ignore: unnecessary_brace_in_string_interps
-      debugPrint(
-          "AZERTY $moreUrgentParkingInfo _ ${moreUrgentReservationInfo['ParkingID']}  ___ ${widget.currentlySignedInUser?.displayName}");
-      //
-      timeUntilBookingEnds == 1150 ? debugPrint("28 MINUTES LEFT") : null;
-      /* timeUntilResStarts == const Duration(seconds: 20).inSeconds && timeUntilBookingEnds == 0
+        moreUrgentParkingInfo =
+            moreUrentResMatchingParkingIDInfo.isNotEmpty ? moreUrentResMatchingParkingIDInfo.first : {};
+        // ignore: unnecessary_brace_in_string_interps
+        debugPrint(
+            "AZERTY $moreUrgentParkingInfo _ ${moreUrgentReservationInfo['ParkingID']}  ___ ${widget.currentlySignedInUser?.displayName}");
+        //
+        timeUntilBookingEnds == 1150 ? debugPrint("28 MINUTES LEFT") : null;
+        /* timeUntilResStarts == const Duration(seconds: 20).inSeconds && timeUntilBookingEnds == 0
           ? {
               debugPrint('starts soon'),
               showNotification('Booking starting soon.',
@@ -133,11 +135,12 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
               ? showNotification('Booking ends soon.',
                   'Hello ${widget.currentlySignedInUser?.displayName}, Your booking in ${moreUrgentParkingInfo.values.first['Name']} ends in 5 minutes!')
               : null; */
-      //
-      if (mounted) {
-        setState(
-          () {},
-        );
+        //
+        if (mounted) {
+          setState(
+            () {},
+          );
+        }
       }
     }
 

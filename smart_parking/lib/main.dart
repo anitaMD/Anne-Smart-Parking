@@ -12,6 +12,7 @@ import 'package:smart_parking/notifiers/booking_state_management.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:smart_parking/screens/authenticate/testlogin.dart';
+import 'package:smart_parking/screens/inside_app/testhome.dart';
 import 'l10n/l10n.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -103,8 +104,8 @@ class _MyAppState extends State<MyApp> {
             GlobalWidgetsLocalizations.delegate,
           ],
           debugShowCheckedModeBanner: false,
-          home:
-              const TestLogin(), /* widget.status == true
+          home: widget.status == true ? const TestLogin() : const TestHome(),
+          /* widget.status == true
               ? const LoginRegister()
               : const Home(
                   fromLoginView: true,

@@ -92,6 +92,19 @@ class FirestoreUserService {
     }
   } //
 
+  Future testgetUserFullName(User aUser) async {
+    try {
+      var userData = await _usersCollectionReference.doc(aUser.uid).get();
+      Map<String, dynamic> data = userData.data() as Map<String, dynamic>;
+      var theUserName = data['Full Name'];
+      print(theUserName);
+      return theUserName;
+    } catch (e) {
+      print(e);
+      return e.toString();
+    }
+  } //
+
   Future getUserNumber(User aUser) async {
     try {
       var userData = await _usersCollectionReference.doc(aUser.uid).get();
@@ -110,6 +123,19 @@ class FirestoreUserService {
       var userData = await _usersCollectionReference.doc(aUser.uid).get();
       Map<String, dynamic> data = userData.data() as Map<String, dynamic>;
       var theUserProfileImage = data['profileImage'];
+      print(theUserProfileImage);
+      return theUserProfileImage;
+    } catch (e) {
+      print(e);
+      return e.toString();
+    }
+  } //
+
+  Future testgetUserProfileImage(User aUser) async {
+    try {
+      var userData = await _usersCollectionReference.doc(aUser.uid).get();
+      Map<String, dynamic> data = userData.data() as Map<String, dynamic>;
+      var theUserProfileImage = data['Profile Image'];
       print(theUserProfileImage);
       return theUserProfileImage;
     } catch (e) {
@@ -140,7 +166,7 @@ class FirestoreUserService {
   Future<bool> doesPhoneNumberAlreadyExist({required String phoneNumber}) async {
     var result;
     try {
-      await _usersCollectionReference.snapshots().any((element) {
+      await _usersCollectionReference.get().then((element) {
         var matchingPhone = element.docs.any((element1) {
           Map<String, dynamic> data = element1.data() as Map<String, dynamic>;
           //print("NUMBER EXISTSZSZ ${data['Phone Number'] == phoneNumber} ________ $phoneNumber");

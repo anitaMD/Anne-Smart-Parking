@@ -21,6 +21,7 @@ import 'package:otp_text_field/style.dart';
 import 'package:phone_number/phone_number.dart' as prefix;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/models/new_user.dart';
 import 'package:smart_parking/models/pages/widgets/header_widget.dart';
 import 'package:smart_parking/models/theme_helper.dart';
@@ -63,6 +64,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
   FirebaseService service = FirebaseService();
   FirestoreUserService firestoreService = FirestoreUserService();
   AuthCredential? theCredential;
+  var myDB = FirebaseFirestore.instance;
+  var firestoreWalletService = FirestoreWalletService();
 
   late AnimationController _animationController;
   final rectoScreenshotController = ScreenshotController(), versoScreenshotController = ScreenshotController();
@@ -328,7 +331,13 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
       userId = '',
       profilePictureStoragePath = '';
 
-  int activeStep = 0, previouslyReachedStep = 0, indicatorCount = 2, secondsRemaining = 40, updateAndVerifNumCount = 0;
+  int activeStep = 0,
+      previouslyReachedStep = 0,
+      indicatorCount = 2,
+      secondsRemaining = 40,
+      updateAndVerifNumCount = 0,
+      navPopCounter = 0,
+      listenableCounter = 0;
   int? resentToken;
   late Timer timer;
 
@@ -348,6 +357,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
       listeningForOTP = false,
       enableResend = false,
       backgroundWaiting = false;
+
+  ValueNotifier<bool> foundPhoneMailMatch = ValueNotifier(true);
 
   PhoneNumber initializedNumber = PhoneNumber(
         isoCode: 'US',
@@ -426,7 +437,6 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     _passwordController.dispose();
     _connectivitySubscription.cancel();
     _textRecognizer.close();
-    //SmsAutoFill().unregisterListener();
 
     super.dispose();
   }
@@ -468,6 +478,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     currentUser = _auth.currentUser;
     //currentUser?.reload();
     currentUser != null ? print("CURRENTLY SIGNED IN USER $currentUser") : null;
+    //foundNoMtachWhatsoever ? print("UHM AFTER SETSTATE $foundNoMtachWhatsoever") : null;
+
     _auth.setLanguageCode(Get.locale!.languageCode);
     equalityCardUploadedStoragePath.isEmpty
         ? null
@@ -486,9 +498,6 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
             print('HA ${theCountry.first} ${theCountry.first['flag'].runtimeType}'),
           }
         : null;
-    PhoneNumber finalNumber = PhoneNumber(
-      isoCode: theCountry.isNotEmpty ? theCountry.first['code'] : 'SN',
-    );
 
     return GestureDetector(
       onTap: () {
@@ -496,263 +505,155 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
       },
       child: Scaffold(
         backgroundColor: activeStep == 1 && isSpecialAccessUser ? Colors.grey.shade900 : Colors.white,
-        body: SingleChildScrollView(child: bodySwitch(localLnSetting, finalNumber)),
+        body: SingleChildScrollView(child: bodySwitch(localLnSetting)),
       ),
     );
   }
 
-  bodySwitch(AppLocalizations localLnSetting, PhoneNumber finalNum) {
+  bodySwitch(AppLocalizations localLnSetting) {
     print("THE DIALCODE: $dialCode ___ Connection Status: ${_connectionStatus.toString()}");
     var yesNoRadio = isSpecialAccessUser ? localLnSetting.regRadioYes : localLnSetting.regRadioNo;
     //email-already-exists add this case to register form ********************
 
     switch (activeStep) {
       case 0:
-        return Stack(
-          children: [
-            SizedBox(
-              height: 150,
-              child: HeaderWidget(
-                height: 150,
-                icon: Icons.person_add_alt_1_rounded,
-                showIcon: false,
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.fromLTRB(25, 50, 25, 10),
-              padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-              alignment: Alignment.center,
-              child: Column(
-                children: [
-                  Form(
-                    key: regFormKey,
-                    onChanged: () {
-                      regFormKey.currentState!.save();
-                      //print("THIS IS THE CURRENT STATE: ${regFormKey.currentState}");
-                    },
-                    child: Column(
-                      children: [
-                        GestureDetector(
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: 120,
-                                height: 120,
-                                //padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(100),
-                                  border: Border.all(width: 5, color: Colors.white),
-                                  color: Colors.white,
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.black12,
-                                      blurRadius: 20,
-                                      offset: Offset(5, 5),
-                                    ),
-                                  ],
-                                ),
-                                child: isProfilePicturePicked
-                                    ? ClipOval(
-                                        child: Image.file(
-                                          File(profilePicture!.path),
-                                          fit: BoxFit.cover,
+        return ValueListenableBuilder<bool>(
+          valueListenable: foundPhoneMailMatch,
+          builder: (context, listenableValue, child) {
+            print("LISTENBALE VALUE $listenableValue");
+            !listenableValue && listenableCounter < 1
+                ? {nextButtonSendOTP(localLnSetting, regFormKey, listenableValue), listenableCounter += 1}
+                : null;
+            return Stack(
+              children: [
+                SizedBox(
+                  height: 150,
+                  child: HeaderWidget(
+                    height: 150,
+                    icon: Icons.person_add_alt_1_rounded,
+                    showIcon: false,
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.fromLTRB(25, 50, 25, 10),
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                  alignment: Alignment.center,
+                  child: Column(
+                    children: [
+                      Form(
+                        key: regFormKey,
+                        onChanged: () {
+                          regFormKey.currentState!.save();
+                          //print("THIS IS THE CURRENT STATE: ${regFormKey.currentState}");
+                        },
+                        child: Column(
+                          children: [
+                            GestureDetector(
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    width: 120,
+                                    height: 120,
+                                    //padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(100),
+                                      border: Border.all(width: 5, color: Colors.white),
+                                      color: Colors.white,
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Colors.black12,
+                                          blurRadius: 20,
+                                          offset: Offset(5, 5),
                                         ),
-                                      )
-                                    : Icon(
-                                        Icons.person,
-                                        color: Colors.grey.shade300,
-                                        size: 80.0,
-                                      ),
+                                      ],
+                                    ),
+                                    child: isProfilePicturePicked
+                                        ? ClipOval(
+                                            child: Image.file(
+                                              File(profilePicture!.path),
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : Icon(
+                                            Icons.person,
+                                            color: Colors.grey.shade300,
+                                            size: 80.0,
+                                          ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.fromLTRB(80, 80, 0, 0),
+                                    child: IconButton(
+                                        onPressed: () {
+                                          getProfileOrCardImage('profilePicture', '', localLnSetting);
+                                        },
+                                        icon: Icon(
+                                          Icons.add_circle,
+                                          color: Colors.grey.shade700,
+                                          size: 25.0,
+                                        )),
+                                  ),
+                                ],
                               ),
-                              Container(
-                                padding: const EdgeInsets.fromLTRB(80, 80, 0, 0),
-                                child: IconButton(
-                                    onPressed: () {
-                                      getProfileOrCardImage('profilePicture', '', localLnSetting);
-                                    },
-                                    icon: Icon(
-                                      Icons.add_circle,
-                                      color: Colors.grey.shade700,
-                                      size: 25.0,
-                                    )),
+                            ),
+                            const SizedBox(
+                              height: 30,
+                            ),
+                            Container(
+                              decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                              child: TextFormField(
+                                controller: _fullNameController,
+                                autovalidateMode: AutovalidateMode.disabled,
+                                keyboardType: TextInputType.name,
+                                textCapitalization: TextCapitalization.words,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(RegExp("[A-Za-z' -]*"), replacementString: ''),
+                                ],
+                                validator: FormBuilderValidators.compose([
+                                  FormBuilderValidators.required(),
+                                ]),
+                                decoration: ThemeHelper().textInputDecoration(Icons.perm_identity,
+                                    localLnSetting.regFullNameLabel, localLnSetting.regFullNamePlaceholder),
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 30,
-                        ),
-                        Container(
-                          decoration: ThemeHelper().inputBoxDecorationShaddow(),
-                          child: TextFormField(
-                            controller: _fullNameController,
-                            autovalidateMode: AutovalidateMode.disabled,
-                            keyboardType: TextInputType.name,
-                            textCapitalization: TextCapitalization.words,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp("[A-Za-z' -]*"), replacementString: ''),
-                            ],
-                            validator: FormBuilderValidators.compose([
-                              FormBuilderValidators.required(),
-                            ]),
-                            decoration: ThemeHelper().textInputDecoration(Icons.perm_identity,
-                                localLnSetting.regFullNameLabel, localLnSetting.regFullNamePlaceholder),
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        Container(
-                          decoration: ThemeHelper().inputBoxDecorationShaddow(),
-                          child: TextFormField(
-                            controller: _emailController,
-                            decoration: ThemeHelper().textInputDecoration(
-                                Icons.email, localLnSetting.regEmailLabel, localLnSetting.regEmailPlaceholder),
-                            keyboardType: TextInputType.emailAddress,
-                            validator: FormBuilderValidators.compose([
-                              FormBuilderValidators.required(),
-                              FormBuilderValidators.match(
-                                  r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$",
-                                  errorText: localLnSetting.logErrorBadEmailFormat)
-                            ]),
-                          ),
-                        ),
-                        const SizedBox(height: 20.0),
-                        InternationalPhoneNumberInput(
-                          key: internatKey,
-                          onInputChanged: (PhoneNumber changingNumber) {
-                            print("changingNumber ${changingNumber.phoneNumber}");
-                          },
-                          onInputValidated: (bool value) {
-                            setState(() {
-                              isPhoneNumberValidated = value;
-                            });
-                            print('VALIDATED $value ______ $finalNum');
-                          },
-                          locale: Get.locale!.languageCode,
-                          selectorConfig: const SelectorConfig(
-                            setSelectorButtonAsPrefixIcon: true,
-                            trailingSpace: false,
-                            selectorType: PhoneInputSelectorType.DROPDOWN,
-                          ),
-                          inputDecoration: InputDecoration(
-                            labelText: localLnSetting.regNumberLabel,
-                            hintText: localLnSetting.regNumberPlaceholder,
-                            fillColor: Colors.white,
-                            filled: true,
-                            contentPadding: const EdgeInsets.fromLTRB(20, 10, 0, 10),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(100.0),
-                                borderSide: const BorderSide(color: Colors.grey)),
-                            enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(100.0),
-                                borderSide: BorderSide(color: Colors.grey.shade400)),
-                            errorBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(100.0),
-                                borderSide: const BorderSide(color: Colors.red, width: 2.0)),
-                            focusedErrorBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(100.0),
-                                borderSide: const BorderSide(color: Colors.red, width: 2.0)),
-                          ),
-                          ignoreBlank: false,
-                          errorMessage: localLnSetting.regNumberError,
-                          autoValidateMode: AutovalidateMode.disabled,
-                          selectorTextStyle: const TextStyle(color: Colors.black),
-                          initialValue: initializedNumber,
-                          textFieldController: _numberController,
-                          formatInput: false,
-                          keyboardType: const TextInputType.numberWithOptions(),
-                          onSaved: (PhoneNumber thenumber) {
-                            print('On Saved: $thenumber');
-                            setState(() {
-                              finalTest = thenumber;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 20.0),
-                        Container(
-                          decoration: ThemeHelper().inputBoxDecorationShaddow(),
-                          child: TextFormField(
-                              autovalidateMode: AutovalidateMode.disabled,
-                              validator: FormBuilderValidators.compose([
-                                FormBuilderValidators.required(),
-                                FormBuilderValidators.match(
-                                    r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$',
-                                    errorText: localLnSetting.regPasswordHelper),
-                                FormBuilderValidators.minLength(8)
-                              ]),
-                              controller: _passwordController,
-                              obscureText: obscurText,
-                              decoration: InputDecoration(
-                                prefixIcon: const Icon(
-                                  Icons.lock,
-                                  size: 25,
-                                  //color: Color.fromARGB(173, 0, 0, 0),
-                                ),
-                                suffixIcon: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      obscurText == true ? obscurText = false : obscurText = true;
-                                    });
-                                  },
-                                  child: Icon(obscurText ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                                ),
-                                labelText: localLnSetting.regPasswordLabel,
-                                hintText: localLnSetting.regPasswordPlaceholder,
-                                fillColor: Colors.white,
-                                filled: true,
-                                helperText: localLnSetting.regPasswordHelper,
-                                helperMaxLines: 1,
-
-                                // helperStyle: TextStyle(height: 0.4),
-                                contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                                focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(100.0),
-                                    borderSide: const BorderSide(color: Colors.grey)),
-                                enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(100.0),
-                                    borderSide: BorderSide(color: Colors.grey.shade400)),
-                                errorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(100.0),
-                                    borderSide: const BorderSide(color: Colors.red, width: 2.0)),
-                                focusedErrorBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(100.0),
-                                    borderSide: const BorderSide(color: Colors.red, width: 2.0)),
-                              )),
-                        ),
-                        const SizedBox(height: 20.0),
-                        Container(
-                          decoration: ThemeHelper().inputBoxDecorationShaddow(),
-                          child: TextFormField(
-                              autovalidateMode: AutovalidateMode.disabled,
-                              validator: FormBuilderValidators.compose([
-                                FormBuilderValidators.required(),
-                                FormBuilderValidators.match(
-                                    r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$',
-                                    errorText: localLnSetting.regConfirmPassError),
-                                FormBuilderValidators.minLength(8),
-                              ]),
-                              controller: _confirmPasswordController,
-                              obscureText: obscurTextConfPass,
-                              decoration: InputDecoration(
-                                prefixIcon: const Icon(
-                                  Icons.lock,
-                                  size: 25,
-                                  //color: Color.fromARGB(173, 0, 0, 0),
-                                ),
-                                suffixIcon: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      obscurTextConfPass == true
-                                          ? obscurTextConfPass = false
-                                          : obscurTextConfPass = true;
-                                    });
-                                  },
-                                  child: Icon(
-                                      obscurTextConfPass ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                                ),
-                                labelText: localLnSetting.regConfirmPassLabel,
-                                hintText: localLnSetting.regConfirmPassPlaceholder,
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            Container(
+                              decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                              child: TextFormField(
+                                controller: _emailController,
+                                decoration: ThemeHelper().textInputDecoration(
+                                    Icons.email, localLnSetting.regEmailLabel, localLnSetting.regEmailPlaceholder),
+                                keyboardType: TextInputType.emailAddress,
+                                validator: FormBuilderValidators.compose([
+                                  FormBuilderValidators.required(),
+                                  FormBuilderValidators.match(
+                                      r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$",
+                                      errorText: localLnSetting.logErrorBadEmailFormat)
+                                ]),
+                              ),
+                            ),
+                            const SizedBox(height: 20.0),
+                            InternationalPhoneNumberInput(
+                              key: internatKey,
+                              onInputChanged: (PhoneNumber changingNumber) {
+                                print("changingNumber ${changingNumber.phoneNumber}");
+                              },
+                              onInputValidated: (bool value) {
+                                setState(() {
+                                  isPhoneNumberValidated = value;
+                                });
+                                print('VALIDATED PHONE NUMBER $value');
+                              },
+                              locale: Get.locale!.languageCode,
+                              selectorConfig: const SelectorConfig(
+                                setSelectorButtonAsPrefixIcon: true,
+                                trailingSpace: false,
+                                selectorType: PhoneInputSelectorType.DROPDOWN,
+                              ),
+                              inputDecoration: InputDecoration(
+                                labelText: localLnSetting.regNumberLabel,
+                                hintText: localLnSetting.regNumberPlaceholder,
                                 fillColor: Colors.white,
                                 filled: true,
                                 contentPadding: const EdgeInsets.fromLTRB(20, 10, 0, 10),
@@ -768,137 +669,200 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                 focusedErrorBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(100.0),
                                     borderSide: const BorderSide(color: Colors.red, width: 2.0)),
-                              )),
-                        ),
-                        FormBuilderRadioGroup(
-                          initialValue: yesNoRadio,
-                          wrapSpacing: 10,
-                          wrapAlignment: WrapAlignment.center,
-                          decoration: InputDecoration(
-                            prefixIcon: FadeTransition(
-                              opacity: _animationController,
-                              child: GestureDetector(
-                                  onTap: () async {
-                                    await showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return ThemeHelper().alartDialog(
-                                              'Description', localLnSetting.regEgaliteChancesDescription, context);
+                              ),
+                              ignoreBlank: false,
+                              errorMessage: localLnSetting.regNumberError,
+                              autoValidateMode: AutovalidateMode.disabled,
+                              selectorTextStyle: const TextStyle(color: Colors.black),
+                              initialValue: initializedNumber,
+                              textFieldController: _numberController,
+                              formatInput: false,
+                              keyboardType: const TextInputType.numberWithOptions(),
+                              onSaved: (PhoneNumber thenumber) {
+                                print('On Saved: $thenumber');
+                                setState(() {
+                                  finalTest = thenumber;
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 20.0),
+                            Container(
+                              decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                              child: TextFormField(
+                                  autovalidateMode: AutovalidateMode.disabled,
+                                  validator: FormBuilderValidators.compose([
+                                    FormBuilderValidators.required(),
+                                    FormBuilderValidators.match(
+                                        r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$',
+                                        errorText: localLnSetting.regPasswordHelper),
+                                    FormBuilderValidators.minLength(8)
+                                  ]),
+                                  controller: _passwordController,
+                                  obscureText: obscurText,
+                                  decoration: InputDecoration(
+                                    prefixIcon: const Icon(
+                                      Icons.lock,
+                                      size: 25,
+                                      //color: Color.fromARGB(173, 0, 0, 0),
+                                    ),
+                                    suffixIcon: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          obscurText == true ? obscurText = false : obscurText = true;
                                         });
-                                  },
-                                  child: const Icon(
-                                    Icons.accessible,
-                                    size: 30,
-                                    color: Colors.blue,
+                                      },
+                                      child:
+                                          Icon(obscurText ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                                    ),
+                                    labelText: localLnSetting.regPasswordLabel,
+                                    hintText: localLnSetting.regPasswordPlaceholder,
+                                    fillColor: Colors.white,
+                                    filled: true,
+                                    helperText: localLnSetting.regPasswordHelper,
+                                    helperMaxLines: 1,
+
+                                    // helperStyle: TextStyle(height: 0.4),
+                                    contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(color: Colors.grey)),
+                                    enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(100.0),
+                                        borderSide: BorderSide(color: Colors.grey.shade400)),
+                                    errorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+                                    focusedErrorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(color: Colors.red, width: 2.0)),
                                   )),
                             ),
-                            alignLabelWithHint: true,
-                            labelText: localLnSetting.regEgaliteDesChances,
-                            labelStyle: const TextStyle(height: 2),
-                            contentPadding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
-                          ),
-                          name: 'egaliteDesChances',
-                          validator: FormBuilderValidators.required(),
-                          onSaved: (newValue) {
-                            setState(() {
-                              newValue == localLnSetting.regRadioYes
-                                  ? isSpecialAccessUser = true
-                                  : isSpecialAccessUser = false;
-                            });
-                            print("ISSPECIALACCESS $isSpecialAccessUser");
-                          },
-                          options: [localLnSetting.regRadioYes, localLnSetting.regRadioNo]
-                              .map((lang) => FormBuilderFieldOption(
-                                    value: lang,
-                                  ))
-                              .toList(growable: false),
-                        ),
-                        const SizedBox(height: 55.0),
-                        nextAndAnimatedSmoothIndic(localLnSetting, localLnSetting.regNextButton.toUpperCase())
-
-                        /* AnimatedSmoothIndicator(
-                          activeIndex: activeStep,
-                          duration: const Duration(milliseconds: 400),
-                          count: isSpecialAccessUser ? indicatorCount = 3 : indicatorCount = 2,
-                          effect: const WormEffect(
-                              type: WormType.normal,
-                              spacing: 5.0,
-                              radius: 20.0,
-                              dotWidth: 10.0,
-                              dotHeight: 10.0,
-                              paintStyle: PaintingStyle.stroke,
-                              strokeWidth: 1.5,
-                              dotColor: Colors.black,
-                              activeDotColor: Colors.indigo),
-                        ),
-                        const SizedBox(height: 25.0),
-                        Container(
-                          decoration: ThemeHelper().buttonBoxDecoration(context),
-                          child: ElevatedButton(
-                              style: ThemeHelper().buttonStyle(),
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
-
-                                child: Text(
-                                  localLnSetting.regNextButton.toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              onPressed: () {
-                                var matchingPasswords =
-                                    toastValidationMessages(_confirmPasswordController.text, localLnSetting).toString();
-                                if (_connectionStatus.toString() == 'ConnectivityResult.none') {
-                                  showSnackBarText(localLnSetting.noInternetError);
-                                } else {
-                                  matchingPasswords.isEmpty && regFormKey.currentState!.validate()
-                                      ? {
-                                          print("PREVIOUSLY REACHEDSTEP $result _ finalNum $finalTest"),
-                                          verifyPhone('${finalTest.dialCode.toString()} ${_numberController.text}')
-                                        }
-                                      : null;
-                                }
-
-                                /* if (_formKey.currentState!.validate()) {
-                                setState(() {
-                                  activeStep = 1;
-                                }); */
-                                /*  Navigator.of(context).pushAndRemoveUntil(
-                                      MaterialPageRoute(builder: (context) => const ProfilePage()),
-                                      (Route<dynamic> route) => false); */
-                              }),
-                        ), */
-                        ,
-                        Container(
-                          margin: const EdgeInsets.fromLTRB(10, 20, 10, 20),
-                          //child: Text('Don\'t have an account? Create'),
-                          child: Text.rich(TextSpan(children: [
-                            TextSpan(text: localLnSetting.alreadyHaveAccount),
-                            TextSpan(
-                              text: localLnSetting.regGoToLogInLink,
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  Navigator.pushReplacement(
-                                      context, MaterialPageRoute(builder: (context) => const TestLogin()));
-                                },
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.secondary,
-                                  fontSize: 15),
+                            const SizedBox(height: 20.0),
+                            Container(
+                              decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                              child: TextFormField(
+                                  autovalidateMode: AutovalidateMode.disabled,
+                                  validator: FormBuilderValidators.compose([
+                                    FormBuilderValidators.required(),
+                                    FormBuilderValidators.match(
+                                        r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$',
+                                        errorText: localLnSetting.regConfirmPassError),
+                                    FormBuilderValidators.minLength(8),
+                                  ]),
+                                  controller: _confirmPasswordController,
+                                  obscureText: obscurTextConfPass,
+                                  decoration: InputDecoration(
+                                    prefixIcon: const Icon(
+                                      Icons.lock,
+                                      size: 25,
+                                      //color: Color.fromARGB(173, 0, 0, 0),
+                                    ),
+                                    suffixIcon: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          obscurTextConfPass == true
+                                              ? obscurTextConfPass = false
+                                              : obscurTextConfPass = true;
+                                        });
+                                      },
+                                      child: Icon(obscurTextConfPass
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined),
+                                    ),
+                                    labelText: localLnSetting.regConfirmPassLabel,
+                                    hintText: localLnSetting.regConfirmPassPlaceholder,
+                                    fillColor: Colors.white,
+                                    filled: true,
+                                    contentPadding: const EdgeInsets.fromLTRB(20, 10, 0, 10),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(color: Colors.grey)),
+                                    enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(100.0),
+                                        borderSide: BorderSide(color: Colors.grey.shade400)),
+                                    errorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+                                    focusedErrorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+                                  )),
                             ),
-                          ])),
+                            FormBuilderRadioGroup(
+                              initialValue: yesNoRadio,
+                              wrapSpacing: 10,
+                              wrapAlignment: WrapAlignment.center,
+                              decoration: InputDecoration(
+                                prefixIcon: FadeTransition(
+                                  opacity: _animationController,
+                                  child: GestureDetector(
+                                      onTap: () async {
+                                        await showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return ThemeHelper().alartDialog(
+                                                  'Description', localLnSetting.regEgaliteChancesDescription, context);
+                                            });
+                                      },
+                                      child: const Icon(
+                                        Icons.accessible,
+                                        size: 30,
+                                        color: Colors.blue,
+                                      )),
+                                ),
+                                alignLabelWithHint: true,
+                                labelText: localLnSetting.regEgaliteDesChances,
+                                labelStyle: const TextStyle(height: 2),
+                                contentPadding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+                              ),
+                              name: 'egaliteDesChances',
+                              validator: FormBuilderValidators.required(),
+                              onSaved: (newValue) {
+                                setState(() {
+                                  newValue == localLnSetting.regRadioYes
+                                      ? isSpecialAccessUser = true
+                                      : isSpecialAccessUser = false;
+                                });
+                                print("ISSPECIALACCESS $isSpecialAccessUser");
+                              },
+                              options: [localLnSetting.regRadioYes, localLnSetting.regRadioNo]
+                                  .map((lang) => FormBuilderFieldOption(
+                                        value: lang,
+                                      ))
+                                  .toList(growable: false),
+                            ),
+                            const SizedBox(height: 55.0),
+                            nextAndAnimatedSmoothIndic(
+                                localLnSetting, localLnSetting.regNextButton.toUpperCase(), listenableValue),
+                            Container(
+                              margin: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                              //child: Text('Don\'t have an account? Create'),
+                              child: Text.rich(TextSpan(children: [
+                                TextSpan(text: localLnSetting.alreadyHaveAccount),
+                                TextSpan(
+                                  text: localLnSetting.regGoToLogInLink,
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () {
+                                      Navigator.pushReplacement(
+                                          context, MaterialPageRoute(builder: (context) => const TestLogin()));
+                                    },
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).colorScheme.secondary,
+                                      fontSize: 15),
+                                ),
+                              ])),
+                            ),
+                            const SizedBox(height: 30.0),
+                          ],
                         ),
-                        const SizedBox(height: 30.0),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         );
 
       case 1:
@@ -993,26 +957,6 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                 ),
                               ),
                               const SizedBox(height: 40.0),
-                              /*  Padding(
-                          padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
-                          child: Text(
-                            "This is the current app signature: $appSignature",
-                          ),
-                        ),
-                        const Spacer(),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32),
-                          child: Builder(
-                            builder: (_) {
-                              if (otpCode == null) {
-                                return Text("Listening for code...");
-                              }
-                              return Text("Code Received: $otpCode");
-                            },
-                          ),
-                        ),
-                        */
-
                               Form(
                                 key: _pinMobileFormKey,
                                 child: Column(
@@ -1081,55 +1025,6 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                     const SizedBox(height: 40.0),
                                     nextAndAnimatedSmoothIndic(
                                         localLnSetting, localLnSetting.numVerifButtonLabel.toUpperCase()),
-
-                                    /*    AnimatedSmoothIndicator(
-                                activeIndex: activeStep,
-                                duration: const Duration(milliseconds: 400),
-                                count: isSpecialAccessUser ? indicatorCount = 3 : indicatorCount = 2,
-                                effect: const WormEffect(
-                                    type: WormType.normal,
-                                    spacing: 5.0,
-                                    radius: 20.0,
-                                    dotWidth: 10.0,
-                                    dotHeight: 10.0,
-                                    paintStyle: PaintingStyle.stroke,
-                                    strokeWidth: 1.5,
-                                    dotColor: Colors.black,
-                                    activeDotColor: Colors.indigo),
-                              ),
-                              const SizedBox(height: 40.0),
-                              Container(
-                                decoration: _pinSuccess
-                                    ? ThemeHelper().buttonBoxDecoration(context)
-                                    : ThemeHelper().buttonBoxDecoration(context, "#AAAAAA", "#757575"),
-                                child: ElevatedButton(
-                                  style: ThemeHelper().buttonStyle(),
-                                  onPressed: _pinSuccess
-                                      ? () {
-                                          if (otpPin.length >= 6) {
-                                            /*  onAutoVerify(
-                                                PhoneAuthProvider.credential(verificationId: verID, smsCode: otpPin)); */
-                                            //  verifyOTP();
-                                          }
-                                          /*  Navigator.of(context).pushAndRemoveUntil(
-                                            MaterialPageRoute(builder: (context) => const ProfilePage()),
-                                            (Route<dynamic> route) => false); */
-                                        }
-                                      : null,
-                                  child: Padding(
-                                    padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
-                                    child: Text(
-                                      localLnSetting.numVerifButtonLabel.toUpperCase(),
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                           */
                                   ],
                                 ),
                               )
@@ -1364,7 +1259,10 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                           const SizedBox(
                             height: 40,
                           ),
-                          nextAndAnimatedSmoothIndic(localLnSetting, localLnSetting.regNextButton.toUpperCase()),
+                          nextAndAnimatedSmoothIndic(
+                            localLnSetting,
+                            localLnSetting.regNextButton.toUpperCase(),
+                          ),
                         ],
                       ),
                     ),
@@ -1609,7 +1507,7 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     }
   }
 
-  nextAndAnimatedSmoothIndic(AppLocalizations localLnSetting, String buttonLabel) {
+  nextAndAnimatedSmoothIndic(AppLocalizations localLnSetting, String buttonLabel, [bool listenableValue = true]) {
     return Column(
       children: [
         AnimatedSmoothIndicator(
@@ -1632,8 +1530,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
           decoration: listeningForOTP
               ? ThemeHelper().buttonBoxDecoration(context, '808080', '7393B3')
               : ThemeHelper().buttonBoxDecoration(context),
-          child: activeStep != 2
-              ? ElevatedButton(
+          child: activeStep == 2 || (activeStep == 1 && !isSpecialAccessUser)
+              ? Container()
+              : ElevatedButton(
                   style: activeStep == 1 && isSpecialAccessUser
                       ? ThemeHelper().buttonStyle('scanner')
                       : ThemeHelper().buttonStyle(),
@@ -1649,77 +1548,83 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                     ),
                   ),
                   onPressed: () {
-                    activeStep == 0 && isSpecialAccessUser
-                        ? nextButtonGoToCardScanner(localLnSetting, regFormKey)
-                        : {
-                            print("BACKGROUND WAITING? $backgroundWaiting"),
-                            !backgroundWaiting
-                                ? {
-                                    nextButtonSendOTP(localLnSetting, regFormKey),
-                                    /* setState(() {
-                                      backgroundWaiting = true;
-                                    }), */
-                                  }
-                                : null,
-                          };
-
-                    /* if (_formKey.currentState!.validate()) {
-                                setState(() {
-                                  activeStep = 1;
-                                }); */
-                    /*  Navigator.of(context).pushAndRemoveUntil(
-                                      MaterialPageRoute(builder: (context) => const ProfilePage()),
-                                      (Route<dynamic> route) => false); */
-                  })
-              : Container(),
+                    if (activeStep == 0 && isSpecialAccessUser) {
+                      nextButtonGoToCardScanner(localLnSetting, regFormKey, listenableValue);
+                    } else {
+                      print("BACKGROUND WAITING? $backgroundWaiting");
+                      !backgroundWaiting
+                          ? {
+                              nextButtonSendOTP(localLnSetting, regFormKey, listenableValue),
+                            }
+                          : null;
+                    }
+                  }),
         ),
       ],
     );
   }
 
-  void nextButtonSendOTP(AppLocalizations localLnSetting, GlobalKey<FormState> regFormKey) async {
+  void nextButtonSendOTP(AppLocalizations localLnSetting, GlobalKey<FormState> regFormKey, bool listenableValue) async {
     if (_connectionStatus.toString() == 'ConnectivityResult.none') {
       showSnackBarText(localLnSetting.noInternetError);
     } else {
-      var proceed = false;
-
-      formFieldsValidationAndAction(localLnSetting, regFormKey, action: 'sendOTP').then((value) {
-        proceed = value;
-        print("VALIDATION FOR OTP: $value");
-        value
-            ? setState(() {
-                backgroundWaiting = true;
-              })
-            : null;
+      await formFieldsValidationAndAction(localLnSetting, listenableValue, regFormKey, action: 'sendOTP')
+          .then((fieldsValideAndNoNumberEmailMatch) {
+        print("I WAITED. Proceed ? $fieldsValideAndNoNumberEmailMatch ________ $listenableValue ");
+        listenableValue == false && fieldsValideAndNoNumberEmailMatch == true ||
+                activeStep == 1 && fieldsValideAndNoNumberEmailMatch == true //put back true
+            ? {
+                //setState(() => backgroundWaiting = true),
+                Future.delayed(
+                    Duration.zero,
+                    (() async => await showDialog(
+                            barrierColor:
+                                activeStep != 1 ? Colors.black.withOpacity(0.4) : Colors.black87.withOpacity(0.7),
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) {
+                              return waitingBackgoundProcessDialog(context, localLnSetting);
+                            }).then((value) {
+                          /* setState(
+                            () => backgroundWaiting = false,
+                          ); */
+                          print("YOU EXITED");
+                        })))
+              }
+            : Container();
       });
-      print("BACKGROUND WAITING OTP? $backgroundWaiting");
-      backgroundWaiting
+
+      /* listenableValue == false
           ? {
-              await showDialog(
-                  barrierColor: Colors.black87,
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) {
-                    print("PROCEED OTP? $proceed");
-                    return waitingBackgoundProcessDialog(context);
-                  }),
-              proceed ? {await registerUserWithMailPass(localLnSetting), Navigator.pop(context)} : null,
+              Future.delayed(
+                  Duration.zero,
+                  (() async => await showDialog(
+                      barrierColor: Colors.black87,
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) {
+                        print("PROCEED OTP? $proceed");
+                        return waitingBackgoundProcessDialog(context, localLnSetting);
+                      })))
             }
-          : Container();
+          : Container(); */
     }
   }
 
-  AlertDialog waitingBackgoundProcessDialog(BuildContext context) {
+  AlertDialog waitingBackgoundProcessDialog(BuildContext context, AppLocalizations localLnSetting) {
+    registerUserWithMailPass(localLnSetting);
     return AlertDialog(
-        backgroundColor: Colors.white.withOpacity(0.4),
+        backgroundColor:
+            activeStep != 1 ? const Color.fromARGB(218, 255, 255, 255).withOpacity(0.8) : Colors.white.withOpacity(0.6),
         scrollable: true,
         content: Padding(
           padding: const EdgeInsets.only(top: 20, bottom: 20),
           child: SpinKitFadingCircle(
-              size: 50,
+              size: activeStep != 1 ? 50 : 60,
               itemBuilder: (BuildContext context, int index) {
-                return const DecoratedBox(
-                  decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                return DecoratedBox(
+                  decoration:
+                      BoxDecoration(color: activeStep != 1 ? Colors.green : Colors.brown, shape: BoxShape.circle),
                 );
               }),
         )
@@ -1739,11 +1644,11 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         );
   }
 
-  Future<bool> formFieldsValidationAndAction(AppLocalizations localLnSetting, GlobalKey<FormState> regFormKey,
+  Future<bool> formFieldsValidationAndAction(
+      AppLocalizations localLnSetting, bool listenableValue, GlobalKey<FormState> regFormKey,
       {required String action}) async {
     print("formFieldsValidationAndAction CALLED FIRST");
-    var proceed = false, emailInDatabase = false, numberInDatabase = false;
-
+    var proceed = !listenableValue;
     action == 'goToScanner'
         ? print("THIS IS THE CURRENT STATE GO SCANNER: ${_emailController.text}")
         : print("THIS IS THE CURRENT STATE SEND OTP}");
@@ -1752,19 +1657,22 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
 
     if (activeStep == 0) {
       /* MEANING action == 'goToScanner' || (action == 'sendOTP' &&  */
-      await Future.delayed(Duration.zero, () {
+      Future.delayed(Duration.zero, () async {
         if (matchingPasswords.isEmpty && regFormKey.currentState!.validate()) {
-          findMatchingPhoneAndEmailInDatabase();
+          findMatchingPhoneAndEmailInDatabase(action).then((value) {
+            proceed = value;
+            print("FINDING MATCH ${!value}. PROCEED $proceed");
+          });
         }
       });
     }
 
-    if (action != 'goToScanner' && activeStep == 1) {
+    /*  if (action != 'goToScanner' && activeStep == 1) {
       proceed = true;
-      setState(() {
+      /* setState(() {
         activeStep = 2;
-      }); //no need to specify here as the incremeent will be done after registerUser is called
-    }
+      }); //no need to specify here as the incremeent will be done after registerUser is called */
+    } */
 
     return proceed;
   }
@@ -1772,11 +1680,12 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
   void nextButtonGoToCardScanner(
     AppLocalizations localLnSetting,
     GlobalKey<FormState> regFormKey,
+    bool listenableValue,
   ) {
     if (_connectionStatus.toString() == 'ConnectivityResult.none') {
       showSnackBarText(localLnSetting.noInternetError);
     } else {
-      formFieldsValidationAndAction(localLnSetting, regFormKey, action: 'goToScanner');
+      formFieldsValidationAndAction(localLnSetting, listenableValue, regFormKey, action: 'goToScanner');
     }
   }
 
@@ -1794,6 +1703,7 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
             isSpecialAccessUser ? activeStep = 2 : activeStep = 1;
           },
         );
+        Navigator.pop(context);
         verifyPhone('${finalTest.dialCode.toString()} ${_numberController.text}');
       });
     } else {
@@ -1803,18 +1713,32 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
 
   registerUserWithMailPass(AppLocalizations localLnSetting) async {
     backgroundWaiting = true;
-    //print("THE USER $currentUser");
     List<String> testEquality = [];
     if (_connectionStatus.toString() != 'ConnectivityResult.none') {
-      isProfilePicturePicked
-          ? await StorageService()
-              .updloadProfilePicture(File(profilePicture!.path))
-              .then((value) => profilePictureStoragePath = value)
-          : null;
-      await registerWithEmailPassword().then((value) {
+      await registerWithEmailPassword().then((singingvalue) async {
         setState(() {
-          value != null ? currentUser = value.user : null;
+          singingvalue != null ? currentUser = singingvalue.user : null;
         });
+
+        isProfilePicturePicked && singingvalue != null
+            ? await StorageService()
+                .updloadProfilePicture(File(profilePicture!.path))
+                .then((value) => profilePictureStoragePath = value)
+            : null;
+        if (currentUser != null) {
+          myDB.collection("users/${currentUser!.uid}/wallet").get().then((walletValue) async {
+            debugPrint("CHECK MIC: ${walletValue.docs.length}");
+            await firestoreWalletService
+                .initializeWalletDebitTopUp(currentUser, walletValue.docs.first.id)
+                .whenComplete(() => {
+                      Future.delayed(const Duration(seconds: 2)).then(
+                        (value) {
+                          updateWalletFields(walletValue, walletValue.docs.first.id, currentUser!);
+                        },
+                      )
+                    });
+          });
+        }
       });
       if (isSpecialAccessUser) {
         if (isEqualityCardValid) {
@@ -1834,12 +1758,16 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
           showSnackBarText("The card needs to be valid to proceed");
         }
       } else {
+        print("NOT SPECIAL USER, going to otp screen");
         setState(
           () {
             backgroundWaiting = false;
             isSpecialAccessUser ? activeStep = 2 : activeStep = 1;
           },
         );
+        if (!mounted) return;
+        Navigator.pop(context);
+
         verifyPhone('${finalTest.dialCode.toString()} ${_numberController.text}');
       }
     } else {
@@ -2206,9 +2134,34 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     );
   }
 
+  updateWalletFields(QuerySnapshot<Map<String, dynamic>> walletCollection, String walletFirstAndOnlyDocID,
+      User currentlySignedInUser) {
+    CollectionReference debitsCollection =
+        myDB.collection("users/${currentlySignedInUser.uid}/wallet/$walletFirstAndOnlyDocID/debits");
+    CollectionReference topUpsCollection =
+        myDB.collection("users/${currentlySignedInUser.uid}/wallet/$walletFirstAndOnlyDocID/topUps");
+
+    debugPrint("WALLETDOCS :${walletCollection.docs.first.id}");
+    final theDocToUpdate =
+        myDB.collection("users/${currentlySignedInUser.uid}/wallet").doc(walletCollection.docs.first.id);
+
+    var ok = walletCollection.docs.first.data()['Transactions']['Top Ups'] as Map<String, dynamic>;
+    topUpsCollection.get().then((value) {
+      List allIDList = [];
+      for (var element in value.docs) {
+        allIDList.add(element.id);
+        debugPrint("YOURE HERE _ $ok _ _ $allIDList");
+      }
+
+      theDocToUpdate.update({'Transactions.Top Ups.IDs': allIDList});
+    });
+  }
+
   Future<UserCredential?> registerWithEmailPassword() async {
     //UserProfile fetchedUP = userProfile;
     UserCredential? user;
+    String walletFirstAndOnlyDocID = '';
+    bool canUpdateFields = false;
     try {
       user =
           await _auth.createUserWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
@@ -2223,7 +2176,26 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                   phoneNumber: finalTest.phoneNumber.toString(),
                   profileImage: !isProfilePicturePicked ? 'none' : profilePictureStoragePath,
                   isSpecialAccessUser: isSpecialAccessUser,
-                  equalityCardUploadedStoragePath: equalityCardUploadedStoragePath))
+                  equalityCardUploadedStoragePath: equalityCardUploadedStoragePath)),
+
+              await myDB.collection("users/${user.user!.uid}/wallet").get().then((value) async {
+                value.docs.isEmpty
+                    ? await firestoreWalletService.addUserWalletInfoToFirebase(user!.user).then((value) {
+                        myDB
+                            .collection("users/${user!.user!.uid}/wallet")
+                            .get()
+                            .then((value) => value.docs.first.id)
+                            .then(
+                          (value) {
+                            debugPrint("WALLET ID: $value}");
+                            walletFirstAndOnlyDocID = value;
+                          },
+                        );
+                      })
+                    : null;
+              }),
+
+              //
             }
           : null;
 
@@ -2243,7 +2215,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
 
       _auth.authStateChanges().listen((user) async {
         if (user != null) {
-          print("THE CURRENT USER ${FirebaseAuth.instance.currentUser}");
+          print("THE CURRENT USER ${FirebaseAuth.instance.currentUser} ____ profilePicPath $profilePictureStoragePath");
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          prefs.setBool("isLoggedIn", false);
           user.updateDisplayName(_fullNameController.text);
           user.updatePhotoURL(profilePictureStoragePath);
           //user.displayName
@@ -2256,7 +2230,7 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
           print(
               'CURRENT USERS DISPLAYNAME AFTER UPDATE: ${thisCurrently?.displayName} ____ DISPLAYNAME ${userProfile.fullName}  ____ ProfileIMAGE ${thisCurrently?.photoURL} '); */
         } else {
-          currentUser?.reload();
+          //currentUser?.reload();
           print('USER IS SIGNED OUT PERFECT! FROM SIGN UP WITH EMAIL');
         }
       });
@@ -2292,11 +2266,17 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
           {}
       }
       print('Error: $e');
+    } finally {
+      user == null
+          ? setState(
+              () => backgroundWaiting = false,
+            )
+          : null;
     }
     return user;
   } //closing brackets
 
-  bool savedFormFields() {
+  /*  bool savedFormFields() {
     final form = formKey.currentState;
 
     if (form!.validate() && _passwordController.text == _confirmPasswordController.text) {
@@ -2315,21 +2295,7 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     }
     return false;
   }
-
-  void moveToRegister() {
-    formKey.currentState!.reset();
-    setState(() {});
-
-    super.deactivate();
-  }
-
-  void moveToLogIn() {
-    formKey.currentState!.reset();
-
-    setState(() {});
-    super.deactivate();
-  }
-
+ */
   getEqualityCardImage(ImageSource cameraOrGallery, String rectoOrVerso, AppLocalizations localLnSetting) async {
     try {
       final cardImage = await ImagePicker().pickImage(source: cameraOrGallery);
@@ -2551,24 +2517,26 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         }); */
   }
 
-  void findMatchingPhoneAndEmailInDatabase() async {
+  Future<bool> findMatchingPhoneAndEmailInDatabase(String action) async {
+    var theEmail = _emailController.text;
     try {
-      await FirebaseFirestore.instance.collection("users").snapshots().any((element) {
+      var foundMatchForBoth = await FirebaseFirestore.instance.collection("users").get().then((element) {
+        /*  element.docChanges.forEach((change) {
+          print("SOMETHING CHANGED ${change.type} ____ ${change.doc.exists}");
+          change.type == DocumentChangeType.removed ? theEmail = '' : null;
+        }); */
         var matchingEmail = element.docs.any((element1) {
           Map<String, dynamic> data = element1.data();
-          // print("NUMBER EXISTSZSZ ${data['Phone Number'] == phoneNumber}");
-
-          return data['Email'] == _emailController.text;
+          return data['Email'] == theEmail;
         });
+        print("THIS IS MATCHING EMAIL: $matchingEmail");
         matchingEmail
             ? {print("EMAIL EXISTS IN THE DATABASE FROM FIRESTORE")}
             : print("EMAIL DOES NOT EXISTS IN THE DATABASE FROM FIRESTORE");
 
         var matchingPhone = element.docs.any((element1) {
           Map<String, dynamic> data = element1.data();
-          //print("NUMBER EXISTSZSZ ${data['Phone Number'] == phoneNumber} ________ $phoneNumber");
-
-          return data['Phone Number'] == finalTest.phoneNumber.toString();
+          return data['Phone Number'] == finalTest.phoneNumber.toString(); //== finalTest.phoneNumber.toString()
         });
         matchingPhone
             ? print("NUMBER EXISTS IN THE DATABASE FROM FIRESTORE")
@@ -2585,16 +2553,35 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         }
         if (!matchingEmail && !matchingPhone) {
           print("PREVIOUSLY REACHEDSTEP $result _ finalNum $finalTest");
-          /* proceed = true;
+          print("NO MATCHING NUMBER OR EMAIL FOUND");
+          setState(
+            () {
+              foundPhoneMailMatch.value = false;
+            },
+          );
+          if (activeStep == 0 && action == 'goToScanner') {
+            print("is special user: going to scanner");
             setState(() {
               activeStep = 1;
+            });
+          }
+          if (action == 'sendOTP') {
+            activeStep == 0
+                ? print("VALIDATION FOR OTP: not special user")
+                : print(
+                    "VALIDATION FOR OTP:SPECIAL USER"); /* setState(() {
+              foundPhoneMailMatch.value == false ? backgroundWaiting = true : null;k
             }); */
+          }
         }
 
-        return matchingPhone;
+        return foundPhoneMailMatch.value; //matchingEmail || matchingPhone;
       });
+
+      return foundMatchForBoth;
     } catch (e) {
       print("EXCEPTION OCCURED");
+      return true;
     }
   }
 }

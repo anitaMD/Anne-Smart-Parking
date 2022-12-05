@@ -13,11 +13,11 @@ import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:otp_text_field/otp_field.dart';
+import 'package:otp_text_field/style.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/models/pages/widgets/header_widget.dart';
 import 'package:smart_parking/models/theme_helper.dart';
 import 'package:smart_parking/screens/authenticate/test_register.dart';
-import 'package:smart_parking/screens/inside_app/home.dart';
 import 'package:smart_parking/screens/inside_app/testhome.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/screens/authenticate/reset_password.dart';
@@ -36,6 +36,8 @@ class TestLogin extends StatefulWidget {
 enum LoginMethod { emailPassword, phone, none }
 
 class TestLoginState extends State<TestLogin> {
+  late Timer _timer;
+  int _start = 5, otpTimeoutDuration = 40;
   List<Map<String, dynamic>> countries = [
     {"name": "Afghanistan", "flag": "🇦🇫", "code": "AF", "dial_code": "+93"},
     {"name": "Åland Islands", "flag": "🇦🇽", "code": "AX", "dial_code": "+358"},
@@ -287,15 +289,22 @@ class TestLoginState extends State<TestLogin> {
   LoginMethod loginMethod = LoginMethod.none;
   late FocusNode myFocusNode;
   final double _headerHeight = 250;
-  bool obscurText = true, listeningForOTP = false, numberAlreadyRegistered = false;
-  String selectedLoginMethodDropDown = 'Select A Login Method';
+  bool obscurText = true,
+      listeningForOTP = false,
+      numberAlreadyRegistered = false,
+      pinSuccess = false,
+      enableResend = false,
+      showOtpUi = false,
+      loadingSigningUserEmail = false;
+  int? tokenToResend;
+  String selectedLoginMethodDropDown = 'Select A Login Method', theCodeForPhone = 'ok', otpPin = '';
 
   ConnectivityResult connectionStatus = ConnectivityResult.none;
   final Connectivity _connectivity = Connectivity();
   late StreamSubscription<ConnectivityResult> connectivitySubscription;
   final OtpFieldController otpFieldController = OtpFieldController();
 
-  final internatKey = GlobalKey<FormState>();
+  final internatKey = GlobalKey<FormState>(), _pinMobileFormKey = GlobalKey<FormState>();
   PhoneNumber initializedNumber = PhoneNumber(
         isoCode: 'US',
         dialCode: '+1',
@@ -308,10 +317,7 @@ class TestLoginState extends State<TestLogin> {
       );
   UserProfile userProfile = UserProfile(
       id: '', fullName: '', email: '', phoneNumber: '', timeStamp: FieldValue.serverTimestamp(), profileImage: '');
-  //final formKey = GlobalKey<FormState>();
-  final _formKey = GlobalKey<FormState>();
-
-  //UserType _userType = UserType.normalUser;
+  final logEmailformKey = GlobalKey<FormState>(), phonelogFormKey = GlobalKey<FormState>();
   final List<String> loginMethodsDropDown = <String>['Select A Login Method', 'Email - Password', 'Phone Number'];
 
   final TextEditingController _emailController = TextEditingController(),
@@ -325,6 +331,13 @@ class TestLoginState extends State<TestLogin> {
 
   @override
   void initState() {
+    const oneSec = Duration(seconds: 1);
+
+    _timer = Timer.periodic(
+      oneSec,
+      (Timer timer) {},
+    );
+
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
     ));
@@ -348,9 +361,16 @@ class TestLoginState extends State<TestLogin> {
   void dispose() {
     // Clean up the focus node when the Form is disposed.
     myFocusNode.dispose();
+    _numberController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _timer.cancel();
+
     super.dispose();
   }
 
+//for AUTH LIMITS, check https://firebase.google.com/docs/auth/limits
+// for otp timer, check https://medium.com/codex/resend-otp-timer-dd0d899a424f
   Future<String> getCarrierCode(List<Map<String, dynamic>> countries) async {
     String code = await prefix.PhoneNumberUtil().carrierRegionCode();
     return code;
@@ -382,9 +402,43 @@ class TestLoginState extends State<TestLogin> {
     });
   }
 
+  void startTimer() {
+    _start = otpTimeoutDuration;
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (Timer timer) {
+        if (_start == 0) {
+          setState(() {
+            timer.cancel();
+          });
+        } else {
+          setState(() {
+            _start--;
+          });
+        }
+      },
+    );
+  }
+
   logInWithEmailPassword(AppLocalizations localLnSetting) async {
+    UserCredential? theUser;
     try {
-      await _auth.signInWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
+      setState(() {
+        loadingSigningUserEmail = true;
+      });
+      theUser =
+          await _auth.signInWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
+
+      theUser.user != null
+          ? {
+              await firestoreService
+                  .testgetUserFullName(theUser.user!)
+                  .then((value) => theUser!.user!.updateDisplayName(value)),
+              await firestoreService
+                  .testgetUserProfileImage(theUser.user!)
+                  .then((value) => value == 'none' ? null : theUser!.user!.updatePhotoURL(value))
+            }
+          : null;
 
       Fluttertoast.showToast(
           msg: 'Successfully logged in',
@@ -394,26 +448,18 @@ class TestLoginState extends State<TestLogin> {
           fontSize: 16.0);
 
       if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => const Home(
-                  fromLoginView: true,
-                  parkingToNavigateTo: {},
-                  newIndex: 0,
-                  timeUntilResStarts: 0,
-                )),
-      );
+      Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const TestHome()), (Route<dynamic> route) => false);
       _auth.idTokenChanges().listen((user) async {
         if (user != null) {
-          currentUser = FirebaseAuth.instance.currentUser;
+          //currentUser = FirebaseAuth.instance.currentUser;
           SharedPreferences prefs = await SharedPreferences.getInstance();
           prefs.setBool("isLoggedIn", false);
           print('USER IS SIGNED IN PERFECT! LOGIN');
 
-          if (currentUser != null) {
+          /*   if (currentUser != null) {
             await currentUser!.reload();
-          }
+          } */
         } else {
           print('USER IS SIGNED OUT PERFECT! FROM LOGIN WITH EMAIL');
         }
@@ -480,12 +526,25 @@ class TestLoginState extends State<TestLogin> {
           }
       }
       print('Error: $e');
+    } finally {
+      currentUser == null
+          ? setState(
+              () => loadingSigningUserEmail = false,
+            )
+          : null;
     }
   } //closing brackets
 
   @override
   Widget build(BuildContext context) {
     var localLnSetting = AppLocalizations.of(context)!;
+    print("listeningForOTP : $listeningForOTP");
+    var theCountry = countries.where((element) => element['code'].toString().toLowerCase() == theCodeForPhone);
+    theCountry.isNotEmpty
+        ? {
+            print('HA ${theCountry.first} ${theCountry.first['flag'].runtimeType}'),
+          }
+        : null;
 
     return Scaffold(
         body: GestureDetector(
@@ -503,10 +562,23 @@ class TestLoginState extends State<TestLogin> {
                       children: [
                         SizedBox(
                           height: _headerHeight,
-                          child: HeaderWidget(
-                            height: _headerHeight,
-                            icon: Icons.login_rounded,
-                            showIcon: false,
+                          child: GestureDetector(
+                            onTap: () {
+                              print("TAPPED ON BACK TO CHNAGE LOGIN NUMBER listeningForOTP $listeningForOTP");
+                              listeningForOTP
+                                  ? null
+                                  : setState(() {
+                                      showOtpUi = false;
+                                      _numberController.clear();
+                                      listeningForOTP = false;
+                                    });
+                            },
+                            child: HeaderWidget(
+                              height: _headerHeight,
+                              icon: Icons.keyboard_backspace_rounded,
+                              showIcon: false,
+                              fromLoginVerif: showOtpUi,
+                            ),
                           ), //let's create a common header widget
                         ),
                         CircleAvatar(
@@ -519,142 +591,153 @@ class TestLoginState extends State<TestLogin> {
                         ),
                       ],
                     ),
-                    SafeArea(
-                        child: Container(
-                            padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                            margin: const EdgeInsets.fromLTRB(20, 10, 20, 10), // This will be the login form
-                            child: Column(
-                              children: [
-                                Text(
-                                  localLnSetting.welcomeToApp,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), //fontSize: 60,
-                                ),
-                                const SizedBox(height: 15),
-                                Text(
-                                  localLnSetting.login,
-                                  style: const TextStyle(color: Colors.grey, fontSize: 15, fontWeight: FontWeight.w500),
-                                ),
-                                const SizedBox(height: 30.0),
-                                loginMethod == LoginMethod.none
-                                    ? DropdownButton<String>(
-                                        value: selectedLoginMethodDropDown,
-                                        icon: const Icon(Icons.arrow_downward),
-                                        elevation: 16,
-                                        alignment: Alignment.center,
-                                        style: const TextStyle(color: Colors.deepPurple),
-                                        underline: Container(
-                                          height: 2,
-                                          color: Colors.deepPurpleAccent,
-                                        ),
-                                        onChanged: (String? value) {
-                                          // This is called when the user selects an item.
-                                          setState(() {
-                                            selectedLoginMethodDropDown = value!;
-                                          });
-                                        },
-                                        items: loginMethodsDropDown.map<DropdownMenuItem<String>>((String value) {
-                                          return DropdownMenuItem<String>(
-                                            value: value,
-                                            child: Text(value),
-                                          );
-                                        }).toList(),
-                                      )
-                                    : Container(),
-                                loginMethod == LoginMethod.emailPassword
-                                    ? Form(
-                                        key: _formKey,
-                                        autovalidateMode: AutovalidateMode.disabled,
-                                        child: Column(
-                                          children: [
-                                            Container(
-                                              decoration: ThemeHelper().inputBoxDecorationShaddow(),
-                                              child: TextFormField(
-                                                validator: FormBuilderValidators.compose([
-                                                  FormBuilderValidators.required(),
-                                                  FormBuilderValidators.match(
-                                                      r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$",
-                                                      errorText: localLnSetting.logErrorBadEmailFormat)
-                                                ]),
-                                                controller: _emailController,
-                                                keyboardType: TextInputType.emailAddress,
-                                                onChanged: (value) {
-                                                  print("THAT'S THE VALUE $value");
-                                                },
-                                                decoration: ThemeHelper().textInputDecoration(
-                                                    Icons.mail,
-                                                    localLnSetting.loginEmailLabel,
-                                                    localLnSetting.loginEmailPlaceholder),
-                                              ),
+                    showOtpUi
+                        ? otpUI(localLnSetting)
+                        : SafeArea(
+                            child: Container(
+                                padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                                margin: const EdgeInsets.fromLTRB(20, 10, 20, 10), // This will be the login form
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      localLnSetting.welcomeToApp,
+                                      textAlign: TextAlign.center,
+                                      overflow: TextOverflow.visible,
+                                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), //fontSize: 60,
+                                    ),
+                                    const SizedBox(height: 15),
+                                    Text(
+                                      localLnSetting.login,
+                                      style: const TextStyle(
+                                          color: Colors.grey, fontSize: 15, fontWeight: FontWeight.w500),
+                                    ),
+                                    const SizedBox(height: 30.0),
+                                    loginMethod == LoginMethod.none
+                                        ? DropdownButton<String>(
+                                            value: selectedLoginMethodDropDown,
+                                            icon: const Icon(Icons.arrow_downward),
+                                            elevation: 16,
+                                            alignment: Alignment.center,
+                                            style: const TextStyle(color: Colors.deepPurple),
+                                            underline: Container(
+                                              height: 2,
+                                              color: Colors.deepPurpleAccent,
                                             ),
-                                            const SizedBox(height: 30.0),
-                                            Container(
-                                              decoration: ThemeHelper().inputBoxDecorationShaddow(),
-                                              child: TextFormField(
-                                                  autovalidateMode: AutovalidateMode.disabled,
-                                                  validator: FormBuilderValidators.compose([
-                                                    FormBuilderValidators.required(),
-                                                  ]),
-                                                  controller: _passwordController,
-                                                  obscureText: obscurText,
-                                                  decoration: InputDecoration(
-                                                    prefixIcon: const Icon(
-                                                      Icons.lock,
-                                                      size: 25,
-                                                      //color: Color.fromARGB(173, 0, 0, 0),
-                                                    ),
-                                                    suffixIcon: GestureDetector(
-                                                      onTap: () {
-                                                        setState(() {
-                                                          obscurText == true ? obscurText = false : obscurText = true;
-                                                        });
-                                                      },
-                                                      child: Icon(obscurText
-                                                          ? Icons.visibility_off_outlined
-                                                          : Icons.visibility_outlined),
-                                                    ),
-                                                    labelText: localLnSetting.loginPasswordLabel,
-                                                    hintText: localLnSetting.loginPasswordPlaceholder,
-                                                    fillColor: Colors.white,
-                                                    filled: true,
-                                                    contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                                                    focusedBorder: OutlineInputBorder(
-                                                        borderRadius: BorderRadius.circular(100.0),
-                                                        borderSide: const BorderSide(color: Colors.grey)),
-                                                    enabledBorder: OutlineInputBorder(
-                                                        borderRadius: BorderRadius.circular(100.0),
-                                                        borderSide: BorderSide(color: Colors.grey.shade400)),
-                                                    errorBorder: OutlineInputBorder(
-                                                        borderRadius: BorderRadius.circular(100.0),
-                                                        borderSide: const BorderSide(color: Colors.red, width: 2.0)),
-                                                    focusedErrorBorder: OutlineInputBorder(
-                                                        borderRadius: BorderRadius.circular(100.0),
-                                                        borderSide: const BorderSide(color: Colors.red, width: 2.0)),
-                                                  )),
-                                            ),
-                                            const SizedBox(height: 15.0),
-                                            Container(
-                                              margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                              alignment: Alignment.topRight,
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  Navigator.push(context,
-                                                      MaterialPageRoute(builder: (context) => const ResetPassword()));
-                                                  /*   Navigator.push(
+                                            onChanged: (String? value) {
+                                              // This is called when the user selects an item.
+                                              setState(() {
+                                                selectedLoginMethodDropDown = value!;
+                                              });
+                                            },
+                                            items: loginMethodsDropDown.map<DropdownMenuItem<String>>((String value) {
+                                              return DropdownMenuItem<String>(
+                                                value: value,
+                                                child: Text(value),
+                                              );
+                                            }).toList(),
+                                          )
+                                        : Container(),
+                                    loginMethod == LoginMethod.emailPassword
+                                        ? Form(
+                                            key: logEmailformKey,
+                                            autovalidateMode: AutovalidateMode.disabled,
+                                            child: Column(
+                                              children: [
+                                                Container(
+                                                  decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                                                  child: TextFormField(
+                                                    validator: FormBuilderValidators.compose([
+                                                      FormBuilderValidators.required(),
+                                                      FormBuilderValidators.match(
+                                                          r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$",
+                                                          errorText: localLnSetting.logErrorBadEmailFormat)
+                                                    ]),
+                                                    controller: _emailController,
+                                                    keyboardType: TextInputType.emailAddress,
+                                                    onChanged: (value) {
+                                                      print("THAT'S THE VALUE $value");
+                                                    },
+                                                    decoration: ThemeHelper().textInputDecoration(
+                                                        Icons.mail,
+                                                        localLnSetting.loginEmailLabel,
+                                                        localLnSetting.loginEmailPlaceholder),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 30.0),
+                                                Container(
+                                                  decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                                                  child: TextFormField(
+                                                      autovalidateMode: AutovalidateMode.disabled,
+                                                      validator: FormBuilderValidators.compose([
+                                                        FormBuilderValidators.required(),
+                                                      ]),
+                                                      controller: _passwordController,
+                                                      obscureText: obscurText,
+                                                      decoration: InputDecoration(
+                                                        prefixIcon: const Icon(
+                                                          Icons.lock,
+                                                          size: 25,
+                                                          //color: Color.fromARGB(173, 0, 0, 0),
+                                                        ),
+                                                        suffixIcon: GestureDetector(
+                                                          onTap: () {
+                                                            setState(() {
+                                                              obscurText == true
+                                                                  ? obscurText = false
+                                                                  : obscurText = true;
+                                                            });
+                                                          },
+                                                          child: Icon(obscurText
+                                                              ? Icons.visibility_off_outlined
+                                                              : Icons.visibility_outlined),
+                                                        ),
+                                                        labelText: localLnSetting.loginPasswordLabel,
+                                                        hintText: localLnSetting.loginPasswordPlaceholder,
+                                                        fillColor: Colors.white,
+                                                        filled: true,
+                                                        contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                                                        focusedBorder: OutlineInputBorder(
+                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderSide: const BorderSide(color: Colors.grey)),
+                                                        enabledBorder: OutlineInputBorder(
+                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderSide: BorderSide(color: Colors.grey.shade400)),
+                                                        errorBorder: OutlineInputBorder(
+                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderSide:
+                                                                const BorderSide(color: Colors.red, width: 2.0)),
+                                                        focusedErrorBorder: OutlineInputBorder(
+                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderSide:
+                                                                const BorderSide(color: Colors.red, width: 2.0)),
+                                                      )),
+                                                ),
+                                                const SizedBox(height: 15.0),
+                                                Container(
+                                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
+                                                  alignment: Alignment.topRight,
+                                                  child: GestureDetector(
+                                                    onTap: () {
+                                                      Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (context) => const ResetPassword()));
+                                                      /*   Navigator.push(
                                         context,
                                         MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
                                       ); */
-                                                },
-                                                child: Text(
-                                                  localLnSetting.forgotPassword,
-                                                  style: const TextStyle(
-                                                      color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500),
+                                                    },
+                                                    child: Text(
+                                                      localLnSetting.forgotPassword,
+                                                      style: const TextStyle(
+                                                          color: Colors.grey,
+                                                          fontSize: 12,
+                                                          fontWeight: FontWeight.w500),
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 15.0),
-                                            /* Container(
+                                                const SizedBox(height: 15.0),
+                                                /* Container(
                                               decoration: ThemeHelper().buttonBoxDecoration(context),
                                               child: ElevatedButton(
                                                 style: ThemeHelper().buttonStyle(),
@@ -675,168 +758,310 @@ class TestLoginState extends State<TestLogin> {
                                               ),
                                             ),
                                              */
-                                            loginButton(loginMethod, localLnSetting),
-                                            Container(
-                                              margin: const EdgeInsets.fromLTRB(10, 20, 10, 20),
-                                              //child: Text('Don\'t have an account? Create'),
-                                              child: Text.rich(TextSpan(children: [
-                                                TextSpan(text: localLnSetting.noAccount),
-                                                TextSpan(
-                                                  text: localLnSetting.createAccount,
-                                                  recognizer: TapGestureRecognizer()
-                                                    ..onTap = () {
-                                                      Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                              builder: (context) =>
-                                                                  const TestRegister() /*const TestingOTP() TestRegister() */));
-                                                    },
-                                                  style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Theme.of(context).colorScheme.secondary,
-                                                      fontSize: 15),
+                                                loginButton(loginMethod, localLnSetting),
+                                                Container(
+                                                  margin: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                                                  //child: Text('Don\'t have an account? Create'),
+                                                  child: Text.rich(TextSpan(children: [
+                                                    TextSpan(text: localLnSetting.noAccount),
+                                                    TextSpan(
+                                                      text: localLnSetting.createAccount,
+                                                      recognizer: TapGestureRecognizer()
+                                                        ..onTap = () {
+                                                          Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                  builder: (context) =>
+                                                                      const TestRegister() /*const TestingOTP() TestRegister() */));
+                                                        },
+                                                      style: TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Theme.of(context).colorScheme.secondary,
+                                                          fontSize: 15),
+                                                    ),
+                                                  ])),
                                                 ),
-                                              ])),
-                                            ),
-                                          ],
-                                        ))
-                                    : loginMethod == LoginMethod.phone
+                                              ],
+                                            ))
+                                        : loginMethod == LoginMethod.phone
+                                            ? Column(
+                                                children: [
+                                                  Form(
+                                                    key: phonelogFormKey,
+                                                    onChanged: () {
+                                                      phonelogFormKey.currentState!.save();
+                                                      //print("THIS IS THE CURRENT STATE: ${regFormKey.currentState}");
+                                                    },
+                                                    child: InternationalPhoneNumberInput(
+                                                      key: internatKey,
+                                                      onInputChanged: (PhoneNumber changingNumber) {
+                                                        print("changingNumber ${changingNumber.phoneNumber}");
+                                                      },
+                                                      locale: Get.locale!.languageCode,
+                                                      selectorConfig: const SelectorConfig(
+                                                        setSelectorButtonAsPrefixIcon: true,
+                                                        trailingSpace: false,
+                                                        selectorType: PhoneInputSelectorType.DROPDOWN,
+                                                      ),
+                                                      inputDecoration: InputDecoration(
+                                                        labelText: localLnSetting.regNumberLabel,
+                                                        hintText: localLnSetting.regNumberPlaceholder,
+                                                        fillColor: Colors.white,
+                                                        filled: true,
+                                                        contentPadding: const EdgeInsets.fromLTRB(20, 10, 0, 10),
+                                                        focusedBorder: OutlineInputBorder(
+                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderSide: const BorderSide(color: Colors.grey)),
+                                                        enabledBorder: OutlineInputBorder(
+                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderSide: BorderSide(color: Colors.grey.shade400)),
+                                                        errorBorder: OutlineInputBorder(
+                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderSide:
+                                                                const BorderSide(color: Colors.red, width: 2.0)),
+                                                        focusedErrorBorder: OutlineInputBorder(
+                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderSide:
+                                                                const BorderSide(color: Colors.red, width: 2.0)),
+                                                      ),
+                                                      ignoreBlank: false,
+                                                      errorMessage: localLnSetting.regNumberError,
+                                                      autoValidateMode: AutovalidateMode.disabled,
+                                                      selectorTextStyle: const TextStyle(color: Colors.black),
+                                                      initialValue: initializedNumber,
+                                                      textFieldController: _numberController,
+                                                      formatInput: false,
+                                                      keyboardType: const TextInputType.numberWithOptions(),
+                                                      onSaved: (PhoneNumber thenumber) {
+                                                        print('On Saved: $thenumber');
+                                                        setState(() {
+                                                          finalTest = thenumber;
+                                                        });
+                                                      },
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 30.0),
+                                                  loginButton(loginMethod, localLnSetting),
+                                                ],
+                                              )
+                                            : Container(
+                                                margin: const EdgeInsets.only(top: 30),
+                                                decoration: ThemeHelper().buttonBoxDecoration(context),
+                                                child: ElevatedButton(
+                                                  style: selectedLoginMethodDropDown == loginMethodsDropDown.first
+                                                      ? ButtonStyle(
+                                                          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                                                            RoundedRectangleBorder(
+                                                              borderRadius: BorderRadius.circular(30.0),
+                                                            ),
+                                                          ),
+                                                          minimumSize: MaterialStateProperty.all(const Size(50, 50)),
+                                                          backgroundColor:
+                                                              MaterialStateProperty.all(Colors.white.withOpacity(0.4)),
+                                                          shadowColor: MaterialStateProperty.all(Colors.brown),
+                                                        )
+                                                      : ThemeHelper().buttonStyle(),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
+                                                    child: Text(
+                                                      localLnSetting.regNextButton.toUpperCase(),
+                                                      style: const TextStyle(
+                                                          fontSize: 20,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Colors.white),
+                                                    ),
+                                                  ),
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      selectedLoginMethodDropDown == loginMethodsDropDown.first
+                                                          ? null
+                                                          : selectedLoginMethodDropDown ==
+                                                                  loginMethodsDropDown.elementAt(1)
+                                                              ? loginMethod = LoginMethod.emailPassword
+                                                              : loginMethod = LoginMethod.phone;
+                                                    });
+
+                                                    //After successful login we will redirect to profile page. Let's create profile page now
+                                                    /*  Navigator.pushReplacement(
+                                          context, MaterialPageRoute(builder: (context) => const ProfilePage())); */
+                                                  },
+                                                ),
+                                              ),
+                                    loginMethod != LoginMethod.none
                                         ? Column(
                                             children: [
-                                              InternationalPhoneNumberInput(
-                                                key: internatKey,
-                                                onInputChanged: (PhoneNumber changingNumber) {
-                                                  print("changingNumber ${changingNumber.phoneNumber}");
-                                                },
-                                                onInputValidated: (bool value) {
-                                                  /*  setState(() {
-                              isPhoneNumberValidated = value;
-                            }); */
-                                                },
-                                                locale: Get.locale!.languageCode,
-                                                selectorConfig: const SelectorConfig(
-                                                  setSelectorButtonAsPrefixIcon: true,
-                                                  trailingSpace: false,
-                                                  selectorType: PhoneInputSelectorType.DROPDOWN,
-                                                ),
-                                                inputDecoration: InputDecoration(
-                                                  labelText: localLnSetting.regNumberLabel,
-                                                  hintText: localLnSetting.regNumberPlaceholder,
-                                                  fillColor: Colors.white,
-                                                  filled: true,
-                                                  contentPadding: const EdgeInsets.fromLTRB(20, 10, 0, 10),
-                                                  focusedBorder: OutlineInputBorder(
-                                                      borderRadius: BorderRadius.circular(100.0),
-                                                      borderSide: const BorderSide(color: Colors.grey)),
-                                                  enabledBorder: OutlineInputBorder(
-                                                      borderRadius: BorderRadius.circular(100.0),
-                                                      borderSide: BorderSide(color: Colors.grey.shade400)),
-                                                  errorBorder: OutlineInputBorder(
-                                                      borderRadius: BorderRadius.circular(100.0),
-                                                      borderSide: const BorderSide(color: Colors.red, width: 2.0)),
-                                                  focusedErrorBorder: OutlineInputBorder(
-                                                      borderRadius: BorderRadius.circular(100.0),
-                                                      borderSide: const BorderSide(color: Colors.red, width: 2.0)),
-                                                ),
-                                                ignoreBlank: false,
-                                                errorMessage: localLnSetting.regNumberError,
-                                                autoValidateMode: AutovalidateMode.disabled,
-                                                selectorTextStyle: const TextStyle(color: Colors.black),
-                                                initialValue: initializedNumber,
-                                                textFieldController: _numberController,
-                                                formatInput: false,
-                                                keyboardType: const TextInputType.numberWithOptions(),
-                                                onSaved: (PhoneNumber thenumber) {
-                                                  print('On Saved: $thenumber');
+                                              TextButton(
+                                                onPressed: () {
                                                   setState(() {
-                                                    finalTest = thenumber;
+                                                    loginMethod = LoginMethod.none;
                                                   });
                                                 },
+                                                child: const Text("Choose another method"),
                                               ),
-                                              const SizedBox(height: 30.0),
-                                              loginButton(loginMethod, localLnSetting),
+                                              listeningForOTP || loadingSigningUserEmail
+                                                  ? SpinKitFadingCircle(
+                                                      size: 50,
+                                                      itemBuilder: (BuildContext context, int index) {
+                                                        return const DecoratedBox(
+                                                          decoration: BoxDecoration(
+                                                              color: Colors.green, shape: BoxShape.circle),
+                                                        );
+                                                      })
+                                                  : Container(),
                                             ],
                                           )
                                         : Container(
-                                            margin: const EdgeInsets.only(top: 30),
-                                            decoration: ThemeHelper().buttonBoxDecoration(context),
-                                            child: ElevatedButton(
-                                              style: ThemeHelper().buttonStyle(),
-                                              child: Padding(
-                                                padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
-                                                child: Text(
-                                                  localLnSetting.regNextButton.toUpperCase(),
-                                                  style: const TextStyle(
-                                                      fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                                                ),
+                                            margin: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                                            //child: Text('Don\'t have an account? Create'),
+                                            child: Text.rich(TextSpan(children: [
+                                              TextSpan(text: localLnSetting.noAccount),
+                                              TextSpan(
+                                                text: localLnSetting.createAccount,
+                                                recognizer: TapGestureRecognizer()
+                                                  ..onTap = () {
+                                                    Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                const TestRegister() /*const TestingOTP() TestRegister() */));
+                                                  },
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                    fontSize: 15),
                                               ),
-                                              onPressed: () {
-                                                setState(() {
-                                                  selectedLoginMethodDropDown == loginMethodsDropDown.first
-                                                      ? null
-                                                      : selectedLoginMethodDropDown == loginMethodsDropDown.elementAt(1)
-                                                          ? loginMethod = LoginMethod.emailPassword
-                                                          : loginMethod = LoginMethod.phone;
-                                                });
-
-                                                //After successful login we will redirect to profile page. Let's create profile page now
-                                                /*  Navigator.pushReplacement(
-                                          context, MaterialPageRoute(builder: (context) => const ProfilePage())); */
-                                              },
-                                            ),
+                                            ])),
                                           ),
-                                loginMethod != LoginMethod.none
-                                    ? Column(
-                                        children: [
-                                          TextButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                loginMethod = LoginMethod.none;
-                                              });
-                                            },
-                                            child: const Text("Choose another method"),
-                                          ),
-                                          listeningForOTP
-                                              ? SpinKitFadingCircle(
-                                                  size: 50,
-                                                  itemBuilder: (BuildContext context, int index) {
-                                                    return const DecoratedBox(
-                                                      decoration:
-                                                          BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-                                                    );
-                                                  })
-                                              : Container(),
-                                        ],
-                                      )
-                                    : Container(
-                                        margin: const EdgeInsets.fromLTRB(10, 20, 10, 20),
-                                        //child: Text('Don\'t have an account? Create'),
-                                        child: Text.rich(TextSpan(children: [
-                                          TextSpan(text: localLnSetting.noAccount),
-                                          TextSpan(
-                                            text: localLnSetting.createAccount,
-                                            recognizer: TapGestureRecognizer()
-                                              ..onTap = () {
-                                                Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            const TestRegister() /*const TestingOTP() TestRegister() */));
-                                              },
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).colorScheme.secondary,
-                                                fontSize: 15),
-                                          ),
-                                        ])),
-                                      ),
-                                const SizedBox(height: 30.0),
-                              ],
-                            ))),
+                                    const SizedBox(height: 30.0),
+                                  ],
+                                ))),
                   ],
                 ),
               ),
             )));
+  }
+
+  otpUI(AppLocalizations localLnSetting) {
+    return SafeArea(
+      child: Container(
+        margin: const EdgeInsets.only(top: 50),
+        padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              alignment: Alignment.topLeft,
+              margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    localLnSetting.numVerifHeader,
+                    style: const TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color: Colors.black54),
+                    // textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Text(
+                    '${localLnSetting.numVerifBody} ${finalTest.phoneNumber}',
+                    style: const TextStyle(
+                        // fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black54),
+                    // textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40.0),
+            Form(
+              key: _pinMobileFormKey,
+              child: Column(
+                children: <Widget>[
+                  SizedBox(
+                    width: 200,
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: OTPTextField(
+                            length: 6,
+                            width: 200,
+                            controller: otpFieldController,
+                            fieldWidth: 30,
+                            style: const TextStyle(fontSize: 30),
+                            textFieldAlignment: MainAxisAlignment.spaceAround,
+                            fieldStyle: FieldStyle.underline,
+                            onChanged: (value) {
+                              setState(
+                                () {
+                                  otpPin = value;
+                                },
+                              );
+                            },
+                            onCompleted: (pin) {
+                              setState(() {
+                                pinSuccess = true;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 50.0),
+                  _start == 0
+                      ? Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: localLnSetting.numVerifDidntReceiveCode,
+                                style: const TextStyle(
+                                  color: Colors.black38,
+                                ),
+                              ),
+                              TextSpan(
+                                text: localLnSetting.numVerifResendCode,
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    setState(() {
+                                      _start = otpTimeoutDuration;
+                                    });
+                                    // enableResend = true; this is set to true when timer is over and no code received
+                                    enableResend
+                                        ? resendCode("${finalTest.dialCode.toString()} ${_numberController.text}")
+                                        : null;
+                                  },
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              "Resend Code in",
+                              style: TextStyle(
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              _start.toString(),
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                            ),
+                          ],
+                        ),
+                  const SizedBox(height: 40.0),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
   }
 
   loginButton(LoginMethod loginMethod, AppLocalizations localLnSetting) {
@@ -855,15 +1080,9 @@ class TestLoginState extends State<TestLogin> {
               ),
               onPressed: () async {
                 connectionStatus.toString() != 'ConnectivityResult.none'
-                    ? loginMethod == LoginMethod.emailPassword
-                        ? submitLoginForm(localLnSetting)
-                        : {
-                            phoneNumberAlreadyExists(finalTest),
-                            if (numberAlreadyRegistered)
-                              {verifyPhone('${finalTest.dialCode.toString()} ${_numberController.text}')}
-                            else
-                              {showSnackBarText('No account linked to this number')}
-                          }
+                    ? loginMethod == LoginMethod.emailPassword || loginMethod == LoginMethod.phone
+                        ? submitLoginForm(localLnSetting, loginMethod)
+                        : null
                     : listeningForOTP
                         ? null
                         : showSnackBarText(localLnSetting.noInternetError);
@@ -943,10 +1162,10 @@ class TestLoginState extends State<TestLogin> {
     }
   }
 
-  Future<void> verifyPhone(String number) async {
+  Future<void> verifyPhone(String number, {required bool resendSMS, int? resendToken = 0}) async {
     await FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: number,
-      timeout: const Duration(seconds: 40),
+      timeout: Duration(seconds: otpTimeoutDuration),
       verificationCompleted: (phoneAuthCredential) async {
         //showSnackBarText("VERIFICATION COMPLETED!");
         //phoneAuthCredential = (PhoneAuthProvider.credential(verificationId: verID, smsCode: otpPin));
@@ -956,70 +1175,135 @@ class TestLoginState extends State<TestLogin> {
           print("DIGIT : $digit");
           otpFieldController.setValue(digit, i++);
         }
-        //await _auth.currentUser!.linkWithCredential(phoneAuthCredential);
         // phoneNumberAlreadyExists(finalTest);
+        try {
+          await _auth.signInWithCredential(phoneAuthCredential).whenComplete(() => setState(
+                () {
+                  listeningForOTP = false;
+                },
+              ));
+          if (!mounted) return;
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const TestHome()), (Route<dynamic> route) => false);
 
-        await _auth.signInWithCredential(phoneAuthCredential).whenComplete(() => setState(
-              () {
-                listeningForOTP = false;
-              },
-            ));
-        if (mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const TestHome(),
-          ),
-        );
+          _auth.idTokenChanges().listen((user) async {
+            if (user != null) {
+              // currentUser = FirebaseAuth.instance.currentUser;
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              prefs.setBool("isLoggedIn", false);
+              print('USER IS SIGNED IN PERFECT! LOGIN');
+              /*    if (currentUser != null) {
+                await currentUser!.reload();
+              } */
+            } else {
+              print('USER IS SIGNED OUT PERFECT! FROM LOGIN WITH EMAIL');
+            }
+          });
+        } on FirebaseAuthException catch (e) {
+          switch (e.code) {
+            case "invalid-email":
+            case "user-not-found":
+              {
+                Fluttertoast.showToast(
+                    msg: e.message!,
+                    toastLength: Toast.LENGTH_LONG,
+                    gravity: ToastGravity.CENTER,
+                    timeInSecForIosWeb: 1,
+                    fontSize: 16.0);
+                print(e.code); //for me to see on the debugging console
+              }
+              break;
+
+            default:
+              {}
+          }
+          print('Error: $e');
+        }
       },
       verificationFailed: (FirebaseAuthException e) {
         showSnackBarText("Auth Failed! ${e.message}");
+        setState(() {
+          enableResend = true;
+          listeningForOTP = false;
+        });
         if (e.code == 'invalid-phone-number') {
           showSnackBarText('The provided phone number is not valid.');
         }
       },
       codeSent: (String verificationId, int? resendToken) {
-        showSnackBarText("OTP Sent!");
+        //handle timer restart on resent
+        setState(
+          () {
+            showOtpUi = true;
+          },
+        );
+        startTimer();
+        resendSMS ? showSnackBarText("OTP Sent!") : {showSnackBarText("OTP Resent!")};
         setState(() {
           //verID = verificationId;
           //savedNumber = _numberController.text;
-          listeningForOTP = true;
-          // resentToken = resendToken;
-          // _numberController.clear();
+          resendSMS ? enableResend = false : null;
+          //listeningForOTP = true;
+          tokenToResend = resendToken;
         });
       },
-      //forceResendingToken: resentToken,
+      forceResendingToken: resendSMS ? tokenToResend : null,
       codeAutoRetrievalTimeout: (String verificationId) {
         showSnackBarText("Timeout!"); // : showSnackBarText("Auth Completed!");
+        setState(() {
+          enableResend = true;
+          listeningForOTP = false;
+        });
       },
     );
   }
 
-  bool savedFormFields() {
-    final form = _formKey.currentState;
+  bool savedFormFields(GlobalKey<FormState> formKey) {
+    final form = formKey.currentState;
 
     if (form!.validate()) {
       form.save();
-      print('Form is valid. Email: $_emailController , Password: $_passwordController');
+      formKey == logEmailformKey
+          ? {print('Form is valid. Email: $_emailController , Password: $_passwordController')}
+          : print("Form is valid. PhoneNumber ${finalTest.phoneNumber}");
       return true;
     }
     return false;
   }
 
-  void submitLoginForm(AppLocalizations localLnSetting) async {
-    if (savedFormFields()) {
-      logInWithEmailPassword(localLnSetting);
+  void submitLoginForm(AppLocalizations localLnSetting, LoginMethod loginMethod) async {
+    if (loginMethod == LoginMethod.emailPassword) {
+      if (savedFormFields(logEmailformKey)) {
+        logInWithEmailPassword(localLnSetting);
+      }
+    } else {
+      if (savedFormFields(phonelogFormKey)) {
+        await phoneNumberAlreadyExists(finalTest);
+      }
     }
   }
 
   phoneNumberAlreadyExists(PhoneNumber finalTest) {
     firestoreService.doesPhoneNumberAlreadyExist(phoneNumber: finalTest.phoneNumber.toString()).then((value) {
-      print("VALUE IS : $value");
+      print("VALUE IS : $value __ ${finalTest.phoneNumber}");
       setState(
-        () {
-          numberAlreadyRegistered = value;
-        },
+        () => numberAlreadyRegistered = value,
       );
+
+      if (numberAlreadyRegistered) {
+        setState(
+          () => listeningForOTP = true,
+        );
+
+        verifyPhone('${finalTest.dialCode.toString()} ${_numberController.text}', resendSMS: false);
+      } else {
+        showSnackBarText('No account linked to this number');
+      }
     });
+  }
+
+  void resendCode(String userPhoneNumber) {
+    verifyPhone(userPhoneNumber, resendSMS: true, resendToken: tokenToResend);
   }
 }
 
