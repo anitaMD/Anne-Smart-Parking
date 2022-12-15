@@ -649,7 +649,7 @@ class WalletState extends State<Wallet> {
             break;
           case DocumentChangeType.modified:
             debugPrint("Document Just Modified: ${change.doc.data()}");
-            allTransactionsWithIDs.length < event.docs.length
+            allWalletTopUpIDs.length < event.docs.length
                 ? {
                     allTransactionsWithIDs.addAll([
                       {
@@ -657,9 +657,11 @@ class WalletState extends State<Wallet> {
                       }
                     ]),
                     allWalletTopUpIDs.add(change.doc.id),
-                    theDocToUpdate.update({'Balance': int.parse(balanceInCFA) + change.doc.data()!['TopUp Amount']}),
-                    theDocToUpdate.update({'Transactions.Top Ups.IDs': allWalletTopUpIDs}),
-                    theDocToUpdate.update({'Transactions.Top Ups.Total Entries': totalEntriesTopUps + 1}),
+                    theDocToUpdate.update({
+                      'Balance': int.parse(balanceInCFA) + change.doc.data()!['TopUp Amount'],
+                      'Transactions.Top Ups.IDs': allWalletTopUpIDs,
+                      'Transactions.Top Ups.Total Entries': totalEntriesTopUps + 1
+                    }),
                   }
                 : null;
             debugPrint("alltransactionsAFTER LISTEN $allTransactionsWithIDs ___ ${allTransactionsWithIDs.length}");

@@ -18,7 +18,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  //await init;
+  await init;
   debugPrint("Handling a background message...: ${message.notification!.body}");
 }
 
@@ -104,7 +104,12 @@ class _MyAppState extends State<MyApp> {
             GlobalWidgetsLocalizations.delegate,
           ],
           debugShowCheckedModeBanner: false,
-          home: widget.status == true ? const TestLogin() : const TestHome(),
+          home: widget.status == true
+              ? const TestLogin()
+              : const TestHome(
+                  timeUntilReservationStarts: 0,
+                  newMoreUrgentBooking: {},
+                ),
           /* widget.status == true
               ? const LoginRegister()
               : const Home(

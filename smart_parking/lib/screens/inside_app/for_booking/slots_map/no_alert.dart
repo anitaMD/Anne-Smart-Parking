@@ -1,4 +1,7 @@
 // ignore_for_file: prefer_typing_uninitialized_variables, avoid_function_literals_in_foreach_calls, unused_local_variable
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -8,7 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/booking_overview.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/slots_map/select_vehicule.dart';
-import 'package:smart_parking/screens/inside_app/home.dart';
+import 'package:smart_parking/screens/inside_app/testhome.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -17,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_parking/notifiers/booking_state_management.dart';
 import 'package:im_stepper/stepper.dart';
 import 'package:time_range_picker/time_range_picker.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BookingThroughSlotsMapNoAlertDialog extends StatefulWidget {
   final String receivedID;
@@ -31,6 +35,11 @@ class BookingThroughSlotsMapNoAlertDialog extends StatefulWidget {
 }
 
 class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlotsMapNoAlertDialog> {
+  //CONNECTIVITY
+  ConnectivityResult _connectionStatus = ConnectivityResult.none;
+  final Connectivity _connectivity = Connectivity();
+  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
+
   //AUTHENTICATION
 
   var myDB = FirebaseFirestore.instance;
@@ -46,6 +55,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       spaceBetweenSlots = 35.0,
       alleySpotWidthRatio = 1 / 4;
   bool isSelected = false, anyReservationForSelectedDay = false;
+  bool isSpecialUser = false;
 
   Transform occupiedSpotIconLegend = Transform.rotate(
       angle: 50.15,
@@ -84,7 +94,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       reShowSelectedCarCard = false,
       dontShowAlleyAlertAgainTemporairyly = false,
       updatedClosingAndOpening = false,
-      doDisplayAvailabilityForWholeDay = false;
+      doDisplayAvailabilityForWholeDay = false,
+      redirectingToDashboard = false;
 
   Set rAvailableIDs = {},
       rOccupiedAfterBookedIDs = {},
@@ -116,7 +127,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
 //BOOKER
 
-  Map<String, dynamic> testallBookedTimeSlotsInMinutes = {};
+  Map<String, dynamic> testallBookedTimeSlotsInMinutes = {}, theReservationDoublon = {};
   Set<TimeOfDay> allBookedTimeSlots = {};
   Map<String, dynamic> testallBookedTimeSlots = {},
       allReservationsSameDaySameParkingWithKey = {},
@@ -156,6 +167,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   @override
   void initState() {
     currentlySignedInUser = firebaseService.auth.currentUser;
+    initConnectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
 
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -172,6 +185,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     );
 
     fetchParkingSlotsInfoFromFB();
+    currentlySignedInUser != null
+        ? getUserSpecialAccStatus(currentlySignedInUser!.uid).then((value) => setState(
+              () => isSpecialUser = value,
+            ))
+        : null;
     myDB.collection("users/${currentlySignedInUser?.uid}/wallet").get().then((value) async {
       debugPrint("THE BALANCE : ${value.docs.first.data()['Balance'].runtimeType} ___ $bookingTotalToPay");
       setState(() {
@@ -181,8 +199,36 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     super.initState();
   }
 
+  Future<void> initConnectivity() async {
+    late ConnectivityResult result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      result = await _connectivity.checkConnectivity();
+    } on PlatformException catch (e) {
+      debugPrint('Couldn\'t check connectivity status $e');
+      return;
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) {
+      return Future.value(null);
+    }
+
+    return _updateConnectionStatus(result);
+  }
+
+  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
+    setState(() {
+      _connectionStatus = result;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    var localLnSetting = AppLocalizations.of(context)!;
+
     var totalBookingDuration = (finallyBookedTimeRange.endTime.hour * 60 + finallyBookedTimeRange.endTime.minute) -
         (finallyBookedTimeRange.startTime.hour * 60 + finallyBookedTimeRange.startTime.minute);
     String durationToString(int minutes) {
@@ -197,7 +243,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     /* debugPrint("WIDGET MAPPED! $mappedInfoFromWidget _ $focusedDay");
     debugPrint("nextPressedWithoutFirstPageAllInfoFetched $nextPressedWithoutFirstPageAllInfoFetched"); */
     currentlySignedInUser = firebaseService.auth.currentUser;
-    debugPrint("SIGNED IN CURRENTLY ${firebaseService.auth.currentUser?.uid.toString()}");
+    debugPrint("SIGNED $isSpecialUser IN CURRENTLY ${firebaseService.auth.currentUser?.uid.toString()}");
     double alleyListViewMinHeightToDisplay =
         alleyHeight + (spaceBetweenSlots * (parkingSlotsTotal ~/ (parkingSlotsTotal ~/ 2) - 1));
 
@@ -374,68 +420,74 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                 .toDate();
                             var timeUntilResStarts = (bookingStartDate.difference(DateTime.now())).inSeconds;
                             debugPrint("TIME UNTIL RES BOOK OVERV :$timeUntilResStarts"); */
-                            await myDB
-                                .collection("users/${currentlySignedInUser?.uid}/wallet")
-                                .get()
-                                .then((value) async {
-                              debugPrint(
-                                  "THE BALANCE : ${value.docs.first.data()['Balance'].runtimeType} ___ $bookingTotalToPay");
-                              setState(() {
-                                walletCollId = value.docs.first.id;
-                              });
+                            if (_connectionStatus.toString() == 'ConnectivityResult.none') {
+                              showSnackBarText(localLnSetting.noInternetError);
+                            } else {
+                              await myDB
+                                  .collection("users/${currentlySignedInUser?.uid}/wallet")
+                                  .get()
+                                  .then((value) async {
+                                debugPrint(
+                                    "THE BALANCE : ${value.docs.first.data()['Balance'].runtimeType} ___ $bookingTotalToPay");
+                                setState(() {
+                                  walletCollId = value.docs.first.id;
+                                });
 
-                              value.docs.first.data()['Balance'] >= bookingTotalToPay
-                                  ? stateManagerRead.updateBuildingBookingText('Registering your booking...')
-                                  : stateManagerRead.updateBuildingBookingText(
-                                      "Seems like you don't have enough SMP. \n Please top up to validate your booking.'");
-                            }).whenComplete(() => checkWallet(bookingTotalToPay, stateManagerRead));
-                            debugPrint("HERE IT IS THE SPOT ${bookerTimeAndSpotInfoMapped['Selected Parking Spot']}");
+                                value.docs.first.data()['Balance'] >= bookingTotalToPay
+                                    ? stateManagerRead.updateBuildingBookingText('Registering your booking...')
+                                    : stateManagerRead.updateBuildingBookingText(
+                                        "Seems like you don't have enough SPM (Smart-Parking Money).\nPlease top-up to validate your booking.");
+                              }).whenComplete(() => checkWallet(bookingTotalToPay, stateManagerRead));
+                              debugPrint("HERE IT IS THE SPOT ${bookerTimeAndSpotInfoMapped['Selected Parking Spot']}");
+                              Map<String, dynamic> yobaaler = {};
+                              if (stateManagerRead.buildingBookingText == 'Registering your booking...') {
+                                await createBookingItem(
+                                        linkedParkingNameAndInsideInfo['Parking Name'],
+                                        widget.receivedID,
+                                        currentlySignedInUser,
+                                        selectedVehiculeInfoMappedFromSelectVehicule,
+                                        finallyBookedTimeRange,
+                                        selectedDay)
+                                    .then((value) {
+                                  yobaaler = value;
+                                });
+                                await firestoreWalletService
+                                    .debitAfterBooking(currentlySignedInUser, walletCollId, bookingTotalToPay,
+                                        widget.receivedID, linkedParkingNameAndInsideInfo['Parking Name'])
+                                    .whenComplete(() => updateParkingSpotsAvailability(
+                                        bookerTimeAndSpotInfoMapped['Selected Parking Spot']));
 
-                            if (stateManagerRead.buildingBookingText == 'Registering your booking...') {
-                              await createBookingItem(
-                                  linkedParkingNameAndInsideInfo['Parking Name'],
-                                  widget.receivedID,
-                                  currentlySignedInUser,
-                                  selectedVehiculeInfoMappedFromSelectVehicule,
-                                  finallyBookedTimeRange,
-                                  selectedDay);
-                              await firestoreWalletService
-                                  .debitAfterBooking(currentlySignedInUser, walletCollId, bookingTotalToPay,
-                                      widget.receivedID, linkedParkingNameAndInsideInfo['Parking Name'])
-                                  .whenComplete(() => updateParkingSpotsAvailability(
-                                      bookerTimeAndSpotInfoMapped['Selected Parking Spot']));
+                                var theDocToUpdate =
+                                    myDB.collection("users/${currentlySignedInUser?.uid}/wallet").doc(walletCollId);
+                                finallyBookedTimeRange.startTime;
 
-                              var theDocToUpdate =
-                                  myDB.collection("users/${currentlySignedInUser?.uid}/wallet").doc(walletCollId);
-                              finallyBookedTimeRange.startTime;
-
-                              debugPrint("THEDOCTOUPDATE ${theDocToUpdate.id}");
-                              listeningToDebitsRT(theDocToUpdate);
-                              var bookingStartDate = Timestamp.fromDate(DateTime(
-                                      selectedDay.year,
-                                      selectedDay.month,
-                                      selectedDay.day,
-                                      finallyBookedTimeRange.startTime.hour,
-                                      finallyBookedTimeRange.startTime.minute))
-                                  .toDate();
-                              var timeUntilResStarts = (bookingStartDate.difference(DateTime.now())).inSeconds;
-                              debugPrint("TIME UNTIL RES BOOK OVERV :$timeUntilResStarts");
-                              Future.delayed(const Duration(seconds: 20));
-                              if (!mounted) return;
-                              Navigator.pop(context);
-                              redirectingAlert();
-                              Future.delayed(const Duration(seconds: 4)).then((value) {
-                                if (mounted) {
-                                  return Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (context) => Home(
-                                            fromLoginView: true,
-                                            parkingToNavigateTo: const {},
-                                            newIndex: 0,
-                                            timeUntilResStarts: timeUntilResStarts)),
-                                  );
-                                }
-                              });
+                                debugPrint("THEDOCTOUPDATE ${theDocToUpdate.id}");
+                                listeningToDebitsRT(theDocToUpdate);
+                                var bookingStartDate = Timestamp.fromDate(DateTime(
+                                        selectedDay.year,
+                                        selectedDay.month,
+                                        selectedDay.day,
+                                        finallyBookedTimeRange.startTime.hour,
+                                        finallyBookedTimeRange.startTime.minute))
+                                    .toDate();
+                                var timeUntilResStarts = (bookingStartDate.difference(DateTime.now())).inSeconds;
+                                debugPrint("TIME UNTIL RES BOOK OVERV :$timeUntilResStarts");
+                                Future.delayed(const Duration(seconds: 20));
+                                if (!mounted) return;
+                                Navigator.pop(context);
+                                redirectingAlert();
+                                Future.delayed(const Duration(seconds: 4)).then((value) {
+                                  if (mounted) {
+                                    return Navigator.of(context).pushAndRemoveUntil(
+                                        MaterialPageRoute(
+                                            builder: (context) => TestHome(
+                                                  timeUntilReservationStarts: timeUntilResStarts,
+                                                  newMoreUrgentBooking: yobaaler,
+                                                )),
+                                        (Route<dynamic> route) => false);
+                                  }
+                                });
+                              }
                             }
                           },
                           child: const Padding(
@@ -531,6 +583,22 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         ),
       ),
     );
+  }
+
+  void showSnackBarText(String text, [TextStyle snackStyle = const TextStyle(color: Colors.white, fontSize: 15)]) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          elevation: 50,
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            text,
+            style: snackStyle,
+          ),
+        ),
+      );
+    }
   }
 
   getSelectedTimeSlotColor(int index, Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
@@ -1249,6 +1317,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                             "Please Select An End Time Before ${timesOfDayFetched.elementAt(selectedEndIndex).format(context)}."),
                       ),
                     ));
+                    //showSnackBarText("Please Select An End Time Before");
                   } else {
                     Navigator.of(context).pop(TimeRange(
                         startTime: selectedBookingStartTimeFromTSGrid, endTime: selectedBookingEndTimeFromTSGrid));
@@ -1279,7 +1348,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                   theindexindex = allConvertedTimesOfDayToInt
                                       .toList()
                                       .indexWhere((element1) => element1 == element),
-                                  allFinallyBookedIndexes.add(theindexindex)
+                                  allFinallyBookedIndexes.add(theindexindex),
+                                  debugPrint("INDEEEEEEEEEED $allFinallyBookedIndexes"),
                                 }
                               : null;
                         },
@@ -1666,18 +1736,19 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             ),
             shadowColor: MaterialStateProperty.all(const Color(0xff7986CB)),
             backgroundColor: MaterialStateProperty.all(const Color(0xff78909C))),
-        onPressed: () {
+        onPressed: () async {
+          var selectedVehiculeInfoEmptyTest =
+              bookerFirstPageInfoMapped['Selected Vehicule Info'] as Map<String, dynamic>;
+
           setState(() {
             nextPressedWithoutFirstPageAllInfoFetched = true;
             stopClearing = 0;
           });
 
-          debugPrint("PREVIOUSLY REACHED SETp: $previouslyReachedStep");
-
           if (previouslyReachedStep == 1) {
             // allDisabledTimeRangeIndexesForTimeSelection.clear();
             outOfXhoursRangeIndexes.clear();
-            allFinallyBookedIndexes.clear();
+            //allFinallyBookedIndexes.clear();
             context.read<BookingStateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
             var ok =
                 mappedSelectedSlotAlley.where((element) => element.values.first == previouslySelectedParkingSpotID);
@@ -1691,46 +1762,39 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             refreshSlotColorState(Colors.transparent);
           }
 
-          var selectedVehiculeInfoEmptyTest =
-              bookerFirstPageInfoMapped['Selected Vehicule Info'] as Map<String, dynamic>;
-          selectedVehiculeInfoEmptyTest.isNotEmpty
-              ? null
-              : {
-                  ScaffoldMessenger.of(context).showMaterialBanner(MaterialBanner(
-                      onVisible: (() {}),
-                      elevation: 10,
-                      contentTextStyle: const TextStyle(color: Colors.white, fontSize: 30),
-                      backgroundColor: Colors.black.withOpacity(0.5),
-                      leadingPadding: const EdgeInsets.only(right: 10),
-                      leading: const Icon(
-                        Icons.info,
-                        color: Colors.red,
-                        size: 25,
-                      ),
-                      content: const FittedBox(
-                        child: Text(
-                          'Please select a vehicule to proceed.',
-                          style: TextStyle(
-                              color: Colors.white, fontSize: 15, fontFamily: 'OpenSans', fontWeight: FontWeight.w900),
-                        ),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              nextPressedWithoutFirstPageAllInfoFetched = false;
-                            });
-                            ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
-                          },
-                          child: const Text('OK',
-                              style: TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 15,
-                                  fontFamily: 'OpenSans',
-                                  fontWeight: FontWeight.w900)),
-                        ),
-                      ])),
-                  /* ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          if (selectedVehiculeInfoEmptyTest.isEmpty) {
+            ScaffoldMessenger.of(context).showMaterialBanner(MaterialBanner(
+                onVisible: (() {}),
+                elevation: 10,
+                contentTextStyle: const TextStyle(color: Colors.white, fontSize: 30),
+                backgroundColor: Colors.black.withOpacity(0.5),
+                leadingPadding: const EdgeInsets.only(right: 10),
+                leading: const Icon(
+                  Icons.info,
+                  color: Colors.red,
+                  size: 25,
+                ),
+                content: const FittedBox(
+                  child: Text(
+                    'Please select a vehicule to proceed.',
+                    style: TextStyle(
+                        color: Colors.white, fontSize: 15, fontFamily: 'OpenSans', fontWeight: FontWeight.w900),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        nextPressedWithoutFirstPageAllInfoFetched = false;
+                      });
+                      ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+                    },
+                    child: const Text('OK',
+                        style: TextStyle(
+                            color: Colors.green, fontSize: 15, fontFamily: 'OpenSans', fontWeight: FontWeight.w900)),
+                  ),
+                ]));
+            /* ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     backgroundColor: Colors.black.withOpacity(0.7),
                     margin: const EdgeInsets.fromLTRB(20, 0, 20, 50),
                     shape: const RoundedRectangleBorder(
@@ -1760,39 +1824,82 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     ),
                   ))
                  */
-                };
+
+          }
+
           var ok = (DateTime(
               selectedDay.year, selectedDay.month, selectedDay.day, TimeOfDay.now().hour, TimeOfDay.now().minute));
           var selectedParkingSpotWithTimeSlot;
           debugPrint("CHECKING $allFinallyBookedIndexes");
+          Set concernedAvailableIDs = !isSpecialUser ? rAvailableIDs : sAvailableIDs;
+          String theSelectedSlotIDForRes = '';
+          var reHasZeroDoublon = false;
+          DateTime parkingClosingHourToDate = DateTime(
+              selectedDay.year,
+              selectedDay.month,
+              selectedDay.day,
+              TimeOfDay(
+                      hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]),
+                      minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1]))
+                  .hour,
+              TimeOfDay(
+                      hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]),
+                      minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1]))
+                  .minute);
 
-          activeStep < upperBound && selectedVehiculeInfoEmptyTest.isNotEmpty
-              ? ok.year == DateTime.now().year &&
-                      ok.month == DateTime.now().month &&
-                      ok.day == DateTime.now().day &&
-                      ok.hour >=
-                          TimeOfDay(
-                                  hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]),
-                                  minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1]))
-                              .hour
-                  ? ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Sorry, we're closed for the day!"),
-                      ),
-                    )
-                  : allFinallyBookedIndexes.isNotEmpty &&
-                          mappedSelectedSlotAlley.where((element) => element['isSlotSelected'] == true).isEmpty
-                      ? {
-                          showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  content: SingleChildScrollView(
-                                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [
-                                    Text(
-                                        "As you have not selected a specific parking spot, you will be assigned a random available one. ")
-                                  ])),
-                                  actions: [
+          if (activeStep < upperBound && selectedVehiculeInfoEmptyTest.isNotEmpty) {
+            //
+            if (ok.difference(parkingClosingHourToDate).inSeconds > 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Sorry, we're closed for the day!"),
+                ),
+              );
+            }
+
+            if (allFinallyBookedIndexes.isNotEmpty) {
+              debugPrint("MAGS IS NOT EMPTY _____ $finallyBookedTimeRange");
+              await checkForSameTimeReservationInOtherParkings(finallyBookedTimeRange).then((noResTimeDoublon) {
+                debugPrint("Result from check: $noResTimeDoublon");
+                reHasZeroDoublon = noResTimeDoublon;
+
+                if (noResTimeDoublon) {
+                  if (mappedSelectedSlotAlley.where((element) => element['isSlotSelected'] == true).isNotEmpty) {
+                    //
+                    theSelectedSlotIDForRes = mappedSelectedSlotAlley
+                        .where((element) => element['isSlotSelected'] == true)
+                        .first
+                        .values
+                        .first;
+                    debugPrint("SELECTED IS HERE $theSelectedSlotIDForRes");
+                    allRegularSpotsID.contains(theSelectedSlotIDForRes) && !isSpecialUser ||
+                            allSpecialSpotsIDs.contains(theSelectedSlotIDForRes) && isSpecialUser
+                        ?
+                        //isSpecialUser ? allRegularSpotsID.contains(value) ? :
+                        {
+                            bookerTimeAndSpotInfoMapped.update(
+                                'Selected Parking Spot', (value) => theSelectedSlotIDForRes),
+                            setState(() {
+                              activeStep += 1;
+                            })
+                          }
+                        : showSnackBarText(!isSpecialUser
+                            ? "This spot is reserved for a special access only."
+                            : 'Please select a Special Access spot.');
+                  } else {
+                    showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            content: SingleChildScrollView(
+                                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                              reHasZeroDoublon
+                                  ? const Text(
+                                      "As you have not selected a specific parking spot, you will be assigned a random available one, according to your condition. ")
+                                  : const Text("TIME ALREADY ASSGINED ")
+                            ])),
+                            actions: reHasZeroDoublon
+                                ? [
                                     TextButton(
                                         onPressed: () {
                                           Navigator.pop(context, 'GO BACK');
@@ -1809,53 +1916,68 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                           },
                                           child: const Text("PROCEED", style: TextStyle(fontSize: 12))),
                                     ),
+                                  ]
+                                : [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context, 'GO BACK');
+                                        },
+                                        child: FittedBox(
+                                            child: Text(
+                                          "GO BACK",
+                                          style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+                                        ))),
                                   ],
-                                );
-                              }).then((value) {
-                            //  final randomSpot = Random();
-                            value == null || value == 'GO BACK'
-                                ? null
-                                : {
-                                    bookerTimeAndSpotInfoMapped.update(
-                                        'Selected Parking Spot', (value) => (sAvailableIDs.toList()..shuffle()).first),
-                                    setState(() {
-                                      activeStep += 1;
-                                    })
-                                  };
-                          }),
-                        }
-                      : allFinallyBookedIndexes.isNotEmpty &&
-                              mappedSelectedSlotAlley.where((element) => element['isSlotSelected'] == true).isNotEmpty
-                          ? {
-                              debugPrint(
-                                  "SELECTED IS HERE ${mappedSelectedSlotAlley.where((element) => element['isSlotSelected'] == true).first.values.first}"),
-                              bookerTimeAndSpotInfoMapped.update(
-                                  'Selected Parking Spot',
-                                  (value) => mappedSelectedSlotAlley
-                                      .where((element) => element['isSlotSelected'] == true)
-                                      .first
-                                      .values
-                                      .first),
+                          );
+                        }).then((value) {
+                      //  final randomSpot = Random();
+                      value == null || value == 'GO BACK'
+                          ? null
+                          : {
+                              //check the user's specialAccess
+
+                              bookerTimeAndSpotInfoMapped.update('Selected Parking Spot',
+                                  (value) => (concernedAvailableIDs.toList()..shuffle()).first),
                               setState(() {
                                 activeStep += 1;
                               })
-                            }
-                          : activeStep == 1 &&
-                                  allFinallyBookedIndexes.isEmpty &&
-                                  (selectedDay.year == DateTime.now().year &&
-                                      selectedDay.month == DateTime.now().month &&
-                                      selectedDay.day == DateTime.now().day)
-                              ? {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Select at least a time interval to proceed."),
-                                    ),
-                                  )
-                                }
-                              : setState(() {
-                                  activeStep += 1;
-                                })
-              : null;
+                            };
+                    });
+                  }
+                } else {
+                  var bookingEndTS = theReservationDoublon['BookingEnd'] as Timestamp;
+                  var bookingStartTS = theReservationDoublon['BookingStart'] as Timestamp;
+                  var formatedEnd = DateFormat('yyyy-MM-dd').format(bookingEndTS.toDate());
+                  var formatedStart = DateFormat('yyyy-MM-dd').format(bookingStartTS.toDate());
+
+                  var timeOfDayEnd = DateFormat.Hm().format(bookingEndTS.toDate());
+
+                  var timeOfDayStart = DateFormat.Hm().format(bookingStartTS.toDate());
+
+                  showSnackBarText(
+                      "You already have a reservation ongoing on the $formatedStart from $timeOfDayStart to $timeOfDayEnd. Please select an available time spot or cancel that reservation.");
+                }
+              });
+            }
+
+            if (activeStep == 1 &&
+                allFinallyBookedIndexes.isEmpty &&
+                DateFormat('yyyy-MM-dd').format(selectedDay) == DateFormat('yyyy-MM-dd').format(DateTime.now())) {
+              showSnackBarText("Select at least a time interval to proceed.");
+            }
+
+            if (activeStep == 0) {
+              setState(() {
+                activeStep += 1;
+              });
+            } /* else {
+              setState(() {
+                activeStep += 1;
+              });
+            } */
+
+            //
+          }
         },
         child: const Align(child: FittedBox(child: Text("Next"))),
       ),
@@ -1905,6 +2027,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   switchBookerBody(double alleyListViewMinHeightToDisplay, TimeOfDay startTime, TimeOfDay endTime) {
     switch (activeStep) {
       case 0:
+        // allFinallyBookedIndexes.clear();
         debugPrint("CHECKING AGAIN :$selectedVehiculeInfoMappedFromSelectVehicule");
         bookerFirstPageInfoMapped.addAll({
           'Selected Parking Name': linkedParkingNameAndInsideInfo['Parking Name'],
@@ -2551,6 +2674,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
       case 2: /* First Page INFO: $bookerFirstPageInfoMapped ___ */
         debugPrint("Booker  SECOND PAGE $bookerTimeAndSpotInfoMapped }");
+        redirectingToDashboard = false;
         return Container(
           color: Colors.blueGrey,
           child: Column(
@@ -3546,33 +3670,69 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                         );
                       },
                     )
-                  : const Icon(Icons.cancel_outlined, size: 35, color: Colors.red),
+                  : Container(),
               const SizedBox(height: 10),
-              FittedBox(child: Text(content)),
+              Text(
+                content,
+                textAlign: TextAlign.justify,
+              ),
               SizedBox(height: content == 'Registering your booking...' ? 40 : 20),
             ])),
+            title: content == 'Registering your booking...'
+                ? const Text('Processing Your Booking')
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.cancel_outlined, size: 25, color: Colors.red),
+                      Text('Validation Failed'),
+                    ],
+                  ),
             actions: content == 'Registering your booking...'
                 ? []
                 : [
                     TextButton(
-                        onPressed: () {
-                          Future.delayed(const Duration(seconds: 4)).then((value) {
-                            if (mounted) {
-                              return Navigator.of(context).push(
-                                MaterialPageRoute(
-                                    builder: (context) => const Home(
-                                          fromLoginView: true,
-                                          parkingToNavigateTo: {},
-                                          newIndex: 0,
-                                          timeUntilResStarts: 0,
-                                        )),
-                              );
-                            }
-                          });
+                        onPressed: () async {
+                          debugPrint("REDIRECTING TO DASH: $redirectingToDashboard");
+                          if (redirectingToDashboard) {
+                          } else {
+                            Navigator.pop(context);
+                            setState(() => redirectingToDashboard = true);
+                            showDialog(
+                                context: context,
+                                builder: (context) {
+                                  Future.delayed(const Duration(seconds: 4)).then((value) {
+                                    if (!mounted) return;
+                                    Navigator.of(context).pushAndRemoveUntil(
+                                        MaterialPageRoute(
+                                            builder: (context) => const TestHome(
+                                                  timeUntilReservationStarts: 0,
+                                                  newMoreUrgentBooking: {},
+                                                )),
+                                        (Route<dynamic> route) => false);
+                                  });
+                                  return AlertDialog(
+                                    scrollable: true,
+                                    //title: Text("Redirecting to dashboard..."),
+                                    content: Column(
+                                      children: [
+                                        const Text("Redirecting to dashboard..."),
+                                        SpinKitFadingCircle(
+                                          size: 50,
+                                          itemBuilder: (BuildContext context, int index) {
+                                            return const DecoratedBox(
+                                              decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                });
+                          }
                         },
                         child: FittedBox(
                             child: Text(
-                          "OK, Back to dashboard!",
+                          "Back to dashboard!",
                           style: TextStyle(fontSize: 12, color: Colors.red.shade400),
                         ))),
                   ],
@@ -3582,13 +3742,14 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     });
   }
 
-  createBookingItem(
+  Future<Map<String, dynamic>> createBookingItem(
       linkedParkingNameAndInsideInfo,
       String receivedID,
       User? currentlySignedInUser,
       Map<String, dynamic> selectedVehiculeInfoMappedFromSelectVehicule,
       TimeRange finallyBookedTimeRange,
-      DateTime selectedDay) {
+      DateTime selectedDay) async {
+    Map<String, dynamic> theMostUrgentBookingAfterReservationMade = {};
     var bookingEndTS = Timestamp.fromDate(DateTime(selectedDay.year, selectedDay.month, selectedDay.day,
         finallyBookedTimeRange.endTime.hour, finallyBookedTimeRange.endTime.minute));
     var bookingStartTS = Timestamp.fromDate(DateTime(selectedDay.year, selectedDay.month, selectedDay.day,
@@ -3612,8 +3773,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         'ReservationStatus': <String, bool>{
           'Added Time': false,
           'Canceled Before Start': false,
-          'Completed Before End': false,
-          'Completed On Time': false,
+          'Completed': false,
           'Started': false,
         },
         'SlotID': bookerTimeAndSpotInfoMapped['Selected Parking Spot'],
@@ -3624,7 +3784,24 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         'TimeStamp': FieldValue.serverTimestamp()
       });
       await slotsResBatch.commit().whenComplete(() => debugPrint("RESERVATION SUCCESSFULLY ADDED"));
+
+      await slotsReservationsCollection.where("ClientID", isEqualTo: currentlySignedInUser!.uid).get().then((value) {
+        if (value.docs.isNotEmpty) {
+          value.docs.sort(
+            (aData, bData) {
+              var aCasted = aData.data() as Map<String, dynamic>;
+              var bCasted = bData.data() as Map<String, dynamic>;
+              var aBookingStart = aCasted['BookingStart'] as Timestamp;
+              var bBookingStart = bCasted['BookingStart'] as Timestamp;
+              return aBookingStart.compareTo(bBookingStart);
+            },
+          );
+
+          theMostUrgentBookingAfterReservationMade = value.docs.first.data() as Map<String, dynamic>;
+        }
+      });
     });
+    return theMostUrgentBookingAfterReservationMade;
   }
 
   void listeningToDebitsRT(DocumentReference<Map<String, dynamic>> theDocToUpdate) {
@@ -3709,11 +3886,112 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [
               Icon(Icons.check_circle_outline, size: 45, color: Colors.green),
               SizedBox(height: 10),
-              FittedBox(child: Text("Booking successfully validated! \n Redirecting you to your dashboard...")),
+              FittedBox(child: Text("Booking successfully validated!\nRedirecting you to your dashboard...")),
               SizedBox(height: 45),
+              CircularProgressIndicator.adaptive(
+                value: 0.5,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.yellow),
+                backgroundColor: Colors.green,
+              )
             ])),
           );
         });
+  }
+
+  Future<bool> getUserSpecialAccStatus(String uid) async {
+    var userDocInfo = myDB.collection("users").where("ID", isEqualTo: uid);
+    bool isSpecial = false;
+    await userDocInfo.get().then((value) => isSpecial = value.docs.first.data()['Special Access']);
+    return isSpecial;
+  }
+
+  Future<bool> checkForSameTimeReservationInOtherParkings(TimeRange finallyBookedTimeRange) async {
+    try {
+      bool proceed = true;
+      debugPrint("checkForSameTimeReservationInOtherParkings $finallyBookedTimeRange");
+      await myDB
+          .collection("slotsReservations")
+          .where("ClientID", isEqualTo: currentlySignedInUser!.uid)
+          .get()
+          .then((value) {
+        debugPrint('value length : ${value.docs.length}');
+        Timestamp bookingEndTS = Timestamp.now(), bookingStartTS = Timestamp.now();
+
+        if (value.docs.isNotEmpty) {
+          var sameDayAsSelectedDayRes = value.docs.where((element) {
+            bookingStartTS = element.data()['BookingStart'] as Timestamp;
+            return DateFormat('yyyy-MM-dd').format(bookingStartTS.toDate()) ==
+                DateFormat('yyyy-MM-dd').format(selectedDay);
+          });
+
+          debugPrint("sameDayAsSelectedDayRes : ${sameDayAsSelectedDayRes.length}");
+
+          if (sameDayAsSelectedDayRes.isNotEmpty) {
+            sameDayAsSelectedDayRes.forEach((element) {
+              bookingEndTS = element.data()['BookingEnd'] as Timestamp;
+              bookingStartTS = element.data()['BookingStart'] as Timestamp;
+
+              var timeOfDayFBStart = TimeOfDay.fromDateTime(bookingStartTS.toDate());
+              var timeOfDayFBEnd = TimeOfDay.fromDateTime(bookingEndTS.toDate());
+
+              var convMinutesBookedTRStart =
+                  finallyBookedTimeRange.startTime.hour * 60 + finallyBookedTimeRange.startTime.minute;
+              var convMinutesBookedTREnd =
+                  finallyBookedTimeRange.endTime.hour * 60 + finallyBookedTimeRange.endTime.minute;
+              var convMinutesFBStart = timeOfDayFBStart.hour * 60 + timeOfDayFBStart.minute;
+              var convMinutesFBEnd = timeOfDayFBEnd.hour * 60 + timeOfDayFBEnd.minute;
+
+              if (convMinutesBookedTRStart >= convMinutesFBStart && convMinutesBookedTREnd <= convMinutesFBEnd) {
+                proceed = false;
+                //exemple 12h10, 13h40
+                debugPrint("LE TEMPS CHOISI EST COMPRIS DANS FBTS _ ${element.id}");
+                theReservationDoublon = element.data();
+                // debugPrint("COMPARED : ${bookingStartTS.compareTo(Timestamp.now())}");
+              } else if (convMinutesBookedTRStart >= convMinutesFBStart &&
+                  convMinutesBookedTRStart < convMinutesFBEnd &&
+                  convMinutesBookedTREnd >= convMinutesFBEnd) {
+                proceed = false;
+                theReservationDoublon = element.data();
+                //exemple 12h15, 13h50
+                debugPrint(
+                    "LE TEMPS CHOISI commencera alors que another ongoing et se terminera après que ongoing over, ce qui est impossible _ ${element.id}");
+                // debugPrint("COMPARED : ${bookingStartTS.compareTo(Timestamp.now())}");
+              } else if (convMinutesBookedTRStart < convMinutesFBStart &&
+                  convMinutesBookedTREnd <= convMinutesFBEnd &&
+                  convMinutesBookedTREnd > convMinutesFBStart) {
+                proceed = false;
+                theReservationDoublon = element.data();
+                //exemple 12h05, 13h20
+                debugPrint(
+                    "LE TEMPS CHOISI commence avant/en même temps que ongoing commence mais  s'ecoulera pendant que ongoing started ${element.id}");
+                // debugPrint("COMPARED : ${bookingStartTS.compareTo(Timestamp.now())}");
+              } else if (convMinutesBookedTRStart <= convMinutesFBStart && convMinutesBookedTREnd >= convMinutesFBEnd) {
+                proceed = false;
+                theReservationDoublon = element.data();
+                debugPrint("LE TEMPS CHOISI contient an ongoing res _ ${element.id}");
+                // debugPrint("COMPARED : ${bookingStartTS.compareTo(Timestamp.now())}");
+              } else if (convMinutesBookedTRStart < convMinutesFBStart &&
+                  convMinutesBookedTREnd < convMinutesFBEnd &&
+                  convMinutesBookedTREnd >= convMinutesFBStart) {
+                proceed = false;
+                theReservationDoublon = element.data();
+                debugPrint(
+                    "LE TEMPS CHOISI tse termine alors que another started a few minutes prior to end an ongoing res");
+                // debugPrint("COMPARED : ${bookingStartTS.compareTo(Timestamp.now())}");
+              }
+
+              /* if (!proceed) {
+                debugPrint("theReservationDoublon $theReservationDoublon");
+                theReservationDoublon = element.data();
+              } */
+            });
+          }
+        }
+      });
+      return proceed;
+    } catch (e) {
+      return false;
+    }
   }
 }
 

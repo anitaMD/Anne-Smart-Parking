@@ -458,7 +458,7 @@ class FirestoreWalletService {
   }
 }
 
-class FirestoreReservationService {
+class FirestoreReservationAndArchiveService {
   var myDB = FirebaseFirestore.instance;
   var currentlySignedInUser = FirebaseService().currentlySignedInUser;
 //listeningtofbchangeswon'twork here so I moved getUserReservationDetails to reservationCountdown direectly

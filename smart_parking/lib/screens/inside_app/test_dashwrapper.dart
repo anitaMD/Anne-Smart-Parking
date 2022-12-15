@@ -11,9 +11,15 @@ import 'for_dashboard/notifs.dart';
 
 class TestDashboardWrapper extends StatefulWidget {
   final Map<String, dynamic> parkingToNavigateTo;
-  final int newIndex, timeUntilResStartsFromBookingOverview;
+  final int newIndex;
+  final int timeUntilResStartsFromBookingOverview;
+  final Map<String, dynamic> newMoreUrgentBooking;
   const TestDashboardWrapper(
-      {Key? key, required this.parkingToNavigateTo, this.newIndex = 0, this.timeUntilResStartsFromBookingOverview = 0})
+      {Key? key,
+      required this.parkingToNavigateTo,
+      this.newIndex = 0,
+      this.timeUntilResStartsFromBookingOverview = 0,
+      required this.newMoreUrgentBooking})
       : super(key: key);
 
   @override
@@ -39,11 +45,13 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
 
   Widget getBodyNoEffect() {
     List<Widget> pages = [
-      const TestDashboardHomePage(
-          /*  canShowToggle: canShowToggle,
+      TestDashboardHomePage(
+        newMoreUrgentBooking: widget.newMoreUrgentBooking,
+        canShowToggle: canShowToggle,
+        /*  
           getIndex: (int selectedIndex) {},
-          timeUntilResStartsFromBookingOverview: widget.timeUntilResStartsFromBookingOverview */
-          ),
+           */
+      ),
       BookingPage(
         parkingToNavigateTo: widget.parkingToNavigateTo,
       ),
@@ -67,11 +75,14 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
     //_currentIndex = widget.newIndex + 1;
     debugPrint(" currentindex $_currentIndex  __ widgetnewindex ${widget.newIndex} _ goB $goBack");
     List<Widget> pages = [
-      const TestDashboardHomePage(
-          /*  canShowToggle: canShowToggle,
+      TestDashboardHomePage(
+        timeUntilResStartsFromBookingOverview: widget.timeUntilResStartsFromBookingOverview,
+        newMoreUrgentBooking: widget.newMoreUrgentBooking,
+        canShowToggle: canShowToggle,
+        /* 
           getIndex: getIndex,
           timeUntilResStartsFromBookingOverview: widget.timeUntilResStartsFromBookingOverview */
-          ),
+      ),
       BookingPage(
         parkingToNavigateTo: widget.parkingToNavigateTo,
       ),
@@ -132,7 +143,8 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
                             context,
                             MaterialPageRoute(
                                 builder: (context) => const TestHome(
-                                    /*   fromLoginView: true,
+                                      newMoreUrgentBooking: {},
+                                      /*   fromLoginView: true,
                                       parkingToNavigateTo: {},
                                       newIndex: 0,
                                       timeUntilResStarts: 0, */
@@ -245,7 +257,7 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
             children: [
               getBodyWFadedEffect(),
               //Positioned(left: 30, child: mapDashboardToggleSwitch()),
-              showToggle == false || isDropped == true ? Container() : dragMapDashToggleSwitch(),
+              /* showToggle == false ||  */ isDropped == true ? Container() : dragMapDashToggleSwitch(),
               Positioned(
                 top: mapTopRightIconBoxHeightDeducted, //to not hide the map location icon en haut à droite
                 child: DragTarget(

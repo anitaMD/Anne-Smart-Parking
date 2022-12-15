@@ -39,7 +39,7 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
   var appBarHeight = 95.61904761904762;
   int time = 29;
   FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
-  var firestoreResService = FirestoreReservationService();
+  var firestoreResService = FirestoreReservationAndArchiveService();
   var myDB = FirebaseFirestore.instance;
   List<Map<String, dynamic>> allUserBookings = [];
   Timer? countdownTimer;

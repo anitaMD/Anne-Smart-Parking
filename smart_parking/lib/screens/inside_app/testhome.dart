@@ -8,12 +8,14 @@ import 'package:smart_parking/screens/inside_app/notifications.dart';
 import 'package:smart_parking/screens/inside_app/settings.dart';
 import 'package:smart_parking/screens/inside_app/test_dashwrapper.dart';
 import 'package:smart_parking/screens/inside_app/test_profile_inf.dart';
-import 'package:smart_parking/screens/inside_app/test_wallet.dart';
+import 'package:smart_parking/screens/inside_app/wallet.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class TestHome extends StatefulWidget {
-  const TestHome({Key? key}) : super(key: key);
+  final int timeUntilReservationStarts;
+  final Map<String, dynamic> newMoreUrgentBooking;
+  const TestHome({Key? key, this.timeUntilReservationStarts = 0, required this.newMoreUrgentBooking}) : super(key: key);
 
   @override
   State<TestHome> createState() => _TestHomeState();
@@ -45,8 +47,17 @@ class _TestHomeState extends State<TestHome> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var localLnSetting = AppLocalizations.of(context)!;
+    int ok = widget.timeUntilReservationStarts;
+    Map<String, dynamic> okUrgent = widget.newMoreUrgentBooking;
+    currentPage != DrawerSections.dashboard ? {ok = 0, okUrgent = {}} : null;
+    debugPrint("okUrgent $okUrgent");
 
     return Scaffold(
       appBar: AppBar(
@@ -155,7 +166,7 @@ class _TestHomeState extends State<TestHome> {
           ),
         ),
       ),
-      body: getBodyContent(),
+      body: getBodyContent(currentUser, ok, okUrgent),
     );
   }
 
@@ -264,18 +275,19 @@ class _TestHomeState extends State<TestHome> {
     );
   }
 
-  Widget getBodyContent() {
+  Widget getBodyContent(User currentUser, int ok, Map<String, dynamic> okUrgent) {
     Widget bodyContainer = Container();
     if (currentPage == DrawerSections.dashboard) {
       setState(() {
-        bodyContainer = const TestDashboardWrapper(
-          parkingToNavigateTo: {},
-        );
+        bodyContainer = TestDashboardWrapper(
+            timeUntilResStartsFromBookingOverview: ok, parkingToNavigateTo: const {}, newMoreUrgentBooking: okUrgent);
       });
     } else if (currentPage == DrawerSections.profileInfo) {
       bodyContainer = const TestProfileInfo();
     } else if (currentPage == DrawerSections.wallet) {
-      bodyContainer = const TestWallet();
+      bodyContainer = const Wallet(
+        takescreenshot: false,
+      );
     } else if (currentPage == DrawerSections.faq) {
       bodyContainer = const NotesPage();
     } else if (currentPage == DrawerSections.settings) {

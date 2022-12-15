@@ -2107,7 +2107,11 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         await _auth.currentUser!.linkWithCredential(phoneAuthCredential);
         if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const TestHome()), (Route<dynamic> route) => false);
+            MaterialPageRoute(
+                builder: (context) => const TestHome(
+                      timeUntilReservationStarts: 0, newMoreUrgentBooking: {}, 
+                    )),
+            (Route<dynamic> route) => false);
       },
       verificationFailed: (FirebaseAuthException e) {
         showSnackBarText("Auth Failed! ${e.message}");

@@ -431,9 +431,10 @@ class TestLoginState extends State<TestLogin> {
 
       theUser.user != null
           ? {
-              await firestoreService
-                  .testgetUserFullName(theUser.user!)
-                  .then((value) => theUser!.user!.updateDisplayName(value)),
+              await firestoreService.testgetUserFullName(theUser.user!).then((value) {
+                theUser!.user!.updateDisplayName(value);
+                print("DISPNAME :$value");
+              }),
               await firestoreService
                   .testgetUserProfileImage(theUser.user!)
                   .then((value) => value == 'none' ? null : theUser!.user!.updatePhotoURL(value))
@@ -449,7 +450,11 @@ class TestLoginState extends State<TestLogin> {
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const TestHome()), (Route<dynamic> route) => false);
+          MaterialPageRoute(
+              builder: (context) => const TestHome(
+                    timeUntilReservationStarts: 0, newMoreUrgentBooking: {},
+                  )),
+          (Route<dynamic> route) => false);
       _auth.idTokenChanges().listen((user) async {
         if (user != null) {
           //currentUser = FirebaseAuth.instance.currentUser;
@@ -1177,14 +1182,19 @@ class TestLoginState extends State<TestLogin> {
         }
         // phoneNumberAlreadyExists(finalTest);
         try {
-          await _auth.signInWithCredential(phoneAuthCredential).whenComplete(() => setState(
+          await _auth.signInWithCredential(phoneAuthCredential).then((theUser) async {
+            await firestoreService.testgetUserFullName(theUser.user!).then((value) {
+              theUser.user!.updateDisplayName(value);
+              print("DISPNAME :$value");
+            });
+          }).whenComplete(() => setState(
                 () {
                   listeningForOTP = false;
                 },
               ));
           if (!mounted) return;
           Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const TestHome()), (Route<dynamic> route) => false);
+              MaterialPageRoute(builder: (context) => const TestHome(newMoreUrgentBooking: {},)), (Route<dynamic> route) => false);
 
           _auth.idTokenChanges().listen((user) async {
             if (user != null) {

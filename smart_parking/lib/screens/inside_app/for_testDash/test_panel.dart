@@ -3,7 +3,7 @@
 import 'package:contained_tab_bar_view/contained_tab_bar_view.dart';
 import 'package:flutter/material.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:smart_parking/screens/inside_app/for_dashboard/tab_view/testmyvehicules.dart';
+import 'package:smart_parking/screens/inside_app/for_testDash/testtab_view/testmyvehicules.dart';
 
 import 'package:smart_parking/styling/styling.dart';
 

@@ -1127,11 +1127,11 @@ Future<String> getCountryName() async {
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () async {
-                                  //print("OK DUDE $realCountryValue  èè $realCityDepValue  $realStateCityValue");
+                                  //debugPrint("OK DUDE $realCountryValue  èè $realCityDepValue  $realStateCityValue");
                                   if (realCountryValue == 'Select Reg. Country' &&
                                       realCityDepValue == "Select Reg. City/Department") {
                                     setState(() => noCountryCityReselectedDuringEdit = true);
-                                    print("CAN'T PROCEED");
+                                    debugPrint("CAN'T PROCEED");
                                     //showSnackBarText("CAN'T PROCEED");
                                   } else {
                                     setState(() => noCountryCityReselectedDuringEdit = false);
@@ -1323,7 +1323,7 @@ Future<String> getCountryName() async {
         );
       }),
     ).then((carAction) async {
-      print("CAR ACTION: $carAction");
+      debugPrint("CAR ACTION: $carAction");
       if (carAction == 'REMOVE CAR') {
         await myDB.collection("users/${currentUser!.uid}/vehicules").doc(selectedVehiculeToEdit.id).delete();
         setState(() {
