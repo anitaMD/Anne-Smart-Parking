@@ -275,9 +275,9 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                           color: Colors.indigo.withAlpha(20),
                                           height:
                                               alleyListViewMinHeightToDisplay,
-                                          child: Stack(
+                                          child: const Stack(
                                             alignment: Alignment.center,
-                                            children: const [
+                                            children: [
                                               Positioned(
                                                 top: 0,
                                                 child: Icon(

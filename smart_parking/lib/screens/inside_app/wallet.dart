@@ -278,7 +278,7 @@ class WalletState extends State<Wallet> {
                           Text(
                             revealBalance == true ? balanceInSPM : '****',
                             style: GoogleFonts.mulish(
-                                textStyle: Theme.of(context).textTheme.headline4,
+                                textStyle: Theme.of(context).textTheme.headlineMedium,
                                 fontSize: 35,
                                 fontWeight: FontWeight.w800,
                                 color: LightColor.yellow2),
@@ -296,7 +296,7 @@ class WalletState extends State<Wallet> {
                           Text(
                             'Eq:',
                             style: GoogleFonts.mulish(
-                                textStyle: Theme.of(context).textTheme.headline4,
+                                textStyle: Theme.of(context).textTheme.headlineMedium,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: LightColor.lightNavyBlue),
@@ -394,7 +394,7 @@ class WalletState extends State<Wallet> {
                   Center(
                     child: Screenshot(
                       controller: screenshotController,
-                      child: QrImage(
+                      child: QrImageView(
                         gapless: true,
                         padding: const EdgeInsets.all(20),
                         /*  embeddedImage: const AssetImage('assets/images/logo.png'),

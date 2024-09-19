@@ -1730,13 +1730,11 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
             debugPrint("CHECK MIC: ${walletValue.docs.length}");
             await firestoreWalletService
                 .initializeWalletDebitTopUp(currentUser, walletValue.docs.first.id)
-                .whenComplete(() => {
-                      Future.delayed(const Duration(seconds: 2)).then(
-                        (value) {
-                          updateWalletFields(walletValue, walletValue.docs.first.id, currentUser!);
-                        },
-                      )
-                    });
+                .whenComplete(() => Future.delayed(const Duration(seconds: 2)).then(
+                      (value) {
+                        updateWalletFields(walletValue, walletValue.docs.first.id, currentUser!);
+                      },
+                    ));
           });
         }
       });
@@ -1953,7 +1951,7 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                               const RotatedBox(quarterTurns: -1, child: Text('0000000000')),
                                               SizedBox(
                                                   width: 100,
-                                                  child: QrImage(
+                                                  child: QrImageView(
                                                     data: '00000000000000000000',
                                                     padding: const EdgeInsets.only(left: 10.0),
                                                   ))
@@ -2109,7 +2107,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
                 builder: (context) => const TestHome(
-                      timeUntilReservationStarts: 0, newMoreUrgentBooking: {}, 
+                      timeUntilReservationStarts: 0,
+                      newMoreUrgentBooking: {},
                     )),
             (Route<dynamic> route) => false);
       },
@@ -2374,7 +2373,6 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
           getBarCodeText(equalityCardRectoVerso.first!, 'gallery', localLnSetting, equalityCardRectoVerso);
         }
         //print("Image List Length:" + imageFileList!.length.toString());
-
       }
     } catch (e) {
       print("error $e");
@@ -2482,7 +2480,7 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
 
     for (Barcode barcode in barcodesList) {
       final BarcodeType type = barcode.type;
-      final Rect? boundingBox = barcode.boundingBox;
+      final Rect boundingBox = barcode.boundingBox;
       final String? displayValue = barcode.displayValue;
       final String? rawValue = barcode.rawValue;
 

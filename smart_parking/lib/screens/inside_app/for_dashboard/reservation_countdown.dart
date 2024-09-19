@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:maps_launcher/maps_launcher.dart';
-import 'package:smart_parking/screens/inside_app/for_dashboard/badges_notifications.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
 import 'package:time_range_picker/time_range_picker.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -270,7 +269,7 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                           'Hello ${widget.currentlySignedInUser?.displayName}, Your booking in ${moreUrgentParkingInfo.values.first['Name']} just started!'),
                       bookingHasStarted = true,
                       debugPrint('just started'),
-                      const BadgesNotifications(),
+                      //const BadgesNotifications(),
                     }
                   : null;
             },
@@ -695,14 +694,14 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 15, right: 10, bottom: 10),
+              const Padding(
+                padding: EdgeInsets.only(left: 15, right: 10, bottom: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         /*      TextButton.icon(
                             style: TextButton.styleFrom(backgroundColor: Colors.black.withOpacity(0.5), elevation: 5),
                             onPressed: () {

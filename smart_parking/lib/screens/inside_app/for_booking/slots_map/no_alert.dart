@@ -161,6 +161,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   @override
   void dispose() {
     infoListViewController.dispose();
+    _connectivitySubscription.cancel();
+
     super.dispose();
   }
 
@@ -1078,9 +1080,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 child: Container(
                   color: Colors.indigo.withAlpha(20),
                   //height: alleyHeight + spaceBetweenSlots * parkingSlotsTotal ~/ 2,
-                  child: Stack(
+                  child: const Stack(
                     alignment: Alignment.center,
-                    children: const [
+                    children: [
                       Positioned(
                         top: 0,
                         child: Icon(Icons.arrow_circle_down),
@@ -2050,10 +2052,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               padding: const EdgeInsets.only(left: 10, right: 10),
               child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 10),
                     child: Row(
-                      children: const [
+                      children: [
                         Icon(
                           Icons.info,
                           color: Colors.indigo,
@@ -2200,10 +2202,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
                     child: Row(
-                      children: const [
+                      children: [
                         Icon(Icons.calendar_month_rounded, color: Colors.indigo),
                         SizedBox(width: 10),
                         Text(
@@ -2228,10 +2230,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
                     child: Row(
-                      children: const [
+                      children: [
                         Icon(
                           Icons.check_circle_rounded,
                           color: Colors.indigo,
@@ -2330,10 +2332,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Column(
+                                    const Column(
                                       children: [
                                         Row(
-                                          children: const [
+                                          children: [
                                             CircleAvatar(
                                               radius: 15,
                                               backgroundColor: Colors.blueGrey,
@@ -2483,10 +2485,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Column(
+                                    const Column(
                                       children: [
                                         Row(
-                                          children: const [
+                                          children: [
                                             CircleAvatar(
                                               radius: 15,
                                               backgroundColor: Colors.blueGrey,
@@ -3680,9 +3682,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             ])),
             title: content == 'Registering your booking...'
                 ? const Text('Processing Your Booking')
-                : Row(
+                : const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.cancel_outlined, size: 25, color: Colors.red),
                       Text('Validation Failed'),
                     ],
@@ -3881,9 +3883,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         barrierDismissible: false,
         context: context,
         builder: (context) {
-          return AlertDialog(
+          return const AlertDialog(
             content: SingleChildScrollView(
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: const [
+                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Icon(Icons.check_circle_outline, size: 45, color: Colors.green),
               SizedBox(height: 10),
               FittedBox(child: Text("Booking successfully validated!\nRedirecting you to your dashboard...")),

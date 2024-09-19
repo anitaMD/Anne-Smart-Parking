@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/models/user.dart';
 import 'package:smart_parking/screens/inside_app/dashboard_wrapper.dart';
-import 'package:smart_parking/screens/inside_app/for_dashboard/badges_notifications.dart';
 import 'package:smart_parking/screens/inside_app/settings.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/screens/authenticate/login_register.dart';
@@ -288,11 +287,11 @@ class HomeState extends State<Home> {
           // Using Stack to show Notification Badge
 
           currentPage != DrawerSections.wallet
-              ? SizedBox(
+              ? const SizedBox(
                   width: 96,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [BadgesNotifications()],
+                    // children: const [BadgesNotifications()],
                   ),
                 )
               : IconButton(
@@ -395,10 +394,10 @@ class HomeState extends State<Home> {
                     if (!mounted) return;
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginRegister()));
                   },
-                  child: Padding(
-                    padding: const EdgeInsets.all(15.0),
+                  child: const Padding(
+                    padding: EdgeInsets.all(15.0),
                     child: Row(
-                      children: const [
+                      children: [
                         Expanded(
                           child: Icon(
                             Icons.logout,

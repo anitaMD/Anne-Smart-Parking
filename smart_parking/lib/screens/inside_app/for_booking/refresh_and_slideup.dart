@@ -53,47 +53,12 @@ class RefreshAndSlideUpState extends State<RefreshAndSlideUp> {
 
   @override
   Widget build(BuildContext context) {
-    print(
-        "MAPPED MARKERS RECEIVED FROM DASHBOARD_HOME: ${widget.mappedMarkers}");
+    print("MAPPED MARKERS RECEIVED FROM DASHBOARD_HOME: ${widget.mappedMarkers}");
     if (widget.mappedMarkers.entries.length == 1) widget.notifyParent();
     print("NUMBER OF MARKERS: ${widget.mappedMarkers.length}");
     //print("slide LENGTH: ${slides.length}");
 
-    return ListView(
-      shrinkWrap: true,
-      padding: EdgeInsets.zero,
-      children: [
-        const SizedBox(height: 13.0),
-        buildDragHandle(),
-        const SizedBox(height: 18.0),
-        const Center(
-          child: Text(
-            'BOOKINGS', //'CHOOSE YOUR SMART PARKING'
-            style:
-                TextStyle(fontWeight: FontWeight.bold, fontFamily: 'OpenSans'),
-          ),
-        ),
-        const SizedBox(height: 16.0),
-        myScrollNotifListener(),
-        /*          Center(
-          /* child: Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: ElevatedButton(
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(Colors.red)),
-
-                /* ElevatedButton.styleFrom(
-                  shape: CircleBorder(),
-                  padding: EdgeInsets.all(24),
-                ), */
-
-                onPressed: () => widget.controller.close(),
-                child: const Text("CLOSE")),
-          ), */
-          child: showFloatingButton(), 
-        ),*/
-      ],
-    );
+    return Container();
   }
 
   buildDragHandle() => GestureDetector(
@@ -110,9 +75,7 @@ class RefreshAndSlideUpState extends State<RefreshAndSlideUp> {
       );
 
   void togglePanel() {
-    widget.controller.isPanelOpen
-        ? widget.controller.close()
-        : widget.controller.open();
+    widget.controller.isPanelOpen ? widget.controller.close() : widget.controller.open();
   }
 
   myScrollNotifListener() {

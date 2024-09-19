@@ -364,10 +364,10 @@ class _SelectVehiculeState extends State<SelectVehicule> {
                     color: Colors.transparent,
                     padding: const EdgeInsets.only(left: 5, right: 5),
                     height: cardHeight,
-                    child: Column(
+                    child: const Column(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       crossAxisAlignment: CrossAxisAlignment.center,
-                      children: const [
+                      children: [
                         Align(
                           child: FittedBox(
                             child: Text(
@@ -1346,9 +1346,9 @@ Future<String> getCountryName() async {
                                       flex: 8,
                                       child: Container(
                                         margin: const EdgeInsets.only(left: 10),
-                                        child: Column(
+                                        child: const Column(
                                           mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                          children: const [
+                                          children: [
                                             Expanded(
                                               flex: 2,
                                               child: SizedBox(
@@ -1390,10 +1390,10 @@ Future<String> getCountryName() async {
                                           height: cardHeight,
                                           padding: const EdgeInsets.only(left: 5, right: 5),
                                           color: Colors.transparent,
-                                          child: Column(
+                                          child: const Column(
                                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                                             crossAxisAlignment: CrossAxisAlignment.center,
-                                            children: const [
+                                            children: [
                                               FittedBox(
                                                 child: Text(
                                                   'City ISO',

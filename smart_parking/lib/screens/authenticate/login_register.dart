@@ -380,9 +380,9 @@ class LoginRegisterState extends State<LoginRegister> {
             isNumber: false,
             isFullName: false,
           ),
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Padding(
                 padding: EdgeInsets.only(left: 5),
                 child: Text(
@@ -664,9 +664,9 @@ class LoginRegisterState extends State<LoginRegister> {
             isNumber: false,
             isFullName: false,
           ),
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Padding(
                 padding: EdgeInsets.only(left: 5),
                 child: Text(

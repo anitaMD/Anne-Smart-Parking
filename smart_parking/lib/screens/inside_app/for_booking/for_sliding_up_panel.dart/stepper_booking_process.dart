@@ -320,8 +320,8 @@ class _TimeSlotSelection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: const [
+    return const Column(
+      children: [
         Center(
             child: Text(
                 'Select booking time (USE CAN USE A STEPPER ALSO HERE TO DEFINE THE TIME OR WHATEVER')),
@@ -335,8 +335,8 @@ class BookingOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: const [
+    return const Column(
+      children: [
         Center(child: Text('Thank you for your order!')),
       ],
     );

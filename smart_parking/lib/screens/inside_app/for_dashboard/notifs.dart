@@ -10,9 +10,9 @@ class NotifsPage extends StatefulWidget {
 class NotifsPageState extends State<NotifsPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Column(
-        children: const [
+        children: [
           SizedBox(
             height: 400,
             width: 100,
