@@ -211,12 +211,12 @@ class _ProfileInfoState extends State<ProfileInfo> {
             top: screenHeight * (4 / 9) - 80 / 2,
             left: 16,
             right: 16,
-            child: SizedBox(
+            child: const SizedBox(
               height: 80,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 mainAxisSize: MainAxisSize.max,
-                children: const <Widget>[
+                children: <Widget>[
                   ProfileInfoMiniCards(firstText: "54%", secondText: "Progress"),
                   SizedBox(
                     width: 10,

@@ -136,10 +136,10 @@ class _TestHomeState extends State<TestHome> {
                     if (!mounted) return;
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const TestLogin()));
                   },
-                  child: Padding(
-                    padding: const EdgeInsets.all(15.0),
+                  child: const Padding(
+                    padding: EdgeInsets.all(15.0),
                     child: Row(
-                      children: const [
+                      children: [
                         Expanded(
                           child: Icon(
                             Icons.logout,

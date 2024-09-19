@@ -277,124 +277,95 @@ class BookingPageState extends State<BookingPage> {
 
     print("POSITION AVAILABLE NOW?  ${context.watch<CurrentLocationNotifier>().positionAvailable}");
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 246, 244, 248),
-      //backgroundColor: Colors.white,
-      body: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).requestFocus(FocusNode());
-        },
-        child: FutureBuilder(
-            future: firestoreParkingLocationService.getParkingInfoData(),
-            builder: (BuildContext context1, AsyncSnapshot snapshot) {
-              if (snapshot.hasData) {
-                //
+        backgroundColor: const Color.fromARGB(255, 246, 244, 248),
+        //backgroundColor: Colors.white,
+        body: GestureDetector(
+          onTap: () {
+            FocusScope.of(context).requestFocus(FocusNode());
+          },
+          child: FutureBuilder(
+              future: firestoreParkingLocationService.getParkingInfoData(),
+              builder: (BuildContext context1, AsyncSnapshot snapshot) {
+                if (snapshot.hasData) {
+                  //
 
-                if (currentLocationProvider.positionAvailable == false) {
-                  return SlidingUpPanel(
-                    panelBuilder: (sc) => Testons(controller: sc),
-                    body: const Padding(
-                      padding: EdgeInsets.only(bottom: 200.0),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: Colors.orange,
-                          backgroundColor: Colors.red,
+                  if (currentLocationProvider.positionAvailable == false) {
+                    return SlidingUpPanel(
+                      panelBuilder: (sc) => Testons(controller: sc),
+                      body: const Padding(
+                        padding: EdgeInsets.only(bottom: 200.0),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.orange,
+                            backgroundColor: Colors.red,
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                } //
-                else if (currentLocationProvider.currentUserLat != 0.0 ||
-                    currentLocationProvider.serviceEnabledAfterRejected == true) {
-                  print("VOILA ${currentLocationProvider.currentUserLat}");
-                  Marker currentLocationMarker = Marker(
-                    markerId: const MarkerId("Your Location"),
-                    position: currentLocationProvider.locationEnabledFromAlertBox == true
-                        ? LatLng(context.read<CurrentLocationNotifier>().locationFetchedFromAlertBox.latitude,
-                            context.watch<CurrentLocationNotifier>().locationFetchedFromAlertBox.longitude)
-                        : LatLng(currentLocationProvider.currentUserLat.toDouble(),
-                            currentLocationProvider.currentUserLng.toDouble()),
-                    icon: BitmapDescriptor.defaultMarker,
-                    infoWindow: InfoWindow(
-                        //EDIT THE JSON.KEYS.FIRST BECAUSE ITS NOT SHOWING ANYTHING
-                        title: "Current Position",
-                        snippet: currentLocationProvider.locationEnabledFromAlertBox == true
-                            ? currentLocationProvider.locationFetchedFromAlertBox.toJson().keys.first
-                            : currentLocationProvider.address.toString()),
-                  );
-                  print("THIS IS THE CURRENT LOCATION MARKER : $currentLocationMarker");
-                  if (currentLocationProvider.serviceEnabledAfterRejected == true &&
-                      currentLocationProvider.userLocationAsked != 0) {
-                    print("ON VERIFIE ${currentLocationProvider.locationFetchedFromAlertBox.latitude}");
-                  }
-                  myMapMarkers[currentLocationMarker.markerId] = currentLocationMarker;
-                  CameraPosition currentUserPositionCamera = CameraPosition(
-                      target: currentLocationProvider.serviceEnabledAfterRejected == true &&
-                              currentLocationProvider.userLocationAsked != 0
-                          ? LatLng(currentLocationProvider.locationFetchedFromAlertBox.latitude,
-                              currentLocationProvider.locationFetchedFromAlertBox.longitude)
+                    );
+                  } //
+                  else if (currentLocationProvider.currentUserLat != 0.0 ||
+                      currentLocationProvider.serviceEnabledAfterRejected == true) {
+                    print("VOILA ${currentLocationProvider.currentUserLat}");
+                    Marker currentLocationMarker = Marker(
+                      markerId: const MarkerId("Your Location"),
+                      position: currentLocationProvider.locationEnabledFromAlertBox == true
+                          ? LatLng(context.read<CurrentLocationNotifier>().locationFetchedFromAlertBox.latitude,
+                              context.watch<CurrentLocationNotifier>().locationFetchedFromAlertBox.longitude)
                           : LatLng(currentLocationProvider.currentUserLat.toDouble(),
                               currentLocationProvider.currentUserLng.toDouble()),
-                      zoom: 11,
-                      bearing: 10); //_kGooglePlex,
+                      icon: BitmapDescriptor.defaultMarker,
+                      infoWindow: InfoWindow(
+                          //EDIT THE JSON.KEYS.FIRST BECAUSE ITS NOT SHOWING ANYTHING
+                          title: "Current Position",
+                          snippet: currentLocationProvider.locationEnabledFromAlertBox == true
+                              ? currentLocationProvider.locationFetchedFromAlertBox.toJson().keys.first
+                              : currentLocationProvider.address.toString()),
+                    );
+                    print("THIS IS THE CURRENT LOCATION MARKER : $currentLocationMarker");
+                    if (currentLocationProvider.serviceEnabledAfterRejected == true &&
+                        currentLocationProvider.userLocationAsked != 0) {
+                      print("ON VERIFIE ${currentLocationProvider.locationFetchedFromAlertBox.latitude}");
+                    }
+                    myMapMarkers[currentLocationMarker.markerId] = currentLocationMarker;
+                    CameraPosition currentUserPositionCamera = CameraPosition(
+                        target: currentLocationProvider.serviceEnabledAfterRejected == true &&
+                                currentLocationProvider.userLocationAsked != 0
+                            ? LatLng(currentLocationProvider.locationFetchedFromAlertBox.latitude,
+                                currentLocationProvider.locationFetchedFromAlertBox.longitude)
+                            : LatLng(currentLocationProvider.currentUserLat.toDouble(),
+                                currentLocationProvider.currentUserLng.toDouble()),
+                        zoom: 11,
+                        bearing: 10); //_kGooglePlex,
 
-                  return SlidingUpPanel(
-                    collapsed: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.blueGrey,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                      ),
-                      child: const Center(
-                          child: Text(
-                        "BOOK A CAR NOW",
-                        style: TextStyle(
-                            color: Colors.white, fontSize: 15.0, fontWeight: FontWeight.w900, fontFamily: 'OpenSans'),
-                      )),
-                    ),
-
-                    controller: drangHandlePanelController,
-                    minHeight: panelHeightClosed,
-                    maxHeight: panelHeightOpened,
-                    parallaxEnabled: true,
-                    parallaxOffset: .5,
-                    panel: RefreshAndSlideUp(
-                        notifyParent: refresh, mappedMarkers: myMapMarkers, controller: drangHandlePanelController),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    /*   panelBuilder: (panelScrollController) => RefreshAndSlideUp(
-                      notifyParent: refresh,
-                      mappedMarkers: myMapMarkers,
-                      panelScrollController: panelScrollController,
-                      dragHandlePanelController: drangHandlePanelController,
-                    ), */ //MAKE THE BLACK CONTAINER The draggable tiroir hand icon
-                    body: isNewCameraPositionAvailable == true
+                    return isNewCameraPositionAvailable == true
                         ? displayMyMap(newCameraPosition)
-                        : displayMyMap(currentUserPositionCamera),
-
+                        : displayMyMap(currentUserPositionCamera);
                     /* SomeMarkers(
                             notifyParent: refresh, mappedMarkers: myMapMarkers), */
-                  );
+                  } else {
+                    return const CircularProgressIndicator(color: Color.fromARGB(255, 238, 244, 54));
+                  }
                 } else {
-                  return const CircularProgressIndicator(color: Color.fromARGB(255, 238, 244, 54));
+                  return Container();
                 }
-              } else {
-                return Container();
-              }
-            }),
-      ),
-
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: <Widget>[
-          FloatingActionButton(
-            mini: true,
-            onPressed: _toggleNavBarForVisibleMap,
-            backgroundColor: Colors.white,
-            elevation: 6.0,
-            heroTag: null,
-            child: const Icon(
-              Icons.info_outline_rounded,
-              color: Colors.red,
-            ),
-          ),
+              }),
+        ),
+        /*     floatingActionButton: Align(
+          alignment: Alignment.bottomCenter,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              FloatingActionButton(
+                mini: true,
+                onPressed: _toggleNavBarForVisibleMap,
+                backgroundColor: Colors.white,
+                elevation: 6.0,
+                heroTag: null,
+                child: const Icon(
+                  Icons.info_outline_rounded,
+                  color: Colors.red,
+                ),
+              ),
 
 /* floating buttons aligned in a row horizontally
 . info button (will display the parking's info, nbr places total, dispo, rented, prix de la place)
@@ -405,21 +376,21 @@ now on the blank space left, the person will see and can choose :
 . The reservation time (day and hour, duration etc)
 . how to pay
 . A BOOK NOW button to validate the reservation */
-          Visibility(
-            visible: isParkingLocationIconNotClicked == true ? false : true,
-            child: FloatingActionButton(
-              onPressed: () async {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => BookingThroughSlotsMapNoAlertDialog(
-                        receivedID: sentParkingIDtoSlotsBooking,
-                        mappedParkingsGeneralInfo: fetchedMappingResult,
-                        slotBooked: false),
-                  ),
-                );
+              Visibility(
+                visible: isParkingLocationIconNotClicked == true ? false : true,
+                child: FloatingActionButton(
+                  onPressed: () async {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BookingThroughSlotsMapNoAlertDialog(
+                            receivedID: sentParkingIDtoSlotsBooking,
+                            mappedParkingsGeneralInfo: fetchedMappingResult,
+                            slotBooked: false),
+                      ),
+                    );
 
-                /* var obtenu = await showDialog(
+                    /* var obtenu = await showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                           content: BookingThroughSlotsMap(
@@ -439,39 +410,87 @@ now on the blank space left, the person will see and can choose :
                           ],
                         ));
                 print("OBTENU $obtenu"); */
-              },
-              mini: true,
-              backgroundColor: Colors.black,
-              elevation: 6.0,
-              heroTag: null,
-              child: const Icon(
-                Icons.visibility,
-                color: Colors.green,
+                  },
+                  mini: true,
+                  backgroundColor: Colors.black,
+                  elevation: 6.0,
+                  heroTag: null,
+                  child: const Icon(
+                    Icons.visibility,
+                    color: Colors.green,
+                  ),
+                ),
               ),
-            ),
+              FloatingActionButton(
+                mini: true,
+                onPressed: _toggleNavBarForVisibleMap,
+                elevation: 6.0,
+                heroTag: null,
+                backgroundColor: Colors.white,
+                child: const Icon(
+                  Icons.visibility,
+                  color: Colors.red,
+                ),
+              ),
+            ],
           ),
-          FloatingActionButton(
-            mini: true,
-            onPressed: _toggleNavBarForVisibleMap,
-            elevation: 6.0,
-            heroTag: null,
-            backgroundColor: Colors.white,
-            child: const Icon(
-              Icons.visibility,
-              color: Colors.red,
-            ),
-          ),
-        ],
-      ),
+        ), */
 
-      /* FloatingActionButton(
-        backgroundColor: Colors.pink,
-        child: const Icon(Icons.drag_indicator),
-        onPressed: _toggleNavBarForVisibleMap,
-        heroTag: null,
-        elevation: 6.0,
-      ), */
-    );
+        floatingActionButton: Align(
+          alignment: Alignment.topRight,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              FloatingActionButton(
+                mini: true,
+                onPressed: _toggleNavBarForVisibleMap,
+                backgroundColor: Colors.red, // Background color
+                elevation: 12.0, // Increased elevation
+                heroTag: null,
+                child: const Icon(
+                  Icons.info_outline_rounded,
+                  color: Colors.white, // Icon color
+                ),
+              ),
+              Visibility(
+                visible: isParkingLocationIconNotClicked == true ? false : true,
+                child: FloatingActionButton(
+                  onPressed: () async {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BookingThroughSlotsMapNoAlertDialog(
+                            receivedID: sentParkingIDtoSlotsBooking,
+                            mappedParkingsGeneralInfo: fetchedMappingResult,
+                            slotBooked: false),
+                      ),
+                    );
+                  },
+                  mini: true,
+                  backgroundColor: Colors.green, // Background color
+                  elevation: 12.0, // Increased elevation
+                  heroTag: null,
+                  child: const Icon(
+                    Icons.visibility,
+                    color: Colors.white, // Icon color
+                  ),
+                ),
+              ),
+              FloatingActionButton(
+                mini: true,
+                onPressed: _toggleNavBarForVisibleMap,
+                elevation: 12.0, // Increased elevation
+                heroTag: null,
+                backgroundColor: Colors.red, // Background color
+                child: const Icon(
+                  Icons.visibility,
+                  color: Colors.white, // Icon color
+                ),
+              ),
+            ],
+          ),
+        ));
+
     /* return Container(
         color: Colors.white,
         child: Column(children: const [

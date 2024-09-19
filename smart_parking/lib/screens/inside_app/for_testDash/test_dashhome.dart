@@ -3,9 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:intl/intl.dart';
 import 'package:maps_launcher/maps_launcher.dart';
+import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:smart_parking/models/common/theme_helper.dart';
+import 'package:smart_parking/notifiers/booking_state_management.dart';
 import 'package:smart_parking/screens/inside_app/for_testDash/test_panel.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
@@ -50,16 +56,21 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
       bookingHasStarted = false,
       userIsInteractingLive = false,
       canDisplayVehicule = false,
-      showBookingDetails = false;
+      showBookingDetails = false,
+      isReservationCanceled = false;
+
   List<Map<String, dynamic>> allUserBookings = [], allBookedParkingsDetails = [], allUserVehiculesUsedForBooking = [];
+  List<TimeOfDay> fetchedParkingTimeSlots = [];
   Map<String, dynamic> allReservationInfoNeeded = {};
   final CountDownController _countdownController = CountDownController();
-  ScrollController bookingInfoScrollController = ScrollController();
-  int settingState = 0, bookingDuration = 0;
+  ScrollController bookingInfoScrollController = ScrollController(), singleChildScrollController = ScrollController();
+  int settingState = 0, bookingDuration = 0, infSliverCount = 3;
   late ValueNotifier<bool> bookingOnGoingListenable = ValueNotifier(false);
   Map<String, dynamic> latestQuerySnapshotCarriedInMapAfterArchive = {}, newDocsAfterNewBookingMade = {};
-  Color modelDetailColor = Colors.black;
+  Color modelDetailColor = Colors.black, infSliverCardColor = Colors.white; //.grey[300]!;
   Timestamp bookingEndTS = Timestamp.now(), bookingStartTS = Timestamp.now();
+  final sliverkEY = GlobalKey();
+  double infSliverHeight = 50, infSliverSpace = 10;
   //var previousBooking
 
   @override
@@ -112,7 +123,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     final theDocToUpdate =
         myDB.collection("users/${currentlySignedInUser?.uid}/wallet").doc(walletCollection.docs.first.id);
 
-    var ok = walletCollection.docs.first.data()['Transactions']['Top Ups'] as Map<String, dynamic>;
+    /*  var ok = walletCollection.docs.first.data()['Transactions']['Top Ups'] as Map<String, dynamic>; */
     topUpsCollection.get().then((value) {
       List allIDList = [];
       for (var element in value.docs) {
@@ -157,7 +168,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
           hasUserAnyRes = getUserReservationDetails(currentlySignedInUser, myDB, docs, value, forInitiState: true);
         }
       });
-      //debugPrint("FROM INITSATAE $hasUserAnyRes");
+      debugPrint("FROM INITSATAE $hasUserAnyRes");
       await FirebaseFirestore.instance.collection("users/${currentlySignedInUser.uid}/vehicules").get().then((value) {
         if (!hasUserAnyRes) {
           if (value.docs.isNotEmpty) {
@@ -180,14 +191,18 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             });
           }
         } else {
-          var moreUrgentReservationInfo = fetchMoreUrgentReservationInfo();
-          var moreUrgentResCarInfo = fetchMoreUrgentResCarInfo(moreUrgentReservationInfo);
-          //  var moreUrgentResParkingInfo = fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
-          setState(() {
-            defaultCarModelDetail = moreUrgentResCarInfo['Specs']['Model Detail'].toString();
-            defaultCarBrand = moreUrgentResCarInfo['Specs']['Brand'].toString().toLowerCase();
-            canDisplayVehicule = true;
-          });
+          if (allUserBookings.isNotEmpty &&
+              allUserVehiculesUsedForBooking.isNotEmpty &&
+              allBookedParkingsDetails.isNotEmpty) {
+            var moreUrgentReservationInfo = fetchMoreUrgentReservationInfo();
+            var moreUrgentResCarInfo = fetchMoreUrgentResCarInfo(moreUrgentReservationInfo);
+            //  var moreUrgentResParkingInfo = fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
+            setState(() {
+              defaultCarModelDetail = moreUrgentResCarInfo['Specs']['Model Detail'].toString();
+              defaultCarBrand = moreUrgentResCarInfo['Specs']['Brand'].toString().toLowerCase();
+              canDisplayVehicule = true;
+            });
+          }
         }
 
         debugPrint("THE FIRST : $defaultCarModelDetail");
@@ -330,20 +345,11 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                   updateDashboardCar: updateDashboardCar),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               body: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-                /*  Container(
-                  margin: EdgeInsets.all(10),
-                  height: 150,
-                  child: Text(
-                    "Hi Maguy, \nWelcome to your dashboard where you can check your upcoming booking infomartion. ",
-                    style: TextStyle(
-                        color: Colors.black, fontSize: 15, fontWeight: FontWeight.w900, fontFamily: 'OpenSans'),
-                  ),
-                ),
-               */
-
                 welcomeToDashboardCard(currentlySignedInUser!.displayName),
                 !doesUserHaveAnyReservation ? noBookingSoFar() : reservationHappening(allReservationsFromAllAppUsers),
-                doesUserHaveAnyReservation ? Container() : bookingInfoListView(/* allUserBookings.first */)
+                !doesUserHaveAnyReservation
+                    ? Container()
+                    : bookingInfoListView(allUserBookings.first.values.elementAt(0))
               ]),
             );
           }
@@ -386,8 +392,22 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                   Text("Hi $displayName,", style: dashboardWelcomeTextStyle),
                 ],
               ),
-              Text("Here, you can visualize your upcoming/ongoing booking details anytime.",
-                  style: dashboardWelcomeTextStyle.copyWith(fontWeight: FontWeight.w500))
+              Text("Here, you can visualize your upcoming or ongoing booking's details anytime.",
+                  style: dashboardWelcomeTextStyle.copyWith(fontWeight: FontWeight.w500)),
+              /*    Row(
+                children: [
+                  const Icon(
+                    Icons.visibility,
+                    size: 15,
+                    color: Colors.blue,
+                  ),
+                  const SizedBox(
+                    width: 5,
+                  ),
+                  Text("Click on the clicking for more details", style: dashboardWelcomeTextStyle),
+                ],
+              ),
+         */
             ],
           ),
         ),
@@ -423,8 +443,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                 duration: 0,
                 isReverse: true,
                 initialDuration: 0,
-                width: 300,
-                height: 300,
+                width: 350,
+                height: 350,
                 ringColor: Colors.grey[300]!,
                 ringGradient: null,
                 fillColor: Colors.purpleAccent[100]!,
@@ -482,14 +502,14 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 15, right: 10, bottom: 10),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 15, right: 10, bottom: 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [],
+                          children: [],
                         ),
                       ],
                     ),
@@ -605,9 +625,24 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     if (userHasBooking) {
       var tempOutadedRes = resDocs.where((element) {
         var bookingEndTS = element.data()['BookingEnd'] as Timestamp;
+        /*  int deleteCount = 0;
+        if (bookingEndTS.toDate().difference(DateTime.now()).inSeconds < 0) && deleteCount < 1 > {
+          debugPrint("THE SINGLE OUTDATED : ${element.id} _____ $stopDeletingCount");
+          var resThatJustEndedEntries = {element.id: element.data()};
+          var moreUrgentReservationInfo = fetchMoreUrgentReservationInfo();
+          var moreUrgentResParkingInfo = fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
+          var castedMoreUrgentParkingInfo = moreUrgentResParkingInfo;
+          archiveResThatJustEnded(castedMoreUrgentParkingInfo, resThatJustEndedEntries, value,
+              action: 'completed', fromInitiState: forInitiState);
+              deleteCount += 1;
+        } */
         return bookingEndTS.toDate().difference(DateTime.now()).inSeconds < 0;
       });
-      if (tempOutadedRes.isNotEmpty && forInitiState) {
+      debugPrint("tempOutadedRes length: ${tempOutadedRes.length}");
+      if (tempOutadedRes.isNotEmpty &&
+          allUserBookings.isNotEmpty &&
+          allUserVehiculesUsedForBooking.isNotEmpty &&
+          allBookedParkingsDetails.isNotEmpty) {
         for (var singleOutdatedRes in tempOutadedRes) {
           if (stopDeletingCount < tempOutadedRes.length) {
             debugPrint("THE SINGLE OUTDATED : ${singleOutdatedRes.id} _____ $stopDeletingCount");
@@ -616,7 +651,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             var moreUrgentResParkingInfo = fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
             var castedMoreUrgentParkingInfo = moreUrgentResParkingInfo;
             archiveResThatJustEnded(castedMoreUrgentParkingInfo, resThatJustEndedEntries, value,
-                action: 'completed', fromInitiState: true);
+                action: 'completed', fromInitiState: forInitiState);
             stopDeletingCount += 1;
           }
         }
@@ -844,7 +879,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
   String durationToString(int minutes) {
     var d = Duration(minutes: minutes).abs();
     List<String> parts = d.toString().split(':');
-    print("éTHE DURATION: ${parts[0].padLeft(2, '0')}h ${parts[1].padLeft(2, '0')}mn}");
+    //debugPrint("éTHE DURATION: ${parts[0].padLeft(2, '0')}h ${parts[1].padLeft(2, '0')}mn}");
     return '${parts[0].padLeft(2, '0')}h ${parts[1].padLeft(2, '0')}mn';
   }
 
@@ -1218,7 +1253,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         });
       } else if (action == 'canceled before start') {
         firebaseResToUpdate.update({
-          'ReservationStatus.Canceled Before Start': {'Status': true, 'TimeStamp': FieldValue.serverTimestamp()}
+          'ReservationStatus.Canceled Before Start': {'Status': true, 'TimeStamp': Timestamp.now()}
         });
       } else {
         //timeAdded
@@ -1291,7 +1326,6 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
               });
             } else {
               //meaning 'Parked
-
             }
           }
         });
@@ -1439,79 +1473,123 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     }
   }
 
-  bookingInfoListView(/* Map<String, dynamic> first */) {
+  bookingInfoListView(Map<String, dynamic> first) {
+    var firstFullIfnfoWithID = allUserBookings.first;
+    var castedStartTime = first['BookingStart'] as Timestamp;
+    var startTimeToHour = TimeOfDay.fromDateTime(castedStartTime.toDate());
+
+    var castedEndTime = first['BookingEnd'] as Timestamp;
+    var endTimeToHour = TimeOfDay.fromDateTime(castedEndTime.toDate());
+
+    var thePSpot = first['SlotID'];
+
+    debugPrint("FIRST INF: $first _ ${startTimeToHour.format(context)}");
+    var ringFillGradientResStartsIn = LinearGradient(
+        colors: [
+          Theme.of(context).primaryColor.withOpacity(0.4),
+
+          Theme.of(context).colorScheme.secondary, //this one do not touch
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        stops: const [0.0, 1.0],
+        tileMode: TileMode.clamp);
+    var ringFillGradientResStarted = LinearGradient(
+        colors: [
+          Colors.green.withOpacity(0.6),
+
+          Theme.of(context).colorScheme.secondary, //this one do not touch
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        /* begin: const FractionalOffset(0.0, 0.0),
+        end: const FractionalOffset(1.0, 0.0), */
+        stops: const [0.0, 1.0],
+        tileMode: TileMode.clamp);
+
     return Column(
       children: [
-        /*   GestureDetector(
-          onTap: () {
-            debugPrint("YUUUU");
-            showDialog(
-                context: context,
-                builder: (context) {
-                  return ThemeHelper().alartDialog('Show/Hide Details',
-                      'LongPress on me to display or hide your upcoming/ongoing reservation details.', context);
-                });
-          },
-          onLongPress: () {
-            setState(() {
-              showBookingDetails ? showBookingDetails = false : showBookingDetails = true;
-            });
-          },
-          child: Icon(showBookingDetails ? Icons.visibility_off : Icons.visibility),
-        ), */
-        Visibility(
-          visible: showBookingDetails ? true : false,
+        Card(
+          //color: Theme.of(context).primaryColorDark,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+          elevation: 10,
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 50),
-            height: 50,
-            color: Colors.pink.withOpacity(0.2),
-            child: RawScrollbar(
-              controller: bookingInfoScrollController,
-              scrollbarOrientation: ScrollbarOrientation.bottom,
-              child: CustomScrollView(
-                scrollDirection: Axis.horizontal,
-                controller: bookingInfoScrollController,
-                slivers: [
-                  SliverGrid(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 1, mainAxisSpacing: 15),
-                      delegate: SliverChildBuilderDelegate((BuildContext context, int index) {
-                        return Container(
-                          color: Colors.green,
-                          height: 20.0,
-                          width: 150,
-                          /*  child: Container(child: Text("ijsjiojoi")), */
-                        );
-                      }, childCount: 5)),
-                ],
+            //padding: EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                gradient: bookingHasStarted == true || bookingOnGoingListenable.value == true
+                    ? ringFillGradientResStarted
+                    : ringFillGradientResStartsIn),
+            child: Container(
+              width: (infSliverHeight * infSliverCount) +
+                  (infSliverSpace * (infSliverCount - 1)), //containerheight * count + (space * count-1)
+              margin: const EdgeInsets.symmetric(
+                horizontal: 20, /*  vertical: 20 */
+              ),
+              child: Visibility(
+                visible: showBookingDetails ? true : false,
+                child: Container(
+                  color: Colors.grey[300]!,
+                  height: infSliverHeight,
+                  child: CustomScrollView(
+                    //center: sliverkEY,
+                    scrollDirection: Axis.horizontal,
+                    controller: bookingInfoScrollController,
+                    slivers: [
+                      /*     SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Container(
+                          child: Text(
+                            "Some Dummy Text",
+                          ),
+                        ),
+                      ), */
+                      SliverGrid.count(
+                        crossAxisCount: 1,
+                        mainAxisSpacing: 10.0,
+                        crossAxisSpacing: 10.0,
+                        childAspectRatio: 1,
+                        children: [
+                          sliverCardTexts(title: "Start", content: startTimeToHour.format(context)),
+                          sliverCardTexts(title: "End ", content: endTimeToHour.format(context)),
+                          sliverCardTexts(title: "Spot ID", content: thePSpot),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            /* archiveResThatJustEnded(castedMoreUrgentParkingInfo, resThatJustEndedEntries, allReservationsFromAllAppUsers, action: action) */
-          },
-          style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.white)),
-          child: const Text(
-            "CANCEL BOOKING",
-            style: TextStyle(color: Colors.black),
-          ),
-        ),
-        /*  Container(
-            margin: const EdgeInsets.all(15),
-            height: 100,
-            width: double.infinity,
-            child: Card(
-              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
-              // shadowColor: const Color(0xff7986CB),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Visibility(
+                visible: true,
+                child: editingDashBookingButtons(
+                  buttonLabel: 'Cancel',
+                  buttonIcon: Icons.cancel_outlined,
+                  iconColor: Colors.red,
+                  concernedBookingWithID: firstFullIfnfoWithID,
+                )), //passthevdehicule to edit as an argument with onTap (onTap allows to select a vehicule only)
+            editingDashBookingButtons(
+              buttonLabel: 'Details',
+              buttonIcon: showBookingDetails ? Icons.visibility_off : Icons.visibility,
+              iconColor: Colors.green,
+              concernedBookingWithID: firstFullIfnfoWithID,
+            ),
+            Visibility(
+              visible: true,
+              child: editingDashBookingButtons(
+                buttonLabel: 'Edit',
+                buttonIcon: Icons.edit,
+                iconColor: Colors.blue,
+                concernedBookingWithID: firstFullIfnfoWithID,
               ),
-              elevation: 20,
-              child: Text("Cancel Reservation"),
-            ))
-      */
+            ) //passthevdehicule to edit as an argument for
+          ],
+        )
       ],
     );
   }
@@ -1533,6 +1611,412 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     } catch (e) {
       debugPrint(e.toString());
     }
+  }
+
+  editingDashBookingButtons(
+      {required String buttonLabel,
+      required IconData buttonIcon,
+      required MaterialColor iconColor,
+      required Map<String, dynamic> concernedBookingWithID}) {
+    return Column(
+      children: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            elevation: 5,
+            backgroundColor: Colors.grey.shade800,
+            shape: const CircleBorder(),
+          ),
+          onPressed: () async {
+            /*   setState(() {
+              /*   addCarIconPressed = true;
+                    callSelectVehiculeAfterAdd = true; */
+            }); */
+            buttonLabel == 'Cancel'
+                ? {
+                    await removeBookingFromFirebase(concernedBookingWithID).then((carRemoveResult) {
+                      isReservationCanceled
+                          ? {
+                              setState(
+                                () => bookingHasEnded = true,
+                              ),
+                            }
+                          : null;
+                    }).whenComplete(() => isReservationCanceled ? Navigator.pop(context) : null),
+                  } //archiverResBlabla with "canceled before end"
+                : buttonLabel == 'Details'
+                    ? {
+                        setState(() {
+                          showBookingDetails ? showBookingDetails = false : showBookingDetails = true;
+                        })
+                      }
+                    : editReservation(concernedBookingWithID);
+          },
+          child: Icon(
+            buttonIcon,
+            color: iconColor,
+            size: buttonLabel == 'Edit' ? 21 : 23,
+          ),
+        ),
+        SizedBox(
+          width: 40,
+          child: Align(
+            child: FittedBox(
+                child: Text(
+              buttonLabel,
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: buttonLabel == "Edit" ? 13 : 15,
+                fontFamily: 'OpenSans',
+                fontWeight: FontWeight.bold,
+              ),
+            )),
+          ),
+        ),
+      ],
+    );
+  }
+
+  sliverCardTexts({required String title, required content}) {
+    TextStyle titleTextStyle = TextStyle(
+      color: Colors.black,
+      fontFamily: 'OpenSans',
+      fontSize: title == "Spot ID" ? 10 : 11,
+      fontWeight: FontWeight.w800,
+    );
+
+    return Card(
+        // color: Colors.blue[200],
+        color: infSliverCardColor,
+        child: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 3),
+          child: Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            Flexible(
+              child: FittedBox(
+                child: Text(
+                  title,
+                  style: titleTextStyle,
+                ),
+              ),
+            ),
+            Flexible(
+              child: FittedBox(
+                child: Text(
+                  content,
+                  style: titleTextStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w100),
+                ),
+              ),
+            ),
+          ]),
+        ));
+  }
+
+  Future<String> removeBookingFromFirebase(Map<String, dynamic> concernedBooking) async {
+    //var theBookingDocID = concernedBooking.keys.elementAt(0);
+    return await showDialog(
+      barrierDismissible: false,
+      useRootNavigator: false,
+      context: context,
+      builder: (dialcontext) => StatefulBuilder(builder: (dialcontext, setState) {
+        return AlertDialog(
+          scrollable: true,
+          title: const Text("Cancelation Confirmation"),
+          content: const Text("Your current booking will be canceled if you proceed."),
+          actions: [
+            TextButton(
+              style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black38)),
+              onPressed: () {
+                Navigator.of(context).pop("REMOVE BOOKING");
+              },
+              child: const Text(
+                "OK",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            TextButton(
+              style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black38)),
+              onPressed: () {
+                Navigator.of(context).pop('CANCEL REMOVAL');
+              },
+              child: const Text(
+                "CANCEL",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      }),
+    ).then((bookingAction) async {
+      debugPrint("BOOKING ACTION: $bookingAction");
+      if (bookingAction == 'REMOVE BOOKING') {
+        awaitActionDialog("Canceling booking, please wait.");
+
+        var moreUrgentReservationInfo = fetchMoreUrgentReservationInfo();
+        var moreUrgentResParkingInfo = fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
+        var castedMoreUrgentParkingInfo = moreUrgentResParkingInfo;
+        await myDB.collection("slotsReservations").get().then((value) => archiveResThatJustEnded(
+            castedMoreUrgentParkingInfo, concernedBooking, value,
+            action: 'canceled before start'));
+        setState(() {
+          isReservationCanceled = true;
+        });
+
+        //showSnackBarText('Car successfully removed!');
+      }
+      String ok = bookingAction as String;
+      return ok;
+    });
+  }
+
+  awaitActionDialog(
+    String actionTitle,
+  ) async {
+    return await showDialog(
+        barrierDismissible: false,
+        useRootNavigator: false,
+        context: context,
+        builder: (dialcontext) => StatefulBuilder(builder: (dialcontext, setState) {
+              /*   isReservationCanceled
+                  ? Future.delayed(const Duration(seconds: 5)).then(
+                      (value) {
+                        Navigator.pop(context);
+                      },
+                    )
+                  : null; */
+              return AlertDialog(
+                  scrollable: true,
+                  title: Center(
+                      child: Text(
+                    actionTitle,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  )),
+                  content: SpinKitFadingCircle(
+                    size: 40,
+                    itemBuilder: (BuildContext context, int index) {
+                      return const DecoratedBox(
+                        decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                      );
+                    },
+                  ));
+            }));
+  }
+
+  editReservation(Map<String, dynamic> concernedBookingWithID) async {
+    bool autoValidate = true;
+    bool readOnly = false;
+    bool showSegmentedControl = true;
+    final formKey = GlobalKey<FormBuilderState>();
+    bool genderHasError = false;
+
+    var genderOptions = ['Male', 'Female', 'Other'];
+
+    void onChanged(dynamic val) => debugPrint(val.toString());
+    var bookingWOid = concernedBookingWithID.values.elementAt(0) as Map<String, dynamic>;
+    Timestamp initialValueBookingStart = bookingWOid['BookingStart'] as Timestamp;
+    Timestamp initialValueBookingEnd = bookingWOid['BookingEnd'] as Timestamp;
+
+    var stateManagerRead = context.read<BookingStateManagement>();
+    Map<String, dynamic> theParkingGeneralInfo = {};
+    fetchParkingIDforCurrentRes(bookingWOid).then((value) {
+      theParkingGeneralInfo = value;
+      stateManagerRead.updateOpeningAndClosingHours(
+          theParkingGeneralInfo['Opening Hour'], theParkingGeneralInfo['Closing Hour']);
+    });
+
+    /*  stateManagerRead.updateOpeningAndClosingHours(
+        theParkingGeneralInfo['Opening Hour'], theParkingGeneralInfo['Closing Hour']);
+ */
+    TimeOfDay startTime = TimeOfDay(
+            hour: int.parse(context.read<BookingStateManagement>().openingHour.split(":")[0]),
+            minute: int.parse(context.read<BookingStateManagement>().openingHour.split(":")[1])),
+        endTime = TimeOfDay(
+            hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]),
+            minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1]));
+
+    stateManagerRead.getTimeSlotsIntervals(startTime, endTime, const Duration(minutes: 30)).toList().then((value) {
+      debugPrint("OK LISTENING LIST $value");
+      fetchedParkingTimeSlots = value;
+    });
+
+    return showDialog(
+        barrierDismissible: true,
+        useRootNavigator: false,
+        context: context,
+        builder: (dialcontext) => StatefulBuilder(builder: (dialcontext, setState) {
+              return AlertDialog(
+                scrollable: true,
+                content: SizedBox(
+                  width: double.maxFinite,
+                  height: 400,
+                  child: SingleChildScrollView(
+                      child: GestureDetector(
+                    onTap: () {
+                      FocusScope.of(context).requestFocus(FocusNode());
+                    },
+                    child: Column(
+                      children: <Widget>[
+                        FormBuilder(
+                          key: formKey,
+                          // enabled: false,
+                          onChanged: () {
+                            formKey.currentState!.save();
+                            debugPrint(formKey.currentState!.value.toString());
+                          },
+                          autovalidateMode: AutovalidateMode.disabled,
+                          initialValue: const {
+                            'movie_rating': 5,
+                            'best_language': 'Dart',
+                            'age': '13',
+                            'gender': 'Male',
+                            'languages_filter': ['Dart']
+                          },
+                          skipDisabled: true,
+                          child: Column(
+                            children: <Widget>[
+                              const SizedBox(height: 15),
+                              /* const SizedBox(height: 100, child: FittedBox(child: Text("Please note that you can only edit the date and time of your booking with no possibility of increasing or decreasing "),),), */
+                              FormBuilderDateTimePicker(
+                                name: 'bookingStart',
+                                initialEntryMode: DatePickerEntryMode.calendar,
+                                initialValue: initialValueBookingStart.toDate(),
+                                inputType: InputType.both,
+                                decoration: InputDecoration(
+                                  labelText: 'New Booking Start',
+                                  suffixIcon: IconButton(
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () {
+                                      formKey.currentState!.fields['bookingStart']?.didChange(null);
+                                    },
+                                  ),
+                                ),
+                                initialTime: TimeOfDay.fromDateTime(initialValueBookingStart.toDate()),
+                                // locale: const Locale.fromSubtags(languageCode: 'fr'),
+                              ),
+                              FormBuilderDateTimePicker(
+                                name: 'bookingEnd',
+                                initialEntryMode: DatePickerEntryMode.calendar,
+                                initialValue: initialValueBookingEnd.toDate(),
+                                inputType: InputType.both,
+                                decoration: InputDecoration(
+                                  labelText: 'New Booking End',
+                                  suffixIcon: IconButton(
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () {
+                                      formKey.currentState!.fields['bookingEnd']?.didChange(null);
+                                    },
+                                  ),
+                                ),
+                                initialTime: TimeOfDay.fromDateTime(initialValueBookingEnd.toDate()),
+                                // locale: const Locale.fromSubtags(languageCode: 'fr'),
+                              ),
+                              FormBuilderDateRangePicker(
+                                name: 'date_range',
+                                firstDate: DateTime(1970),
+                                lastDate: DateTime(2030),
+                                format: DateFormat('yyyy-MM-dd'),
+                                onChanged: onChanged,
+                                decoration: InputDecoration(
+                                  labelText: 'Date Range',
+                                  helperText: 'Helper text',
+                                  hintText: 'Hint text',
+                                  suffixIcon: IconButton(
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () {
+                                      formKey.currentState!.fields['date_range']?.didChange(null);
+                                    },
+                                  ),
+                                ),
+                              ),
+                              FormBuilderSlider(
+                                name: 'timeAdded',
+                                validator: FormBuilderValidators.compose([
+                                  FormBuilderValidators.min(6),
+                                ]),
+                                onChanged: onChanged,
+                                min: 0.0,
+                                max: 10.0,
+                                initialValue: 7.0,
+                                divisions: 20,
+                                activeColor: Colors.red,
+                                inactiveColor: Colors.pink[100],
+                                decoration: const InputDecoration(
+                                  labelText: 'Number of things',
+                                ),
+                              ),
+                              FormBuilderDropdown<String>(
+                                // autovalidate: true,
+                                name: 'gender',
+                                decoration: InputDecoration(
+                                  labelText: 'Gender',
+                                  suffix: genderHasError ? const Icon(Icons.error) : const Icon(Icons.check),
+                                  hintText: 'Select Gender',
+                                ),
+                                validator: FormBuilderValidators.compose([FormBuilderValidators.required()]),
+                                items: genderOptions
+                                    .map((gender) => DropdownMenuItem(
+                                          alignment: AlignmentDirectional.center,
+                                          value: gender,
+                                          child: Text(gender),
+                                        ))
+                                    .toList(),
+                                onChanged: (val) {
+                                  setState(() {
+                                    genderHasError = !(formKey.currentState?.fields['gender']?.validate() ?? false);
+                                  });
+                                },
+                                valueTransformer: (val) => val?.toString(),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  if (formKey.currentState?.saveAndValidate() ?? false) {
+                                    debugPrint(formKey.currentState?.value.toString());
+                                  } else {
+                                    debugPrint(formKey.currentState?.value.toString());
+                                    debugPrint('validation failed');
+                                  }
+                                },
+                                child: const Text(
+                                  'Submit',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  formKey.currentState?.reset();
+                                },
+                                // color: Theme.of(context).colorScheme.secondary,
+                                child: Text(
+                                  'Reset',
+                                  style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )),
+                ),
+              );
+            }));
+  }
+
+  Future<Map<String, dynamic>> fetchParkingIDforCurrentRes(Map<String, dynamic> bookingWOid) async {
+    Map<String, dynamic> theParkingGeneralInfo = {};
+    await myDB.collection("locations").doc(bookingWOid['ParkingID']).get().then((value) {
+      debugPrint("CONTEXT READ: ${value.data()}");
+      theParkingGeneralInfo = value.data() as Map<String, dynamic>;
+    });
+    return theParkingGeneralInfo;
   }
 
 //closinbrac

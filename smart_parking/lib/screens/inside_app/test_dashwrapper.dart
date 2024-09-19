@@ -104,7 +104,7 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
 
   Widget mapDashboardToggleSwitch() {
     return Material(
-      color: Colors.white.withOpacity(0),
+      color: Colors.red, //Colors.white.withOpacity(0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(13),
       ),
@@ -183,42 +183,42 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
   dragMapDashToggleSwitch() {
     //CHECK THIS LINK FOR THE NEW OFFSET POSITION TO KEEP THE OBJECT THERE AFTER DRAG https://flutteragency.com/draggable-widget/
     return Draggable(
-      axis: Axis.vertical,
-      data: mapDashboardToggleSwitch(),
-      feedback: mapDashboardToggleSwitch(),
-      childWhenDragging: Container(),
-      onDraggableCanceled: (velocity, offset) {
-        setState(() {
-          isToggleDragStarted = false;
-        });
-      },
-      onDragStarted: () {
-        setState(() {
-          isToggleDragStarted = true;
-        });
-      },
-      onDragEnd: (details) {
-        setState(() {
-          isToggleDragStarted = false;
-          /*CAN KEEP THESE TWO IF I WANT THE TOGGLE OBJECT TO BE SENT BACK TO ITS PREVIOUS POSITION  
-         previousPositionX = dragEndOffsetX;
-          previousPositionY = dragEndOffsetY; */
-          dragEndOffsetX = details.offset.dx;
-          dragEndOffsetY = details.offset.dy;
-          if (dragEndOffsetY < appBarHeightFinal + mapTopRightIconBoxHeightDeducted) {
-            debugPrint("YOU WENT TOO FAR UP!");
-            dragEndOffsetY = appBarHeightFinal +
-                15 +
-                mapTopRightIconBoxHeightDeducted; //15 to not touch the appbar and see it clearly
-          }
-          if (dragEndOffsetY > totalScreenHeightFinal - appBarHeightFinal - toggleContainerHeight) {
-            debugPrint("YOU WENT TOO FAR DOWN!");
-            dragEndOffsetY = totalScreenHeightFinal - appBarHeightFinal - toggleContainerHeight;
-          }
-        });
-      },
-      child: mapDashboardToggleSwitch(),
-    );
+        hitTestBehavior: HitTestBehavior.translucent,
+        axis: Axis.vertical,
+        data: mapDashboardToggleSwitch(),
+        feedback: mapDashboardToggleSwitch(),
+        childWhenDragging: Container(),
+        onDraggableCanceled: (velocity, offset) {
+          setState(() {
+            isToggleDragStarted = false;
+          });
+        },
+        onDragStarted: () {
+          setState(() {
+            isToggleDragStarted = true;
+          });
+        },
+        onDragEnd: (details) {
+          setState(() {
+            isToggleDragStarted = false;
+            /*CAN KEEP THESE TWO IF I WANT THE TOGGLE OBJECT TO BE SENT BACK TO ITS PREVIOUS POSITION  
+     previousPositionX = dragEndOffsetX;
+      previousPositionY = dragEndOffsetY; */
+            dragEndOffsetX = details.offset.dx;
+            dragEndOffsetY = details.offset.dy;
+            if (dragEndOffsetY < appBarHeightFinal + mapTopRightIconBoxHeightDeducted) {
+              debugPrint("YOU WENT TOO FAR UP!");
+              dragEndOffsetY = appBarHeightFinal +
+                  15 +
+                  mapTopRightIconBoxHeightDeducted; //15 to not touch the appbar and see it clearly
+            }
+            if (dragEndOffsetY > totalScreenHeightFinal - appBarHeightFinal - toggleContainerHeight) {
+              debugPrint("YOU WENT TOO FAR DOWN!");
+              dragEndOffsetY = totalScreenHeightFinal - appBarHeightFinal - toggleContainerHeight;
+            }
+          });
+        },
+        child: mapDashboardToggleSwitch());
   }
 
   @override
@@ -239,82 +239,76 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
     debugPrint("APPBAR.height $fetchedAppBarHeight ___________ test : $appBarHeightFinal");
     debugPrint("CAN SHOW TOGGLE: $showToggle ____ isDropped $isDropped");
     return Scaffold(
-      body: GestureDetector(
-        onTapUp: (details) {
-          setState(() {
-            showToggle = true;
-          });
-          /*   LocalPushNotificationsService.sendNotification(); */
-        },
-        onVerticalDragStart: (details) {
-          setState(() {
-            showToggle = true;
-          });
-        },
-        child: Stack(
-            //
-            alignment: const Alignment(1.00, 0.70),
-            children: [
-              getBodyWFadedEffect(),
-              //Positioned(left: 30, child: mapDashboardToggleSwitch()),
-              /* showToggle == false ||  */ isDropped == true ? Container() : dragMapDashToggleSwitch(),
-              Positioned(
-                top: mapTopRightIconBoxHeightDeducted, //to not hide the map location icon en haut à droite
-                child: DragTarget(
-                  builder: ((context, data, rejectedData) {
-                    return DottedBorder(
-                      borderType: BorderType.RRect,
-                      radius: const Radius.circular(12),
-                      color: isToggleDragStarted ? Colors.blueGrey : Colors.white.withOpacity(0),
-                      strokeWidth: 2,
-                      dashPattern: const [6],
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.all(Radius.circular(12)),
-                        child: Container(
-                          height: isDropped == true
-                              ? dragTargetContainerHeight
-                              : dragTargetContainerHeight - toggleContainerHeight + 10,
-                          /* dragTargetContainerHeight +
-                              toggleContainerHeight -
-                               -
-                              2, // */ //deduct stroke width
-                          width: toggleContainerWidth - 2,
-                          color: isDropped ? null : null,
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                top: dragEndOffsetY - toggleContainerHeight - toggleContainerHeight / 2,
-                                child: isDropped == true ? dragMapDashToggleSwitch() : Container(),
-                              ),
-                            ],
+      body: Stack(
+          //
+          alignment: const Alignment(1.00, 0.70),
+          children: [
+            getBodyWFadedEffect(),
+            //Positioned(left: 30, child: mapDashboardToggleSwitch()),
+            /* showToggle == false ||  */ isDropped == true ? Container() : dragMapDashToggleSwitch(),
+            Positioned(
+              top: mapTopRightIconBoxHeightDeducted, //to not hide the map location icon en haut à droite
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                child: Container(
+                  decoration: BoxDecoration(
+                  ),
+                  child: DragTarget(
+                    builder: ((context, data, rejectedData) {
+                      return DottedBorder(
+                        borderType: BorderType.RRect,
+                        radius: const Radius.circular(12),
+                        color: isToggleDragStarted ? Colors.blueGrey : Colors.white.withOpacity(0),
+                        strokeWidth: 2,
+                        dashPattern: const [6],
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          child: Container(
+                            height: isDropped == true
+                                ? dragTargetContainerHeight
+                                : dragTargetContainerHeight - toggleContainerHeight + 10,
+                            /* dragTargetContainerHeight +
+                                toggleContainerHeight -
+                                 -
+                                2, // */ //deduct stroke width
+                            width: toggleContainerWidth - 2,
+                            color: isDropped ? null : null,
+                            child: Stack(
+                              children: [
+                                Positioned(
+                                  top: dragEndOffsetY - toggleContainerHeight - toggleContainerHeight / 2,
+                                  child: isDropped == true ? dragMapDashToggleSwitch() : Container(),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }),
-                  onWillAccept: (data) => true,
-                  onAccept: (data) {
-                    /* ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Dropped successfully'),
-                      ),
-                    ); */
-                    setState(() {
-                      isDropped = true;
-                    });
-                  },
+                      );
+                    }),
+                    onWillAccept: (data) => true,
+                    onAccept: (data) {
+                      /* ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Dropped successfully'),
+                        ),
+                      ); */
+                      setState(() {
+                        isDropped = true;
+                      });
+                    },
+                  ),
                 ),
               ),
-              /*  /* WOULD WORK IF I DIDNT WANT TO MAKE IT ALIGN TO THE VERTICAL CONTAINER ON THE LEFT SO KEEP THIS */
-              isDropped == true 
-                  ? Positioned(
-                      left: dragEndOffsetX,
-                      top: dragEndOffsetY - toggleContainerHeight,
-                      child: dragMapDashToggleSwitch(),
-                    )
-                  : Container(), */
-            ]),
-      ),
+            ),
+            /*  /* WOULD WORK IF I DIDNT WANT TO MAKE IT ALIGN TO THE VERTICAL CONTAINER ON THE LEFT SO KEEP THIS */
+            isDropped == true 
+                ? Positioned(
+                    left: dragEndOffsetX,
+                    top: dragEndOffsetY - toggleContainerHeight,
+                    child: dragMapDashToggleSwitch(),
+                  )
+                : Container(), */
+          ]),
     );
   }
 
