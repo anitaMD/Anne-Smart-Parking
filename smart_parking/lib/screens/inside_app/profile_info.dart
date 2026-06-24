@@ -223,6 +223,7 @@ class _ProfileInfoState extends State<ProfileInfo> {
             left: 16,
             right: 16,
             child: const SizedBox(
+            child: const SizedBox(
               height: 80,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

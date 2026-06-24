@@ -768,7 +768,9 @@ Future<String> getCountryName() async {
               return AlertDialog(
                 title: showEditingCarUI
                     ? const Row(
+                    ? const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
                         children: [
                           CircleAvatar(
                             backgroundColor: Colors.amber,
