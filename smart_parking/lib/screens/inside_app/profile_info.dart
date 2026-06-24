@@ -282,7 +282,8 @@ class OpaqueImage extends StatelessWidget {
       children: <Widget>[
         assetOrNetworkImageOpaque(imageUrl),
         Container(
-          color: primaryColorOpacity.withAlpha(22), //0.85 de base replaced withValues(alpha:0.22) which is deprecated
+          color: primaryColorOpacity.withAlpha(
+              22), //0.85 de base replaced withValues(alpha:0.22) which is deprecated
         ),
       ],
     );

@@ -14,6 +14,7 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:smart_parking/notifiers/location_notifier.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/location_alert_box.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/for_sliding_up_panel.dart/slider_inf_loaded.dart';
+import 'package:smart_parking/screens/inside_app/for_booking/refresh_and_slideup.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/slots_map/no_alert.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
 
@@ -92,11 +93,11 @@ class BookingPageState extends State<BookingPage> {
     var ok = widget.parkingToNavigateTo.values.first as Map<String, dynamic>;
 
     var infos = ok['Positions'] as GeoPoint;
-// ✅ 1. Initialize with API key ONCE
-    final polylinePoints =
+
+    PolylinePoints polyline =
         PolylinePoints(apiKey: 'AIzaSyBFaD36PRwIAg4-WEdZpBktOMH-RwvH9YQ');
 
-// ✅ 2. Create request with origin/destination INSIDE
+    // ✅ 2. Create request with origin/destination INSIDE
     final request = PolylineRequest(
       origin: PointLatLng(
         Provider.of<CurrentLocationNotifier>(context, listen: false)
@@ -109,28 +110,27 @@ class BookingPageState extends State<BookingPage> {
     );
 
 // ✅ 3. Call with ONLY request parameter (no API key, no start/end)
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+    PolylineResult result = await polyline.getRouteBetweenCoordinates(
       request: request,
     );
 
     debugPrint(" widget.parkingToNavigateTo ${result.status}");
-
     if (result.points.isNotEmpty) {
       for (var pointLatLng in result.points) {
         polylineCoordinates
             .add(LatLng(pointLatLng.latitude, pointLatLng.longitude));
       }
-      setState(() {});
     }
+    setState(() {});
   }
 
-  void refreshParkingIconClickState(bool result) {
+  refreshParkingIconClickState(bool result) {
     setState(() {
       isParkingLocationIconNotClicked = result;
     });
   }
 
-  void initMarker(Map<String, dynamic> parkingData, parkingID) {
+  initMarker(Map<String, dynamic> parkingData, parkingID) {
     final MarkerId parkingMarkerID = MarkerId(parkingID);
     getLatLngValues(parkingID);
     print("MARKERS RESULT: ${myMapMarkers.values}");
@@ -177,7 +177,7 @@ class BookingPageState extends State<BookingPage> {
     return aParkingLongitude;
   }
 
-  void getLatLngValues(String parkingID) {
+  getLatLngValues(String parkingID) {
     Set<double> parkingCoordinatesList = {};
     firestoreParkingLocationService
         .getParkingLocationCoordinates(parkingID)
@@ -214,7 +214,7 @@ class BookingPageState extends State<BookingPage> {
   } */
 
   final Completer<GoogleMapController> _controller = Completer();
-  void mapInitialize() {
+  mapInitialize() {
     for (var parkingInfo in fetchedMappingResult.entries) {
       initMarker(parkingInfo.value, parkingInfo.key);
       print(
@@ -223,15 +223,15 @@ class BookingPageState extends State<BookingPage> {
   }
 
   var mapCreated = false;
-  void isMapCreated() => setState(() {
+  isMapCreated() => setState(() {
         mapCreated = true;
       }); //print("$mapCreated IS FINALLY TRUE");
 
-  Future<Null> refresh() => Future.delayed(const Duration(seconds: 1), () {
+  refresh() => Future.delayed(const Duration(seconds: 1), () {
         setState(() {});
       });
 
-  GoogleMap displayMyMap(CameraPosition currentLocationCameraPosition) {
+  displayMyMap(CameraPosition currentLocationCameraPosition) {
     return GoogleMap(
       // ignore: prefer_collection_literals
       onTap: (latLng) {
@@ -262,7 +262,7 @@ class BookingPageState extends State<BookingPage> {
     );
   }
 
-  void displayLocationEnablerDialBox(
+  displayLocationEnablerDialBox(
       bool rejectedFromTheStart, bool enabledAfterRejected) {
     if (rejectedFromTheStart == true && enabledAfterRejected == false) {
       Future.delayed(const Duration(seconds: 5)).then((value) => {

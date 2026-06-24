@@ -1648,20 +1648,19 @@ Future<String> getCountryName() async {
       builder: (dialcontext) =>
           StatefulBuilder(builder: (dialcontext, setState) {
         return AlertDialog(
-          content: SizedBox(
-            width: double.maxFinite,
-            height: cardHeight + 800,
-            child: SingleChildScrollView(
-              child: GestureDetector(
-                  onTap: () {
-                    FocusScope.of(context).requestFocus(FocusNode());
-                  },
-                  child: const Column(
-                    children: [],
-                  )),
-            ),
-          ),
-        );
+            content: SizedBox(
+                width: double.maxFinite,
+                height: cardHeight + 800,
+                child: SingleChildScrollView(
+                  child: GestureDetector(
+                    onTap: () {
+                      FocusScope.of(context).requestFocus(FocusNode());
+                    },
+                    child: const Column(
+                      children: [],
+                    ),
+                  ),
+                )));
       }),
     );
   }

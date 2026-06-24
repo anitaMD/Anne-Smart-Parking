@@ -183,6 +183,8 @@ class _BookingThroughSlotsMapNoAlertDialogState
     infoListViewController.dispose();
     _connectivitySubscription.cancel();
 
+    _connectivitySubscription.cancel();
+
     super.dispose();
   }
 

@@ -8,6 +8,7 @@ import Foundation
 import cloud_firestore
 import connectivity_plus
 import file_selector_macos
+import file_selector_macos
 import firebase_auth
 import firebase_core
 import firebase_messaging
@@ -20,6 +21,7 @@ import location
 import maps_launcher
 import package_info_plus
 import share_plus
+import shared_preferences_foundation
 import shared_preferences_foundation
 import url_launcher_macos
 
