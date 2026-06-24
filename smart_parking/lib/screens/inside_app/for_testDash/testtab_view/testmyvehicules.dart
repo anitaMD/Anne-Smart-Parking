@@ -768,7 +768,9 @@ Future<String> getCountryName() async {
               return AlertDialog(
                 title: showEditingCarUI
                     ? const Row(
+                    ? const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
                         children: [
                           CircleAvatar(
                             backgroundColor: Colors.amber,
@@ -1656,6 +1658,8 @@ Future<String> getCountryName() async {
                   onTap: () {
                     FocusScope.of(context).requestFocus(FocusNode());
                   },
+                  child: const Column(
+                    children: [],
                   child: const Column(
                     children: [],
                   )),

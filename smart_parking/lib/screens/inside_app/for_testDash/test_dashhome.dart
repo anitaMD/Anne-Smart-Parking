@@ -7,10 +7,16 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:intl/intl.dart';
 import 'package:maps_launcher/maps_launcher.dart';
+import 'package:provider/provider.dart';
 import 'package:provider/provider.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:smart_parking/models/common/theme_helper.dart';
+import 'package:smart_parking/notifiers/booking_state_management.dart';
 import 'package:smart_parking/notifiers/booking_state_management.dart';
 import 'package:smart_parking/screens/inside_app/for_testDash/test_panel.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
@@ -79,7 +85,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
   Timestamp bookingEndTS = Timestamp.now(), bookingStartTS = Timestamp.now();
   final sliverkEY = GlobalKey();
   double infSliverHeight = 50, infSliverSpace = 10;
-  //var previousBooking
+ //var previousBooking
 
   @override
   void initState() {
@@ -136,6 +142,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         .collection("users/${currentlySignedInUser?.uid}/wallet")
         .doc(walletCollection.docs.first.id);
 
+    /*  var ok = walletCollection.docs.first.data()['Transactions']['Top Ups'] as Map<String, dynamic>; */
     /*  var ok = walletCollection.docs.first.data()['Transactions']['Top Ups'] as Map<String, dynamic>; */
     topUpsCollection.get().then((value) {
       List allIDList = [];
@@ -506,6 +513,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                 initialDuration: 0,
                 width: 350,
                 height: 350,
+                width: 350,
+                height: 350,
                 ringColor: Colors.grey[300]!,
                 ringGradient: null,
                 fillColor: Colors.purpleAccent[100]!,
@@ -568,11 +577,14 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                   ),
                   const Padding(
                     padding: EdgeInsets.only(left: 15, right: 10, bottom: 10),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 15, right: 10, bottom: 10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
+                          children: [],
                           children: [],
                         ),
                       ],
@@ -719,8 +731,24 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
               action: 'completed', fromInitiState: forInitiState);
               deleteCount += 1;
         } */
+        /*  int deleteCount = 0;
+        if (bookingEndTS.toDate().difference(DateTime.now()).inSeconds < 0) && deleteCount < 1 > {
+          debugPrint("THE SINGLE OUTDATED : ${element.id} _____ $stopDeletingCount");
+          var resThatJustEndedEntries = {element.id: element.data()};
+          var moreUrgentReservationInfo = fetchMoreUrgentReservationInfo();
+          var moreUrgentResParkingInfo = fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
+          var castedMoreUrgentParkingInfo = moreUrgentResParkingInfo;
+          archiveResThatJustEnded(castedMoreUrgentParkingInfo, resThatJustEndedEntries, value,
+              action: 'completed', fromInitiState: forInitiState);
+              deleteCount += 1;
+        } */
         return bookingEndTS.toDate().difference(DateTime.now()).inSeconds < 0;
       });
+      debugPrint("tempOutadedRes length: ${tempOutadedRes.length}");
+      if (tempOutadedRes.isNotEmpty &&
+          allUserBookings.isNotEmpty &&
+          allUserVehiculesUsedForBooking.isNotEmpty &&
+          allBookedParkingsDetails.isNotEmpty) {
       debugPrint("tempOutadedRes length: ${tempOutadedRes.length}");
       if (tempOutadedRes.isNotEmpty &&
           allUserBookings.isNotEmpty &&
@@ -1006,6 +1034,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
   String durationToString(int minutes) {
     var d = Duration(minutes: minutes).abs();
     List<String> parts = d.toString().split(':');
+    //debugPrint("éTHE DURATION: ${parts[0].padLeft(2, '0')}h ${parts[1].padLeft(2, '0')}mn}");
     //debugPrint("éTHE DURATION: ${parts[0].padLeft(2, '0')}h ${parts[1].padLeft(2, '0')}mn}");
     return '${parts[0].padLeft(2, '0')}h ${parts[1].padLeft(2, '0')}mn';
   }

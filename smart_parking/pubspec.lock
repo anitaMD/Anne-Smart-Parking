@@ -151,12 +151,16 @@ packages:
       name: contained_tab_bar_view
       sha256: "87e35f47992764e45ab6205493f2f90c1e3fac4ad84f2b2285b73414727b756e"
       url: "https://pub.dev"
+      sha256: "87e35f47992764e45ab6205493f2f90c1e3fac4ad84f2b2285b73414727b756e"
+      url: "https://pub.dev"
     source: hosted
     version: "0.8.0"
   container_tab_indicator:
     dependency: transitive
     description:
       name: container_tab_indicator
+      sha256: b0bdd73bb495c31c5711cefa363511b10bb3ebcfc007b603a2599401ebe6b2d9
+      url: "https://pub.dev"
       sha256: b0bdd73bb495c31c5711cefa363511b10bb3ebcfc007b603a2599401ebe6b2d9
       url: "https://pub.dev"
     source: hosted
@@ -222,6 +226,8 @@ packages:
     dependency: "direct main"
     description:
       name: device_apps
+      sha256: e84dc74d55749993fd671148cc0bd53096e1be0c268fc364285511b1d8a4c19b
+      url: "https://pub.dev"
       sha256: e84dc74d55749993fd671148cc0bd53096e1be0c268fc364285511b1d8a4c19b
       url: "https://pub.dev"
     source: hosted
@@ -461,6 +467,8 @@ packages:
       name: flutter_broadcast_receiver
       sha256: "710f3be5b55098bb85dc4eca3f5a33c007f0849a153f0aa338929ff4e5d36c1b"
       url: "https://pub.dev"
+      sha256: "710f3be5b55098bb85dc4eca3f5a33c007f0849a153f0aa338929ff4e5d36c1b"
+      url: "https://pub.dev"
     source: hosted
     version: "1.0.0+2"
   flutter_emoji:
@@ -469,7 +477,10 @@ packages:
       name: flutter_emoji
       sha256: "3cc794d2459738e6489cee63f50e85de3732257042f425611d255c8049ce1b81"
       url: "https://pub.dev"
+      sha256: "3cc794d2459738e6489cee63f50e85de3732257042f425611d255c8049ce1b81"
+      url: "https://pub.dev"
     source: hosted
+    version: "2.5.1"
     version: "2.5.1"
   flutter_form_builder:
     dependency: "direct main"
@@ -536,6 +547,8 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_native_timezone
+      sha256: ed7bfb982f036243de1c068e269182a877100c994f05143c8b26a325e28c1b02
+      url: "https://pub.dev"
       sha256: ed7bfb982f036243de1c068e269182a877100c994f05143c8b26a325e28c1b02
       url: "https://pub.dev"
     source: hosted
@@ -892,6 +905,8 @@ packages:
       name: im_stepper
       sha256: "84ca411f7c4666cb8762a6dd6eec0353c96c67f674124614263875d0570ca634"
       url: "https://pub.dev"
+      sha256: "84ca411f7c4666cb8762a6dd6eec0353c96c67f674124614263875d0570ca634"
+      url: "https://pub.dev"
     source: hosted
     version: "1.0.1+1"
   image_gallery_saver:
@@ -900,7 +915,10 @@ packages:
       name: image_gallery_saver
       sha256: "0aba74216a4d9b0561510cb968015d56b701ba1bd94aace26aacdd8ae5761816"
       url: "https://pub.dev"
+      sha256: "0aba74216a4d9b0561510cb968015d56b701ba1bd94aace26aacdd8ae5761816"
+      url: "https://pub.dev"
     source: hosted
+    version: "2.0.3"
     version: "2.0.3"
   image_picker:
     dependency: "direct main"
@@ -1124,12 +1142,16 @@ packages:
       name: nested
       sha256: "03bac4c528c64c95c722ec99280375a6f2fc708eec17c7b3f07253b626cd2a20"
       url: "https://pub.dev"
+      sha256: "03bac4c528c64c95c722ec99280375a6f2fc708eec17c7b3f07253b626cd2a20"
+      url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
   nm:
     dependency: transitive
     description:
       name: nm
+      sha256: "2c9aae4127bdc8993206464fcc063611e0e36e72018696cd9631023a31b24254"
+      url: "https://pub.dev"
       sha256: "2c9aae4127bdc8993206464fcc063611e0e36e72018696cd9631023a31b24254"
       url: "https://pub.dev"
     source: hosted
@@ -1146,6 +1168,8 @@ packages:
     dependency: "direct main"
     description:
       name: otp_text_field
+      sha256: "340b1ed135e1abe9fac0aaebe1c4e48147d95a3e29ecb03ae45ad63a7c28d65d"
+      url: "https://pub.dev"
       sha256: "340b1ed135e1abe9fac0aaebe1c4e48147d95a3e29ecb03ae45ad63a7c28d65d"
       url: "https://pub.dev"
     source: hosted
@@ -1220,7 +1244,10 @@ packages:
       name: path_provider_linux
       sha256: f7a1fe3a634fe7734c8d3f2766ad746ae2a2884abe22e241a8b301bf5cac3279
       url: "https://pub.dev"
+      sha256: f7a1fe3a634fe7734c8d3f2766ad746ae2a2884abe22e241a8b301bf5cac3279
+      url: "https://pub.dev"
     source: hosted
+    version: "2.2.1"
     version: "2.2.1"
   path_provider_platform_interface:
     dependency: transitive
@@ -1364,6 +1391,8 @@ packages:
       name: qr_flutter
       sha256: "5095f0fc6e3f71d08adef8feccc8cea4f12eec18a2e31c2e8d82cb6019f4b097"
       url: "https://pub.dev"
+      sha256: "5095f0fc6e3f71d08adef8feccc8cea4f12eec18a2e31c2e8d82cb6019f4b097"
+      url: "https://pub.dev"
     source: hosted
     version: "4.1.0"
   record_use:
@@ -1487,6 +1516,8 @@ packages:
     dependency: "direct main"
     description:
       name: sliding_up_panel
+      sha256: "578e90956a6212d1e406373250b2436a0f3afece29aee3c24c8360094d6cf968"
+      url: "https://pub.dev"
       sha256: "578e90956a6212d1e406373250b2436a0f3afece29aee3c24c8360094d6cf968"
       url: "https://pub.dev"
     source: hosted

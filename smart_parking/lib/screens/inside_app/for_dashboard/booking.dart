@@ -329,108 +329,131 @@ class BookingPageState extends State<BookingPage> {
         backgroundColor: const Color.fromARGB(255, 246, 244, 248),
         //backgroundColor: Colors.white,
         body: GestureDetector(
-          onTap: () {
-            FocusScope.of(context).requestFocus(FocusNode());
-          },
-          child: FutureBuilder(
-              future: firestoreParkingLocationService.getParkingInfoData(),
-              builder: (BuildContext context1, AsyncSnapshot snapshot) {
-                if (snapshot.hasData) {
-                  //
+            onTap: () {
+              FocusScope.of(context).requestFocus(FocusNode());
+            },
+            child: FutureBuilder(
+                future: firestoreParkingLocationService.getParkingInfoData(),
+                builder: (BuildContext context1, AsyncSnapshot snapshot) {
+                  if (snapshot.hasData) {
+                    //
+                    //backgroundColor: Colors.white,
 
-                  if (currentLocationProvider.positionAvailable == false) {
-                    return SlidingUpPanel(
-                      panelBuilder: (sc) => Testons(controller: sc),
-                      body: const Padding(
-                        padding: EdgeInsets.only(bottom: 200.0),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.orange,
-                            backgroundColor: Colors.red,
+                    if (snapshot.hasData) {
+                      //
+
+                      if (currentLocationProvider.positionAvailable == false) {
+                        return SlidingUpPanel(
+                          panelBuilder: (sc) => Testons(controller: sc),
+                          body: const Padding(
+                            padding: EdgeInsets.only(bottom: 200.0),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.orange,
+                                backgroundColor: Colors.red,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  } //
-                  else if (currentLocationProvider.currentUserLat != 0.0 ||
-                      currentLocationProvider.serviceEnabledAfterRejected ==
-                          true) {
-                    print("VOILA ${currentLocationProvider.currentUserLat}");
-                    Marker currentLocationMarker = Marker(
-                      markerId: const MarkerId("Your Location"),
-                      position: currentLocationProvider
-                                  .locationEnabledFromAlertBox ==
-                              true
-                          ? LatLng(
-                              context
-                                  .read<CurrentLocationNotifier>()
-                                  .locationFetchedFromAlertBox
-                                  .latitude,
-                              context
-                                  .watch<CurrentLocationNotifier>()
-                                  .locationFetchedFromAlertBox
-                                  .longitude)
-                          : LatLng(
-                              currentLocationProvider.currentUserLat.toDouble(),
-                              currentLocationProvider.currentUserLng
-                                  .toDouble()),
-                      icon: BitmapDescriptor.defaultMarker,
-                      infoWindow: InfoWindow(
-                          //EDIT THE JSON.KEYS.FIRST BECAUSE ITS NOT SHOWING ANYTHING
-                          title: "Current Position",
-                          snippet: currentLocationProvider
+                        );
+                      } //
+                      else if (currentLocationProvider.currentUserLat != 0.0 ||
+                          currentLocationProvider.serviceEnabledAfterRejected ==
+                              true) {
+                        print(
+                            "VOILA ${currentLocationProvider.currentUserLat}");
+                        Marker currentLocationMarker = Marker(
+                          markerId: const MarkerId("Your Location"),
+                          position: currentLocationProvider
                                       .locationEnabledFromAlertBox ==
                                   true
-                              ? currentLocationProvider
-                                  .locationFetchedFromAlertBox
-                                  .toJson()
-                                  .keys
-                                  .first
-                              : currentLocationProvider.address.toString()),
-                    );
-                    print(
-                        "THIS IS THE CURRENT LOCATION MARKER : $currentLocationMarker");
-                    if (currentLocationProvider.serviceEnabledAfterRejected ==
-                            true &&
-                        currentLocationProvider.userLocationAsked != 0) {
-                      print(
-                          "ON VERIFIE ${currentLocationProvider.locationFetchedFromAlertBox.latitude}");
-                    }
-                    myMapMarkers[currentLocationMarker.markerId] =
-                        currentLocationMarker;
-                    CameraPosition currentUserPositionCamera = CameraPosition(
-                        target: currentLocationProvider
-                                        .serviceEnabledAfterRejected ==
-                                    true &&
-                                currentLocationProvider.userLocationAsked != 0
-                            ? LatLng(
-                                currentLocationProvider
-                                    .locationFetchedFromAlertBox.latitude,
-                                currentLocationProvider
-                                    .locationFetchedFromAlertBox.longitude)
-                            : LatLng(
-                                currentLocationProvider.currentUserLat
-                                    .toDouble(),
-                                currentLocationProvider.currentUserLng
-                                    .toDouble()),
-                        zoom: 11,
-                        bearing: 10); //_kGooglePlex,
+                              ? LatLng(
+                                  context
+                                      .read<CurrentLocationNotifier>()
+                                      .locationFetchedFromAlertBox
+                                      .latitude,
+                                  context
+                                      .watch<CurrentLocationNotifier>()
+                                      .locationFetchedFromAlertBox
+                                      .longitude)
+                              : LatLng(
+                                  currentLocationProvider.currentUserLat
+                                      .toDouble(),
+                                  currentLocationProvider.currentUserLng
+                                      .toDouble()),
+                          icon: BitmapDescriptor.defaultMarker,
+                          infoWindow: InfoWindow(
+                              //EDIT THE JSON.KEYS.FIRST BECAUSE ITS NOT SHOWING ANYTHING
+                              title: "Current Position",
+                              snippet: currentLocationProvider
+                                          .locationEnabledFromAlertBox ==
+                                      true
+                                  ? currentLocationProvider
+                                      .locationFetchedFromAlertBox
+                                      .toJson()
+                                      .keys
+                                      .first
+                                  : currentLocationProvider.address.toString()),
+                        );
+                        print(
+                            "THIS IS THE CURRENT LOCATION MARKER : $currentLocationMarker");
+                        if (currentLocationProvider
+                                    .serviceEnabledAfterRejected ==
+                                true &&
+                            currentLocationProvider.userLocationAsked != 0) {
+                          print(
+                              "ON VERIFIE ${currentLocationProvider.locationFetchedFromAlertBox.latitude}");
+                        }
+                        myMapMarkers[currentLocationMarker.markerId] =
+                            currentLocationMarker;
+                        CameraPosition
+                            currentUserPositionCamera =
+                            CameraPosition(
+                                target: currentLocationProvider
+                                                .serviceEnabledAfterRejected ==
+                                            true &&
+                                        currentLocationProvider
+                                                .userLocationAsked !=
+                                            0
+                                    ? LatLng(
+                                        currentLocationProvider
+                                            .locationFetchedFromAlertBox
+                                            .latitude,
+                                        currentLocationProvider
+                                            .locationFetchedFromAlertBox
+                                            .longitude)
+                                    : LatLng(
+                                        currentLocationProvider.currentUserLat
+                                            .toDouble(),
+                                        currentLocationProvider.currentUserLng
+                                            .toDouble()),
+                                zoom: 11,
+                                bearing: 10); //_kGooglePlex,
 
-                    return isNewCameraPositionAvailable == true
-                        ? displayMyMap(newCameraPosition)
-                        : displayMyMap(currentUserPositionCamera);
-                    /* SomeMarkers(
+                        return isNewCameraPositionAvailable == true
+                            ? displayMyMap(newCameraPosition)
+                            : displayMyMap(currentUserPositionCamera);
+                        /* SomeMarkers(
                             notifyParent: refresh, mappedMarkers: myMapMarkers), */
-                  } else {
-                    return const CircularProgressIndicator(
-                        color: Color.fromARGB(255, 238, 244, 54));
+                      } else {
+                        return const CircularProgressIndicator(
+                            color: Color.fromARGB(255, 238, 244, 54));
+                      }
+                    } else {
+                      return Container();
+                    }
                   }
-                } else {
-                  return Container();
-                }
-              }),
-        ),
-        /*     floatingActionButton: Align(
+
+                  return Container(
+                      color: Colors.white,
+                      child: Column(children: const [
+                        Text(
+                            'BOOKING where you can show the user the nearby parkings [https://www.google.com/search?q=car+booking+app+flutter&tbm=isch&ved=2ahUKEwi3oLi93Iv1AhUIlBoKHbV0BGEQ2-cCegQIABAA&oq=car+booking+app+flutter&gs_lcp=CgNpbWcQAzoHCCMQ7wMQJzoGCAAQCBAeUPAHWL8RYPMUaAFwAHgAgAGIAogBjgeSAQUwLjUuMZgBAKABAaoBC2d3cy13aXotaW1nwAEB&sclient=img&ei=ksDNYbePKYioarXpkYgG&bih=714&biw=1280&client=firefox-b-d#imgrc=ddyerWq6kmcSrM] and once he clicks on one, he gets the occupation info (numbers only) of the parking and then if he decides to proceed to booking with that one, he is redirected to the page showing the parking map with: cars representing actually parked car, lock icon representing already booked and nothing with green or blue dot for available for noaml people and handicapped '),
+                      ]));
+                })));
+  }
+}
+
+/*     floatingActionButton: Align(
           alignment: Alignment.bottomCenter,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -469,7 +492,21 @@ now on the blank space left, the person will see and can choose :
                             slotBooked: false),
                       ),
                     );
+              Visibility(
+                visible: isParkingLocationIconNotClicked == true ? false : true,
+                child: FloatingActionButton(
+                  onPressed: () async {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BookingThroughSlotsMapNoAlertDialog(
+                            receivedID: sentParkingIDtoSlotsBooking,
+                            mappedParkingsGeneralInfo: fetchedMappingResult,
+                            slotBooked: false),
+                      ),
+                    );
 
+                    /* var obtenu = await showDialog(
                     /* var obtenu = await showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
@@ -603,4 +640,4 @@ now on the blank space left, the person will see and can choose :
   }
 
   /* 'BOOKING where you can show the user the nearby parkings [https://www.google.com/search?q=car+booking+app+flutter&tbm=isch&ved=2ahUKEwi3oLi93Iv1AhUIlBoKHbV0BGEQ2-cCegQIABAA&oq=car+booking+app+flutter&gs_lcp=CgNpbWcQAzoHCCMQ7wMQJzoGCAAQCBAeUPAHWL8RYPMUaAFwAHgAgAGIAogBjgeSAQUwLjUuMZgBAKABAaoBC2d3cy13aXotaW1nwAEB&sclient=img&ei=ksDNYbePKYioarXpkYgG&bih=714&biw=1280&client=firefox-b-d#imgrc=ddyerWq6kmcSrM] and once he clicks on one, he gets the occupation info (numbers only) of the parking and then if he decides to proceed to booking with that one, he is redirected to the page showing the parking map with: cars representing actually parked car, lock icon representing already booked and nothing with green or blue dot for available for noaml people and handicapped '), */
-}
+}*/

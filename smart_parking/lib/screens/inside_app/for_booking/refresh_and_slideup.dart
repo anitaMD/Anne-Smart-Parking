@@ -53,8 +53,7 @@ class RefreshAndSlideUpState extends State<RefreshAndSlideUp> {
 
   @override
   Widget build(BuildContext context) {
-    print(
-        "MAPPED MARKERS RECEIVED FROM DASHBOARD_HOME: ${widget.mappedMarkers}");
+    print("MAPPED MARKERS RECEIVED FROM DASHBOARD_HOME: ${widget.mappedMarkers}");
     if (widget.mappedMarkers.entries.length == 1) widget.notifyParent();
     print("NUMBER OF MARKERS: ${widget.mappedMarkers.length}");
     //print("slide LENGTH: ${slides.length}");
@@ -76,9 +75,7 @@ class RefreshAndSlideUpState extends State<RefreshAndSlideUp> {
       );
 
   void togglePanel() {
-    widget.controller.isPanelOpen
-        ? widget.controller.close()
-        : widget.controller.open();
+    widget.controller.isPanelOpen ? widget.controller.close() : widget.controller.open();
   }
 
   SingleChildScrollView myScrollNotifListener() {

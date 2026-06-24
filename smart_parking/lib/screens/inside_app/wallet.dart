@@ -449,6 +449,7 @@ class WalletState extends State<Wallet> {
                     child: Screenshot(
                       controller: screenshotController,
                       child: QrImageView(
+                      child: QrImageView(
                         gapless: true,
                         padding: const EdgeInsets.all(20),
                         /*  embeddedImage: const AssetImage('assets/images/logo.png'),
