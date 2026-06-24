@@ -30,7 +30,9 @@ class CurrentLocationNotifier with ChangeNotifier {
     timestamp: Timestamp.now().toDate(),
     accuracy: 16.805999755859375,
     altitude: 68.9000015258789,
+    altitudeAccuracy: 0.0,
     heading: 162.72528076171875,
+    headingAccuracy: 0.0,
     speed: 0.0626937747001648,
     speedAccuracy: 0.0,
   );
@@ -89,7 +91,8 @@ class CurrentLocationNotifier with ChangeNotifier {
 
   geolocator.Position getLocationFromAlert() => locationFetchedFromAlertBox;
 
-  updateLocationFromAlertBox(geolocator.Position updatedLocationFromButton) {
+  void updateLocationFromAlertBox(
+      geolocator.Position updatedLocationFromButton) {
     locationFetchedFromAlertBox = updatedLocationFromButton;
     locationEnabledFromAlertBox = true;
     print("LOCATION FROM ALERT BOX $locationFetchedFromAlertBox}");
@@ -188,7 +191,9 @@ class CurrentLocationNotifier with ChangeNotifier {
       timestamp: Timestamp.now().toDate(),
       accuracy: 16.805999755859375,
       altitude: 68.9000015258789,
+      altitudeAccuracy: 0.0,
       heading: 162.72528076171875,
+      headingAccuracy: 0.0,
       speed: 0.0626937747001648,
       speedAccuracy: 0.0,
     );
@@ -196,7 +201,8 @@ class CurrentLocationNotifier with ChangeNotifier {
 
     try {
       await geolocator.Geolocator.getCurrentPosition(
-              desiredAccuracy: geolocator.LocationAccuracy.high)
+              locationSettings: const geolocator.LocationSettings(
+                  accuracy: geolocator.LocationAccuracy.high))
           .then((value) => {dummyPosition = value});
     } catch (e) {
       bool testEnabled;
@@ -209,21 +215,20 @@ class CurrentLocationNotifier with ChangeNotifier {
         // Location services are not enabled don't continue
         // accessing the position and request users of the
         // App to enable the location services.
-
       }
     }
 
     return dummyPosition;
   }
 
-  getMappedResultsFromFirestore() {
+  void getMappedResultsFromFirestore() {
     firestoreParkingLocationService.getParkingInfoData().then((themap) {
       print("RESULT FROM FirestoreParkingLocationService SERVICE : $themap");
       fetchedMappingResult.addAll(themap);
     });
   }
 
-  getSearchPlacesResult() {
+  void getSearchPlacesResult() {
     Map<String, dynamic> fetchedPlacesMap =
         myPlacesAutocompleteService.showPlacesList(fetchedMappingResult);
     print("MAMAN OK $fetchedPlacesMap");

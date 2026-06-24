@@ -14,7 +14,7 @@ class MapsBookingProcessState extends State<MapsBookingProcess> {
 
   //VARIABLES --------------------END
 
-  stepState(int step) {
+  StepState stepState(int step) {
     if (_currentStep > step) {
       return StepState.complete;
     } else {
@@ -52,7 +52,7 @@ class MapsBookingProcessState extends State<MapsBookingProcess> {
     return steps;
   }
 
-  switchStepperType() {
+  void switchStepperType() {
     setState(() {
       stepperType == StepperType.horizontal
           ? stepperType == StepperType.vertical

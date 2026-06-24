@@ -42,8 +42,15 @@ class WalletState extends State<Wallet> {
   int current = 0, currentIndex = 0, oneSMP = 500;
   double dragExtent = 0;
   bool revealBalance = false, areTimesStampsSorted = false;
-  String swipeDirection = '', walletFirstAndOnlyDocID = '', balanceInCFA = '', balanceInSPM = '', qrCodeEncrypted = '';
-  Map<String, dynamic> initiallyLoadedTransactions = {'TopUps': {}, 'Debits': {}},
+  String swipeDirection = '',
+      walletFirstAndOnlyDocID = '',
+      balanceInCFA = '',
+      balanceInSPM = '',
+      qrCodeEncrypted = '';
+  Map<String, dynamic> initiallyLoadedTransactions = {
+        'TopUps': {},
+        'Debits': {}
+      },
       walletData = {},
       usersSoonestReservationToVerify = {};
 
@@ -56,7 +63,10 @@ class WalletState extends State<Wallet> {
   @override
   void initState() {
     User? currentlySignedInUser = firebaseService.auth.currentUser;
-    myDB.collection("users/${currentlySignedInUser?.uid}/wallet").get().then((value1) async {
+    myDB
+        .collection("users/${currentlySignedInUser?.uid}/wallet")
+        .get()
+        .then((value1) async {
       value1.docs.isEmpty
           ? null
           : {
@@ -82,9 +92,11 @@ class WalletState extends State<Wallet> {
                     for (var element in value.docs) {
                       debugPrint("element: ${element.data()}");
 
-                      topUpEntries.addAll({'ID': element.id, 'Operation': element.data()});
+                      topUpEntries.addAll(
+                          {'ID': element.id, 'Operation': element.data()});
                     }
-                    initiallyLoadedTransactions.update('TopUps', (value) => topUpEntries);
+                    initiallyLoadedTransactions.update(
+                        'TopUps', (value) => topUpEntries);
                     debugPrint("INITALLYLOADED :$initiallyLoadedTransactions ");
                   });
 
@@ -100,10 +112,13 @@ class WalletState extends State<Wallet> {
                       debugPrint("element: ${element.data()}");
                       element.data()['Debit Amount'] == 0
                           ? null
-                          : debitEntries.addAll({'ID': element.id, 'Operation': element.data()});
+                          : debitEntries.addAll(
+                              {'ID': element.id, 'Operation': element.data()});
                     }
-                    initiallyLoadedTransactions.update('Debits', (value) => debitEntries);
-                    debugPrint("INITALLYLOADED debi :$initiallyLoadedTransactions ");
+                    initiallyLoadedTransactions.update(
+                        'Debits', (value) => debitEntries);
+                    debugPrint(
+                        "INITALLYLOADED debi :$initiallyLoadedTransactions ");
                   });
 
                   //end
@@ -114,14 +129,17 @@ class WalletState extends State<Wallet> {
             };
     });
 
-    myDB.collection("users/${currentlySignedInUser?.uid}/wallet").get().then((value) => {
-          setState(
-            () {
-              balanceInCFA = value.docs.first.data()['Balance'].toString();
-              balanceInSPM = (int.parse(balanceInCFA) ~/ oneSMP).toString();
-            },
-          )
-        });
+    myDB
+        .collection("users/${currentlySignedInUser?.uid}/wallet")
+        .get()
+        .then((value) => {
+              setState(
+                () {
+                  balanceInCFA = value.docs.first.data()['Balance'].toString();
+                  balanceInSPM = (int.parse(balanceInCFA) ~/ oneSMP).toString();
+                },
+              )
+            });
 
     getUsersReservationHappeningSoon().then((value) {
       value.keys.contains('empty')
@@ -151,13 +169,16 @@ class WalletState extends State<Wallet> {
     //initiallyLoadedTransactions.values.where
     //encryption.decryptMsg(encryption.getCode(qrCodeEncrypted)).toString();
     qrCodeEncrypted.isNotEmpty
-        ? debugPrint("TOLISTED $walletFirstAndOnlyDocID _________ $qrCodeEncrypted  ______ ${widget.takescreenshot}")
+        ? debugPrint(
+            "TOLISTED $walletFirstAndOnlyDocID _________ $qrCodeEncrypted  ______ ${widget.takescreenshot}")
         : null;
     //encryption.getCode(qrCodeEncrypted);
     return Scaffold(
         backgroundColor: Colors.white,
         body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance.collection("users/${currentlySignedInUser?.uid}/wallet").snapshots(),
+            stream: FirebaseFirestore.instance
+                .collection("users/${currentlySignedInUser?.uid}/wallet")
+                .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Text('');
@@ -173,10 +194,12 @@ class WalletState extends State<Wallet> {
                 listeningToWalletsRT(walletIDTest);
 
                 var okDebit = myDB
-                    .collection("users/${currentlySignedInUser?.uid}/wallet/$walletIDTest/debits")
+                    .collection(
+                        "users/${currentlySignedInUser?.uid}/wallet/$walletIDTest/debits")
                     .snapshots()
                     .where((event) {
-                  return event.docs.any((element) => element.data()['Debit Amount'] != 0);
+                  return event.docs
+                      .any((element) => element.data()['Debit Amount'] != 0);
                 });
                 int debitEntriesTotal = 0;
 
@@ -195,14 +218,17 @@ class WalletState extends State<Wallet> {
                     }));
 
                 var okTopUp = myDB
-                    .collection("users/${currentlySignedInUser?.uid}/wallet/$walletIDTest/topUps")
+                    .collection(
+                        "users/${currentlySignedInUser?.uid}/wallet/$walletIDTest/topUps")
                     .snapshots()
                     .where((event) {
-                  return event.docs.any((element) => element.data().containsKey('TopUp Amount'));
+                  return event.docs.any(
+                      (element) => element.data().containsKey('TopUp Amount'));
                 });
 
                 okTopUp.first.then((value) => value.docs.forEach((element) {
-                      allTransactionsWithIDs.length < value.docs.length + debitEntriesTotal
+                      allTransactionsWithIDs.length <
+                              value.docs.length + debitEntriesTotal
                           ? allTransactionsWithIDs.addAll([
                               {element.id: element.data()}
                             ])
@@ -210,8 +236,10 @@ class WalletState extends State<Wallet> {
                     }));
 
                 areTimesStampsSorted == false
-                    ? debugPrint("allTransactionsWithIDs BEFORE SORTED: $allTransactionsWithIDs")
-                    : debugPrint("allTransactionsWithIDs AFTER SORTED: $allTransactionsWithIDs");
+                    ? debugPrint(
+                        "allTransactionsWithIDs BEFORE SORTED: $allTransactionsWithIDs")
+                    : debugPrint(
+                        "allTransactionsWithIDs AFTER SORTED: $allTransactionsWithIDs");
 
                 allTransactionsWithIDs.sort(
                   (a, b) {
@@ -237,12 +265,16 @@ class WalletState extends State<Wallet> {
                       padding: EdgeInsets.fromLTRB(8, 50, 8, 0),
                       child: Text(
                         'YOUR WALLET',
-                        style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900, color: LightColor.black),
+                        style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w900,
+                            color: LightColor.black),
                       ),
                     ),
                     getWalletCard(),
                     ElevatedButton(
-                        onPressed: () => topUp(currentlySignedInUser, walletFirstAndOnlyDocID),
+                        onPressed: () => topUp(
+                            currentlySignedInUser, walletFirstAndOnlyDocID),
                         /* firestoreWalletService.topUp(currentlySignedInUser,
                             walletFirstAndOnlyDocID), */ //topUp(currentlySignedInUser, walletFirstAndOnlyDocID),
                         child: const Text('Top Up'))
@@ -252,7 +284,7 @@ class WalletState extends State<Wallet> {
             }));
   }
 
-  getContainerLeft() {
+  Container getContainerLeft() {
     return Container(
         child: ClipRRect(
             borderRadius: const BorderRadius.all(Radius.circular(25)),
@@ -269,7 +301,10 @@ class WalletState extends State<Wallet> {
                     children: <Widget>[
                       const Text(
                         'Current Balance,',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: LightColor.lightNavyBlue),
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: LightColor.lightNavyBlue),
                       ),
                       const SizedBox(height: 10),
                       Row(
@@ -278,7 +313,8 @@ class WalletState extends State<Wallet> {
                           Text(
                             revealBalance == true ? balanceInSPM : '****',
                             style: GoogleFonts.mulish(
-                                textStyle: Theme.of(context).textTheme.headlineMedium,
+                                textStyle:
+                                    Theme.of(context).textTheme.headlineMedium,
                                 fontSize: 35,
                                 fontWeight: FontWeight.w800,
                                 color: LightColor.yellow2),
@@ -286,7 +322,9 @@ class WalletState extends State<Wallet> {
                           Text(
                             ' SMP',
                             style: TextStyle(
-                                fontSize: 35, fontWeight: FontWeight.w500, color: LightColor.yellow.withAlpha(200)),
+                                fontSize: 35,
+                                fontWeight: FontWeight.w500,
+                                color: LightColor.yellow.withAlpha(200)),
                           ),
                         ],
                       ),
@@ -296,14 +334,20 @@ class WalletState extends State<Wallet> {
                           Text(
                             'Eq:',
                             style: GoogleFonts.mulish(
-                                textStyle: Theme.of(context).textTheme.headlineMedium,
+                                textStyle:
+                                    Theme.of(context).textTheme.headlineMedium,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: LightColor.lightNavyBlue),
                           ),
                           Text(
-                            revealBalance == true ? ' $balanceInCFA CFA' : ' * * * * * CFA',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.white),
+                            revealBalance == true
+                                ? ' $balanceInCFA CFA'
+                                : ' * * * * * CFA',
+                            style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white),
                           ),
                         ],
                       ),
@@ -315,19 +359,27 @@ class WalletState extends State<Wallet> {
                           height: 40,
                           //padding: const EdgeInsets.all(5),
                           decoration: BoxDecoration(
-                              borderRadius: const BorderRadius.all(Radius.circular(12)),
-                              border: Border.all(color: Colors.white, width: 1)),
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(12)),
+                              border:
+                                  Border.all(color: Colors.white, width: 1)),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
                               IconButton(
                                 style: const ButtonStyle(),
-                                icon: Icon(revealBalance == false ? Icons.visibility_off : Icons.visibility,
-                                    color: Colors.white, size: 20),
+                                icon: Icon(
+                                    revealBalance == false
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: Colors.white,
+                                    size: 20),
                                 highlightColor: Colors.green,
                                 onPressed: () {
                                   setState(() {
-                                    revealBalance == false ? revealBalance = true : revealBalance = false;
+                                    revealBalance == false
+                                        ? revealBalance = true
+                                        : revealBalance = false;
                                   });
                                 },
                               ),
@@ -374,11 +426,13 @@ class WalletState extends State<Wallet> {
             )));
   }
 
-  getContainerRight() {
+  Container getContainerRight() {
     //  widget.takescreenshot == true ? currentIndex = 1 : null;
     widget.takescreenshot == true
-        ? Future.delayed(const Duration(seconds: 2))
-            .then((value) => screenshotCount < 1 ? {takeQrScreenshot(), screenshotCount += 1} : null)
+        ? Future.delayed(const Duration(seconds: 2)).then((value) =>
+            screenshotCount < 1
+                ? {takeQrScreenshot(), screenshotCount += 1}
+                : null)
         : null;
 
     return Container(
@@ -404,7 +458,8 @@ class WalletState extends State<Wallet> {
                         data: qrCodeEncrypted,
                         version: QrVersions.auto,
                         //size: 200.0,
-                        foregroundColor: const Color.fromARGB(187, 255, 255, 255),
+                        foregroundColor:
+                            const Color.fromARGB(187, 255, 255, 255),
                       ),
                     ),
                   ),
@@ -445,7 +500,7 @@ class WalletState extends State<Wallet> {
             )));
   }
 
-  getWalletCard() {
+  Container getWalletCard() {
     return Container(
       margin: const EdgeInsets.fromLTRB(10, 50, 10, 50),
       decoration: const BoxDecoration(
@@ -490,10 +545,13 @@ class WalletState extends State<Wallet> {
                       })
                     : null;
 
-                debugPrint("SWIPE DIRECTION: $swipeDirection _ _ currentIndex $currentIndex");
+                debugPrint(
+                    "SWIPE DIRECTION: $swipeDirection _ _ currentIndex $currentIndex");
               }
             },
-            child: widget.takescreenshot == true || swipeDirection == 'next' ? getContainerRight() : getContainerLeft()
+            child: widget.takescreenshot == true || swipeDirection == 'next'
+                ? getContainerRight()
+                : getContainerLeft()
 
             /* SlidableWalletCard(
             childLeft: getContainerLeft(),
@@ -505,11 +563,12 @@ class WalletState extends State<Wallet> {
     );
   }
 
-  _scrollingList(ScrollController sc) {
+  Container _scrollingList(ScrollController sc) {
     return Container(
       decoration: const BoxDecoration(
           color: LightColor.navyBlue1,
-          borderRadius: BorderRadius.only(topLeft: Radius.circular(24.0), topRight: Radius.circular(24.0)),
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24.0), topRight: Radius.circular(24.0)),
           boxShadow: [
             BoxShadow(
               blurRadius: 5.0,
@@ -532,7 +591,10 @@ class WalletState extends State<Wallet> {
               padding: EdgeInsets.all(8),
               child: Text(
                 "TRANSACTIONS HISTORY",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white),
               ),
             ),
           ),
@@ -541,8 +603,10 @@ class WalletState extends State<Wallet> {
               controller: sc,
               itemCount: allTransactionsWithIDs.length,
               itemBuilder: (BuildContext context, int i) {
-                var values = allTransactionsWithIDs.elementAt(i).values.first as Map<String, dynamic>;
-                bool isTopUpOperation = values.containsKey('TopUp Amount') ? true : false;
+                var values = allTransactionsWithIDs.elementAt(i).values.first
+                    as Map<String, dynamic>;
+                bool isTopUpOperation =
+                    values.containsKey('TopUp Amount') ? true : false;
                 var timeStamp = values['TimeStamp'] as Timestamp;
                 var timeStampToDate = timeStamp.toDate();
                 return Container(
@@ -558,8 +622,10 @@ class WalletState extends State<Wallet> {
                             context,
                             MaterialPageRoute(
                                 builder: (context) => ShowOperationDetails(
-                                      transactionData: allTransactionsWithIDs.elementAt(i),
-                                      transactionType: isTopUpOperation ? 'TopUp' : 'Debit',
+                                      transactionData:
+                                          allTransactionsWithIDs.elementAt(i),
+                                      transactionType:
+                                          isTopUpOperation ? 'TopUp' : 'Debit',
                                     )),
                           );
                         },
@@ -588,14 +654,21 @@ class WalletState extends State<Wallet> {
     );
   }
 
-  Future<QuerySnapshot<Map<String, dynamic>>> topUp(User? currentlySIUser, String walletCollId) {
+  Future<QuerySnapshot<Map<String, dynamic>>> topUp(
+      User? currentlySIUser, String walletCollId) {
     WriteBatch batchTopUp = myDB.batch();
 
-    CollectionReference walletTopUpCollection =
-        myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps");
-    myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps").get().then((value) async {
+    CollectionReference walletTopUpCollection = myDB.collection(
+        "users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps");
+    myDB
+        .collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps")
+        .get()
+        .then((value) async {
       if (value.docs.isEmpty) {
-        myDB.doc("users/${currentlySIUser?.uid}/wallet/$walletCollId").collection("topUps").add({'initialized': true});
+        myDB
+            .doc("users/${currentlySIUser?.uid}/wallet/$walletCollId")
+            .collection("topUps")
+            .add({'initialized': true});
       }
 
       batchTopUp.set(
@@ -609,11 +682,22 @@ class WalletState extends State<Wallet> {
             'New Balance': int.parse(balanceInCFA) + 8500
           });
 
-      await batchTopUp.commit().whenComplete(() => debugPrint("TOP UP SUCCESSFULLY ADDED"));
+      await batchTopUp
+          .commit()
+          .whenComplete(() => debugPrint("TOP UP SUCCESSFULLY ADDED"));
 
-      await myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps").get().then((value) async {
-        var firstInitializedDoc = value.docs.where((element) => element.data().keys.contains('initialized'));
-        firstInitializedDoc.isNotEmpty ? await walletTopUpCollection.doc(firstInitializedDoc.first.id).delete() : null;
+      await myDB
+          .collection(
+              "users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps")
+          .get()
+          .then((value) async {
+        var firstInitializedDoc = value.docs
+            .where((element) => element.data().keys.contains('initialized'));
+        firstInitializedDoc.isNotEmpty
+            ? await walletTopUpCollection
+                .doc(firstInitializedDoc.first.id)
+                .delete()
+            : null;
       });
     });
 
@@ -623,19 +707,28 @@ class WalletState extends State<Wallet> {
   void listeningToWalletsRT(String walletIDTest) {
     List allWalletTopUpIDs = [], allWalletDebitIDs = [];
     int totalEntriesTopUps = 0, totalEntriesDebit = 0;
-    final theDocToUpdate = myDB.collection("users/${currentlySignedInUser?.uid}/wallet").doc(walletIDTest);
+    final theDocToUpdate = myDB
+        .collection("users/${currentlySignedInUser?.uid}/wallet")
+        .doc(walletIDTest);
     theDocToUpdate.get().then((value) {
       var topUpList = value.data()!['Transactions']['Top Ups']['IDs'] as List;
-      allWalletTopUpIDs.length < topUpList.length ? allWalletTopUpIDs = topUpList : null;
+      allWalletTopUpIDs.length < topUpList.length
+          ? allWalletTopUpIDs = topUpList
+          : null;
 
       var debitList = value.data()!['Transactions']['Debits']['IDs'] as List;
-      allWalletDebitIDs.length < debitList.length ? allWalletDebitIDs = debitList : null;
+      allWalletDebitIDs.length < debitList.length
+          ? allWalletDebitIDs = debitList
+          : null;
 
-      totalEntriesTopUps = value.data()!['Transactions']['Top Ups']['Total Entries'];
-      totalEntriesDebit = value.data()!['Transactions']['Debits']['Total Entries'];
+      totalEntriesTopUps =
+          value.data()!['Transactions']['Top Ups']['Total Entries'];
+      totalEntriesDebit =
+          value.data()!['Transactions']['Debits']['Total Entries'];
     });
     FirebaseFirestore.instance
-        .collection("users/${currentlySignedInUser?.uid}/wallet/$walletIDTest/topUps")
+        .collection(
+            "users/${currentlySignedInUser?.uid}/wallet/$walletIDTest/topUps")
         .where("TopUp Amount", isGreaterThan: 10)
         .snapshots()
         .listen((event) {
@@ -658,13 +751,16 @@ class WalletState extends State<Wallet> {
                     ]),
                     allWalletTopUpIDs.add(change.doc.id),
                     theDocToUpdate.update({
-                      'Balance': int.parse(balanceInCFA) + change.doc.data()!['TopUp Amount'],
+                      'Balance': int.parse(balanceInCFA) +
+                          change.doc.data()!['TopUp Amount'],
                       'Transactions.Top Ups.IDs': allWalletTopUpIDs,
-                      'Transactions.Top Ups.Total Entries': totalEntriesTopUps + 1
+                      'Transactions.Top Ups.Total Entries':
+                          totalEntriesTopUps + 1
                     }),
                   }
                 : null;
-            debugPrint("alltransactionsAFTER LISTEN $allTransactionsWithIDs ___ ${allTransactionsWithIDs.length}");
+            debugPrint(
+                "alltransactionsAFTER LISTEN $allTransactionsWithIDs ___ ${allTransactionsWithIDs.length}");
 
             break;
           case DocumentChangeType.removed:
@@ -676,7 +772,8 @@ class WalletState extends State<Wallet> {
 
     //debits
     FirebaseFirestore.instance
-        .collection("users/${currentlySignedInUser?.uid}/wallet/$walletIDTest/debits")
+        .collection(
+            "users/${currentlySignedInUser?.uid}/wallet/$walletIDTest/debits")
         .where("Debit Amount", isGreaterThan: 0)
         .snapshots()
         .listen((event) {
@@ -693,13 +790,20 @@ class WalletState extends State<Wallet> {
                     allTransactionsWithIDs.addAll([
                       {change.doc.id: change.doc.data()}
                     ]),
-                    theDocToUpdate.update({'Balance': int.parse(balanceInCFA) - change.doc.data()!['Debit Amount']}),
+                    theDocToUpdate.update({
+                      'Balance': int.parse(balanceInCFA) -
+                          change.doc.data()!['Debit Amount']
+                    }),
                     allWalletTopUpIDs.add(change.doc.id),
-                    theDocToUpdate.update({'Transactions.Debits.IDs': allWalletDebitIDs}),
-                    theDocToUpdate.update({'Transactions.Debits.Total Entries': totalEntriesDebit + 1}),
+                    theDocToUpdate
+                        .update({'Transactions.Debits.IDs': allWalletDebitIDs}),
+                    theDocToUpdate.update({
+                      'Transactions.Debits.Total Entries': totalEntriesDebit + 1
+                    }),
                   }
                 : null;
-            debugPrint("alltransactionsAFTER LISTEN $allTransactionsWithIDs ____ ${allTransactionsWithIDs.length}");
+            debugPrint(
+                "alltransactionsAFTER LISTEN $allTransactionsWithIDs ____ ${allTransactionsWithIDs.length}");
 
             break;
           case DocumentChangeType.removed:
@@ -716,8 +820,8 @@ class WalletState extends State<Wallet> {
     var check = myDB.collection("slotsReservations").get().then((value) {
       if (value.docChanges.isNotEmpty) {
         //
-        var userBookings =
-            value.docChanges.where((element) => element.doc.data()!['ClientID'] == currentlySignedInUser?.uid);
+        var userBookings = value.docChanges.where((element) =>
+            element.doc.data()!['ClientID'] == currentlySignedInUser?.uid);
         userBookings.isNotEmpty && allUserBookings.length < userBookings.length
             ? userBookings.forEach((element) {
                 // debugPrint("FOUND ONE :${element.doc.id}");
@@ -737,7 +841,9 @@ class WalletState extends State<Wallet> {
         );
 
         setState(() {
-          theResToVerify = allUserBookings.isNotEmpty ? allUserBookings.first : {'empty': true};
+          theResToVerify = allUserBookings.isNotEmpty
+              ? allUserBookings.first
+              : {'empty': true};
         });
       }
 
@@ -746,35 +852,42 @@ class WalletState extends State<Wallet> {
     return check;
   }
 
-  prefix.Encrypted startEncryption(Map<String, dynamic> usersSoonestReservationToVerify) {
-    var reservationValues = usersSoonestReservationToVerify.values.first as Map<String, dynamic>;
+  prefix.Encrypted startEncryption(
+      Map<String, dynamic> usersSoonestReservationToVerify) {
+    var reservationValues =
+        usersSoonestReservationToVerify.values.first as Map<String, dynamic>;
 
     var resID = usersSoonestReservationToVerify.keys.first;
     var clientID = reservationValues['ClientID'];
     var parkingID = reservationValues['ParkingID'];
     var slotID = reservationValues['SlotID'];
-    var theMap = {'resID': resID, 'clientID': clientID, 'parkingID': parkingID, 'slotID': slotID};
+    var theMap = {
+      'resID': resID,
+      'clientID': clientID,
+      'parkingID': parkingID,
+      'slotID': slotID
+    };
 
     var dataToVerify = theMap.toString();
 
     return encryption.encryptMsg(dataToVerify);
   }
 
-  takeQrScreenshot() async {
+  Future<void> takeQrScreenshot() async {
     final image = await screenshotController.capture();
     if (image == null) return;
     await saveImage(image);
     // LaunchApp.openApp(androidPackageName: 'com.example.testing', openStore: false);
   }
 
-  saveImage(Uint8List imageBytes) async {
+  Future<void> saveImage(Uint8List imageBytes) async {
     final temp = await getTemporaryDirectory();
     final path = '${temp.path}/smartParkingQRForCurrentReservation.jpg';
     debugPrint('IN THE PATH $path');
-    await File(path).writeAsBytes(imageBytes);
+    final file = await File(path).writeAsBytes(imageBytes);
 
-    // ignore: deprecated_member_use
-    await Share.shareFiles([path], text: 'HERE');
+    await SharePlus.instance
+        .share(ShareParams(files: [XFile(file.path)], text: 'HERE'));
     // await Share.shareFiles([path]);
 
     /*  shareXFiles([ok], text: 'HERE').then((value) => print('this should be printed after the sharing process')); */
@@ -789,12 +902,16 @@ class WalletState extends State<Wallet> {
     return result['filePath']; */
   }
 
-  openAnotherApp(data) async {
+  Future<void> openAnotherApp(data) async {
     String dt = data;
     bool isInstalled = await DeviceApps.isAppInstalled('com.example.testing');
     debugPrint("IS IT INSTALLED? : $isInstalled");
     if (isInstalled != false) {
-      final intent = AndroidIntent(action: 'action_send', data: dt, package: 'com.example.testing', type: 'plain/text');
+      final intent = AndroidIntent(
+          action: 'action_send',
+          data: dt,
+          package: 'com.example.testing',
+          type: 'plain/text');
 
       await intent.launch();
     }

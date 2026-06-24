@@ -20,25 +20,30 @@ import 'package:flutter/material.dart';
 import 'package:smart_parking/notifiers/booking_state_management.dart';
 import 'package:im_stepper/stepper.dart';
 import 'package:time_range_picker/time_range_picker.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:smart_parking/l10n/generated/app_localizations.dart';
 
 class BookingThroughSlotsMapNoAlertDialog extends StatefulWidget {
   final String receivedID;
   final Map<String, dynamic> mappedParkingsGeneralInfo;
   final bool slotBooked;
   const BookingThroughSlotsMapNoAlertDialog(
-      {Key? key, required this.receivedID, required this.mappedParkingsGeneralInfo, required this.slotBooked})
+      {Key? key,
+      required this.receivedID,
+      required this.mappedParkingsGeneralInfo,
+      required this.slotBooked})
       : super(key: key);
 
   @override
-  State<BookingThroughSlotsMapNoAlertDialog> createState() => _BookingThroughSlotsMapNoAlertDialogState();
+  State<BookingThroughSlotsMapNoAlertDialog> createState() =>
+      _BookingThroughSlotsMapNoAlertDialogState();
 }
 
-class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlotsMapNoAlertDialog> {
+class _BookingThroughSlotsMapNoAlertDialogState
+    extends State<BookingThroughSlotsMapNoAlertDialog> {
   //CONNECTIVITY
   ConnectivityResult _connectionStatus = ConnectivityResult.none;
   final Connectivity _connectivity = Connectivity();
-  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
 
   //AUTHENTICATION
 
@@ -47,7 +52,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   var firestoreWalletService = FirestoreWalletService();
   User? currentlySignedInUser;
   int parkingSlotsTotal = 10;
-  late String parkingNameToolBar, walletCollId = '', insideParkingInfoDocIDNeeded = '';
+  late String parkingNameToolBar,
+      walletCollId = '',
+      insideParkingInfoDocIDNeeded = '';
   String tappedOnAlley = '', previouslySelectedParkingSpotID = '';
   double alleyHeight = 200,
       singleSpotHeight = 50,
@@ -70,18 +77,24 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   final alleyA = <String>{}, alleyB = <String>{};
   var mappedAlleyASelectedCheck = {}, mappedAlleyBSelectedCheck = {};
   List<Map<String, dynamic>> mappedSelectedSlotAlley = [];
-  List<int> allDisabledTimeRangeIndexesForTimeSelection = [], outOfXhoursRangeIndexes = [];
-  List<QueryDocumentSnapshot<Map<String, dynamic>>> slotsReservationsInfoFetchedList = [];
+  List<int> allDisabledTimeRangeIndexesForTimeSelection = [],
+      outOfXhoursRangeIndexes = [];
+  List<QueryDocumentSnapshot<Map<String, dynamic>>>
+      slotsReservationsInfoFetchedList = [];
   Map<String, dynamic> linkedParkingNameAndInsideInfo = {},
       insideParkingInfoFetched = {},
       bookerFirstPageInfoMapped = {},
-      bookerTimeAndSpotInfoMapped = {'Selected Parking Spot': '', 'Selected Time Interval': ''},
+      bookerTimeAndSpotInfoMapped = {
+        'Selected Parking Spot': '',
+        'Selected Time Interval': ''
+      },
       selectedVehiculeInfoMappedFromSelectVehicule = {},
       slotsReservationsInfoFetchedAsMapWithData = {};
   Map<String, Set> mappedAlleysAndSlotIds = {};
   late Map<String, dynamic> mappedInfoFromWidget = {};
   Map<String, dynamic> correspondingStartandEndIndexes = {};
-  List<Map<String, dynamic>> withinXHoursParkingSpotInfosNeeded = [], allHoursParkingSpotInfosNeeded = [];
+  List<Map<String, dynamic>> withinXHoursParkingSpotInfosNeeded = [],
+      allHoursParkingSpotInfosNeeded = [];
   bool test = true, rebuildIDLists = false;
 
 //RESERVATION VARS
@@ -127,18 +140,23 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
 //BOOKER
 
-  Map<String, dynamic> testallBookedTimeSlotsInMinutes = {}, theReservationDoublon = {};
+  Map<String, dynamic> testallBookedTimeSlotsInMinutes = {},
+      theReservationDoublon = {};
   Set<TimeOfDay> allBookedTimeSlots = {};
   Map<String, dynamic> testallBookedTimeSlots = {},
       allReservationsSameDaySameParkingWithKey = {},
       allReservationsExistingSameTimeAsNowDifferentDay = {};
-  TimeOfDay selectedBookingEndTimeFromTSGrid = TimeOfDay.now(), selectedBookingStartTimeFromTSGrid = TimeOfDay.now();
-  TimeRange finallyBookedTimeRange =
-      TimeRange(startTime: const TimeOfDay(hour: 00, minute: 00), endTime: const TimeOfDay(hour: 01, minute: 00));
+  TimeOfDay selectedBookingEndTimeFromTSGrid = TimeOfDay.now(),
+      selectedBookingStartTimeFromTSGrid = TimeOfDay.now();
+  TimeRange finallyBookedTimeRange = TimeRange(
+      startTime: const TimeOfDay(hour: 00, minute: 00),
+      endTime: const TimeOfDay(hour: 01, minute: 00));
   Set<TimeOfDay> timesOfDayFetched = {};
   CalendarFormat format = CalendarFormat.week;
   Duration interval = const Duration(minutes: 30);
-  DateTime selectedDay = DateTime.now(), focusedDay = DateTime.now(), previouslySelectedDay = DateTime.now();
+  DateTime selectedDay = DateTime.now(),
+      focusedDay = DateTime.now(),
+      previouslySelectedDay = DateTime.now();
   Color selectedTimeSlotColor = Colors.blueGrey.shade500;
   ScrollController singleChildController = ScrollController(),
       leftAlleyController = ScrollController(),
@@ -154,7 +172,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       tappedOnParkingSpotID = 0,
       selectedDayPlusXHourToInt = 0,
       selectedDayToInt = 0; //do not remove any of these
-  var timeSlotAvailable = {}, timeSlotCurrentlyOccupied = {}, timeSlotbooked = {};
+  var timeSlotAvailable = {},
+      timeSlotCurrentlyOccupied = {},
+      timeSlotbooked = {};
   num bookingTotalNum = 0;
   int bookingTotalToPay = 0, clearOutOfXrange = 0;
 
@@ -170,14 +190,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   void initState() {
     currentlySignedInUser = firebaseService.auth.currentUser;
     initConnectivity();
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+    _connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
 
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
     ));
     //getAlleySlotsId(parkingSlotsTotal);
     // batchWriteInsideParkingInfo(18);
-    var ok = widget.mappedParkingsGeneralInfo[widget.receivedID] as Map<String, dynamic>;
+    var ok = widget.mappedParkingsGeneralInfo[widget.receivedID]
+        as Map<String, dynamic>;
     mappedInfoFromWidget.addAll(ok);
     setState(
       () {
@@ -188,12 +210,17 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
     fetchParkingSlotsInfoFromFB();
     currentlySignedInUser != null
-        ? getUserSpecialAccStatus(currentlySignedInUser!.uid).then((value) => setState(
-              () => isSpecialUser = value,
-            ))
+        ? getUserSpecialAccStatus(currentlySignedInUser!.uid)
+            .then((value) => setState(
+                  () => isSpecialUser = value,
+                ))
         : null;
-    myDB.collection("users/${currentlySignedInUser?.uid}/wallet").get().then((value) async {
-      debugPrint("THE BALANCE : ${value.docs.first.data()['Balance'].runtimeType} ___ $bookingTotalToPay");
+    myDB
+        .collection("users/${currentlySignedInUser?.uid}/wallet")
+        .get()
+        .then((value) async {
+      debugPrint(
+          "THE BALANCE : ${value.docs.first.data()['Balance'].runtimeType} ___ $bookingTotalToPay");
       setState(() {
         walletCollId = value.docs.first.id;
       });
@@ -202,7 +229,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   }
 
   Future<void> initConnectivity() async {
-    late ConnectivityResult result;
+    late List<ConnectivityResult> result;
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       result = await _connectivity.checkConnectivity();
@@ -221,9 +248,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     return _updateConnectionStatus(result);
   }
 
-  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
+  Future<void> _updateConnectionStatus(List<ConnectivityResult> result) async {
     setState(() {
-      _connectionStatus = result;
+      _connectionStatus = result.first;
     });
   }
 
@@ -231,38 +258,61 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   Widget build(BuildContext context) {
     var localLnSetting = AppLocalizations.of(context)!;
 
-    var totalBookingDuration = (finallyBookedTimeRange.endTime.hour * 60 + finallyBookedTimeRange.endTime.minute) -
-        (finallyBookedTimeRange.startTime.hour * 60 + finallyBookedTimeRange.startTime.minute);
+    var totalBookingDuration = (finallyBookedTimeRange.endTime.hour * 60 +
+            finallyBookedTimeRange.endTime.minute) -
+        (finallyBookedTimeRange.startTime.hour * 60 +
+            finallyBookedTimeRange.startTime.minute);
     String durationToString(int minutes) {
       var d = Duration(minutes: minutes);
       List<String> parts = d.toString().split(':');
       return '${parts[0].padLeft(2, '0')}h ${parts[1].padLeft(2, '0')}mn';
     }
 
-    var totalBookingDurationMinutePart =
-        int.parse(durationToString(totalBookingDuration).split(' ').last.substring(0, 2));
+    var totalBookingDurationMinutePart = int.parse(
+        durationToString(totalBookingDuration).split(' ').last.substring(0, 2));
 
     /* debugPrint("WIDGET MAPPED! $mappedInfoFromWidget _ $focusedDay");
     debugPrint("nextPressedWithoutFirstPageAllInfoFetched $nextPressedWithoutFirstPageAllInfoFetched"); */
     currentlySignedInUser = firebaseService.auth.currentUser;
-    debugPrint("SIGNED $isSpecialUser IN CURRENTLY ${firebaseService.auth.currentUser?.uid.toString()}");
-    double alleyListViewMinHeightToDisplay =
-        alleyHeight + (spaceBetweenSlots * (parkingSlotsTotal ~/ (parkingSlotsTotal ~/ 2) - 1));
+    debugPrint(
+        "SIGNED $isSpecialUser IN CURRENTLY ${firebaseService.auth.currentUser?.uid.toString()}");
+    double alleyListViewMinHeightToDisplay = alleyHeight +
+        (spaceBetweenSlots *
+            (parkingSlotsTotal ~/ (parkingSlotsTotal ~/ 2) - 1));
 
     var stateManagerRead = context.read<BookingStateManagement>();
+    stateManagerRead.updateOpeningAndClosingHours(
+        mappedInfoFromWidget['Opening Hour'],
+        mappedInfoFromWidget['Closing Hour']);
 
     debugPrint(
-        "OK LISTENING: ${stateManagerRead.updateOpeningAndClosingHours(mappedInfoFromWidget['Opening Hour'], mappedInfoFromWidget['Closing Hour'])} __________ ${context.watch<BookingStateManagement>().openingHour} ______ ${context.watch<BookingStateManagement>().closingHour}");
+        "OK LISTENING: Updated __________ ${context.watch<BookingStateManagement>().openingHour} ______ ${context.watch<BookingStateManagement>().closingHour}");
+
     //TIMESLOTSELECTION
     TimeOfDay startTime = TimeOfDay(
-            hour: int.parse(context.watch<BookingStateManagement>().openingHour.split(":")[0]),
-            minute: int.parse(context.watch<BookingStateManagement>().openingHour.split(":")[1])),
+            hour: int.parse(context
+                .watch<BookingStateManagement>()
+                .openingHour
+                .split(":")[0]),
+            minute: int.parse(context
+                .watch<BookingStateManagement>()
+                .openingHour
+                .split(":")[1])),
         endTime = TimeOfDay(
-            hour: int.parse(context.watch<BookingStateManagement>().closingHour.split(":")[0]),
-            minute: int.parse(context.watch<BookingStateManagement>().closingHour.split(":")[1]));
+            hour: int.parse(context
+                .watch<BookingStateManagement>()
+                .closingHour
+                .split(":")[0]),
+            minute: int.parse(context
+                .watch<BookingStateManagement>()
+                .closingHour
+                .split(":")[1]));
 
     debugPrint("OK LISTENING TIME OF  DAY $startTime ___ $endTime");
-    stateManagerRead.getTimeSlotsIntervals(startTime, endTime, interval).toList().then((value) {
+    stateManagerRead
+        .getTimeSlotsIntervals(startTime, endTime, interval)
+        .toList()
+        .then((value) {
       debugPrint("OK LISTENING LIST $value   ___ \t stop $stop");
       stop < 2
           ? setState(() {
@@ -279,13 +329,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     Map<String, dynamic> selectedVehiculeInfoEmptyTest;
     bookerFirstPageInfoMapped.isNotEmpty
         ? {
-            selectedVehiculeInfoEmptyTest = bookerFirstPageInfoMapped['Selected Vehicule Info'] as Map<String, dynamic>,
+            selectedVehiculeInfoEmptyTest =
+                bookerFirstPageInfoMapped['Selected Vehicule Info']
+                    as Map<String, dynamic>,
             selectedVehiculeInfoEmptyTest.isNotEmpty
                 ? {
                     ScaffoldMessenger.of(context).clearMaterialBanners(),
                     setState(() {
                       removeMaterialBannerSizedBox = true;
-                      debugPrint("removeMaterialBannerSizedBox $removeMaterialBannerSizedBox");
+                      debugPrint(
+                          "removeMaterialBannerSizedBox $removeMaterialBannerSizedBox");
                     })
                   }
                 : null
@@ -293,17 +346,29 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         : null;
     if (insideParkingInfoFetched.isNotEmpty) {
       bookingTotalNum = totalBookingDurationMinutePart < 30
-          ? (totalBookingDuration ~/ 30 * insideParkingInfoFetched['Fee per 30 minutes']) +
-              ((totalBookingDurationMinutePart * insideParkingInfoFetched['Fee per 30 minutes']) ~/ 30)
+          ? (totalBookingDuration ~/
+                  30 *
+                  insideParkingInfoFetched['Fee per 30 minutes']) +
+              ((totalBookingDurationMinutePart *
+                      insideParkingInfoFetched['Fee per 30 minutes']) ~/
+                  30)
           : totalBookingDurationMinutePart > 30
-              ? (totalBookingDuration ~/ 30 * insideParkingInfoFetched['Fee per 30 minutes']) +
-                  (((totalBookingDurationMinutePart - 30) * insideParkingInfoFetched['Fee per 30 minutes']) ~/ 30)
-              : totalBookingDuration ~/ 30 * insideParkingInfoFetched['Fee per 30 minutes'];
+              ? (totalBookingDuration ~/
+                      30 *
+                      insideParkingInfoFetched['Fee per 30 minutes']) +
+                  (((totalBookingDurationMinutePart - 30) *
+                          insideParkingInfoFetched['Fee per 30 minutes']) ~/
+                      30)
+              : totalBookingDuration ~/
+                  30 *
+                  insideParkingInfoFetched['Fee per 30 minutes'];
     }
     bookingTotalToPay = int.parse(bookingTotalNum.toString());
 
     return Scaffold(
-      backgroundColor: activeStep != 2 ? Theme.of(context).scaffoldBackgroundColor : Colors.blueGrey,
+      backgroundColor: activeStep != 2
+          ? Theme.of(context).scaffoldBackgroundColor
+          : Colors.blueGrey,
       appBar: activeStep != 2
           ? AppBar(
               bottomOpacity: 0.0,
@@ -348,7 +413,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                               ? FittedBox(
                                   child: Text(
                                     /* activeStep == 2 ? "Your Booking Overview" :  */ parkingNameToolBar,
-                                    style: const TextStyle(fontWeight: FontWeight.w900),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w900),
                                   ),
                                 )
                               : const Text("LOADING"),
@@ -361,7 +427,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
           : null,
       bottomNavigationBar: activeStep == 2
           ? BottomAppBar(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               elevation: 1,
               child: Row(
                 children: [
@@ -401,17 +467,23 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   Flexible(
                     child: Container(
                       decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.only(topLeft: Radius.circular(15), bottomLeft: Radius.circular(15)),
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(15),
+                            bottomLeft: Radius.circular(15)),
                       ),
-                      width: MediaQuery.of(context).size.width - MediaQuery.of(context).size.width * 0.6,
+                      width: MediaQuery.of(context).size.width -
+                          MediaQuery.of(context).size.width * 0.6,
                       height: 70,
                       child: Material(
-                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))),
+                        shape: const RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(15))),
                         color: Colors.orange,
                         child: InkWell(
                           highlightColor: Colors.red,
-                          borderRadius:
-                              const BorderRadius.only(topLeft: Radius.circular(15), bottomLeft: Radius.circular(15)),
+                          borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(15),
+                              bottomLeft: Radius.circular(15)),
                           onTap: () async {
                             /*        var bookingStartDate = Timestamp.fromDate(DateTime(
                                     selectedDay.year,
@@ -422,11 +494,13 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                 .toDate();
                             var timeUntilResStarts = (bookingStartDate.difference(DateTime.now())).inSeconds;
                             debugPrint("TIME UNTIL RES BOOK OVERV :$timeUntilResStarts"); */
-                            if (_connectionStatus.toString() == 'ConnectivityResult.none') {
+                            if (_connectionStatus.toString() ==
+                                'ConnectivityResult.none') {
                               showSnackBarText(localLnSetting.noInternetError);
                             } else {
                               await myDB
-                                  .collection("users/${currentlySignedInUser?.uid}/wallet")
+                                  .collection(
+                                      "users/${currentlySignedInUser?.uid}/wallet")
                                   .get()
                                   .then((value) async {
                                 debugPrint(
@@ -435,16 +509,23 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                   walletCollId = value.docs.first.id;
                                 });
 
-                                value.docs.first.data()['Balance'] >= bookingTotalToPay
-                                    ? stateManagerRead.updateBuildingBookingText('Registering your booking...')
+                                value.docs.first.data()['Balance'] >=
+                                        bookingTotalToPay
+                                    ? stateManagerRead
+                                        .updateBuildingBookingText(
+                                            'Registering your booking...')
                                     : stateManagerRead.updateBuildingBookingText(
                                         "Seems like you don't have enough SPM (Smart-Parking Money).\nPlease top-up to validate your booking.");
-                              }).whenComplete(() => checkWallet(bookingTotalToPay, stateManagerRead));
-                              debugPrint("HERE IT IS THE SPOT ${bookerTimeAndSpotInfoMapped['Selected Parking Spot']}");
+                              }).whenComplete(() => checkWallet(
+                                      bookingTotalToPay, stateManagerRead));
+                              debugPrint(
+                                  "HERE IT IS THE SPOT ${bookerTimeAndSpotInfoMapped['Selected Parking Spot']}");
                               Map<String, dynamic> yobaaler = {};
-                              if (stateManagerRead.buildingBookingText == 'Registering your booking...') {
+                              if (stateManagerRead.buildingBookingText ==
+                                  'Registering your booking...') {
                                 await createBookingItem(
-                                        linkedParkingNameAndInsideInfo['Parking Name'],
+                                        linkedParkingNameAndInsideInfo[
+                                            'Parking Name'],
                                         widget.receivedID,
                                         currentlySignedInUser,
                                         selectedVehiculeInfoMappedFromSelectVehicule,
@@ -454,39 +535,59 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                   yobaaler = value;
                                 });
                                 await firestoreWalletService
-                                    .debitAfterBooking(currentlySignedInUser, walletCollId, bookingTotalToPay,
-                                        widget.receivedID, linkedParkingNameAndInsideInfo['Parking Name'])
-                                    .whenComplete(() => updateParkingSpotsAvailability(
-                                        bookerTimeAndSpotInfoMapped['Selected Parking Spot']));
+                                    .debitAfterBooking(
+                                        currentlySignedInUser,
+                                        walletCollId,
+                                        bookingTotalToPay,
+                                        widget.receivedID,
+                                        linkedParkingNameAndInsideInfo[
+                                            'Parking Name'])
+                                    .whenComplete(() =>
+                                        updateParkingSpotsAvailability(
+                                            bookerTimeAndSpotInfoMapped[
+                                                'Selected Parking Spot']));
 
-                                var theDocToUpdate =
-                                    myDB.collection("users/${currentlySignedInUser?.uid}/wallet").doc(walletCollId);
+                                var theDocToUpdate = myDB
+                                    .collection(
+                                        "users/${currentlySignedInUser?.uid}/wallet")
+                                    .doc(walletCollId);
                                 finallyBookedTimeRange.startTime;
 
-                                debugPrint("THEDOCTOUPDATE ${theDocToUpdate.id}");
+                                debugPrint(
+                                    "THEDOCTOUPDATE ${theDocToUpdate.id}");
                                 listeningToDebitsRT(theDocToUpdate);
-                                var bookingStartDate = Timestamp.fromDate(DateTime(
-                                        selectedDay.year,
-                                        selectedDay.month,
-                                        selectedDay.day,
-                                        finallyBookedTimeRange.startTime.hour,
-                                        finallyBookedTimeRange.startTime.minute))
+                                var bookingStartDate = Timestamp.fromDate(
+                                        DateTime(
+                                            selectedDay.year,
+                                            selectedDay.month,
+                                            selectedDay.day,
+                                            finallyBookedTimeRange
+                                                .startTime.hour,
+                                            finallyBookedTimeRange
+                                                .startTime.minute))
                                     .toDate();
-                                var timeUntilResStarts = (bookingStartDate.difference(DateTime.now())).inSeconds;
-                                debugPrint("TIME UNTIL RES BOOK OVERV :$timeUntilResStarts");
+                                var timeUntilResStarts = (bookingStartDate
+                                        .difference(DateTime.now()))
+                                    .inSeconds;
+                                debugPrint(
+                                    "TIME UNTIL RES BOOK OVERV :$timeUntilResStarts");
                                 Future.delayed(const Duration(seconds: 20));
                                 if (!mounted) return;
                                 Navigator.pop(context);
                                 redirectingAlert();
-                                Future.delayed(const Duration(seconds: 4)).then((value) {
+                                Future.delayed(const Duration(seconds: 4))
+                                    .then((value) {
                                   if (mounted) {
-                                    return Navigator.of(context).pushAndRemoveUntil(
-                                        MaterialPageRoute(
-                                            builder: (context) => TestHome(
-                                                  timeUntilReservationStarts: timeUntilResStarts,
-                                                  newMoreUrgentBooking: yobaaler,
-                                                )),
-                                        (Route<dynamic> route) => false);
+                                    return Navigator.of(context)
+                                        .pushAndRemoveUntil(
+                                            MaterialPageRoute(
+                                                builder: (context) => TestHome(
+                                                      timeUntilReservationStarts:
+                                                          timeUntilResStarts,
+                                                      newMoreUrgentBooking:
+                                                          yobaaler,
+                                                    )),
+                                            (Route<dynamic> route) => false);
                                   }
                                 });
                               }
@@ -531,7 +632,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             padding: const EdgeInsets.fromLTRB(10, 20, 10, 10),
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
-                    .collection("locations/${widget.receivedID}/insideParkingInfo")
+                    .collection(
+                        "locations/${widget.receivedID}/insideParkingInfo")
                     .snapshots()
                 /* .map((snapshot) => snapshot.docs
                         .map((doc) => InsideInfo.fromFirestore(
@@ -544,10 +646,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   } else {
                     //String source = snapshot.data!.metadata.hasPendingWrites ? "Local" : "Server";
                     // insideParkingInfoFetched.clear();
-                    insideParkingInfoFetched = snapshot.data!.docs[0].data(); //PUT BACK 0
+                    insideParkingInfoFetched =
+                        snapshot.data!.docs[0].data(); //PUT BACK 0
                     insideParkingInfoDocIDNeeded = snapshot.data!.docs[0].id;
 
-                    for (var element in widget.mappedParkingsGeneralInfo.entries) {
+                    for (var element
+                        in widget.mappedParkingsGeneralInfo.entries) {
                       if (element.key == widget.receivedID) {
                         String currentlySelectedParkingsName = element.value
                             .toString()
@@ -557,7 +661,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                 .toString()
                                 .split(',')
                                 .toList()
-                                .indexWhere((element) => element.contains("Parking")))
+                                .indexWhere(
+                                    (element) => element.contains("Parking")))
                             .split(':')
                             .toList()
                             .last
@@ -566,8 +671,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                             .toString()
                             .substring(1);
 //come back here and put whatever as Map<String, dynamic> and treat the data isntead of splitting
-                        linkedParkingNameAndInsideInfo
-                            .addAll({'Parking Name': currentlySelectedParkingsName, 'Info': insideParkingInfoFetched});
+                        linkedParkingNameAndInsideInfo.addAll({
+                          'Parking Name': currentlySelectedParkingsName,
+                          'Info': insideParkingInfoFetched
+                        });
                       }
                     }
                     parkingSlotsTotal = insideParkingInfoFetched["Total"];
@@ -577,7 +684,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                         "DATA SNAP: linkedParkingNameAndInsideInfo $linkedParkingNameAndInsideInfo \t insideParkingInfoFetched $insideParkingInfoFetched");
 
                     return Column(
-                      children: [bookerBody(alleyListViewMinHeightToDisplay, startTime, endTime)],
+                      children: [
+                        bookerBody(
+                            alleyListViewMinHeightToDisplay, startTime, endTime)
+                      ],
                     );
                   }
                 }),
@@ -587,11 +697,14 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     );
   }
 
-  void showSnackBarText(String text, [TextStyle snackStyle = const TextStyle(color: Colors.white, fontSize: 15)]) {
+  void showSnackBarText(String text,
+      [TextStyle snackStyle =
+          const TextStyle(color: Colors.white, fontSize: 15)]) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           elevation: 50,
           behavior: SnackBarBehavior.floating,
           content: Text(
@@ -603,17 +716,23 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     }
   }
 
-  getSelectedTimeSlotColor(int index, Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
-    bool displayOccupiedIcon =
-        sOccupiedNoPriorBookingIDs.isNotEmpty || rOccupiedNoPriorBookingIDs.isNotEmpty ? true : false;
+  dynamic getSelectedTimeSlotColor(int index,
+      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
+    bool displayOccupiedIcon = sOccupiedNoPriorBookingIDs.isNotEmpty ||
+            rOccupiedNoPriorBookingIDs.isNotEmpty
+        ? true
+        : false;
 
     Map<String, dynamic> bookedIntervalsSlotColor =
-        testconvertAllTimesOfDayFetched(testallBookedTimeSlotsInMinutes, timesOfDayFetched);
+        testconvertAllTimesOfDayFetched(
+            testallBookedTimeSlotsInMinutes, timesOfDayFetched);
     Set timeSlotCardBookedIndex = <int>{};
 
     for (var element in bookedIntervalsSlotColor.values) {
       debugPrint("bookedIntervalsSlotColor : $element");
-      index >= element['startIndex'] && index <= element['endIndex'] ? timeSlotCardBookedIndex.add(index) : null;
+      index >= element['startIndex'] && index <= element['endIndex']
+          ? timeSlotCardBookedIndex.add(index)
+          : null;
     }
 
     debugPrint(
@@ -644,8 +763,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       if (selectedDayPlusXHourToInt <= allConvertedTimesOfDayToInt.last) {
         if (indexesToDisplayWithnXHours.isNotEmpty) {
           //if left sup closing time basically, show normal indexes that are still within X hours of the currentTime but also within parking closing time
-          clearOutOfXrange < 1 ? {outOfXhoursRangeIndexes.clear(), clearOutOfXrange += 1} : null;
-          index > selectedDayPlusXHourToIntIndex ? outOfXhoursRangeIndexes.add(index) : null;
+          clearOutOfXrange < 1
+              ? {outOfXhoursRangeIndexes.clear(), clearOutOfXrange += 1}
+              : null;
+          index > selectedDayPlusXHourToIntIndex
+              ? outOfXhoursRangeIndexes.add(index)
+              : null;
           outOfXhoursRangeIndexes = outOfXhoursRangeIndexes.toSet().toList();
           debugPrint(
               "FETCHING OUTOFXRANGE INDEXES(indexesToDisplayWithnXHours NOTempty) _______ $outOfXhoursRangeIndexes");
@@ -656,7 +779,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
           if (mappedSelectedSlotAlley.any((element) =>
                   element['isSlotOccupied']['NoPriorBooking'] == true &&
                   (index >= selectedDayIndex &&
-                      allConvertedTimesOfDayToInt.elementAt(index * 2) <= selectedDayToInt &&
+                      allConvertedTimesOfDayToInt.elementAt(index * 2) <=
+                          selectedDayToInt &&
                       allConvertedTimesOfDayToInt.elementAt((index * 2) + 1) >
                           selectedDayToInt /* &&
                       itdwxh == true */
@@ -665,7 +789,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             // debugPrint("OUIOUI");
             return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               //booked for certain parking spots and occuiped for others
-              getTimeSpotIcon('occupied'), const SizedBox(width: 5), getTimeSpotIcon('booked'),
+              getTimeSpotIcon('occupied'), const SizedBox(width: 5),
+              getTimeSpotIcon('booked'),
 
               // getTimeSpotIcon('available'),
             ]);
@@ -704,7 +829,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
           if (indexesToDisplayWithnXHours.any((element) {
                 element as List;
-                index < selectedDayIndex ? allDisabledTimeRangeIndexesForTimeSelection.add(index) : null;
+                index < selectedDayIndex
+                    ? allDisabledTimeRangeIndexesForTimeSelection.add(index)
+                    : null;
                 return index < selectedDayIndex;
               }) ==
               true) {
@@ -716,8 +843,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               "FETCHING OUTOFXRANGE INDEXES(indexesToDisplayWithnXHours empty) _______ $outOfXhoursRangeIndexes ");
 
           //indexesToDisplayWithnXHours.isEmpty
-          index < selectedDayIndex ? allDisabledTimeRangeIndexesForTimeSelection.add(index) : null;
-          index > selectedDayPlusXHourToIntIndex ? outOfXhoursRangeIndexes.add(index) : null;
+          index < selectedDayIndex
+              ? allDisabledTimeRangeIndexesForTimeSelection.add(index)
+              : null;
+          index > selectedDayPlusXHourToIntIndex
+              ? outOfXhoursRangeIndexes.add(index)
+              : null;
           outOfXhoursRangeIndexes = outOfXhoursRangeIndexes.toSet().toList();
           //debugPrint("THESE OUT OF RANGE INDEXES $index _________ $outOfXhoursRangeIndexes");
           return index < selectedDayIndex
@@ -733,14 +864,19 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         if (indexesToDisplayWithnXHours.isNotEmpty) {
           return indexesToDisplayWithnXHours.any((element) {
                     element as List;
-                    index >= selectedDayIndex == false ? allDisabledTimeRangeIndexesForTimeSelection.add(index) : null;
-                    return index >= element.first && index <= element.last && index >= selectedDayIndex;
+                    index >= selectedDayIndex == false
+                        ? allDisabledTimeRangeIndexesForTimeSelection.add(index)
+                        : null;
+                    return index >= element.first &&
+                        index <= element.last &&
+                        index >= selectedDayIndex;
                   }) ==
                   true
               ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   //booked for certain parking spots and occuiped for others
                   getTimeSpotIcon('booked'), const SizedBox(width: 5),
-                  sAvailableIDs.isNotEmpty == true || rAvailableIDs.isNotEmpty == true
+                  sAvailableIDs.isNotEmpty == true ||
+                          rAvailableIDs.isNotEmpty == true
                       ? getTimeSpotIcon('available')
                       : Container(),
                   /* const SizedBox(width: 5),
@@ -752,7 +888,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 ])
               : getTimeSpotIcon('unbookable');
         } else {
-          index < selectedDayIndex ? allDisabledTimeRangeIndexesForTimeSelection.add(index) : null;
+          index < selectedDayIndex
+              ? allDisabledTimeRangeIndexesForTimeSelection.add(index)
+              : null;
           debugPrint("STILL HERE __ $index __ $selectedDayIndex");
           index >= selectedDayIndex
               ? getTimeSpotIcon('available')
@@ -774,8 +912,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 indexesToDisplayWithnXHours.isEmpty
             ? {
                 outOfXhoursRangeIndexes.add(index),
-                outOfXhoursRangeIndexes = outOfXhoursRangeIndexes.toSet().toList(),
-                debugPrint("OUTOFXRANGE INDEXES $index _________ $outOfXhoursRangeIndexes"),
+                outOfXhoursRangeIndexes =
+                    outOfXhoursRangeIndexes.toSet().toList(),
+                debugPrint(
+                    "OUTOFXRANGE INDEXES $index _________ $outOfXhoursRangeIndexes"),
               }
             : null;
     return selectedDayPlusXHourToInt <= allConvertedTimesOfDayToInt.last &&
@@ -794,7 +934,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     /*  :  */ //ADD IF PARKING SPOT IS SELECTED TOO
   }
 
-  fetchAlleySelectedSlotId(int i, String alley) {
+  void fetchAlleySelectedSlotId(int i, String alley) {
     for (var singleAlleyInfo in mappedSelectedSlotAlley) {
       singleAlleyInfo.update('isSlotSelected', (value) => false);
       // DO NOT MOVE OR REMOVE THE UPPER LINE CMD. It has to put everything to false before putting only the selected slot to true
@@ -805,34 +945,49 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         mappedSelectedSlotAlley.elementAt(i + parkingSlotsTotal ~/ 2) ==
                 singleAlleyInfo //parkingSlotsTotal ~/ 2 = 3 needed to get to the B section because the received i in parameters is limited to half the total number of slots
             ? {
-                mappedSelectedSlotAlley.elementAt(i + parkingSlotsTotal ~/ 2).update('isSlotSelected', (value) => true),
+                mappedSelectedSlotAlley
+                    .elementAt(i + parkingSlotsTotal ~/ 2)
+                    .update('isSlotSelected', (value) => true),
                 mappedSelectedSlotAlley
                     .elementAt(i + parkingSlotsTotal ~/ 2)
                     .update('highlightColor', (value) => slotHighlithbgColor),
-                refreshSlotColorState(mappedSelectedSlotAlley.elementAt(i + parkingSlotsTotal ~/ 2).values.last),
+                refreshSlotColorState(mappedSelectedSlotAlley
+                    .elementAt(i + parkingSlotsTotal ~/ 2)
+                    .values
+                    .last),
               }
             : {
                 singleAlleyInfo.update('isSlotSelected', (value) => false),
-                singleAlleyInfo.update('highlightColor', (value) => Colors.transparent)
+                singleAlleyInfo.update(
+                    'highlightColor', (value) => Colors.transparent)
               };
-      } else if (singleAlleyInfo.keys.first.contains('A') && alley.contains('A')) {
+      } else if (singleAlleyInfo.keys.first.contains('A') &&
+          alley.contains('A')) {
         mappedSelectedSlotAlley.elementAt(i) == singleAlleyInfo
             ? {
-                mappedSelectedSlotAlley.elementAt(i).update('isSlotSelected', (value) => true),
-                mappedSelectedSlotAlley.elementAt(i).update('highlightColor', (value) => slotHighlithbgColor),
-                refreshSlotColorState(mappedSelectedSlotAlley.elementAt(i).values.last),
+                mappedSelectedSlotAlley
+                    .elementAt(i)
+                    .update('isSlotSelected', (value) => true),
+                mappedSelectedSlotAlley
+                    .elementAt(i)
+                    .update('highlightColor', (value) => slotHighlithbgColor),
+                refreshSlotColorState(
+                    mappedSelectedSlotAlley.elementAt(i).values.last),
               }
             : {
                 singleAlleyInfo.update('isSlotSelected', (value) => false),
-                singleAlleyInfo.update('highlightColor', (value) => Colors.transparent)
+                singleAlleyInfo.update(
+                    'highlightColor', (value) => Colors.transparent)
               };
       }
     }
 
-    debugPrint("REALLY? ${mappedSelectedSlotAlley.elementAt(i)} ___ $mappedSelectedSlotAlley");
+    debugPrint(
+        "REALLY? ${mappedSelectedSlotAlley.elementAt(i)} ___ $mappedSelectedSlotAlley");
   }
 
-  buildLeftAlleySlots(int parkingSlotsTotal, double spaceBetweenSlots, bool isSelected) {
+  List<Material> buildLeftAlleySlots(
+      int parkingSlotsTotal, double spaceBetweenSlots, bool isSelected) {
     int leftAlleySlotsTotal = parkingSlotsTotal ~/ 2;
     return List.generate(
         leftAlleySlotsTotal,
@@ -849,7 +1004,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     tappedOnAlley = 'alleyA';
                     previouslySelectedParkingSpotID = 'A$i';
                   });
-                  context.read<BookingStateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
+                  context
+                      .read<BookingStateManagement>()
+                      .updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
 
                   //highlightSelectedSlot(isSelected, i);
                 },
@@ -860,8 +1017,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   decoration: BoxDecoration(
                     color: mappedSelectedSlotAlley.elementAt(i).values.last,
                     border: Border(
-                      top: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
-                      bottom: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
+                      top: BorderSide(
+                          color: Colors.indigo.withAlpha(30), width: 2),
+                      bottom: BorderSide(
+                          color: Colors.indigo.withAlpha(30), width: 2),
                     ),
                     /*  gradient: LinearGradient(
                       /* begin: Alignment(0.0, -1.0),
@@ -873,9 +1032,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     ), */
                   ),
                   child: CustomPaint(
-                    foregroundPainter: DashedSeparatedBordersPainterLTRB(false, true, false, true),
+                    foregroundPainter: DashedSeparatedBordersPainterLTRB(
+                        false, true, false, true),
                     child: Center(
-                      child: mappedSelectedSlotAlley.elementAt(i)['isSlotSelected'] ==
+                      child: mappedSelectedSlotAlley
+                                  .elementAt(i)['isSlotSelected'] ==
                               true //checks if 'isSlotSelected is true or not
                           ? const Text('Selected')
                           : Column(
@@ -884,25 +1045,43 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                 Flexible(
                                     flex: 2,
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         allSpecialSpotsIDs.contains("A$i")
-                                            ? Flexible(flex: 1, child: getParkingSpotIcon("insideSpot", 'accessible'))
+                                            ? Flexible(
+                                                flex: 1,
+                                                child: getParkingSpotIcon(
+                                                    "insideSpot", 'accessible'))
                                             : Container(),
                                         Flexible(
-                                          child: rOccupiedAfterBookedIDs.contains("A$i") ||
-                                                  sOccupiedAfterBookedIDs.contains("A$i")
-                                              ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
-                                              : rOccupiedNoPriorBookingIDs.contains("A$i") ||
-                                                      sOccupiedNoPriorBookingIDs.contains("A$i")
+                                          child: rOccupiedAfterBookedIDs
+                                                      .contains("A$i") ||
+                                                  sOccupiedAfterBookedIDs
+                                                      .contains("A$i")
+                                              ? const Icon(Icons.time_to_leave,
+                                                  color: Colors.red, size: 20)
+                                              : rOccupiedNoPriorBookingIDs
+                                                          .contains("A$i") ||
+                                                      sOccupiedNoPriorBookingIDs
+                                                          .contains("A$i")
                                                   ? occupiedSpotIconLegend
-                                                  : sAvailableIDs.contains("A$i") || rAvailableIDs.contains("A$i")
-                                                      ? getParkingSpotIcon("insideSpot", 'available')
-                                                      : getParkingSpotIcon("insideSpot", 'booked'),
+                                                  : sAvailableIDs.contains(
+                                                              "A$i") ||
+                                                          rAvailableIDs
+                                                              .contains("A$i")
+                                                      ? getParkingSpotIcon(
+                                                          "insideSpot",
+                                                          'available')
+                                                      : getParkingSpotIcon(
+                                                          "insideSpot",
+                                                          'booked'),
                                         ),
                                       ],
                                     )),
-                                Flexible(flex: 2, child: FittedBox(child: Text('A$i'))),
+                                Flexible(
+                                    flex: 2,
+                                    child: FittedBox(child: Text('A$i'))),
                               ],
                             ),
                     ),
@@ -912,7 +1091,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             )).toList(); // replace * with your rupee or use Icon instead
   }
 
-  buildRightAlleySlots(int parkingSlotsTotal, double spaceBetweenSlots, bool isSelected) {
+  List<Material> buildRightAlleySlots(
+      int parkingSlotsTotal, double spaceBetweenSlots, bool isSelected) {
     int rightAlleySlotsTotal = parkingSlotsTotal ~/ 2;
     return List.generate(
         rightAlleySlotsTotal,
@@ -928,7 +1108,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     tappedOnAlley = 'alleyB';
                     previouslySelectedParkingSpotID = 'B$i';
                   });
-                  context.read<BookingStateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
+                  context
+                      .read<BookingStateManagement>()
+                      .updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
                 },
                 highlightColor: Colors.blueGrey.shade500,
                 splashColor: Colors.yellow,
@@ -936,40 +1118,64 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   height: singleSpotHeight,
                   width: singleSpotWidth,
                   decoration: BoxDecoration(
-                    color: mappedSelectedSlotAlley.elementAt(i + parkingSlotsTotal ~/ 2).values.last,
+                    color: mappedSelectedSlotAlley
+                        .elementAt(i + parkingSlotsTotal ~/ 2)
+                        .values
+                        .last,
                     border: Border(
-                      top: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
-                      bottom: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
+                      top: BorderSide(
+                          color: Colors.indigo.withAlpha(30), width: 2),
+                      bottom: BorderSide(
+                          color: Colors.indigo.withAlpha(30), width: 2),
                     ),
                   ),
                   child: CustomPaint(
                     //child: Container(color: Colors.yellow,),
-                    foregroundPainter: DashedSeparatedBordersPainterLTRB(false, true, false, true),
+                    foregroundPainter: DashedSeparatedBordersPainterLTRB(
+                        false, true, false, true),
                     child: Center(
-                        child: mappedSelectedSlotAlley.elementAt(i + parkingSlotsTotal ~/ 2)['isSlotSelected'] ==
+                        child: mappedSelectedSlotAlley.elementAt(i +
+                                    parkingSlotsTotal ~/ 2)['isSlotSelected'] ==
                                 true //crcks if 'isSlotSelected is true or not
                             ? const Text('Selected')
                             : Column(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   Flexible(
                                     flex: 2,
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         allSpecialSpotsIDs.contains("B$i")
-                                            ? Flexible(flex: 1, child: getParkingSpotIcon("insideSpot", 'accessible'))
+                                            ? Flexible(
+                                                flex: 1,
+                                                child: getParkingSpotIcon(
+                                                    "insideSpot", 'accessible'))
                                             : Container(),
                                         Flexible(
-                                          child: rOccupiedAfterBookedIDs.contains("B$i") ||
-                                                  sOccupiedAfterBookedIDs.contains("B$i")
-                                              ? const Icon(Icons.time_to_leave, color: Colors.red, size: 20)
-                                              : rOccupiedNoPriorBookingIDs.contains("B$i") ||
-                                                      sOccupiedNoPriorBookingIDs.contains("B$i")
+                                          child: rOccupiedAfterBookedIDs
+                                                      .contains("B$i") ||
+                                                  sOccupiedAfterBookedIDs
+                                                      .contains("B$i")
+                                              ? const Icon(Icons.time_to_leave,
+                                                  color: Colors.red, size: 20)
+                                              : rOccupiedNoPriorBookingIDs
+                                                          .contains("B$i") ||
+                                                      sOccupiedNoPriorBookingIDs
+                                                          .contains("B$i")
                                                   ? occupiedSpotIconLegend
-                                                  : sAvailableIDs.contains("B$i") || rAvailableIDs.contains("B$i")
-                                                      ? getParkingSpotIcon("insideSpot", 'available')
-                                                      : getParkingSpotIcon("insideSpot", 'booked'),
+                                                  : sAvailableIDs.contains(
+                                                              "B$i") ||
+                                                          rAvailableIDs
+                                                              .contains("B$i")
+                                                      ? getParkingSpotIcon(
+                                                          "insideSpot",
+                                                          'available')
+                                                      : getParkingSpotIcon(
+                                                          "insideSpot",
+                                                          'booked'),
                                         ),
                                       ],
                                     ),
@@ -988,20 +1194,21 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     Color myColor = Colors.yellow;
     for (var singleAlleyInfo in mappedSelectedSlotAlley) {
       myColor = Colors.transparent;
-      if (mappedSelectedSlotAlley.elementAt(i).values.last == singleAlleyInfo.values.last) {
+      if (mappedSelectedSlotAlley.elementAt(i).values.last ==
+          singleAlleyInfo.values.last) {
         myColor = Colors.transparent;
       }
     }
     return myColor;
   }
 
-  refreshSlotColorState(selectedSlotColorFetched) {
+  void refreshSlotColorState(selectedSlotColorFetched) {
     setState(() {
       finalSelectedColorSlot = selectedSlotColorFetched;
     });
   }
 
-  getAlleySlotsIdWithFBListeners(parkingSlotsTotal) {
+  void getAlleySlotsIdWithFBListeners(parkingSlotsTotal) {
     listeningToInsideParkingRealTime();
     int alleyBindexStart = parkingSlotsTotal ~/ 2;
     var j = 0;
@@ -1010,8 +1217,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     debugPrint("mappedAlleysAndSlotIds : $mappedAlleysAndSlotIds");
   }
 
-  insideParkingLayout(double alleyListViewMinHeightToDisplay) {
-    double kindaWorkingContainerHeightForAlleys = ((parkingSlotsTotal ~/ 2) - 0.5) * 80;
+  GestureDetector insideParkingLayout(double alleyListViewMinHeightToDisplay) {
+    double kindaWorkingContainerHeightForAlleys =
+        ((parkingSlotsTotal ~/ 2) - 0.5) * 80;
     //debugPrint("kindaWorkingContainerHeightForAlleys $kindaWorkingContainerHeightForAlleys");
     return GestureDetector(
       onVerticalDragStart: (details) {
@@ -1023,7 +1231,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       onVerticalDragCancel: () async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         var status = prefs.getBool('dontShowAlleyAlertAgain') ?? true;
-        debugPrint("DON'T SHOW ALLEY EVER AGAIN? $status  _______ reshow tempo $dontShowAlleyAlertAgainTemporairyly");
+        debugPrint(
+            "DON'T SHOW ALLEY EVER AGAIN? $status  _______ reshow tempo $dontShowAlleyAlertAgainTemporairyly");
         dontShowAlleyAlertAgainTemporairyly == false
             ? showAlleyAlert()
             : dontShowAlleyAlertAgainTemporairyly == true || status == true
@@ -1032,7 +1241,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       },
       child: Container(
         margin: const EdgeInsets.only(left: 10, right: 10),
-        height: kindaWorkingContainerHeightForAlleys > 480 ? 480 : kindaWorkingContainerHeightForAlleys,
+        height: kindaWorkingContainerHeightForAlleys > 480
+            ? 480
+            : kindaWorkingContainerHeightForAlleys,
         width: double.infinity,
         child: Card(
           shape: RoundedRectangleBorder(
@@ -1049,8 +1260,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 decoration: BoxDecoration(
                     color: Colors.indigo.withAlpha(10),
                     border: Border(
-                      left: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
-                      right: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
+                      left: BorderSide(
+                          color: Colors.indigo.withAlpha(30), width: 2),
+                      right: BorderSide(
+                          color: Colors.indigo.withAlpha(30), width: 2),
                     )),
                 width: MediaQuery.of(context).size.width * alleySpotWidthRatio,
                 child: RawScrollbar(
@@ -1058,7 +1271,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   trackVisibility: false,
                   trackColor: Colors.transparent,
                   thickness: 3,
-                  thumbColor: Colors.black54.withOpacity(0.2),
+                  thumbColor: Colors.black54.withValues(alpha: 0.2),
                   scrollbarOrientation: ScrollbarOrientation.left,
                   thumbVisibility: false,
                   controller: leftAlleyController,
@@ -1067,7 +1280,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     shrinkWrap: false,
                     itemCount: parkingSlotsTotal ~/ 2,
                     itemBuilder: (context, index) {
-                      final item = buildLeftAlleySlots(parkingSlotsTotal, spaceBetweenSlots, isSelected)[index];
+                      final item = buildLeftAlleySlots(parkingSlotsTotal,
+                          spaceBetweenSlots, isSelected)[index];
                       return item;
                     },
                     separatorBuilder: (BuildContext context, int index) {
@@ -1132,8 +1346,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 decoration: BoxDecoration(
                     color: Colors.indigo.withAlpha(10),
                     border: Border(
-                      left: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
-                      right: BorderSide(color: Colors.indigo.withAlpha(30), width: 2),
+                      left: BorderSide(
+                          color: Colors.indigo.withAlpha(30), width: 2),
+                      right: BorderSide(
+                          color: Colors.indigo.withAlpha(30), width: 2),
                     )),
                 width: MediaQuery.of(context).size.width * alleySpotWidthRatio,
                 //height: alleyHeight + spaceBetweenSlots * parkingSlotsTotal ~/ 2,
@@ -1142,7 +1358,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   trackVisibility: false,
                   trackColor: Colors.transparent,
                   thickness: 3,
-                  thumbColor: Colors.black54.withOpacity(0.2),
+                  thumbColor: Colors.black54.withValues(alpha: 0.2),
                   scrollbarOrientation: ScrollbarOrientation.right,
                   thumbVisibility: false,
                   controller: rightAlleyController,
@@ -1151,7 +1367,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     shrinkWrap: false,
                     itemCount: parkingSlotsTotal ~/ 2,
                     itemBuilder: (context, index) {
-                      final item = buildRightAlleySlots(parkingSlotsTotal, spaceBetweenSlots, isSelected)[index];
+                      final item = buildRightAlleySlots(parkingSlotsTotal,
+                          spaceBetweenSlots, isSelected)[index];
                       return item;
                     },
                     separatorBuilder: (BuildContext context, int index) {
@@ -1167,18 +1384,25 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     );
   }
 
-  showUserRangePicker(int index, TimeOfDay parkingClosingHour, TimeOfDay parkingOpeningHour,
-      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData, Set<int> timeSlotsDisabled) async {
+  Future<void> showUserRangePicker(
+      int index,
+      TimeOfDay parkingClosingHour,
+      TimeOfDay parkingOpeningHour,
+      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData,
+      Set<int> timeSlotsDisabled) async {
     await showDialog(
         context: context,
         builder: (context) {
           TimeOfDay startTime = TimeOfDay.now();
           TimeOfDay endTime = TimeOfDay.now();
 
-          selectedBookingStartTimeFromTSGrid = timesOfDayFetched.elementAt(index * 2);
+          selectedBookingStartTimeFromTSGrid =
+              timesOfDayFetched.elementAt(index * 2);
           selectedBookingEndTimeFromTSGrid = TimeOfDay(
               hour: timesOfDayFetched.elementAt(index * 2 + 1).hour,
-              minute: timesOfDayFetched.elementAt(index * 2 + 1).minute); //if error, put both = TimeOfDay.now
+              minute: timesOfDayFetched
+                  .elementAt(index * 2 + 1)
+                  .minute); //if error, put both = TimeOfDay.now
           return AlertDialog(
             scrollable: true,
             contentPadding: EdgeInsets.zero,
@@ -1198,25 +1422,33 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                       setState(() {
                         selectedBookingEndTimeFromTSGrid = p0;
                       });
-                      debugPrint("THE CHANGE $p0 _____ $selectedBookingEndTimeFromTSGrid");
+                      debugPrint(
+                          "THE CHANGE $p0 _____ $selectedBookingEndTimeFromTSGrid");
                     },
                     minDuration: const Duration(minutes: 30),
                     handlerRadius: 7,
                     start: timesOfDayFetched.elementAt(index * 2).hour == TimeOfDay.now().hour &&
-                            timesOfDayFetched.elementAt(index * 2).minute < TimeOfDay.now().minute
+                            timesOfDayFetched.elementAt(index * 2).minute <
+                                TimeOfDay.now().minute
                         ? TimeOfDay.now()
                         : timesOfDayFetched.elementAt(index * 2), //FROM
                     //
                     end: timesOfDayFetched.elementAt(index * 2).hour == TimeOfDay.now().hour &&
-                            timesOfDayFetched.elementAt(index * 2).minute < TimeOfDay.now().minute
+                            timesOfDayFetched.elementAt(index * 2).minute <
+                                TimeOfDay.now().minute
                         ? TimeOfDay(
-                            hour: TimeOfDay.now().minute + 30 >= 60 ? TimeOfDay.now().hour + 1 : TimeOfDay.now().hour,
+                            hour: TimeOfDay.now().minute + 30 >= 60
+                                ? TimeOfDay.now().hour + 1
+                                : TimeOfDay.now().hour,
                             minute: TimeOfDay.now().minute + 30 >= 60
                                 ? TimeOfDay.now().minute + 30 - 60
                                 : TimeOfDay.now().minute + 30)
                         : TimeOfDay(
-                            hour: timesOfDayFetched.elementAt(index * 2 + 1).hour,
-                            minute: timesOfDayFetched.elementAt(index * 2 + 1).minute), //TO
+                            hour:
+                                timesOfDayFetched.elementAt(index * 2 + 1).hour,
+                            minute: timesOfDayFetched
+                                .elementAt(index * 2 + 1)
+                                .minute), //TO
                     //
                     disabledTime: selectedDay.year == DateTime.now().year &&
                             selectedDay.month == DateTime.now().month &&
@@ -1226,29 +1458,39 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                 hour: parkingClosingHour.minute == 0
                                     ? parkingClosingHour.hour - 1
                                     : parkingClosingHour.hour,
-                                minute: parkingClosingHour.minute == 0 ? 55 : parkingClosingHour.minute - 5),
-                            endTime: timesOfDayFetched.elementAt(index * 2).hour == TimeOfDay.now().hour &&
-                                    timesOfDayFetched.elementAt(index * 2).minute < TimeOfDay.now().minute
-                                ? TimeOfDay.now()
-                                : TimeOfDay(
-                                    hour: timesOfDayFetched.elementAt(index * 2).hour,
-                                    minute: timesOfDayFetched.elementAt(index * 2).minute),
+                                minute: parkingClosingHour.minute == 0
+                                    ? 55
+                                    : parkingClosingHour.minute - 5),
+                            endTime:
+                                timesOfDayFetched.elementAt(index * 2).hour ==
+                                            TimeOfDay.now().hour &&
+                                        timesOfDayFetched
+                                                .elementAt(index * 2)
+                                                .minute <
+                                            TimeOfDay.now().minute
+                                    ? TimeOfDay.now()
+                                    : TimeOfDay(
+                                        hour: timesOfDayFetched
+                                            .elementAt(index * 2)
+                                            .hour,
+                                        minute: timesOfDayFetched
+                                            .elementAt(index * 2)
+                                            .minute),
                           )
                         : TimeRange(
                             startTime: TimeOfDay(
-                                hour: parkingClosingHour.minute == 0
-                                    ? parkingClosingHour.hour - 1
-                                    : parkingClosingHour.hour,
+                                hour: parkingClosingHour.minute == 0 ? parkingClosingHour.hour - 1 : parkingClosingHour.hour,
                                 minute: parkingClosingHour.minute == 0 ? 55 : parkingClosingHour.minute - 5),
                             endTime: parkingOpeningHour),
-                    disabledColor: Colors.red.withOpacity(0.5),
+                    disabledColor: Colors.red.withValues(alpha: 0.5),
                     strokeWidth: 5,
                     ticks: 24,
                     ticksOffset: -12,
                     ticksLength: 15,
                     ticksColor: Colors.grey,
                     labels: ["24h", "3h", "6h", "9h", "12h", "15h", "18h", "21h"].asMap().entries.map((e) {
-                      return ClockLabel.fromIndex(idx: e.key, length: 8, text: e.value);
+                      return ClockLabel.fromIndex(
+                          idx: e.key, length: 8, text: e.value);
                     }).toList(),
                     labelOffset: -30,
                     rotateLabels: false,
@@ -1258,19 +1500,21 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   child: const Text('CANCEL'),
                   onPressed: () {
                     Navigator.of(context).pop(TimeRange(
-                        startTime: const TimeOfDay(hour: 0, minute: 0), endTime: const TimeOfDay(hour: 0, minute: 05)));
+                        startTime: const TimeOfDay(hour: 0, minute: 0),
+                        endTime: const TimeOfDay(hour: 0, minute: 05)));
                   }),
               TextButton(
                 child: const Text('OK'),
                 onPressed: () {
                   debugPrint(
                       "selectedBookingStartTimeFromTSGrid $selectedBookingStartTimeFromTSGrid   selectedBookingENDTimeFromTSGrid $selectedBookingEndTimeFromTSGrid");
-                  var selectedEndIndex = timesOfDayFetched
-                          .toList()
-                          .indexWhere((element) => element == selectedBookingEndTimeFromTSGrid),
+                  var selectedEndIndex = timesOfDayFetched.toList().indexWhere(
+                          (element) =>
+                              element == selectedBookingEndTimeFromTSGrid),
                       selectedStartIndex = timesOfDayFetched
                           .toList()
-                          .indexWhere((element) => element == selectedBookingStartTimeFromTSGrid);
+                          .indexWhere((element) =>
+                              element == selectedBookingStartTimeFromTSGrid);
                   int matchingStartIndexForTSGrid = selectedStartIndex ~/ 2,
                       matchingEndIndexForTSGrid = selectedEndIndex ~/ 2;
                   debugPrint(
@@ -1279,25 +1523,30 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   if (selectedStartIndex >= 0 &&
                       selectedStartIndex > index * 2 &&
                       matchingStartIndexForTSGrid >= index &&
-                      selectedBookingStartTimeFromTSGrid == timesOfDayFetched.elementAt((selectedStartIndex)) &&
-                      matchingStartIndexForTSGrid != matchingEndIndexForTSGrid) {
+                      selectedBookingStartTimeFromTSGrid ==
+                          timesOfDayFetched.elementAt((selectedStartIndex)) &&
+                      matchingStartIndexForTSGrid !=
+                          matchingEndIndexForTSGrid) {
                     //if the selectedTimeIsIndeedInTheListOftIMeperiodsfetched, I have to check if that selectedTime is selectable. Can't book starting the endtimeof a slotinterval and a=can't end starting the timeofday of next slotinterval
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      backgroundColor: Colors.black.withOpacity(0.7),
+                      backgroundColor: Colors.black.withValues(alpha: 0.7),
                       margin: const EdgeInsets.fromLTRB(20, 0, 20, 50),
-                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+                      shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(20))),
                       behavior: SnackBarBehavior.floating,
                       elevation: 15,
                       //margin: EdgeInsets.only(bottom: 100, left: 30, right: 30),
                       content: FittedBox(
-                        child: Text(/* ${TimeOfDay.now().hour}:${TimeOfDay.now().minute} and  */
+                        child: Text(
+                            /* ${TimeOfDay.now().hour}:${TimeOfDay.now().minute} and  */
                             "Please Select A Time Start Past ${timesOfDayFetched.elementAt(selectedStartIndex).format(context)}."),
                       ),
                     ));
                   } else if (selectedEndIndex >= 0 &&
                       selectedEndIndex > index * 2 &&
                       matchingEndIndexForTSGrid > index &&
-                      selectedBookingEndTimeFromTSGrid == timesOfDayFetched.elementAt((selectedEndIndex)) &&
+                      selectedBookingEndTimeFromTSGrid ==
+                          timesOfDayFetched.elementAt((selectedEndIndex)) &&
                       timesOfDayFetched.elementAt(selectedEndIndex + 1).minute -
                               selectedBookingEndTimeFromTSGrid.minute !=
                           5 &&
@@ -1306,23 +1555,28 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                               hour: parkingClosingHour.minute == 0
                                   ? parkingClosingHour.hour - 1
                                   : parkingClosingHour.hour,
-                              minute: parkingClosingHour.minute == 0 ? 55 : parkingClosingHour.minute - 5)) {
+                              minute: parkingClosingHour.minute == 0
+                                  ? 55
+                                  : parkingClosingHour.minute - 5)) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      backgroundColor: Colors.black.withOpacity(0.7),
+                      backgroundColor: Colors.black.withValues(alpha: 0.7),
                       margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+                      shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(20))),
                       behavior: SnackBarBehavior.floating,
                       elevation: 15,
                       //margin: EdgeInsets.only(bottom: 100, left: 30, right: 30),
                       content: FittedBox(
-                        child: Text(/* ${TimeOfDay.now().hour}:${TimeOfDay.now().minute} and  */
+                        child: Text(
+                            /* ${TimeOfDay.now().hour}:${TimeOfDay.now().minute} and  */
                             "Please Select An End Time Before ${timesOfDayFetched.elementAt(selectedEndIndex).format(context)}."),
                       ),
                     ));
                     //showSnackBarText("Please Select An End Time Before");
                   } else {
                     Navigator.of(context).pop(TimeRange(
-                        startTime: selectedBookingStartTimeFromTSGrid, endTime: selectedBookingEndTimeFromTSGrid));
+                        startTime: selectedBookingStartTimeFromTSGrid,
+                        endTime: selectedBookingEndTimeFromTSGrid));
                   }
                 },
               ),
@@ -1339,8 +1593,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   ? null
                   : {
                       allFinallyBookedIndexes.clear(),
-                      valueStartToInt = (value.startTime.hour * 60 + value.startTime.minute) * 60,
-                      valueEndToInt = (value.endTime.hour * 60 + value.endTime.minute) * 60,
+                      valueStartToInt =
+                          (value.startTime.hour * 60 + value.startTime.minute) *
+                              60,
+                      valueEndToInt =
+                          (value.endTime.hour * 60 + value.endTime.minute) * 60,
                       allConvertedTimesOfDayToInt.forEach(
                         (element) {
                           //to chaneg the color of the selected timeranges based on the finallybookedtimerange
@@ -1349,14 +1606,17 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                               ? {
                                   theindexindex = allConvertedTimesOfDayToInt
                                       .toList()
-                                      .indexWhere((element1) => element1 == element),
+                                      .indexWhere(
+                                          (element1) => element1 == element),
                                   allFinallyBookedIndexes.add(theindexindex),
-                                  debugPrint("INDEEEEEEEEEED $allFinallyBookedIndexes"),
+                                  debugPrint(
+                                      "INDEEEEEEEEEED $allFinallyBookedIndexes"),
                                 }
                               : null;
                         },
                       ),
-                      bookerTimeAndSpotInfoMapped.update('Selected Time Interval', (timeslot) => value),
+                      bookerTimeAndSpotInfoMapped.update(
+                          'Selected Time Interval', (timeslot) => value),
                       setState(
                         () {
                           finallyBookedTimeRange = value;
@@ -1368,10 +1628,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     });
   }
 
-  timeSlotsGrid(
-      TimeOfDay startTime, TimeOfDay endTime, Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
-    Set<int> timeSlotsDisabled = allDisabledTimeRangeIndexesForTimeSelection.toSet();
-    debugPrint("GOT THIS ${allDisabledTimeRangeIndexesForTimeSelection.toSet()}");
+  Container timeSlotsGrid(TimeOfDay startTime, TimeOfDay endTime,
+      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
+    Set<int> timeSlotsDisabled =
+        allDisabledTimeRangeIndexesForTimeSelection.toSet();
+    debugPrint(
+        "GOT THIS ${allDisabledTimeRangeIndexesForTimeSelection.toSet()}");
     return Container(
       color: Colors.white,
       height: timesOfDayFetched.toList().length * 10,
@@ -1385,11 +1647,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   //primary: false,
                   controller: timeSlotGridController,
                   shrinkWrap: true,
-                  itemCount: timesOfDayFetched.toList().isEmpty ? 10 : ((timesOfDayFetched.toList().length - 1) ~/ 2),
+                  itemCount: timesOfDayFetched.toList().isEmpty
+                      ? 10
+                      : ((timesOfDayFetched.toList().length - 1) ~/ 2),
 
                   ///becaause I used two items per bloc
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      childAspectRatio: 1.5, crossAxisSpacing: 10, mainAxisSpacing: 15, crossAxisCount: 3),
+                      childAspectRatio: 1.5,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 15,
+                      crossAxisCount: 3),
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: () async {
@@ -1398,16 +1665,20 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                         timeSlotsDisabled.contains(index)
                             ? ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text("Sorry, time interval already in the past!"),
+                                  content: Text(
+                                      "Sorry, time interval already in the past!"),
                                 ),
                               )
                             : outOfXhoursRangeIndexes.contains(index)
                                 ? ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      backgroundColor: Colors.black.withOpacity(0.7),
-                                      margin: const EdgeInsets.fromLTRB(20, 0, 20, 50),
+                                      backgroundColor:
+                                          Colors.black.withValues(alpha: 0.7),
+                                      margin: const EdgeInsets.fromLTRB(
+                                          20, 0, 20, 50),
                                       shape: const RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(Radius.circular(20))),
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(20))),
                                       behavior: SnackBarBehavior.floating,
                                       elevation: 15,
                                       //margin: EdgeInsets.only(bottom: 100, left: 30, right: 30),
@@ -1425,7 +1696,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                 selectedDayToInt) ==
                                         true
                                     ? ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                        backgroundColor: Colors.black.withOpacity(0.7),
+                                        backgroundColor: Colors.black.withValues(alpha:0.7),
                                         margin: const EdgeInsets.fromLTRB(20, 0, 20, 50),
                                         shape: const RoundedRectangleBorder(
                                             borderRadius: BorderRadius.all(Radius.circular(20))),
@@ -1440,36 +1711,56 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                 : {
                                     context
                                         .read<BookingStateManagement>()
-                                        .updateSelectedTime(timesOfDayFetched.elementAt(index)),
-                                    showUserRangePicker(index, endTime, startTime,
-                                        slotsReservationsInfoFetchedAsMapWithData, timeSlotsDisabled)
+                                        .updateSelectedTime(
+                                            timesOfDayFetched.elementAt(index)),
+                                    showUserRangePicker(
+                                        index,
+                                        endTime,
+                                        startTime,
+                                        slotsReservationsInfoFetchedAsMapWithData,
+                                        timeSlotsDisabled)
                                   };
                       },
                       child: Row(
                         children: [
                           Flexible(
                             child: Card(
-                                elevation: allDisabledTimeRangeIndexesForTimeSelection.toSet().contains(index)
+                                elevation: allDisabledTimeRangeIndexesForTimeSelection
+                                        .toSet()
+                                        .contains(index)
                                     ? 25
-                                    : outOfXhoursRangeIndexes.toSet().contains(index)
+                                    : outOfXhoursRangeIndexes
+                                            .toSet()
+                                            .contains(index)
                                         ? 28
                                         : 20,
                                 //margin:const EdgeInsets.only(left: 20, right: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                                color: context.watch<BookingStateManagement>().selectedTime ==
-                                            timesOfDayFetched.elementAt(index) &&
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15)),
+                                color: context
+                                                .watch<BookingStateManagement>()
+                                                .selectedTime ==
+                                            timesOfDayFetched
+                                                .elementAt(index) &&
                                         allFinallyBookedIndexes.isEmpty
                                     ? selectedTimeSlotColor
-                                    : allFinallyBookedIndexes.any((element) => element ~/ 2 == index) == true
+                                    : allFinallyBookedIndexes.any((element) =>
+                                                element ~/ 2 == index) ==
+                                            true
                                         ? selectedTimeSlotColor
                                         : /* previouslyReachedStep == 1 && anyReservationForSelectedDay == true //when there is no reservation for the day selected
                                             ? Colors.yellow
                                             :  */
-                                        allDisabledTimeRangeIndexesForTimeSelection.toSet().contains(index)
-                                            ? Colors.purple.withOpacity(0.3)
-                                            : outOfXhoursRangeIndexes.toSet().contains(index) &&
+                                        allDisabledTimeRangeIndexesForTimeSelection
+                                                .toSet()
+                                                .contains(index)
+                                            ? Colors.purple
+                                                .withValues(alpha: 0.3)
+                                            : outOfXhoursRangeIndexes
+                                                        .toSet()
+                                                        .contains(index) &&
                                                     doDisplayAvailabilityForWholeDay == false
-                                                ? Colors.white.withOpacity(0.5)
+                                                ? Colors.white.withValues(alpha: 0.5)
                                                 : Colors.white,
                                 /*  doDisplayAvailabilityForWholeDay == true
                                     ? displayAvailabilityForWholeDay(tappedOnParkingSpotID, "tappedOnAlley", index)
@@ -1477,43 +1768,57 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                 child: timesOfDayFetched.toList().isEmpty
                                     ? null
                                     : Center(
-                                        child: (index * 2 + 1) == timesOfDayFetched.toList().length
-                                            ? null
-                                            : Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
-                                                  Flexible(
-                                                    child: GridTile(
-                                                      child: Padding(
-                                                        padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                                                        child: FittedBox(
-                                                          alignment: Alignment.bottomCenter,
-                                                          child: Text(
-                                                              (index * 2) + 1 < timesOfDayFetched.length - 1
-                                                                  ? "${timesOfDayFetched.elementAt(index * 2).format(context)} - ${timesOfDayFetched.elementAt(index * 2 + 1).format(context)}"
-                                                                  : 'OK',
-                                                              style: TextStyle(
-                                                                  color: /* context
+                                        child:
+                                            (index * 2 + 1) ==
+                                                    timesOfDayFetched
+                                                        .toList()
+                                                        .length
+                                                ? null
+                                                : Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Flexible(
+                                                        child: GridTile(
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    left: 8.0,
+                                                                    right: 8.0),
+                                                            child: FittedBox(
+                                                              alignment: Alignment
+                                                                  .bottomCenter,
+                                                              child: Text(
+                                                                  (index * 2) +
+                                                                              1 <
+                                                                          timesOfDayFetched.length -
+                                                                              1
+                                                                      ? "${timesOfDayFetched.elementAt(index * 2).format(context)} - ${timesOfDayFetched.elementAt(index * 2 + 1).format(context)}"
+                                                                      : 'OK',
+                                                                  style: TextStyle(
+                                                                      color: /* context
                                                                                   .watch<StateManagement>()
                                                                                   .selectedTime ==
                                                                               timesOfDayFetched.elementAt(index) || */
-                                                                      allFinallyBookedIndexes.any(
-                                                                                  (element) => element ~/ 2 == index) ==
-                                                                              true
-                                                                          ? Colors.white
-                                                                          : Colors.black,
-                                                                  fontWeight: FontWeight.w400)),
+                                                                          allFinallyBookedIndexes.any((element) => element ~/ 2 == index) == true ? Colors.white : Colors.black,
+                                                                      fontWeight: FontWeight.w400)),
+                                                            ),
+                                                          ),
                                                         ),
                                                       ),
-                                                    ),
+                                                      doDisplayAvailabilityForWholeDay ==
+                                                              true
+                                                          ? displayAvailabilityForWholeDay(
+                                                              tappedOnParkingSpotID,
+                                                              tappedOnAlley,
+                                                              index)
+                                                          : getSelectedTimeSlotColor(
+                                                              index,
+                                                              slotsReservationsInfoFetchedAsMapWithData),
+                                                    ],
                                                   ),
-                                                  doDisplayAvailabilityForWholeDay == true
-                                                      ? displayAvailabilityForWholeDay(
-                                                          tappedOnParkingSpotID, tappedOnAlley, index)
-                                                      : getSelectedTimeSlotColor(
-                                                          index, slotsReservationsInfoFetchedAsMapWithData),
-                                                ],
-                                              ),
                                       )),
                           ),
                         ],
@@ -1527,7 +1832,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     );
   }
 
-  tableCalendar() {
+  Card tableCalendar() {
     debugPrint(
         "THAT'S SELECTED $selectedDay ${TimeOfDay(hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]), minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1])).hour}");
     return Card(
@@ -1545,7 +1850,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         child: TableCalendar(
           rowHeight: 40,
           headerStyle: const HeaderStyle(
-              formatButtonTextStyle: TextStyle(fontSize: 10.0), titleTextStyle: TextStyle(fontSize: 11)),
+              formatButtonTextStyle: TextStyle(fontSize: 10.0),
+              titleTextStyle: TextStyle(fontSize: 11)),
           pageJumpingEnabled: true,
           startingDayOfWeek: StartingDayOfWeek.monday,
           focusedDay: focusedDay,
@@ -1556,7 +1862,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
           },
           onDaySelected: (newSelectedDay, newFocusedDay) {
             debugPrint("BEFORE  SELECTED $selectedDay FOCUSED $focusedDay");
-            var ok = (DateTime(newSelectedDay.year, newSelectedDay.month, newSelectedDay.day, TimeOfDay.now().hour,
+            var ok = (DateTime(
+                newSelectedDay.year,
+                newSelectedDay.month,
+                newSelectedDay.day,
+                TimeOfDay.now().hour,
                 TimeOfDay.now().minute));
             debugPrint("PEPS $ok");
 
@@ -1565,8 +1875,14 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     ok.day == DateTime.now().day &&
                     ok.hour ==
                         TimeOfDay(
-                                hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]),
-                                minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1]))
+                                hour: int.parse(context
+                                    .read<BookingStateManagement>()
+                                    .closingHour
+                                    .split(":")[0]),
+                                minute: int.parse(context
+                                    .read<BookingStateManagement>()
+                                    .closingHour
+                                    .split(":")[1]))
                             .hour
                 ? {
                     debugPrint(
@@ -1583,10 +1899,20 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   : //I'LL SUPPOSE THE PARKINGS ARE OPEN EVERYDAY */
 
                 : setState(() {
-                    selectedDay = DateTime(newSelectedDay.year, newSelectedDay.month, newSelectedDay.day,
-                        DateTime.now().hour, DateTime.now().minute, DateTime.now().second);
-                    focusedDay = DateTime(newFocusedDay.year, newFocusedDay.month, newFocusedDay.day,
-                        DateTime.now().hour, DateTime.now().minute, DateTime.now().second);
+                    selectedDay = DateTime(
+                        newSelectedDay.year,
+                        newSelectedDay.month,
+                        newSelectedDay.day,
+                        DateTime.now().hour,
+                        DateTime.now().minute,
+                        DateTime.now().second);
+                    focusedDay = DateTime(
+                        newFocusedDay.year,
+                        newFocusedDay.month,
+                        newFocusedDay.day,
+                        DateTime.now().hour,
+                        DateTime.now().minute,
+                        DateTime.now().second);
 
                     //selectedDay.hour = DateTime.now().
                     // update `_focusedDay` here as well
@@ -1600,14 +1926,15 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
           }),
           calendarStyle: const CalendarStyle(
             //weekendDecoration: BoxDecoration(color: Colors.purple),
-            selectedDecoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+            selectedDecoration:
+                BoxDecoration(color: Colors.green, shape: BoxShape.circle),
           ),
         ),
       ),
     );
   }
 
-  timeSlotsLegendColorCode() {
+  Card timeSlotsLegendColorCode() {
     return Card(
       child: Row(
         //COLOR LEGEND TIME
@@ -1619,7 +1946,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               Container(
                 width: 20,
                 height: 20,
-                decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                    color: Colors.green, shape: BoxShape.circle),
               ),
               const SizedBox(width: 3),
               const FittedBox(
@@ -1636,7 +1964,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               Container(
                 width: 20,
                 height: 20,
-                decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                    color: Colors.orange, shape: BoxShape.circle),
               ),
               const SizedBox(width: 3),
               const FittedBox(
@@ -1653,7 +1982,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               Container(
                 width: 20,
                 height: 20,
-                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                    color: Colors.red, shape: BoxShape.circle),
               ),
               const SizedBox(width: 3),
               const FittedBox(
@@ -1669,19 +1999,19 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     );
   }
 
-  addWhiteSpace(double i) {
+  SizedBox addWhiteSpace(double i) {
     return SizedBox(
       height: i,
     );
   }
 
-  fetchSelectedVehiculeInfo(Map<String, dynamic> selectedVehiculeInf) {
+  void fetchSelectedVehiculeInfo(Map<String, dynamic> selectedVehiculeInf) {
     setState(() {
       selectedVehiculeInfoMappedFromSelectVehicule.addAll(selectedVehiculeInf);
     });
   }
 
-  bookingIconStepper() {
+  Container bookingIconStepper() {
     return Container(
       margin: const EdgeInsets.only(left: 5, right: 5),
       width: 90,
@@ -1722,25 +2052,26 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     );
   }
 
-  nextButton() {
+  SizedBox nextButton() {
     return SizedBox(
       width: 65,
       height: 35,
       child: ElevatedButton(
         style: ButtonStyle(
-            elevation: MaterialStateProperty.all(1),
-            shape: MaterialStateProperty.all(
+            elevation: WidgetStateProperty.all(1),
+            shape: WidgetStateProperty.all(
               const RoundedRectangleBorder(
                   borderRadius: BorderRadius.vertical(
                 bottom: Radius.circular(20),
                 top: Radius.circular(20),
               )),
             ),
-            shadowColor: MaterialStateProperty.all(const Color(0xff7986CB)),
-            backgroundColor: MaterialStateProperty.all(const Color(0xff78909C))),
+            shadowColor: WidgetStateProperty.all(const Color(0xff7986CB)),
+            backgroundColor: WidgetStateProperty.all(const Color(0xff78909C))),
         onPressed: () async {
           var selectedVehiculeInfoEmptyTest =
-              bookerFirstPageInfoMapped['Selected Vehicule Info'] as Map<String, dynamic>;
+              bookerFirstPageInfoMapped['Selected Vehicule Info']
+                  as Map<String, dynamic>;
 
           setState(() {
             nextPressedWithoutFirstPageAllInfoFetched = true;
@@ -1751,9 +2082,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             // allDisabledTimeRangeIndexesForTimeSelection.clear();
             outOfXhoursRangeIndexes.clear();
             //allFinallyBookedIndexes.clear();
-            context.read<BookingStateManagement>().updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
-            var ok =
-                mappedSelectedSlotAlley.where((element) => element.values.first == previouslySelectedParkingSpotID);
+            context
+                .read<BookingStateManagement>()
+                .updateSelectedTime(const TimeOfDay(hour: 0, minute: 0));
+            var ok = mappedSelectedSlotAlley.where((element) =>
+                element.values.first == previouslySelectedParkingSpotID);
             debugPrint("PREVIOUSLY ONPRESSED SELECTED PARKING spot: $ok");
             ok.forEach(
               (element) {
@@ -1768,8 +2101,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             ScaffoldMessenger.of(context).showMaterialBanner(MaterialBanner(
                 onVisible: (() {}),
                 elevation: 10,
-                contentTextStyle: const TextStyle(color: Colors.white, fontSize: 30),
-                backgroundColor: Colors.black.withOpacity(0.5),
+                contentTextStyle:
+                    const TextStyle(color: Colors.white, fontSize: 30),
+                backgroundColor: Colors.black.withValues(alpha: 0.5),
                 leadingPadding: const EdgeInsets.only(right: 10),
                 leading: const Icon(
                   Icons.info,
@@ -1780,7 +2114,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   child: Text(
                     'Please select a vehicule to proceed.',
                     style: TextStyle(
-                        color: Colors.white, fontSize: 15, fontFamily: 'OpenSans', fontWeight: FontWeight.w900),
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontFamily: 'OpenSans',
+                        fontWeight: FontWeight.w900),
                   ),
                 ),
                 actions: [
@@ -1793,11 +2130,14 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     },
                     child: const Text('OK',
                         style: TextStyle(
-                            color: Colors.green, fontSize: 15, fontFamily: 'OpenSans', fontWeight: FontWeight.w900)),
+                            color: Colors.green,
+                            fontSize: 15,
+                            fontFamily: 'OpenSans',
+                            fontWeight: FontWeight.w900)),
                   ),
                 ]));
             /* ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    backgroundColor: Colors.black.withOpacity(0.7),
+                    backgroundColor: Colors.black.withValues(alpha:0.7),
                     margin: const EdgeInsets.fromLTRB(20, 0, 20, 50),
                     shape: const RoundedRectangleBorder(
                         borderRadius: BorderRadius.all(Radius.circular(20))),
@@ -1826,14 +2166,14 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     ),
                   ))
                  */
-
           }
 
-          var ok = (DateTime(
-              selectedDay.year, selectedDay.month, selectedDay.day, TimeOfDay.now().hour, TimeOfDay.now().minute));
+          var ok = (DateTime(selectedDay.year, selectedDay.month,
+              selectedDay.day, TimeOfDay.now().hour, TimeOfDay.now().minute));
           var selectedParkingSpotWithTimeSlot;
           debugPrint("CHECKING $allFinallyBookedIndexes");
-          Set concernedAvailableIDs = !isSpecialUser ? rAvailableIDs : sAvailableIDs;
+          Set concernedAvailableIDs =
+              !isSpecialUser ? rAvailableIDs : sAvailableIDs;
           String theSelectedSlotIDForRes = '';
           var reHasZeroDoublon = false;
           DateTime parkingClosingHourToDate = DateTime(
@@ -1841,15 +2181,26 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               selectedDay.month,
               selectedDay.day,
               TimeOfDay(
-                      hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]),
-                      minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1]))
+                      hour: int.parse(context
+                          .read<BookingStateManagement>()
+                          .closingHour
+                          .split(":")[0]),
+                      minute: int.parse(context
+                          .read<BookingStateManagement>()
+                          .closingHour
+                          .split(":")[1]))
                   .hour,
               TimeOfDay(
-                      hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]),
-                      minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1]))
+                      hour: int.parse(context
+                          .read<BookingStateManagement>()
+                          .closingHour
+                          .split(":")[0]),
+                      minute: int.parse(
+                          context.read<BookingStateManagement>().closingHour.split(":")[1]))
                   .minute);
 
-          if (activeStep < upperBound && selectedVehiculeInfoEmptyTest.isNotEmpty) {
+          if (activeStep < upperBound &&
+              selectedVehiculeInfoEmptyTest.isNotEmpty) {
             //
             if (ok.difference(parkingClosingHourToDate).inSeconds > 0) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1861,12 +2212,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
             if (allFinallyBookedIndexes.isNotEmpty) {
               debugPrint("MAGS IS NOT EMPTY _____ $finallyBookedTimeRange");
-              await checkForSameTimeReservationInOtherParkings(finallyBookedTimeRange).then((noResTimeDoublon) {
+              await checkForSameTimeReservationInOtherParkings(
+                      finallyBookedTimeRange)
+                  .then((noResTimeDoublon) {
                 debugPrint("Result from check: $noResTimeDoublon");
                 reHasZeroDoublon = noResTimeDoublon;
 
                 if (noResTimeDoublon) {
-                  if (mappedSelectedSlotAlley.where((element) => element['isSlotSelected'] == true).isNotEmpty) {
+                  if (mappedSelectedSlotAlley
+                      .where((element) => element['isSlotSelected'] == true)
+                      .isNotEmpty) {
                     //
                     theSelectedSlotIDForRes = mappedSelectedSlotAlley
                         .where((element) => element['isSlotSelected'] == true)
@@ -1874,13 +2229,17 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                         .values
                         .first;
                     debugPrint("SELECTED IS HERE $theSelectedSlotIDForRes");
-                    allRegularSpotsID.contains(theSelectedSlotIDForRes) && !isSpecialUser ||
-                            allSpecialSpotsIDs.contains(theSelectedSlotIDForRes) && isSpecialUser
+                    allRegularSpotsID.contains(theSelectedSlotIDForRes) &&
+                                !isSpecialUser ||
+                            allSpecialSpotsIDs
+                                    .contains(theSelectedSlotIDForRes) &&
+                                isSpecialUser
                         ?
                         //isSpecialUser ? allRegularSpotsID.contains(value) ? :
                         {
                             bookerTimeAndSpotInfoMapped.update(
-                                'Selected Parking Spot', (value) => theSelectedSlotIDForRes),
+                                'Selected Parking Spot',
+                                (value) => theSelectedSlotIDForRes),
                             setState(() {
                               activeStep += 1;
                             })
@@ -1894,12 +2253,14 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                         builder: (context) {
                           return AlertDialog(
                             content: SingleChildScrollView(
-                                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                              reHasZeroDoublon
-                                  ? const Text(
-                                      "As you have not selected a specific parking spot, you will be assigned a random available one, according to your condition. ")
-                                  : const Text("TIME ALREADY ASSGINED ")
-                            ])),
+                                child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                  reHasZeroDoublon
+                                      ? const Text(
+                                          "As you have not selected a specific parking spot, you will be assigned a random available one, according to your condition. ")
+                                      : const Text("TIME ALREADY ASSGINED ")
+                                ])),
                             actions: reHasZeroDoublon
                                 ? [
                                     TextButton(
@@ -1909,14 +2270,17 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                         child: FittedBox(
                                             child: Text(
                                           "GO BACK",
-                                          style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.red.shade400),
                                         ))),
                                     FittedBox(
                                       child: TextButton(
                                           onPressed: () {
                                             Navigator.pop(context, 'PROCEED');
                                           },
-                                          child: const Text("PROCEED", style: TextStyle(fontSize: 12))),
+                                          child: const Text("PROCEED",
+                                              style: TextStyle(fontSize: 12))),
                                     ),
                                   ]
                                 : [
@@ -1927,7 +2291,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                         child: FittedBox(
                                             child: Text(
                                           "GO BACK",
-                                          style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.red.shade400),
                                         ))),
                                   ],
                           );
@@ -1938,8 +2304,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                           : {
                               //check the user's specialAccess
 
-                              bookerTimeAndSpotInfoMapped.update('Selected Parking Spot',
-                                  (value) => (concernedAvailableIDs.toList()..shuffle()).first),
+                              bookerTimeAndSpotInfoMapped.update(
+                                  'Selected Parking Spot',
+                                  (value) => (concernedAvailableIDs.toList()
+                                        ..shuffle())
+                                      .first),
                               setState(() {
                                 activeStep += 1;
                               })
@@ -1947,14 +2316,20 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     });
                   }
                 } else {
-                  var bookingEndTS = theReservationDoublon['BookingEnd'] as Timestamp;
-                  var bookingStartTS = theReservationDoublon['BookingStart'] as Timestamp;
-                  var formatedEnd = DateFormat('yyyy-MM-dd').format(bookingEndTS.toDate());
-                  var formatedStart = DateFormat('yyyy-MM-dd').format(bookingStartTS.toDate());
+                  var bookingEndTS =
+                      theReservationDoublon['BookingEnd'] as Timestamp;
+                  var bookingStartTS =
+                      theReservationDoublon['BookingStart'] as Timestamp;
+                  var formatedEnd =
+                      DateFormat('yyyy-MM-dd').format(bookingEndTS.toDate());
+                  var formatedStart =
+                      DateFormat('yyyy-MM-dd').format(bookingStartTS.toDate());
 
-                  var timeOfDayEnd = DateFormat.Hm().format(bookingEndTS.toDate());
+                  var timeOfDayEnd =
+                      DateFormat.Hm().format(bookingEndTS.toDate());
 
-                  var timeOfDayStart = DateFormat.Hm().format(bookingStartTS.toDate());
+                  var timeOfDayStart =
+                      DateFormat.Hm().format(bookingStartTS.toDate());
 
                   showSnackBarText(
                       "You already have a reservation ongoing on the $formatedStart from $timeOfDayStart to $timeOfDayEnd. Please select an available time spot or cancel that reservation.");
@@ -1964,7 +2339,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
             if (activeStep == 1 &&
                 allFinallyBookedIndexes.isEmpty &&
-                DateFormat('yyyy-MM-dd').format(selectedDay) == DateFormat('yyyy-MM-dd').format(DateTime.now())) {
+                DateFormat('yyyy-MM-dd').format(selectedDay) ==
+                    DateFormat('yyyy-MM-dd').format(DateTime.now())) {
               showSnackBarText("Select at least a time interval to proceed.");
             }
 
@@ -1987,22 +2363,22 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   }
 
   /// Returns the previous button.
-  previousButton() {
+  SizedBox previousButton() {
     return SizedBox(
       width: 65,
       height: 35,
       child: ElevatedButton(
         style: ButtonStyle(
-            elevation: MaterialStateProperty.all(1),
-            shape: MaterialStateProperty.all(
+            elevation: WidgetStateProperty.all(1),
+            shape: WidgetStateProperty.all(
               const RoundedRectangleBorder(
                   borderRadius: BorderRadius.vertical(
                 bottom: Radius.circular(20),
                 top: Radius.circular(20),
               )),
             ),
-            shadowColor: MaterialStateProperty.all(const Color(0xff7986CB)),
-            backgroundColor: MaterialStateProperty.all(const Color(0xff78909C))),
+            shadowColor: WidgetStateProperty.all(const Color(0xff7986CB)),
+            backgroundColor: WidgetStateProperty.all(const Color(0xff78909C))),
         onPressed: () {
           activeStep > 0
               ? setState(() {
@@ -2019,21 +2395,27 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   }
 
   /// Returns the header wrapping the header text.
-  bookerBody(double alleyListViewMinHeightToDisplay, TimeOfDay startTime, TimeOfDay endTime) {
+  Container bookerBody(double alleyListViewMinHeightToDisplay,
+      TimeOfDay startTime, TimeOfDay endTime) {
     return Container(
-      child: switchBookerBody(alleyListViewMinHeightToDisplay, startTime, endTime),
+      child:
+          switchBookerBody(alleyListViewMinHeightToDisplay, startTime, endTime),
     );
   }
 
   // Returns the header text based on the activeStep.
-  switchBookerBody(double alleyListViewMinHeightToDisplay, TimeOfDay startTime, TimeOfDay endTime) {
+  Widget switchBookerBody(double alleyListViewMinHeightToDisplay,
+      TimeOfDay startTime, TimeOfDay endTime) {
     switch (activeStep) {
       case 0:
         // allFinallyBookedIndexes.clear();
-        debugPrint("CHECKING AGAIN :$selectedVehiculeInfoMappedFromSelectVehicule");
+        debugPrint(
+            "CHECKING AGAIN :$selectedVehiculeInfoMappedFromSelectVehicule");
         bookerFirstPageInfoMapped.addAll({
-          'Selected Parking Name': linkedParkingNameAndInsideInfo['Parking Name'],
-          'Selected Parking Fee / 30mns': insideParkingInfoFetched['Fee per 30 minutes'].toString(),
+          'Selected Parking Name':
+              linkedParkingNameAndInsideInfo['Parking Name'],
+          'Selected Parking Fee / 30mns':
+              insideParkingInfoFetched['Fee per 30 minutes'].toString(),
           'Selected Day': selectedDay,
           'Selected Vehicule Info': selectedVehiculeInfoMappedFromSelectVehicule
         });
@@ -2043,7 +2425,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             bookerFirstPageInfoFetched: bookerFirstPageInfoMapped,
             bookerSecondPageInfoFetched: bookerTimeAndSpotInfoMapped);
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          nextPressedWithoutFirstPageAllInfoFetched == true && removeMaterialBannerSizedBox == false
+          nextPressedWithoutFirstPageAllInfoFetched == true &&
+                  removeMaterialBannerSizedBox == false
               ? const SizedBox(height: 40)
               : Container(),
           SizedBox(
@@ -2063,7 +2446,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                         SizedBox(width: 10),
                         Text(
                           'Parking Details',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 16),
                         ),
                       ],
                     ),
@@ -2080,14 +2464,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                             Flexible(
                               child: RawScrollbar(
                                 minOverscrollLength: 8,
-                                scrollbarOrientation: ScrollbarOrientation.bottom,
+                                scrollbarOrientation:
+                                    ScrollbarOrientation.bottom,
                                 thumbColor: Colors.blueGrey,
                                 radius: const Radius.circular(20),
                                 thumbVisibility: true,
                                 trackVisibility: true,
                                 controller: infoListViewController,
                                 child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(0, 5, 0, 20),
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 5, 0, 20),
                                   child: ListView.builder(
                                       controller:
                                           infoListViewController, //DO NOT REMOVE. LISTVIEW AND SCROLLBAR MUST SHARE THE SAME CONTROLLER OR YOU'LL GET AN ERROR
@@ -2098,16 +2484,21 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                           // surfaceTintColor: Colors.yellow,
                                           shadowColor: Colors.black,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10.0),
+                                            borderRadius:
+                                                BorderRadius.circular(10.0),
                                           ),
                                           elevation: 5,
                                           child: Container(
                                             //THERE WAS AN EXPANDED HERE BEFORE CONTAINER
                                             // width: 115,
-                                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(50)),
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(50)),
                                             child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
                                               children: [
                                                 Align(
                                                   child: FittedBox(
@@ -2128,7 +2519,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                         color: Colors.blueGrey,
                                                         fontSize: 12,
                                                         fontFamily: 'OpenSans',
-                                                        fontWeight: FontWeight.w800,
+                                                        fontWeight:
+                                                            FontWeight.w800,
                                                       ),
                                                     ),
                                                   ),
@@ -2147,32 +2539,55 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                             :  */
                                                                   index == 2
                                                                       ? "${insideParkingInfoFetched['Fee per 30 minutes'].toString()} CFA"
-                                                                      : index == 3
-                                                                          ? mappedInfoFromWidget['Opening Hour']
-                                                                          : mappedInfoFromWidget['Closing Hour'],
+                                                                      : index ==
+                                                                              3
+                                                                          ? mappedInfoFromWidget[
+                                                                              'Opening Hour']
+                                                                          : mappedInfoFromWidget[
+                                                                              'Closing Hour'],
 
-                                                                  style: const TextStyle(
-                                                                    color: Colors.black87,
-                                                                    fontSize: 13,
-                                                                    fontFamily: 'OpenSans',
-                                                                    fontWeight: FontWeight.w800,
+                                                                  style:
+                                                                      const TextStyle(
+                                                                    color: Colors
+                                                                        .black87,
+                                                                    fontSize:
+                                                                        13,
+                                                                    fontFamily:
+                                                                        'OpenSans',
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w800,
                                                                   ),
                                                                 )
                                                               : Row(
                                                                   children: [
-                                                                    const Icon(Icons.accessible,
-                                                                        color: Colors.blue, size: 15),
-                                                                    Text(index == 0
-                                                                        ? specialTotal.toString()
+                                                                    const Icon(
+                                                                        Icons
+                                                                            .accessible,
+                                                                        color: Colors
+                                                                            .blue,
+                                                                        size:
+                                                                            15),
+                                                                    Text(index ==
+                                                                            0
+                                                                        ? specialTotal
+                                                                            .toString()
                                                                         : specialAvailableTotal
                                                                             .toString()), // for handicaped
                                                                     const SizedBox(
                                                                       width: 10,
                                                                     ),
-                                                                    const Icon(Icons.not_accessible,
-                                                                        color: Colors.blue, size: 15),
-                                                                    Text(index == 0
-                                                                        ? regularTotal.toString()
+                                                                    const Icon(
+                                                                        Icons
+                                                                            .not_accessible,
+                                                                        color: Colors
+                                                                            .blue,
+                                                                        size:
+                                                                            15),
+                                                                    Text(index ==
+                                                                            0
+                                                                        ? regularTotal
+                                                                            .toString()
                                                                         : regularAvailableTotal
                                                                             .toString()), // for handicaped
                                                                   ],
@@ -2206,11 +2621,13 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     padding: EdgeInsets.only(bottom: 10),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_month_rounded, color: Colors.indigo),
+                        Icon(Icons.calendar_month_rounded,
+                            color: Colors.indigo),
                         SizedBox(width: 10),
                         Text(
                           'Select A Date',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 16),
                         ),
                       ],
                     ),
@@ -2241,16 +2658,22 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                         SizedBox(width: 10),
                         Text(
                           'Select A Vehicule',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 16),
                         ),
                       ],
                     ),
                   ),
                   SelectVehicule(
                     currentlySIUser: currentlySignedInUser,
-                    updateParkingDetailsAndSelectedDayMapped: fetchSelectedVehiculeInfo,
-                    reShowSelectedCarCard: selectedVehiculeInfoMappedFromSelectVehicule.isEmpty ? false : true,
-                    selectedCarDetails: selectedVehiculeInfoMappedFromSelectVehicule,
+                    updateParkingDetailsAndSelectedDayMapped:
+                        fetchSelectedVehiculeInfo,
+                    reShowSelectedCarCard:
+                        selectedVehiculeInfoMappedFromSelectVehicule.isEmpty
+                            ? false
+                            : true,
+                    selectedCarDetails:
+                        selectedVehiculeInfoMappedFromSelectVehicule,
                   ),
                 ],
               ),
@@ -2267,7 +2690,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             ? slotsReservationsInfoFetchedAsMapWithData.clear
             : null;
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance.collection("slotsReservations").snapshots(),
+            stream: FirebaseFirestore.instance
+                .collection("slotsReservations")
+                .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Text('');
@@ -2279,11 +2704,14 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 //slotsReservationsInfoFetchedAsMapWithData.addAll(slotsReservationsInfoFetchedList.);
 
                 for (var element in slotsReservationsInfoFetchedList) {
-                  slotsReservationsInfoFetchedAsMapWithData
-                      .addAll({element.id: element.data()}); //lement id is key and value is the data
+                  slotsReservationsInfoFetchedAsMapWithData.addAll({
+                    element.id: element.data()
+                  }); //lement id is key and value is the data
                 }
-                debugPrint("slotsReservationsInfoFetchedAsMap $slotsReservationsInfoFetchedAsMapWithData");
-                fetchSlotReservationInfoFromFB(slotsReservationsInfoFetchedAsMapWithData);
+                debugPrint(
+                    "slotsReservationsInfoFetchedAsMap $slotsReservationsInfoFetchedAsMapWithData");
+                fetchSlotReservationInfoFromFB(
+                    slotsReservationsInfoFetchedAsMapWithData);
                 getAlleySlotsIdWithFBListeners(parkingSlotsTotal);
 
                 return Column(
@@ -2297,13 +2725,17 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                         Iterable<Map<String, dynamic>> ok = {};
                         mappedSelectedSlotAlley.isNotEmpty
                             ? {
-                                ok = mappedSelectedSlotAlley
-                                    .where((element) => element.values.first == previouslySelectedParkingSpotID),
-                                debugPrint("PREVIOUSLY ONPRESSED SELECTED PARKING spot: $ok"),
+                                ok = mappedSelectedSlotAlley.where((element) =>
+                                    element.values.first ==
+                                    previouslySelectedParkingSpotID),
+                                debugPrint(
+                                    "PREVIOUSLY ONPRESSED SELECTED PARKING spot: $ok"),
                                 ok.forEach(
                                   (element) {
-                                    element.update('isSlotSelected', (value) => false);
-                                    element.update('highlightColor', (value) => Colors.transparent);
+                                    element.update(
+                                        'isSlotSelected', (value) => false);
+                                    element.update('highlightColor',
+                                        (value) => Colors.transparent);
                                   },
                                 ),
                                 refreshSlotColorState(Colors.transparent),
@@ -2328,9 +2760,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                           child: Column(
                             children: [
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
+                                padding:
+                                    const EdgeInsets.fromLTRB(10, 0, 0, 20),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Column(
                                       children: [
@@ -2350,7 +2784,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                             ),
                                             Text(
                                               'Select A Spot',
-                                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 16),
                                             ),
                                           ],
                                         ),
@@ -2359,34 +2795,50 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                     Column(
                                       children: [
                                         Container(
-                                          margin: const EdgeInsets.only(top: 0, right: 10),
+                                          margin: const EdgeInsets.only(
+                                              top: 0, right: 10),
                                           width: 100,
                                           height: 78,
                                           child: Card(
                                             color: Colors.white,
                                             elevation: 5,
                                             child: Padding(
-                                              padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      5, 5, 10, 5),
                                               child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
                                                 children: [
                                                   //FRIST LINE
                                                   Flexible(
                                                     child: SizedBox(
                                                       height: 15,
                                                       child: Row(
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
                                                         children: [
                                                           Padding(
-                                                            padding: const EdgeInsets.only(left: 4.0),
-                                                            child: getParkingSpotIcon("legend", 'available'),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    left: 4.0),
+                                                            child:
+                                                                getParkingSpotIcon(
+                                                                    "legend",
+                                                                    'available'),
                                                           ),
                                                           const Flexible(
                                                             child: FittedBox(
                                                               child: Text(
                                                                 "Available",
-                                                                style:
-                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                                style: TextStyle(
+                                                                    fontSize: 8,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500),
                                                               ),
                                                             ),
                                                           )
@@ -2399,11 +2851,19 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                     child: SizedBox(
                                                       height: 15,
                                                       child: Row(
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
                                                         children: [
                                                           Padding(
-                                                            padding: const EdgeInsets.only(left: 4.0),
-                                                            child: getParkingSpotIcon("legend", "booked"),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    left: 4.0),
+                                                            child:
+                                                                getParkingSpotIcon(
+                                                                    "legend",
+                                                                    "booked"),
                                                           ),
                                                           const SizedBox(
                                                             width: 10,
@@ -2412,8 +2872,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                             child: FittedBox(
                                                               child: Text(
                                                                 "Booked",
-                                                                style:
-                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                                style: TextStyle(
+                                                                    fontSize: 8,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500),
                                                               ),
                                                             ),
                                                           )
@@ -2425,7 +2888,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                     child: SizedBox(
                                                       height: 15,
                                                       child: Row(
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
                                                         children: [
                                                           occupiedSpotIconLegend,
                                                           const SizedBox(
@@ -2435,8 +2900,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                             child: FittedBox(
                                                               child: Text(
                                                                 "Occupied",
-                                                                style:
-                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                                style: TextStyle(
+                                                                    fontSize: 8,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500),
                                                               ),
                                                             ),
                                                           )
@@ -2448,18 +2916,30 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                     child: SizedBox(
                                                       height: 15,
                                                       child: Row(
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
                                                         children: [
                                                           Padding(
-                                                            padding: const EdgeInsets.only(left: 3.0, bottom: 5),
-                                                            child: getParkingSpotIcon("legend", 'accessible'),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    left: 3.0,
+                                                                    bottom: 5),
+                                                            child:
+                                                                getParkingSpotIcon(
+                                                                    "legend",
+                                                                    'accessible'),
                                                           ),
                                                           const Flexible(
                                                             child: FittedBox(
                                                               child: Text(
                                                                 "Special",
-                                                                style:
-                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                                style: TextStyle(
+                                                                    fontSize: 8,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500),
                                                               ),
                                                             ),
                                                           )
@@ -2477,13 +2957,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                   ],
                                 ),
                               ),
-                              insideParkingLayout(alleyListViewMinHeightToDisplay),
+                              insideParkingLayout(
+                                  alleyListViewMinHeightToDisplay),
                               addWhiteSpace(40),
                               //
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
+                                padding:
+                                    const EdgeInsets.fromLTRB(10, 0, 0, 20),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Column(
                                       children: [
@@ -2494,7 +2977,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                               backgroundColor: Colors.blueGrey,
                                               foregroundColor: Colors.white,
                                               child: Icon(
-                                                Icons.access_time_filled_outlined,
+                                                Icons
+                                                    .access_time_filled_outlined,
                                                 size: 20,
                                               ),
                                             ),
@@ -2503,7 +2987,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                             ),
                                             Text(
                                               'Select A Time Slot',
-                                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 16),
                                             ),
                                           ],
                                         ),
@@ -2544,31 +3030,42 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                     Column(
                                       children: [
                                         Container(
-                                          margin: const EdgeInsets.only(top: 0, right: 10),
+                                          margin: const EdgeInsets.only(
+                                              top: 0, right: 10),
                                           width: 100,
                                           height: 70,
                                           child: Card(
                                             color: Colors.white,
                                             elevation: 5,
                                             child: Padding(
-                                              padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                      5, 5, 10, 5),
                                               child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
                                                 children: [
                                                   //FRIST LINE
                                                   Flexible(
                                                     child: SizedBox(
                                                       height: 10,
                                                       child: Row(
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
                                                         children: [
-                                                          getTimeSpotIcon('available'),
+                                                          getTimeSpotIcon(
+                                                              'available'),
                                                           const Flexible(
                                                             child: FittedBox(
                                                               child: Text(
                                                                 "Available",
-                                                                style:
-                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                                style: TextStyle(
+                                                                    fontSize: 8,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500),
                                                               ),
                                                             ),
                                                           )
@@ -2581,9 +3078,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                     child: SizedBox(
                                                       height: 10,
                                                       child: Row(
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
                                                         children: [
-                                                          getTimeSpotIcon('booked'),
+                                                          getTimeSpotIcon(
+                                                              'booked'),
                                                           const SizedBox(
                                                             width: 10,
                                                           ),
@@ -2591,8 +3091,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                             child: FittedBox(
                                                               child: Text(
                                                                 "Booked",
-                                                                style:
-                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                                style: TextStyle(
+                                                                    fontSize: 8,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500),
                                                               ),
                                                             ),
                                                           )
@@ -2604,9 +3107,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                     child: SizedBox(
                                                       height: 10,
                                                       child: Row(
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
                                                         children: [
-                                                          getTimeSpotIcon('occupied'),
+                                                          getTimeSpotIcon(
+                                                              'occupied'),
                                                           const SizedBox(
                                                             width: 10,
                                                           ),
@@ -2614,8 +3120,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                             child: FittedBox(
                                                               child: Text(
                                                                 "Occupied",
-                                                                style:
-                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                                style: TextStyle(
+                                                                    fontSize: 8,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500),
                                                               ),
                                                             ),
                                                           )
@@ -2627,9 +3136,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                     child: SizedBox(
                                                       height: 10,
                                                       child: Row(
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
                                                         children: [
-                                                          getTimeSpotIcon('unbookable'),
+                                                          getTimeSpotIcon(
+                                                              'unbookable'),
                                                           const SizedBox(
                                                             width: 10,
                                                           ),
@@ -2637,8 +3149,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                                             child: FittedBox(
                                                               child: Text(
                                                                 "Disabled",
-                                                                style:
-                                                                    TextStyle(fontSize: 8, fontWeight: FontWeight.w500),
+                                                                style: TextStyle(
+                                                                    fontSize: 8,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w500),
                                                               ),
                                                             ),
                                                           )
@@ -2659,9 +3174,11 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
                               addWhiteSpace(10), //edit height and shape of card
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(10, 0, 0, 20),
+                                padding:
+                                    const EdgeInsets.fromLTRB(10, 0, 0, 20),
                                 child: Column(children: [
-                                  timeSlotsGrid(startTime, endTime, slotsReservationsInfoFetchedAsMapWithData),
+                                  timeSlotsGrid(startTime, endTime,
+                                      slotsReservationsInfoFetchedAsMapWithData),
 
                                   //test()
                                 ]),
@@ -2685,7 +3202,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               Row(
                 children: [
                   Container(
-                    decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(10)),
+                    decoration: BoxDecoration(
+                        color: Colors.white10,
+                        borderRadius: BorderRadius.circular(10)),
                     margin: const EdgeInsets.only(top: 40),
                     child: IconButton(
                       alignment: Alignment.center,
@@ -2726,12 +3245,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     }
   }
 
-  showAlleyAlert() async {
+  Future<dynamic> showAlleyAlert() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return showDialog(
         context: context,
         builder: (_) => AlertDialog(
-              backgroundColor: Colors.black45.withOpacity(0.4),
+              backgroundColor: Colors.black45.withValues(alpha: 0.4),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -2740,7 +3259,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                       child: Text(
                         "Slide through the alleys to check all the slots.",
                         style: TextStyle(
-                            color: Colors.white, fontSize: 20, fontFamily: 'OpenSans', fontWeight: FontWeight.w900),
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontFamily: 'OpenSans',
+                            fontWeight: FontWeight.w900),
                       ),
                     ),
                     Image.asset(
@@ -2758,14 +3280,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                             child: FittedBox(
                                 child: Text(
                               "DO NOT SHOW EVER AGAIN",
-                              style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.red.shade400),
                             ))),
                         FittedBox(
                           child: TextButton(
                               onPressed: () {
                                 Navigator.pop(context, 'show again');
                               },
-                              child: const Text("OK", style: TextStyle(fontSize: 12))),
+                              child: const Text("OK",
+                                  style: TextStyle(fontSize: 12))),
                         ),
                       ],
                     )
@@ -2781,7 +3305,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                   prefs.setBool("dontShowAlleyAlertAgain", false),
                   setState(
                     () {
-                      dontShowAlleyAlertAgainTemporairyly = true; //temporairement
+                      dontShowAlleyAlertAgainTemporairyly =
+                          true; //temporairement
                     },
                   )
                 }
@@ -2794,9 +3319,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   Icon getParkingSpotIcon(String legendOrInsideSpot, String whichIcon) {
     // don't need to add spotOccupiedIcon because it is NOT an ICON but an IMAGE
     double? iconSize = legendOrInsideSpot == 'legend' ? 13 : 20;
-    Icon spotBookedIcon = Icon(Icons.lock_clock_outlined, size: iconSize, color: Colors.orange.shade700),
-        spotAvailableIcon = Icon(Icons.lock_open_outlined, color: Colors.green, size: iconSize),
-        specialAccessIcon = Icon(Icons.accessible, color: Colors.blue, size: iconSize + 2);
+    Icon spotBookedIcon = Icon(Icons.lock_clock_outlined,
+            size: iconSize, color: Colors.orange.shade700),
+        spotAvailableIcon =
+            Icon(Icons.lock_open_outlined, color: Colors.green, size: iconSize),
+        specialAccessIcon =
+            Icon(Icons.accessible, color: Colors.blue, size: iconSize + 2);
 
     return whichIcon == 'available'
         ? spotAvailableIcon
@@ -2805,7 +3333,7 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             : spotBookedIcon;
   }
 
-  getTimeSpotIcon(String status) {
+  Container getTimeSpotIcon(String status) {
     return Container(
       width: 10,
       height: 10,
@@ -2818,13 +3346,15 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                       ? Colors.orange.shade700
                       : status == 'unbookable'
                           ? Colors.purple.shade700
-                          : Colors.white, //for unbookable as it's already past datetime.now
+                          : Colors
+                              .white, //for unbookable as it's already past datetime.now
           shape: BoxShape.circle),
     );
   }
 
   Map<String, dynamic> testconvertAllTimesOfDayFetched(
-      Map<String, dynamic> testallBookedTimeSlotsInMinutes, Set<TimeOfDay> timesOfDayFetched) {
+      Map<String, dynamic> testallBookedTimeSlotsInMinutes,
+      Set<TimeOfDay> timesOfDayFetched) {
     selectedDay.year == previouslySelectedDay.year &&
             selectedDay.month == previouslySelectedDay.month &&
             selectedDay.day == previouslySelectedDay.day
@@ -2847,7 +3377,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     allConvertedTimesOfDayToInt = convertedTimesSet;
     for (var i = 0; i < convertedTimesSet.length - 1; i++) {
       int selectedDayToInt = (selectedDay.hour * 60 + selectedDay.minute) * 60;
-      convertedTimesSet.elementAt(i) < selectedDayToInt && convertedTimesSet.elementAt(i + 1) > selectedDayToInt
+      convertedTimesSet.elementAt(i) < selectedDayToInt &&
+              convertedTimesSet.elementAt(i + 1) > selectedDayToInt
           ? selectedDayIndex = (i + 1) ~/ 2
           : null;
       convertedTimesSet.elementAt(i) < selectedDayPlusXHourToInt &&
@@ -2855,18 +3386,26 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
           ? selectedDayPlusXHourToIntIndex = (i + 1) ~/ 2
           : null;
     }
-    testallBookedTimeSlotsInMinutes.isEmpty ? correspondingStartandEndIndexes.clear() : null;
+    testallBookedTimeSlotsInMinutes.isEmpty
+        ? correspondingStartandEndIndexes.clear()
+        : null;
     for (var i = 0; i < testallBookedTimeSlotsInMinutes.length; i++) {
       var currentEntry = testallBookedTimeSlotsInMinutes.entries.elementAt(i);
       int firstMatchForStartIndex = 0, firstMatchForEndIndex = 0;
-      for (int convertedIndex = 0; convertedIndex < convertedTimesSet.length - 1; convertedIndex++) {
-        if (convertedTimesSet.elementAt(convertedIndex) <= currentEntry.value['BookingStart'] &&
-            convertedTimesSet.elementAt(convertedIndex + 1) >= currentEntry.value['BookingStart']) {
+      for (int convertedIndex = 0;
+          convertedIndex < convertedTimesSet.length - 1;
+          convertedIndex++) {
+        if (convertedTimesSet.elementAt(convertedIndex) <=
+                currentEntry.value['BookingStart'] &&
+            convertedTimesSet.elementAt(convertedIndex + 1) >=
+                currentEntry.value['BookingStart']) {
           firstMatchForStartIndex = convertedIndex ~/ 2;
         }
 
-        if (convertedTimesSet.elementAt(convertedIndex) <= currentEntry.value['BookingEnd'] &&
-            convertedTimesSet.elementAt(convertedIndex + 1) > currentEntry.value['BookingEnd']) {
+        if (convertedTimesSet.elementAt(convertedIndex) <=
+                currentEntry.value['BookingEnd'] &&
+            convertedTimesSet.elementAt(convertedIndex + 1) >
+                currentEntry.value['BookingEnd']) {
           firstMatchForEndIndex = convertedIndex ~/ 2;
         }
         correspondingStartandEndIndexes.addAll({
@@ -2886,14 +3425,18 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     return correspondingStartandEndIndexes;
   }
 
-  void fetchSlotReservationInfoFromFB(Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
+  void fetchSlotReservationInfoFromFB(
+      Map<String, dynamic> slotsReservationsInfoFetchedAsMapWithData) {
     /* DateTime currentlySelectedDateForTimeSlotAvailability =
         bookerFirstPageInfoMapped['Selected Day'];
  */
-    var allReservationsOnSelectedDayList = slotsReservationsInfoFetchedAsMapWithData.entries.where(
+    var allReservationsOnSelectedDayList =
+        slotsReservationsInfoFetchedAsMapWithData.entries.where(
       (element) {
-        var res = slotsReservationsInfoFetchedAsMapWithData.entries.where((element1) {
-          var oj = element1.value as Map<String, dynamic>; //fetching all the timeSlots that are booked for all parkings
+        var res =
+            slotsReservationsInfoFetchedAsMapWithData.entries.where((element1) {
+          var oj = element1.value as Map<String,
+              dynamic>; //fetching all the timeSlots that are booked for all parkings
           //debugPrint("OJ $oj");
           var timeST = oj['BookingStart'] as Timestamp;
           return timeST.toDate().day == selectedDay.day &&
@@ -2912,7 +3455,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         ? {
             anyReservationForSelectedDay = false,
             allReservationsSameDaySameParkingWithKey.clear(),
-            debugPrint("allReservationsSameDaySameParkingWithKey $allReservationsSameDaySameParkingWithKey"),
+            debugPrint(
+                "allReservationsSameDaySameParkingWithKey $allReservationsSameDaySameParkingWithKey"),
             testallBookedTimeSlots.clear(),
             testallBookedTimeSlotsInMinutes.clear(),
             spotIDsWithinXHoursBookedNotOccupied.clear(),
@@ -2922,24 +3466,34 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     //debugPrint("allReservationsSameDaySameParkingWithKey $testallBookedTimeSlots");
 
     debugPrint("VAR IS: $allReservationsOnSelectedDayList");
-    for (var singleReservationSameDayAsUserSelectedDay in allReservationsOnSelectedDayList) {
+    for (var singleReservationSameDayAsUserSelectedDay
+        in allReservationsOnSelectedDayList) {
       //debugPrint("CHECK $singleReservationSameDayAsUserSelectedDay");
 
-      var singleReservationNoKeyCasted = singleReservationSameDayAsUserSelectedDay.value as Map<String, dynamic>;
-      var singleBookingStartTimeStamp = singleReservationNoKeyCasted['BookingStart'] as Timestamp;
-      var singleBookingEndTimeStamp = singleReservationNoKeyCasted['BookingEnd'] as Timestamp;
+      var singleReservationNoKeyCasted =
+          singleReservationSameDayAsUserSelectedDay.value
+              as Map<String, dynamic>;
+      var singleBookingStartTimeStamp =
+          singleReservationNoKeyCasted['BookingStart'] as Timestamp;
+      var singleBookingEndTimeStamp =
+          singleReservationNoKeyCasted['BookingEnd'] as Timestamp;
 
       if (selectedDay.year == DateTime.now().year &&
           selectedDay.month == DateTime.now().month &&
           selectedDay.day == DateTime.now().day) {
-        allReservationsExistingSameTimeAsNowDifferentDay.clear(); //do not delete
-        allReservationsSameDaySameParkingWithKey
-            .addAll({singleReservationSameDayAsUserSelectedDay.key: singleReservationNoKeyCasted});
+        allReservationsExistingSameTimeAsNowDifferentDay
+            .clear(); //do not delete
+        allReservationsSameDaySameParkingWithKey.addAll({
+          singleReservationSameDayAsUserSelectedDay.key:
+              singleReservationNoKeyCasted
+        });
       } else {
         allReservationsSameDaySameParkingWithKey.clear(); //do not delete
 
-        allReservationsExistingSameTimeAsNowDifferentDay
-            .addAll({singleReservationSameDayAsUserSelectedDay.key: singleReservationNoKeyCasted});
+        allReservationsExistingSameTimeAsNowDifferentDay.addAll({
+          singleReservationSameDayAsUserSelectedDay.key:
+              singleReservationNoKeyCasted
+        });
       }
 
       debugPrint(
@@ -2947,28 +3501,42 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
       testallBookedTimeSlots.addAll({
         singleReservationSameDayAsUserSelectedDay.key: {
-          'BookingStart': TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()),
-          'BookingEnd': TimeOfDay.fromDateTime(singleBookingEndTimeStamp.toDate()),
+          'BookingStart':
+              TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()),
+          'BookingEnd':
+              TimeOfDay.fromDateTime(singleBookingEndTimeStamp.toDate()),
         }
       });
-      int bookedTimeStartInt = (TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()).hour * 60 +
-                  TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate()).minute) *
+      int bookedTimeStartInt = (TimeOfDay.fromDateTime(
+                              singleBookingStartTimeStamp.toDate())
+                          .hour *
+                      60 +
+                  TimeOfDay.fromDateTime(singleBookingStartTimeStamp.toDate())
+                      .minute) *
               60,
-          bookedTimeEndInt = (TimeOfDay.fromDateTime(singleBookingEndTimeStamp.toDate()).hour * 60 +
-                  TimeOfDay.fromDateTime(singleBookingEndTimeStamp.toDate()).minute) *
-              60;
+          bookedTimeEndInt =
+              (TimeOfDay.fromDateTime(singleBookingEndTimeStamp.toDate()).hour *
+                          60 +
+                      TimeOfDay.fromDateTime(singleBookingEndTimeStamp.toDate())
+                          .minute) *
+                  60;
       testallBookedTimeSlotsInMinutes.addAll({
         singleReservationSameDayAsUserSelectedDay.key: {
           'BookingStart': bookedTimeStartInt,
           'BookingEnd': bookedTimeEndInt,
         }
       });
-      debugPrint("testallBookedTimeSlotsInMinutes $testallBookedTimeSlotsInMinutes");
+      debugPrint(
+          "testallBookedTimeSlotsInMinutes $testallBookedTimeSlotsInMinutes");
     }
   }
 
-  Iterable<MapEntry<String, dynamic>> getWithinXHoursAvailabalitySatus(int availabilityHoursInterval) {
-    selectedDayPlusXHourToInt = ((selectedDay.hour + availabilityHoursInterval) * 60 + selectedDay.minute) *
+  Iterable<MapEntry<String, dynamic>> getWithinXHoursAvailabalitySatus(
+      int availabilityHoursInterval) {
+    selectedDayPlusXHourToInt = ((selectedDay.hour +
+                    availabilityHoursInterval) *
+                60 +
+            selectedDay.minute) *
         60; //closinghour to int , if selectedDayPlusXhours sup to closnghours to int, (fetchedTimes.last) then
     selectedDayToInt = ((selectedDay.hour) * 60 + selectedDay.minute) * 60;
     Set<int> convertedTimesSet = {};
@@ -2978,18 +3546,23 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     }
     debugPrint("SELECTEDDAYTOI_NT :$selectedDayToInt");
     var work = allReservationsSameDaySameParkingWithKey.entries.where((entry) {
-      var matchingTimeStampEntry = testallBookedTimeSlotsInMinutes.entries.where((element) => element.key == entry.key);
-      var matchingTSEntryFinal =
-          matchingTimeStampEntry.isNotEmpty ? matchingTimeStampEntry.first.value as Map<String, dynamic> : {};
+      var matchingTimeStampEntry = testallBookedTimeSlotsInMinutes.entries
+          .where((element) => element.key == entry.key);
+      var matchingTSEntryFinal = matchingTimeStampEntry.isNotEmpty
+          ? matchingTimeStampEntry.first.value as Map<String, dynamic>
+          : {};
       /*  selectedDayPlusXHourToInt <= convertedTimesSet.last && matchingTimeStampEntry.isNotEmpty
           ? debugPrint("MATCHINGOO $matchingTSEntryFinal")
           : null; */
-      return selectedDayPlusXHourToInt > convertedTimesSet.last && matchingTimeStampEntry.isNotEmpty
+      return selectedDayPlusXHourToInt > convertedTimesSet.last &&
+              matchingTimeStampEntry.isNotEmpty
           ? matchingTSEntryFinal['BookingEnd'] >= selectedDayToInt &&
               matchingTSEntryFinal['BookingEnd'] <= selectedDayPlusXHourToInt
-          : selectedDayPlusXHourToInt <= convertedTimesSet.last && matchingTimeStampEntry.isNotEmpty
+          : selectedDayPlusXHourToInt <= convertedTimesSet.last &&
+                  matchingTimeStampEntry.isNotEmpty
               ? matchingTSEntryFinal['BookingEnd'] >= selectedDayToInt &&
-                      matchingTSEntryFinal['BookingEnd'] >= selectedDayPlusXHourToInt ||
+                      matchingTSEntryFinal['BookingEnd'] >=
+                          selectedDayPlusXHourToInt ||
                   matchingTSEntryFinal['BookingStart'] >= selectedDayToInt ||
                   matchingTSEntryFinal['BookingEnd'] > selectedDayToInt
               //&&matchingTSEntryFinal['BookingEnd'] >= selectedDayPlusXHourToInt
@@ -3013,11 +3586,14 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     return work;
   }
 
-  batchWriteInsideParkingInfo(int total) async {
+  Future<void> batchWriteInsideParkingInfo(int total) async {
     currentlySignedInUser = firebaseService.auth.currentUser;
-    CollectionReference collectionRef = myDB.collection("locations/${widget.receivedID}/insideParkingInfo");
+    CollectionReference collectionRef =
+        myDB.collection("locations/${widget.receivedID}/insideParkingInfo");
     WriteBatch batch = myDB.batch();
-    List allBatchSpotIDs = <String>[], specialAvailableShuffle = <String>[], regAvailableShuffle = <String>[];
+    List allBatchSpotIDs = <String>[],
+        specialAvailableShuffle = <String>[],
+        regAvailableShuffle = <String>[];
     int totalForParking = total;
     for (var i = 0; i < totalForParking ~/ 2; i++) {
       allBatchSpotIDs.add('A$i');
@@ -3027,10 +3603,13 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     debugPrint("TOTAL DIV 3 ${total - (total ~/ 3)}");
     for (var i = 0; i < totalForParking ~/ 3; i++) {
       var theFirstShuffle = (allBatchSpotIDs..shuffle()).first;
-      specialAvailableShuffle.contains(theFirstShuffle) ? null : specialAvailableShuffle.add(theFirstShuffle);
+      specialAvailableShuffle.contains(theFirstShuffle)
+          ? null
+          : specialAvailableShuffle.add(theFirstShuffle);
     }
     debugPrint("ALL SPEC SHUFFLE :$specialAvailableShuffle");
-    var specSet = Set.from(specialAvailableShuffle), allBatchSet = Set.from(allBatchSpotIDs);
+    var specSet = Set.from(specialAvailableShuffle),
+        allBatchSet = Set.from(allBatchSpotIDs);
     regAvailableShuffle = allBatchSet.difference(specSet).toList();
 
     batch.set(
@@ -3039,7 +3618,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         'Fee per 30 minutes': 500,
         'Special': {
           'IDs': specialAvailableShuffle,
-          'Available': {'IDs': specialAvailableShuffle, 'Total': specialAvailableShuffle.length},
+          'Available': {
+            'IDs': specialAvailableShuffle,
+            'Total': specialAvailableShuffle.length
+          },
           'Booked': {'IDs': [], 'Total': 0},
           'Occupied': {
             'From Real Parking': {'IDs': [], 'Total': 0},
@@ -3049,7 +3631,10 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         },
         'Regular': {
           'IDs': regAvailableShuffle,
-          'Available': {'IDs': regAvailableShuffle, 'Total': regAvailableShuffle.length},
+          'Available': {
+            'IDs': regAvailableShuffle,
+            'Total': regAvailableShuffle.length
+          },
           'Booked': {'IDs': [], 'Total': 0},
           'Occupied': {
             'From Real Parking': {'IDs': [], 'Total': 0},
@@ -3061,20 +3646,24 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       },
     );
 
-    await batch.commit().whenComplete(() => debugPrint("SUCCESSFULLY WRITTEN INSIDE PARKING TO FIREBASE"));
+    await batch.commit().whenComplete(
+        () => debugPrint("SUCCESSFULLY WRITTEN INSIDE PARKING TO FIREBASE"));
   }
 
   void fetchParkingSlotsInfoFromFB() {
     if (insideParkingInfoFetched.isNotEmpty) {
       var regAllIDs = insideParkingInfoFetched['Regular']['IDs'] as List;
       var specAllIDs = insideParkingInfoFetched['Special']['IDs'] as List;
-      var cast1 = insideParkingInfoFetched['Regular']['Available'] as Map<String, dynamic>;
+      var cast1 = insideParkingInfoFetched['Regular']['Available']
+          as Map<String, dynamic>;
       var castedRAvailableSlotsItems = cast1['IDs'] as List;
 
-      var cast2 = insideParkingInfoFetched['Regular']['Booked'] as Map<String, dynamic>;
+      var cast2 =
+          insideParkingInfoFetched['Regular']['Booked'] as Map<String, dynamic>;
       var castedRBookedSlotsList = cast2['IDs'] as List;
 
-      var cast3 = insideParkingInfoFetched['Regular']['Occupied'] as Map<String, dynamic>;
+      var cast3 = insideParkingInfoFetched['Regular']['Occupied']
+          as Map<String, dynamic>;
 
       var cast31 = cast3['From Booking'] as Map<String, dynamic>;
       var castedROccupiedAfterBook = cast31['IDs'] as List;
@@ -3082,13 +3671,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       var cast32 = cast3['From Real Parking'] as Map<String, dynamic>;
       var castedROccupiedNoPriorBooking = cast32['IDs'] as List;
 
-      var cast4 = insideParkingInfoFetched['Special']['Available'] as Map<String, dynamic>;
+      var cast4 = insideParkingInfoFetched['Special']['Available']
+          as Map<String, dynamic>;
       var castedSAvailable = cast4['IDs'] as List;
 
-      var cast5 = insideParkingInfoFetched['Special']['Booked'] as Map<String, dynamic>;
+      var cast5 =
+          insideParkingInfoFetched['Special']['Booked'] as Map<String, dynamic>;
       var castedSBookedSlotsList = cast5['IDs'] as List;
 
-      var cast6 = insideParkingInfoFetched['Special']['Occupied'] as Map<String, dynamic>;
+      var cast6 = insideParkingInfoFetched['Special']['Occupied']
+          as Map<String, dynamic>;
 
       var cast61 = cast6['From Booking'] as Map<String, dynamic>;
       var castedSOccupiedAfterBook = cast61['IDs'] as List;
@@ -3107,9 +3699,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         sBookedIDs = castedSBookedSlotsList.toSet();
         sOccupiedAfterBookedIDs = castedSOccupiedAfterBook.toSet();
         sOccupiedNoPriorBookingIDs = castedSOccupiedNoPriorBooking.toSet();
-        allSpecialSpotsIDs = [sBookedIDs, sAvailableIDs, sOccupiedAfterBookedIDs, sOccupiedNoPriorBookingIDs]
-            .expand((element) => element)
-            .toSet();
+        allSpecialSpotsIDs = [
+          sBookedIDs,
+          sAvailableIDs,
+          sOccupiedAfterBookedIDs,
+          sOccupiedNoPriorBookingIDs
+        ].expand((element) => element).toSet();
 
         allRegularSpotsID = [
           rBookedIDs,
@@ -3139,7 +3734,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
           if (slotRes.size != 0) {
             var ok = slotRes.docs.where((element) {
               var timeStamp = element.data()['BookingStart'] as Timestamp;
-              return DateFormat.yMEd().format(timeStamp.toDate()) == DateFormat.yMEd().format(selectedDay) &&
+              return DateFormat.yMEd().format(timeStamp.toDate()) ==
+                      DateFormat.yMEd().format(selectedDay) &&
                   element.data()['ParkingID'] == widget.receivedID;
             });
             ok.isNotEmpty
@@ -3177,18 +3773,29 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
               mappedSelectedSlotAlley.add({
                 "alleyA_Id": alleyA.elementAt(i) /* "A$i" */,
                 "isSlotSelected": false,
-                "isSlotBooked": rBookedIDs.contains("A$i") || sBookedIDs.contains("A$i") ? true : false,
+                "isSlotBooked":
+                    rBookedIDs.contains("A$i") || sBookedIDs.contains("A$i")
+                        ? true
+                        : false,
                 "isSlotOccupied": {
-                  'AfterBooked':
-                      rOccupiedAfterBookedIDs.contains("A$i") || sOccupiedAfterBookedIDs.contains("A$i") ? true : false,
+                  'AfterBooked': rOccupiedAfterBookedIDs.contains("A$i") ||
+                          sOccupiedAfterBookedIDs.contains("A$i")
+                      ? true
+                      : false,
                   'NoPriorBooking':
-                      rOccupiedNoPriorBookingIDs.contains("A$i") || sOccupiedNoPriorBookingIDs.contains("A$i")
+                      rOccupiedNoPriorBookingIDs.contains("A$i") ||
+                              sOccupiedNoPriorBookingIDs.contains("A$i")
                           ? true
                           : false,
                 },
-                "isSlotFree": rAvailableIDs.contains("A$i") || sAvailableIDs.contains("A$i") ? true : false,
-                "isSpecialSpot": allSpecialSpotsIDs.contains("A$i") ? true : false,
-                "isBookedWithinXHours": spotIDsWithinXHoursBookedNotOccupied.any((element) => element.contains("A$i"))
+                "isSlotFree": rAvailableIDs.contains("A$i") ||
+                        sAvailableIDs.contains("A$i")
+                    ? true
+                    : false,
+                "isSpecialSpot":
+                    allSpecialSpotsIDs.contains("A$i") ? true : false,
+                "isBookedWithinXHours": spotIDsWithinXHoursBookedNotOccupied
+                        .any((element) => element.contains("A$i"))
                     ? true
                     : false, // comeback
                 "highlightColor": Colors.transparent
@@ -3197,30 +3804,40 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
           : {
               alleyB.add("B${j++}"),
               mappedSelectedSlotAlley.add({
-                "alleyB_Id": alleyB
-                    .elementAt(i - alleyBindexStart), //3 because at this point, i = 3 and I need the counter to reset
+                "alleyB_Id": alleyB.elementAt(i -
+                    alleyBindexStart), //3 because at this point, i = 3 and I need the counter to reset
                 "isSlotSelected": false,
                 "isSlotBooked":
-                    rBookedIDs.contains("B${i - alleyBindexStart}") || sBookedIDs.contains("B${i - alleyBindexStart}")
+                    rBookedIDs.contains("B${i - alleyBindexStart}") ||
+                            sBookedIDs.contains("B${i - alleyBindexStart}")
                         ? true
                         : false,
                 "isSlotOccupied": {
-                  'AfterBooked': rOccupiedAfterBookedIDs.contains("B${i - alleyBindexStart}") ||
-                          sOccupiedAfterBookedIDs.contains("B${i - alleyBindexStart}")
+                  'AfterBooked': rOccupiedAfterBookedIDs
+                              .contains("B${i - alleyBindexStart}") ||
+                          sOccupiedAfterBookedIDs
+                              .contains("B${i - alleyBindexStart}")
                       ? true
                       : false,
-                  'NoPriorBooking': rOccupiedNoPriorBookingIDs.contains("B${i - alleyBindexStart}") ||
-                          sOccupiedNoPriorBookingIDs.contains("B${i - alleyBindexStart}")
+                  'NoPriorBooking': rOccupiedNoPriorBookingIDs
+                              .contains("B${i - alleyBindexStart}") ||
+                          sOccupiedNoPriorBookingIDs
+                              .contains("B${i - alleyBindexStart}")
                       ? true
                       : false,
                 },
-                "isSlotFree": rAvailableIDs.contains("B${i - alleyBindexStart}") ||
-                        sAvailableIDs.contains("B${i - alleyBindexStart}")
-                    ? true
-                    : false,
-                "isSpecialSpot": allSpecialSpotsIDs.contains("B${i - alleyBindexStart}") ? true : false,
+                "isSlotFree":
+                    rAvailableIDs.contains("B${i - alleyBindexStart}") ||
+                            sAvailableIDs.contains("B${i - alleyBindexStart}")
+                        ? true
+                        : false,
+                "isSpecialSpot":
+                    allSpecialSpotsIDs.contains("B${i - alleyBindexStart}")
+                        ? true
+                        : false,
                 "isBookedWithinXHours":
-                    spotIDsWithinXHoursBookedNotOccupied.any((element) => element.contains("B${i - alleyBindexStart}"))
+                    spotIDsWithinXHoursBookedNotOccupied.any((element) =>
+                            element.contains("B${i - alleyBindexStart}"))
                         ? true
                         : false,
 
@@ -3251,26 +3868,30 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         switch (change.type) {
           case DocumentChangeType.added:
             //debugPrint("Slots Reservations Document Just Loaded: ${change.doc.data()}");
-            debugPrint("REAL TIME CHECK __ ${change.doc.data()!['BookingStart']} __ ${change.doc.id}");
+            debugPrint(
+                "REAL TIME CHECK __ ${change.doc.data()!['BookingStart']} __ ${change.doc.id}");
             break;
           case DocumentChangeType.modified:
             //debugPrint("Slots Reservations Document Just EDITED: ${change.doc.data()}");
-            var baba =
-                allReservationsSameDaySameParkingWithKey.entries.where((element) => element.key == change.doc.id);
+            var baba = allReservationsSameDaySameParkingWithKey.entries
+                .where((element) => element.key == change.doc.id);
             debugPrint("THE KEY IS: ${baba.first.value['BookingStart']}");
 
-            debugPrint("CHECK BS ${change.doc.data()!['BookingStart']} _ __ ${change.doc.id}");
-            if (change.doc.data()!['BookingStart'] != baba.first.value['BookingStart']) {
+            debugPrint(
+                "CHECK BS ${change.doc.data()!['BookingStart']} _ __ ${change.doc.id}");
+            if (change.doc.data()!['BookingStart'] !=
+                baba.first.value['BookingStart']) {
               debugPrint("NEED UPDATE");
-              baba.first.value['BookingStart'] = change.doc.data()!['BookingStart'];
+              baba.first.value['BookingStart'] =
+                  change.doc.data()!['BookingStart'];
             }
 
             if (change.doc.data()!['VehiculeStatus']['Status'] == 'Parked') {
-              spotIDsWithinXHoursBookedNotOccupied.remove(change.doc.data()!['SlotID']);
+              spotIDsWithinXHoursBookedNotOccupied
+                  .remove(change.doc.data()!['SlotID']);
             }
             if (change.doc.data()!['VehiculeStatus']['Status'] == 'Gone') {
               //Deal with the car leaving
-
             }
             break;
           case DocumentChangeType.removed:
@@ -3295,34 +3916,48 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         var castIndexEntries = indexEntries.value as Map<String, dynamic>;
 
         allReservationsExistingSameTimeAsNowDifferentDay.entries.isNotEmpty
-            ? allReservationsExistingSameTimeAsNowDifferentDay.entries.any((allHoursEntries) {
+            ? allReservationsExistingSameTimeAsNowDifferentDay.entries
+                .any((allHoursEntries) {
                 var castAllHoursValues;
                 allHoursEntries.key ==
-                        indexEntries.key //AND THE of withinXhours IDS ARE DIFF then update withinXhoursParking
+                        indexEntries
+                            .key //AND THE of withinXhours IDS ARE DIFF then update withinXhoursParking
                     ? {
-                        castAllHoursValues = allHoursEntries.value as Map<String, dynamic>,
+                        castAllHoursValues =
+                            allHoursEntries.value as Map<String, dynamic>,
                         //debugPrint("LOLO $castXHoursValues \t $castIndexEntries \t $count"),
-                        if (allHoursParkingSpotInfosNeeded.length < correspondingStartandEndIndexes.length)
+                        if (allHoursParkingSpotInfosNeeded.length <
+                            correspondingStartandEndIndexes.length)
                           {
                             allHoursParkingSpotInfosNeeded.add({
                               'SlotID': castAllHoursValues['SlotID'],
-                              'indexes': [castIndexEntries['startIndex'], castIndexEntries['endIndex']],
+                              'indexes': [
+                                castIndexEntries['startIndex'],
+                                castIndexEntries['endIndex']
+                              ],
                             }),
                             //withinXHoursParkingSpotInfosNeeded FIND A WQAY TO UPDATE THE LIST TH THE NEWLY ADDED VALUE WHICH IS B1 IN THIS CASE
-                            allSpotIDsAllHoursBookedNotOccupied.add({castAllHoursValues['SlotID']}),
+                            allSpotIDsAllHoursBookedNotOccupied
+                                .add({castAllHoursValues['SlotID']}),
                           }
-                        else if (allHoursParkingSpotInfosNeeded.length == correspondingStartandEndIndexes.length)
+                        else if (allHoursParkingSpotInfosNeeded.length ==
+                            correspondingStartandEndIndexes.length)
                           {
                             allHoursParkingSpotInfosNeeded.forEach((element) {
-                              debugPrint("WOODZ: ${listEquals(element.values.last, [
+                              debugPrint(
+                                  "WOODZ: ${listEquals(element.values.last, [
                                     castIndexEntries['startIndex'],
                                     castIndexEntries['endIndex']
                                   ])}");
-                              listEquals(element.values.last,
-                                              [castIndexEntries['startIndex'], castIndexEntries['endIndex']]) ==
+                              listEquals(element.values.last, [
+                                            castIndexEntries['startIndex'],
+                                            castIndexEntries['endIndex']
+                                          ]) ==
                                           true &&
-                                      element.values.first != castAllHoursValues['SlotID']
-                                  ? element.update('SlotID', (value) => castAllHoursValues['SlotID'])
+                                      element.values.first !=
+                                          castAllHoursValues['SlotID']
+                                  ? element.update('SlotID',
+                                      (value) => castAllHoursValues['SlotID'])
                                   : null;
                             })
                           }
@@ -3337,40 +3972,59 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 var castXHoursValues;
                 Iterable<Map<String, dynamic>> themappedElement;
                 xHoursEntries.key ==
-                        indexEntries.key //AND THE of withinXhours IDS ARE DIFF then update withinXhoursParking
+                        indexEntries
+                            .key //AND THE of withinXhours IDS ARE DIFF then update withinXhoursParking
                     ? {
-                        castXHoursValues = xHoursEntries.value as Map<String, dynamic>,
+                        castXHoursValues =
+                            xHoursEntries.value as Map<String, dynamic>,
                         //debugPrint("LOLO $castXHoursValues \t $castIndexEntries \t $count"),
-                        if (withinXHoursParkingSpotInfosNeeded.length < correspondingStartandEndIndexes.length)
+                        if (withinXHoursParkingSpotInfosNeeded.length <
+                            correspondingStartandEndIndexes.length)
                           {
                             withinXHoursParkingSpotInfosNeeded.add({
                               'SlotID': castXHoursValues['SlotID'],
-                              'indexes': [castIndexEntries['startIndex'], castIndexEntries['endIndex']],
+                              'indexes': [
+                                castIndexEntries['startIndex'],
+                                castIndexEntries['endIndex']
+                              ],
                             }),
-                            indexesToDisplayWithnXHours
-                                .add([castIndexEntries['startIndex'], castIndexEntries['endIndex']]),
-                            spotIDsWithinXHoursBookedNotOccupied.add({castXHoursValues['SlotID']}),
-                            themappedElement = mappedSelectedSlotAlley
-                                .where((element) => element.values.first == castXHoursValues['SlotID']),
+                            indexesToDisplayWithnXHours.add([
+                              castIndexEntries['startIndex'],
+                              castIndexEntries['endIndex']
+                            ]),
+                            spotIDsWithinXHoursBookedNotOccupied
+                                .add({castXHoursValues['SlotID']}),
+                            themappedElement = mappedSelectedSlotAlley.where(
+                                (element) =>
+                                    element.values.first ==
+                                    castXHoursValues['SlotID']),
                             debugPrint("THEMAPPEDELEMENET :$themappedElement"),
                             themappedElement.isNotEmpty
                                 ? themappedElement.forEach((element) {
-                                    element.update('isBookedWithinXHours', (value) => true);
+                                    element.update('isBookedWithinXHours',
+                                        (value) => true);
                                   })
                                 : null
                           }
-                        else if (withinXHoursParkingSpotInfosNeeded.length == correspondingStartandEndIndexes.length)
+                        else if (withinXHoursParkingSpotInfosNeeded.length ==
+                            correspondingStartandEndIndexes.length)
                           {
-                            withinXHoursParkingSpotInfosNeeded.forEach((element) {
-                              debugPrint("WOODZ: ${listEquals(element.values.last, [
+                            withinXHoursParkingSpotInfosNeeded
+                                .forEach((element) {
+                              debugPrint(
+                                  "WOODZ: ${listEquals(element.values.last, [
                                     castIndexEntries['startIndex'],
                                     castIndexEntries['endIndex']
                                   ])}");
-                              listEquals(element.values.last,
-                                              [castIndexEntries['startIndex'], castIndexEntries['endIndex']]) ==
+                              listEquals(element.values.last, [
+                                            castIndexEntries['startIndex'],
+                                            castIndexEntries['endIndex']
+                                          ]) ==
                                           true &&
-                                      element.values.first != castXHoursValues['SlotID']
-                                  ? element.update('SlotID', (value) => castXHoursValues['SlotID'])
+                                      element.values.first !=
+                                          castXHoursValues['SlotID']
+                                  ? element.update('SlotID',
+                                      (value) => castXHoursValues['SlotID'])
                                   : null;
                             })
                           }
@@ -3381,7 +4035,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             : withinXHoursParkingSpotInfosNeeded.clear();
       });
 
-      withinXHoursEntriesFetched.isEmpty ? withinXHoursParkingSpotInfosNeeded.clear() : null;
+      withinXHoursEntriesFetched.isEmpty
+          ? withinXHoursParkingSpotInfosNeeded.clear()
+          : null;
       debugPrint(
           "withinXHoursParkingSpotIDsToShow $withinXHoursParkingSpotInfosNeeded __ $allHoursParkingSpotInfosNeeded }");
       debugPrint(
@@ -3391,7 +4047,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       for (var change in event.docChanges) {
         switch (change.type) {
           case DocumentChangeType.added:
-            debugPrint("Inside Parking Info Document Just Loaded: ${change.doc.data()}"); //rt for realTime
+            debugPrint(
+                "Inside Parking Info Document Just Loaded: ${change.doc.data()}"); //rt for realTime
             /*   var rTrBookedIDs = change.doc.data()!['Regular']['Booked']['IDs'] as List;
 
             var theID;
@@ -3436,7 +4093,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             break;
 
           case DocumentChangeType.modified:
-            debugPrint("Inside Parking Info Document Just EDITED: ${change.doc.data()}");
+            debugPrint(
+                "Inside Parking Info Document Just EDITED: ${change.doc.data()}");
 
             /*    var rTrAvailableIDs = change.doc.data()!['Regular']['Available']['IDs'] as List;
             var rTrBookedIDs = change.doc.data()!['Regular']['Booked']['IDs'] as List;
@@ -3517,42 +4175,62 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     });
   }
 
-  displayAvailabilityForWholeDay(int tappedOnSpotIndex, String whichAlley, int timeSlotIndex) {
-    whichAlley.contains('B') ? tappedOnSpotIndex = tappedOnSpotIndex + parkingSlotsTotal ~/ 2 : null;
+  dynamic displayAvailabilityForWholeDay(
+      int tappedOnSpotIndex, String whichAlley, int timeSlotIndex) {
+    whichAlley.contains('B')
+        ? tappedOnSpotIndex = tappedOnSpotIndex + parkingSlotsTotal ~/ 2
+        : null;
     debugPrint(
         "THE INDEX $tappedOnSpotIndex _____ alley: $whichAlley ${mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex)} _ $doDisplayAvailabilityForWholeDay __ $tappedOnParkingSpotID");
 
     if (selectedDay.year == DateTime.now().year &&
         selectedDay.month == DateTime.now().month &&
         selectedDay.day == DateTime.now().day) {
-      if (mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex)['isBookedWithinXHours'] == true ||
-          mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex)['isSlotOccupied']['AfterBooked'] == true) {
+      if (mappedSelectedSlotAlley
+                  .elementAt(tappedOnSpotIndex)['isBookedWithinXHours'] ==
+              true ||
+          mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex)['isSlotOccupied']
+                  ['AfterBooked'] ==
+              true) {
         List<List> wholeDayStatusForSpecificSpot = [];
-        testallBookedTimeSlotsInMinutes.isEmpty ? wholeDayStatusForSpecificSpot.clear() : null;
+        testallBookedTimeSlotsInMinutes.isEmpty
+            ? wholeDayStatusForSpecificSpot.clear()
+            : null;
         debugPrint("castIndexEntries $testallBookedTimeSlotsInMinutes");
 
         correspondingStartandEndIndexes.entries.forEach((indexEntries) {
           var castIndexEntries = indexEntries.value as Map<String, dynamic>;
           testallBookedTimeSlotsInMinutes.isNotEmpty
-              ? testallBookedTimeSlotsInMinutes.entries.any((allBookedHoursEntries) {
+              ? testallBookedTimeSlotsInMinutes.entries
+                  .any((allBookedHoursEntries) {
                   var castAllHoursValues;
                   Iterable<Map<String, dynamic>> babs = {};
                   allBookedHoursEntries.key == indexEntries.key
                       ? {
                           withinXHoursParkingSpotInfosNeeded.isNotEmpty
-                              ? babs = withinXHoursParkingSpotInfosNeeded.where((element) {
+                              ? babs = withinXHoursParkingSpotInfosNeeded
+                                  .where((element) {
                                   var ok = element['indexes'] as List;
-                                  return castIndexEntries.values.first == ok.first;
+                                  return castIndexEntries.values.first ==
+                                      ok.first;
                                 })
                               : null,
-                          castAllHoursValues = allBookedHoursEntries.value as Map<String, dynamic>,
+                          castAllHoursValues = allBookedHoursEntries.value
+                              as Map<String, dynamic>,
                           //debugPrint("LOLOI $castAllHoursValues \t $castIndexEntries \t $babs"),
                           babs.isNotEmpty
                               ? babs.forEach((element) {
-                                  element['SlotID'] == mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex).values.first
+                                  element['SlotID'] ==
+                                          mappedSelectedSlotAlley
+                                              .elementAt(tappedOnSpotIndex)
+                                              .values
+                                              .first
                                       ? {
                                           wholeDayStatusForSpecificSpot += ([
-                                            [castIndexEntries['startIndex'], castIndexEntries['endIndex']]
+                                            [
+                                              castIndexEntries['startIndex'],
+                                              castIndexEntries['endIndex']
+                                            ]
                                           ])
                                         }
                                       : null;
@@ -3577,51 +4255,75 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                     }) ==
                     true
                 ? getTimeSpotIcon('unbookable')
-                : getTimeSpotIcon('available'); /*  ? Colors.orange
+                : getTimeSpotIcon(
+                    'available'); /*  ? Colors.orange
           : Colors.green; */
-      } else if (mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex)['isSlotOccupied']['NoPriorBooking'] == true) {
+      } else if (mappedSelectedSlotAlley.elementAt(
+              tappedOnSpotIndex)['isSlotOccupied']['NoPriorBooking'] ==
+          true) {
         return timeSlotIndex >= selectedDayIndex &&
-                allConvertedTimesOfDayToInt.elementAt(timeSlotIndex * 2) <= selectedDayToInt &&
-                allConvertedTimesOfDayToInt.elementAt((timeSlotIndex * 2) + 1) >= selectedDayToInt
+                allConvertedTimesOfDayToInt.elementAt(timeSlotIndex * 2) <=
+                    selectedDayToInt &&
+                allConvertedTimesOfDayToInt
+                        .elementAt((timeSlotIndex * 2) + 1) >=
+                    selectedDayToInt
             ? getTimeSpotIcon('occupied')
             : timeSlotIndex < selectedDayIndex == true
                 ? getTimeSpotIcon('unbookable')
-                : getTimeSpotIcon('available'); //getTimeSpotIcon('unBookable') if today'sdateis = selectedDay
+                : getTimeSpotIcon(
+                    'available'); //getTimeSpotIcon('unBookable') if today'sdateis = selectedDay
         /*   ? Color.fromARGB(255, 202, 24, 21)
           : Colors.green; */
       } else {
         return timeSlotIndex < selectedDayIndex == true
             ? getTimeSpotIcon('unbookable')
-            : getTimeSpotIcon('available'); //Container(width: 15, height: 15, color: Colors.amber);
+            : getTimeSpotIcon(
+                'available'); //Container(width: 15, height: 15, color: Colors.amber);
       }
     } else {
       //OCCUPIED CANNOT BE SHOWN BECAUSE THE DAY HAS NOT COME YET! JUST TAKE CARE OF BOOKED AND AVAILABLE
-      if (mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex)['isSlotBooked'] == true) {
+      if (mappedSelectedSlotAlley
+              .elementAt(tappedOnSpotIndex)['isSlotBooked'] ==
+          true) {
         List<List> wholeDayStatusForSpecificSpotSelectedDaySupToToday = [];
-        testallBookedTimeSlotsInMinutes.isEmpty ? wholeDayStatusForSpecificSpotSelectedDaySupToToday.clear() : null;
+        testallBookedTimeSlotsInMinutes.isEmpty
+            ? wholeDayStatusForSpecificSpotSelectedDaySupToToday.clear()
+            : null;
 
         correspondingStartandEndIndexes.entries.forEach((indexEntries) {
           var castIndexEntries = indexEntries.value as Map<String, dynamic>;
           testallBookedTimeSlotsInMinutes.isNotEmpty
-              ? testallBookedTimeSlotsInMinutes.entries.any((allBookedHoursEntries) {
+              ? testallBookedTimeSlotsInMinutes.entries
+                  .any((allBookedHoursEntries) {
                   var castAllHoursValues;
                   Iterable<Map<String, dynamic>> babs = {};
                   allBookedHoursEntries.key == indexEntries.key
                       ? {
                           allHoursParkingSpotInfosNeeded.isNotEmpty
-                              ? babs = allHoursParkingSpotInfosNeeded.where((element) {
+                              ? babs = allHoursParkingSpotInfosNeeded
+                                  .where((element) {
                                   var ok = element['indexes'] as List;
-                                  return castIndexEntries.values.first == ok.first;
+                                  return castIndexEntries.values.first ==
+                                      ok.first;
                                 })
                               : null,
-                          castAllHoursValues = allBookedHoursEntries.value as Map<String, dynamic>,
+                          castAllHoursValues = allBookedHoursEntries.value
+                              as Map<String, dynamic>,
                           //debugPrint("MALADADA $castAllHoursValues \t $castIndexEntries \t $babs"),
                           babs.isNotEmpty
                               ? babs.forEach((element) {
-                                  element['SlotID'] == mappedSelectedSlotAlley.elementAt(tappedOnSpotIndex).values.first
+                                  element['SlotID'] ==
+                                          mappedSelectedSlotAlley
+                                              .elementAt(tappedOnSpotIndex)
+                                              .values
+                                              .first
                                       ? {
-                                          wholeDayStatusForSpecificSpotSelectedDaySupToToday += ([
-                                            [castIndexEntries['startIndex'], castIndexEntries['endIndex']]
+                                          wholeDayStatusForSpecificSpotSelectedDaySupToToday +=
+                                              ([
+                                            [
+                                              castIndexEntries['startIndex'],
+                                              castIndexEntries['endIndex']
+                                            ]
                                           ])
                                         }
                                       : null;
@@ -3633,10 +4335,13 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 })
               : wholeDayStatusForSpecificSpotSelectedDaySupToToday.clear();
         });
-        debugPrint(" wholeDayStatusSUP $wholeDayStatusForSpecificSpotSelectedDaySupToToday");
+        debugPrint(
+            " wholeDayStatusSUP $wholeDayStatusForSpecificSpotSelectedDaySupToToday");
 
-        return wholeDayStatusForSpecificSpotSelectedDaySupToToday.any((element) {
-                  return element.first <= timeSlotIndex && element.last >= timeSlotIndex
+        return wholeDayStatusForSpecificSpotSelectedDaySupToToday
+                    .any((element) {
+                  return element.first <= timeSlotIndex &&
+                          element.last >= timeSlotIndex
                       /* &&
                       timeSlotIndex >= selectedDayIndex */
                       ;
@@ -3654,7 +4359,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     }
   }
 
-  checkWallet(num bookingTotalToPay, BookingStateManagement stateManagerRead) {
+  void checkWallet(
+      num bookingTotalToPay, BookingStateManagement stateManagerRead) {
     String content = stateManagerRead.buildingBookingText;
     showDialog(
         barrierDismissible: false,
@@ -3662,24 +4368,29 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         builder: (context) {
           return AlertDialog(
             content: SingleChildScrollView(
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              content == 'Registering your booking...'
-                  ? SpinKitFadingCircle(
-                      size: 50,
-                      itemBuilder: (BuildContext context, int index) {
-                        return const DecoratedBox(
-                          decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-                        );
-                      },
-                    )
-                  : Container(),
-              const SizedBox(height: 10),
-              Text(
-                content,
-                textAlign: TextAlign.justify,
-              ),
-              SizedBox(height: content == 'Registering your booking...' ? 40 : 20),
-            ])),
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                  content == 'Registering your booking...'
+                      ? SpinKitFadingCircle(
+                          size: 50,
+                          itemBuilder: (BuildContext context, int index) {
+                            return const DecoratedBox(
+                              decoration: BoxDecoration(
+                                  color: Colors.green, shape: BoxShape.circle),
+                            );
+                          },
+                        )
+                      : Container(),
+                  const SizedBox(height: 10),
+                  Text(
+                    content,
+                    textAlign: TextAlign.justify,
+                  ),
+                  SizedBox(
+                      height:
+                          content == 'Registering your booking...' ? 40 : 20),
+                ])),
             title: content == 'Registering your booking...'
                 ? const Text('Processing Your Booking')
                 : const Row(
@@ -3694,7 +4405,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 : [
                     TextButton(
                         onPressed: () async {
-                          debugPrint("REDIRECTING TO DASH: $redirectingToDashboard");
+                          debugPrint(
+                              "REDIRECTING TO DASH: $redirectingToDashboard");
                           if (redirectingToDashboard) {
                           } else {
                             Navigator.pop(context);
@@ -3702,11 +4414,13 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                             showDialog(
                                 context: context,
                                 builder: (context) {
-                                  Future.delayed(const Duration(seconds: 4)).then((value) {
+                                  Future.delayed(const Duration(seconds: 4))
+                                      .then((value) {
                                     if (!mounted) return;
                                     Navigator.of(context).pushAndRemoveUntil(
                                         MaterialPageRoute(
-                                            builder: (context) => const TestHome(
+                                            builder: (context) =>
+                                                const TestHome(
                                                   timeUntilReservationStarts: 0,
                                                   newMoreUrgentBooking: {},
                                                 )),
@@ -3717,12 +4431,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                                     //title: Text("Redirecting to dashboard..."),
                                     content: Column(
                                       children: [
-                                        const Text("Redirecting to dashboard..."),
+                                        const Text(
+                                            "Redirecting to dashboard..."),
                                         SpinKitFadingCircle(
                                           size: 50,
-                                          itemBuilder: (BuildContext context, int index) {
+                                          itemBuilder: (BuildContext context,
+                                              int index) {
                                             return const DecoratedBox(
-                                              decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                                              decoration: BoxDecoration(
+                                                  color: Colors.green,
+                                                  shape: BoxShape.circle),
                                             );
                                           },
                                         ),
@@ -3735,7 +4453,8 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                         child: FittedBox(
                             child: Text(
                           "Back to dashboard!",
-                          style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+                          style: TextStyle(
+                              fontSize: 12, color: Colors.red.shade400),
                         ))),
                   ],
           );
@@ -3752,17 +4471,27 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
       TimeRange finallyBookedTimeRange,
       DateTime selectedDay) async {
     Map<String, dynamic> theMostUrgentBookingAfterReservationMade = {};
-    var bookingEndTS = Timestamp.fromDate(DateTime(selectedDay.year, selectedDay.month, selectedDay.day,
-        finallyBookedTimeRange.endTime.hour, finallyBookedTimeRange.endTime.minute));
-    var bookingStartTS = Timestamp.fromDate(DateTime(selectedDay.year, selectedDay.month, selectedDay.day,
-        finallyBookedTimeRange.startTime.hour, finallyBookedTimeRange.startTime.minute));
+    var bookingEndTS = Timestamp.fromDate(DateTime(
+        selectedDay.year,
+        selectedDay.month,
+        selectedDay.day,
+        finallyBookedTimeRange.endTime.hour,
+        finallyBookedTimeRange.endTime.minute));
+    var bookingStartTS = Timestamp.fromDate(DateTime(
+        selectedDay.year,
+        selectedDay.month,
+        selectedDay.day,
+        finallyBookedTimeRange.startTime.hour,
+        finallyBookedTimeRange.startTime.minute));
 
     WriteBatch slotsResBatch = myDB.batch();
-    CollectionReference slotsReservationsCollection = myDB.collection("slotsReservations");
+    CollectionReference slotsReservationsCollection =
+        myDB.collection("slotsReservations");
     myDB
         .collection("users/${currentlySignedInUser?.uid}/vehicules")
         .where('Specs.License Plate N°',
-            isEqualTo: selectedVehiculeInfoMappedFromSelectVehicule['Specs']['License Plate N°'])
+            isEqualTo: selectedVehiculeInfoMappedFromSelectVehicule['Specs']
+                ['License Plate N°'])
         .get()
         .then((value) async {
       debugPrint("SPEC CHECK :${value.docs.first.data()}");
@@ -3785,9 +4514,14 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         },
         'TimeStamp': FieldValue.serverTimestamp()
       });
-      await slotsResBatch.commit().whenComplete(() => debugPrint("RESERVATION SUCCESSFULLY ADDED"));
+      await slotsResBatch
+          .commit()
+          .whenComplete(() => debugPrint("RESERVATION SUCCESSFULLY ADDED"));
 
-      await slotsReservationsCollection.where("ClientID", isEqualTo: currentlySignedInUser!.uid).get().then((value) {
+      await slotsReservationsCollection
+          .where("ClientID", isEqualTo: currentlySignedInUser!.uid)
+          .get()
+          .then((value) {
         if (value.docs.isNotEmpty) {
           value.docs.sort(
             (aData, bData) {
@@ -3799,14 +4533,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             },
           );
 
-          theMostUrgentBookingAfterReservationMade = value.docs.first.data() as Map<String, dynamic>;
+          theMostUrgentBookingAfterReservationMade =
+              value.docs.first.data() as Map<String, dynamic>;
         }
       });
     });
     return theMostUrgentBookingAfterReservationMade;
   }
 
-  void listeningToDebitsRT(DocumentReference<Map<String, dynamic>> theDocToUpdate) {
+  void listeningToDebitsRT(
+      DocumentReference<Map<String, dynamic>> theDocToUpdate) {
     List allWalletDebitIDs = [];
     int totalEntriesDebit = 0;
     String balanceInCFA = '10';
@@ -3814,20 +4550,25 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
     theDocToUpdate.get().then((value) {
       debugPrint("DATA CHECK: ${value.data()}");
       var debitList = value.data()!['Transactions']['Debits']['IDs'] as List;
-      allWalletDebitIDs.length < debitList.length ? allWalletDebitIDs = debitList : null;
-      totalEntriesDebit = value.data()!['Transactions']['Debits']['Total Entries'];
+      allWalletDebitIDs.length < debitList.length
+          ? allWalletDebitIDs = debitList
+          : null;
+      totalEntriesDebit =
+          value.data()!['Transactions']['Debits']['Total Entries'];
       balanceInCFA = value.data()!['Balance'].toString();
     });
 
     FirebaseFirestore.instance
-        .collection("users/${currentlySignedInUser?.uid}/wallet/${theDocToUpdate.id}/debits")
+        .collection(
+            "users/${currentlySignedInUser?.uid}/wallet/${theDocToUpdate.id}/debits")
         .where("Debit Amount", isGreaterThan: 0)
         .snapshots()
         .listen((event) {
       for (var change in event.docChanges) {
         switch (change.type) {
           case DocumentChangeType.added:
-            debugPrint("FIRESTORESERVICE Document Just Loaded: ${change.doc.data()}");
+            debugPrint(
+                "FIRESTORESERVICE Document Just Loaded: ${change.doc.data()}");
 
             break;
           case DocumentChangeType.modified:
@@ -3835,9 +4576,15 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
             allWalletDebitIDs.length < event.docs.length
                 ? {
                     allWalletDebitIDs.add(change.doc.id),
-                    theDocToUpdate.update({'Balance': int.parse(balanceInCFA) - change.doc.data()!['Debit Amount']}),
-                    theDocToUpdate.update({'Transactions.Debits.IDs': allWalletDebitIDs}),
-                    theDocToUpdate.update({'Transactions.Debits.Total Entries': totalEntriesDebit + 1}),
+                    theDocToUpdate.update({
+                      'Balance': int.parse(balanceInCFA) -
+                          change.doc.data()!['Debit Amount']
+                    }),
+                    theDocToUpdate
+                        .update({'Transactions.Debits.IDs': allWalletDebitIDs}),
+                    theDocToUpdate.update({
+                      'Transactions.Debits.Total Entries': totalEntriesDebit + 1
+                    }),
                   }
                 : null;
 
@@ -3852,8 +4599,9 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 
   void updateParkingSpotsAvailability(String parkingSpotIDBooked) {
     Set theParking = {parkingSpotIDBooked};
-    var theDocToUpdate =
-        myDB.collection("locations/${widget.receivedID}/insideParkingInfo").doc(insideParkingInfoDocIDNeeded);
+    var theDocToUpdate = myDB
+        .collection("locations/${widget.receivedID}/insideParkingInfo")
+        .doc(insideParkingInfoDocIDNeeded);
     if (sAvailableIDs.contains(parkingSpotIDBooked)) {
       var sAvailableUpdated = sAvailableIDs.difference(theParking).toList();
       sBookedIDs.add(parkingSpotIDBooked);
@@ -3885,17 +4633,22 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
         builder: (context) {
           return const AlertDialog(
             content: SingleChildScrollView(
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(Icons.check_circle_outline, size: 45, color: Colors.green),
-              SizedBox(height: 10),
-              FittedBox(child: Text("Booking successfully validated!\nRedirecting you to your dashboard...")),
-              SizedBox(height: 45),
-              CircularProgressIndicator.adaptive(
-                value: 0.5,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.yellow),
-                backgroundColor: Colors.green,
-              )
-            ])),
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                  Icon(Icons.check_circle_outline,
+                      size: 45, color: Colors.green),
+                  SizedBox(height: 10),
+                  FittedBox(
+                      child: Text(
+                          "Booking successfully validated!\nRedirecting you to your dashboard...")),
+                  SizedBox(height: 45),
+                  CircularProgressIndicator.adaptive(
+                    value: 0.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.yellow),
+                    backgroundColor: Colors.green,
+                  )
+                ])),
           );
         });
   }
@@ -3903,21 +4656,26 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
   Future<bool> getUserSpecialAccStatus(String uid) async {
     var userDocInfo = myDB.collection("users").where("ID", isEqualTo: uid);
     bool isSpecial = false;
-    await userDocInfo.get().then((value) => isSpecial = value.docs.first.data()['Special Access']);
+    await userDocInfo
+        .get()
+        .then((value) => isSpecial = value.docs.first.data()['Special Access']);
     return isSpecial;
   }
 
-  Future<bool> checkForSameTimeReservationInOtherParkings(TimeRange finallyBookedTimeRange) async {
+  Future<bool> checkForSameTimeReservationInOtherParkings(
+      TimeRange finallyBookedTimeRange) async {
     try {
       bool proceed = true;
-      debugPrint("checkForSameTimeReservationInOtherParkings $finallyBookedTimeRange");
+      debugPrint(
+          "checkForSameTimeReservationInOtherParkings $finallyBookedTimeRange");
       await myDB
           .collection("slotsReservations")
           .where("ClientID", isEqualTo: currentlySignedInUser!.uid)
           .get()
           .then((value) {
         debugPrint('value length : ${value.docs.length}');
-        Timestamp bookingEndTS = Timestamp.now(), bookingStartTS = Timestamp.now();
+        Timestamp bookingEndTS = Timestamp.now(),
+            bookingStartTS = Timestamp.now();
 
         if (value.docs.isNotEmpty) {
           var sameDayAsSelectedDayRes = value.docs.where((element) {
@@ -3926,27 +4684,36 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 DateFormat('yyyy-MM-dd').format(selectedDay);
           });
 
-          debugPrint("sameDayAsSelectedDayRes : ${sameDayAsSelectedDayRes.length}");
+          debugPrint(
+              "sameDayAsSelectedDayRes : ${sameDayAsSelectedDayRes.length}");
 
           if (sameDayAsSelectedDayRes.isNotEmpty) {
             sameDayAsSelectedDayRes.forEach((element) {
               bookingEndTS = element.data()['BookingEnd'] as Timestamp;
               bookingStartTS = element.data()['BookingStart'] as Timestamp;
 
-              var timeOfDayFBStart = TimeOfDay.fromDateTime(bookingStartTS.toDate());
-              var timeOfDayFBEnd = TimeOfDay.fromDateTime(bookingEndTS.toDate());
+              var timeOfDayFBStart =
+                  TimeOfDay.fromDateTime(bookingStartTS.toDate());
+              var timeOfDayFBEnd =
+                  TimeOfDay.fromDateTime(bookingEndTS.toDate());
 
               var convMinutesBookedTRStart =
-                  finallyBookedTimeRange.startTime.hour * 60 + finallyBookedTimeRange.startTime.minute;
+                  finallyBookedTimeRange.startTime.hour * 60 +
+                      finallyBookedTimeRange.startTime.minute;
               var convMinutesBookedTREnd =
-                  finallyBookedTimeRange.endTime.hour * 60 + finallyBookedTimeRange.endTime.minute;
-              var convMinutesFBStart = timeOfDayFBStart.hour * 60 + timeOfDayFBStart.minute;
-              var convMinutesFBEnd = timeOfDayFBEnd.hour * 60 + timeOfDayFBEnd.minute;
+                  finallyBookedTimeRange.endTime.hour * 60 +
+                      finallyBookedTimeRange.endTime.minute;
+              var convMinutesFBStart =
+                  timeOfDayFBStart.hour * 60 + timeOfDayFBStart.minute;
+              var convMinutesFBEnd =
+                  timeOfDayFBEnd.hour * 60 + timeOfDayFBEnd.minute;
 
-              if (convMinutesBookedTRStart >= convMinutesFBStart && convMinutesBookedTREnd <= convMinutesFBEnd) {
+              if (convMinutesBookedTRStart >= convMinutesFBStart &&
+                  convMinutesBookedTREnd <= convMinutesFBEnd) {
                 proceed = false;
                 //exemple 12h10, 13h40
-                debugPrint("LE TEMPS CHOISI EST COMPRIS DANS FBTS _ ${element.id}");
+                debugPrint(
+                    "LE TEMPS CHOISI EST COMPRIS DANS FBTS _ ${element.id}");
                 theReservationDoublon = element.data();
                 // debugPrint("COMPARED : ${bookingStartTS.compareTo(Timestamp.now())}");
               } else if (convMinutesBookedTRStart >= convMinutesFBStart &&
@@ -3967,10 +4734,12 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
                 debugPrint(
                     "LE TEMPS CHOISI commence avant/en même temps que ongoing commence mais  s'ecoulera pendant que ongoing started ${element.id}");
                 // debugPrint("COMPARED : ${bookingStartTS.compareTo(Timestamp.now())}");
-              } else if (convMinutesBookedTRStart <= convMinutesFBStart && convMinutesBookedTREnd >= convMinutesFBEnd) {
+              } else if (convMinutesBookedTRStart <= convMinutesFBStart &&
+                  convMinutesBookedTREnd >= convMinutesFBEnd) {
                 proceed = false;
                 theReservationDoublon = element.data();
-                debugPrint("LE TEMPS CHOISI contient an ongoing res _ ${element.id}");
+                debugPrint(
+                    "LE TEMPS CHOISI contient an ongoing res _ ${element.id}");
                 // debugPrint("COMPARED : ${bookingStartTS.compareTo(Timestamp.now())}");
               } else if (convMinutesBookedTRStart < convMinutesFBStart &&
                   convMinutesBookedTREnd < convMinutesFBEnd &&
@@ -4003,9 +4772,16 @@ class _BookingThroughSlotsMapNoAlertDialogState extends State<BookingThroughSlot
 class DashedSeparatedBordersPainterLTRB extends CustomPainter {
   bool left = false, top = false, right = false, bottom = false;
 
-  DashedSeparatedBordersPainterLTRB(this.left, this.top, this.right, this.bottom);
+  DashedSeparatedBordersPainterLTRB(
+      this.left, this.top, this.right, this.bottom);
 
-  void drawDashedLeftBorder(Canvas canvas, Size size, Paint paint, int dashWidth, int dashSpace, double paintStartXmin,
+  void drawDashedLeftBorder(
+      Canvas canvas,
+      Size size,
+      Paint paint,
+      int dashWidth,
+      int dashSpace,
+      double paintStartXmin,
       double paintStartYmax) {
     double startX = paintStartXmin;
     double y = size.height; //final destination
@@ -4015,8 +4791,8 @@ class DashedSeparatedBordersPainterLTRB extends CustomPainter {
     }
   }
 
-  void drawDashedTopBorder(Canvas canvas, Size size, Paint paint, int dashWidth, int dashSpace, double paintStartXmin,
-      double paintStartYmax) {
+  void drawDashedTopBorder(Canvas canvas, Size size, Paint paint, int dashWidth,
+      int dashSpace, double paintStartXmin, double paintStartYmax) {
     double startX = paintStartXmin;
     double y = paintStartYmax;
     while (startX < size.width) {
@@ -4027,8 +4803,8 @@ class DashedSeparatedBordersPainterLTRB extends CustomPainter {
     }
   }
 
-  void drawDashedRightBorder(
-      Canvas canvas, Size size, Paint paint, int dashWidth, int dashSpace, double paintStartYmax) {
+  void drawDashedRightBorder(Canvas canvas, Size size, Paint paint,
+      int dashWidth, int dashSpace, double paintStartYmax) {
     double startX = size.width;
     double y = size.height; //final destination
     while (y > paintStartYmax) {
@@ -4037,8 +4813,14 @@ class DashedSeparatedBordersPainterLTRB extends CustomPainter {
     }
   }
 
-  void drawDashedBottomBorder(Canvas canvas, Size size, Paint paint, int dashWidth, int dashSpace,
-      double paintStartXmin, double paintStartYmin) {
+  void drawDashedBottomBorder(
+      Canvas canvas,
+      Size size,
+      Paint paint,
+      int dashWidth,
+      int dashSpace,
+      double paintStartXmin,
+      double paintStartYmin) {
     double startX = paintStartXmin;
     double y = paintStartYmin + 1;
     while (startX < size.width) {
@@ -4065,14 +4847,22 @@ class DashedSeparatedBordersPainterLTRB extends CustomPainter {
     double paintStartYmin = size.height;
 
     left == true
-        ? drawDashedLeftBorder(canvas, size, paint, dashWidth, dashSpace, paintStartXmin, paintStartYmax)
+        ? drawDashedLeftBorder(canvas, size, paint, dashWidth, dashSpace,
+            paintStartXmin, paintStartYmax)
         : null;
 
-    top == true ? drawDashedTopBorder(canvas, size, paint, dashWidth, dashSpace, paintStartXmin, paintStartYmax) : null;
-    right == true ? drawDashedRightBorder(canvas, size, paint, dashWidth, dashSpace, paintStartYmax) : null;
+    top == true
+        ? drawDashedTopBorder(canvas, size, paint, dashWidth, dashSpace,
+            paintStartXmin, paintStartYmax)
+        : null;
+    right == true
+        ? drawDashedRightBorder(
+            canvas, size, paint, dashWidth, dashSpace, paintStartYmax)
+        : null;
 
     bottom == true
-        ? drawDashedBottomBorder(canvas, size, paint, dashWidth, dashSpace, paintStartXmin, paintStartYmin)
+        ? drawDashedBottomBorder(canvas, size, paint, dashWidth, dashSpace,
+            paintStartXmin, paintStartYmin)
         : null;
   }
 

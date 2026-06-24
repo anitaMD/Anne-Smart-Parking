@@ -10,7 +10,10 @@ import 'package:smart_parking/styling/styling.dart';
 class DashBoardPanel extends StatefulWidget {
   final ScrollController panelScrollController;
   final PanelController dragHandlePanelController;
-  const DashBoardPanel({Key? key, required this.panelScrollController, required this.dragHandlePanelController})
+  const DashBoardPanel(
+      {Key? key,
+      required this.panelScrollController,
+      required this.dragHandlePanelController})
       : super(key: key);
 
   @override
@@ -35,7 +38,8 @@ class _DashBoardPanelState extends State<DashBoardPanel> {
           unselectedLabelColor: dashPanelTabBarUnselectedTextColor,
           labelColor: dashPanelTabBarSelectedTextColor,
           indicator: ContainerTabIndicator(
-            padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 11.0),
+            padding:
+                const EdgeInsets.symmetric(vertical: 11.0, horizontal: 11.0),
             radius: const BorderRadius.all(Radius.circular(18)),
             color: dashPanelTabIndicatorColor,
           ),
@@ -70,7 +74,7 @@ class _DashBoardPanelState extends State<DashBoardPanel> {
   }
 }
 
-panelTabBarDisplay(String tabLabel) {
+Align panelTabBarDisplay(String tabLabel) {
   return Align(
     alignment: Alignment.center,
     child: Text(
@@ -80,14 +84,14 @@ panelTabBarDisplay(String tabLabel) {
   );
 }
 
-myVehiculesView() {
+Container myVehiculesView() {
   return Container(
     color: dashPanelMyVehiculesViewColor,
     child: const MyVehiculesTab(),
   );
 }
 
-myFavsView() {
+Container myFavsView() {
   return Container(
       //color: Colors.indigo,
       color: dashPanelFavoritesViewColor,
@@ -97,6 +101,5 @@ myFavsView() {
 /* myWalletView() {
   return Container(color: dashPanelWalletViewColor);
 } */
-
 
 //

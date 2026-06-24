@@ -14,7 +14,7 @@ import 'package:get/get.dart';
 import 'package:smart_parking/screens/authenticate/testlogin.dart';
 import 'package:smart_parking/screens/inside_app/testhome.dart';
 import 'l10n/l10n.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:smart_parking/l10n/generated/app_localizations.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -27,11 +27,13 @@ final init = Firebase.initializeApp();
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'high_importance_channel', // id
     'High Importance Notifications', // title
-    description: 'This channel is used for important notifications.', // description
+    description:
+        'This channel is used for important notifications.', // description
     importance: Importance.high,
     playSound: true);
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,7 +46,8 @@ Future<void> main() async {
 
 // Firebase local notification plugin
   await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
 
 //Firebase messaging

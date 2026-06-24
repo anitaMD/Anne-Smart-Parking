@@ -80,7 +80,7 @@ class RadialPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
-      ..color = progressBackgroundColor.withOpacity(0.5)
+      ..color = progressBackgroundColor.withValues(alpha: 0.5)
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke
       ..strokeWidth = width;

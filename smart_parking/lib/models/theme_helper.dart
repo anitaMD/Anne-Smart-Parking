@@ -20,27 +20,32 @@ class ThemeHelper {
       filled: true,
       contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(100.0), borderSide: const BorderSide(color: Colors.grey)),
+          borderRadius: BorderRadius.circular(100.0),
+          borderSide: const BorderSide(color: Colors.grey)),
       enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(100.0), borderSide: BorderSide(color: Colors.grey.shade400)),
+          borderRadius: BorderRadius.circular(100.0),
+          borderSide: BorderSide(color: Colors.grey.shade400)),
       errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(100.0), borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+          borderRadius: BorderRadius.circular(100.0),
+          borderSide: const BorderSide(color: Colors.red, width: 2.0)),
       focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(100.0), borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+          borderRadius: BorderRadius.circular(100.0),
+          borderSide: const BorderSide(color: Colors.red, width: 2.0)),
     );
   }
 
   BoxDecoration inputBoxDecorationShaddow() {
     return BoxDecoration(boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.1),
+        color: Colors.black.withValues(alpha: 0.1),
         blurRadius: 20,
         offset: const Offset(0, 5),
       )
     ]);
   }
 
-  BoxDecoration buttonBoxDecoration(BuildContext context, [String color1 = "", String color2 = ""]) {
+  BoxDecoration buttonBoxDecoration(BuildContext context,
+      [String color1 = "", String color2 = ""]) {
     Color c1 = Theme.of(context).primaryColor;
     Color c2 = Theme.of(context).colorScheme.secondary;
     if (color1.isEmpty == false) {
@@ -51,7 +56,9 @@ class ThemeHelper {
     }
 
     return BoxDecoration(
-      boxShadow: const [BoxShadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 5.0)],
+      boxShadow: const [
+        BoxShadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 5.0)
+      ],
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -68,16 +75,18 @@ class ThemeHelper {
 
   ButtonStyle buttonStyle([String scanner = '']) {
     return ButtonStyle(
-      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
         RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30.0),
         ),
       ),
-      minimumSize: MaterialStateProperty.all(const Size(50, 50)),
-      backgroundColor:
-          scanner == '' ? MaterialStateProperty.all(Colors.transparent) : MaterialStateProperty.all(Colors.brown),
-      shadowColor:
-          scanner == '' ? MaterialStateProperty.all(Colors.transparent) : MaterialStateProperty.all(Colors.brown),
+      minimumSize: WidgetStateProperty.all(const Size(50, 50)),
+      backgroundColor: scanner == ''
+          ? WidgetStateProperty.all(Colors.transparent)
+          : WidgetStateProperty.all(Colors.brown),
+      shadowColor: scanner == ''
+          ? WidgetStateProperty.all(Colors.transparent)
+          : WidgetStateProperty.all(Colors.brown),
     );
   }
 
@@ -87,7 +96,8 @@ class ThemeHelper {
       content: Text(content),
       actions: [
         TextButton(
-          style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black38)),
+          style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.all(Colors.black38)),
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -102,7 +112,7 @@ class ThemeHelper {
 
   AlertDialog waitingBackgoundProcessDialog(BuildContext context) {
     return AlertDialog(
-        backgroundColor: Colors.white.withOpacity(0.4),
+        backgroundColor: Colors.white.withValues(alpha: 0.4),
         scrollable: true,
         content: Padding(
           padding: const EdgeInsets.only(top: 20, bottom: 20),
@@ -110,7 +120,8 @@ class ThemeHelper {
               size: 50,
               itemBuilder: (BuildContext context, int index) {
                 return const DecoratedBox(
-                  decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                      color: Colors.green, shape: BoxShape.circle),
                 );
               }),
         )

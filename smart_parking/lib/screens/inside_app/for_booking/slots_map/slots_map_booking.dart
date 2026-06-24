@@ -25,7 +25,7 @@ class _BookingThroughSlotsMapState extends State<BookingThroughSlotsMap> {
     super.initState();
   }
 
-  getAlleySlotsId(parkingSlotsTotal) {
+  void getAlleySlotsId(parkingSlotsTotal) {
     int alleyBindexStart = parkingSlotsTotal ~/ 2;
 
     var j = 0;
@@ -97,7 +97,7 @@ class _BookingThroughSlotsMapState extends State<BookingThroughSlotsMap> {
       0,
       0); //TO BE UPDATED WITH SETSTATE. This is just a random initialization
 
-  fetchAlleySelectedSlotId(int i, String alley) {
+  void fetchAlleySelectedSlotId(int i, String alley) {
     for (var singleAlleyInfo in mappedSelectedSlotAlley) {
       singleAlleyInfo.update('isSlotSelected', (value) => 'false');
       // DO NOT MOVE OR REMOVE THE UPPER LINE CMD. It has to put everything to false before putting only the selected slot to true
@@ -343,7 +343,7 @@ class _BookingThroughSlotsMapState extends State<BookingThroughSlotsMap> {
     //WILLL NEED 3 COLUMNS with an expanded or flex for the 3 vertical columns and in each of the two extreme columns, INKWELL AND A CONATINER CHILD FOR EACH SLOT with the icons and colors. So find a wwway to create a function that allows me to show those and not repeat code much
   }
 
-  pickDate() async {
+  Future<void> pickDate() async {
     final pickedDate = await showDatePicker(
         context: context,
         initialDate: initialDate,
@@ -363,7 +363,7 @@ class _BookingThroughSlotsMapState extends State<BookingThroughSlotsMap> {
     });
   }
 
-  buildLeftAlleySlots(
+  List<Material> buildLeftAlleySlots(
       int parkingSlotsTotal, double spaceBetweenSlots, bool isSelected) {
     int leftAlleySlotsTotal = parkingSlotsTotal ~/ 2;
     return List.generate(
@@ -408,7 +408,7 @@ class _BookingThroughSlotsMapState extends State<BookingThroughSlotsMap> {
             )).toList(); // replace * with your rupee or use Icon instead
   }
 
-  buildRightAlleySlots(
+  List<Material> buildRightAlleySlots(
       int parkingSlotsTotal, double spaceBetweenSlots, bool isSelected) {
     int rightAlleySlotsTotal = parkingSlotsTotal ~/ 2;
     return List.generate(
@@ -464,7 +464,7 @@ class _BookingThroughSlotsMapState extends State<BookingThroughSlotsMap> {
     return myColor;
   }
 
-  refreshSlotColorState(selectedSlotColorFetched) {
+  void refreshSlotColorState(selectedSlotColorFetched) {
     setState(() {
       finalSelectedColorSlot = selectedSlotColorFetched;
     });

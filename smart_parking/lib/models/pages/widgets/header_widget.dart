@@ -44,10 +44,13 @@ class _HeaderWidgetState extends State<HeaderWidget> {
               gradient: LinearGradient(
                   colors: [
                     widget.fromScanner == false
-                        ? Theme.of(context).primaryColor.withOpacity(0.4)
+                        ? Theme.of(context).primaryColor.withValues(alpha: 0.4)
                         : Colors.grey.shade900,
                     widget.fromScanner == false
-                        ? Theme.of(context).colorScheme.secondary.withOpacity(0.4)
+                        ? Theme.of(context)
+                            .colorScheme
+                            .secondary
+                            .withValues(alpha: 0.4)
                         : Colors.grey.shade800, //this one do not touch
                   ],
                   begin: const FractionalOffset(0.0, 0.0),
@@ -68,9 +71,14 @@ class _HeaderWidgetState extends State<HeaderWidget> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                   colors: [
-                    widget.fromScanner == false ? Theme.of(context).primaryColor.withOpacity(0.4) : Colors.brown,
                     widget.fromScanner == false
-                        ? Theme.of(context).colorScheme.secondary.withOpacity(0.4)
+                        ? Theme.of(context).primaryColor.withValues(alpha: 0.4)
+                        : Colors.brown,
+                    widget.fromScanner == false
+                        ? Theme.of(context)
+                            .colorScheme
+                            .secondary
+                            .withValues(alpha: 0.4)
                         : Colors.grey.shade700,
                   ],
                   begin: const FractionalOffset(0.0, 0.0),
@@ -91,7 +99,9 @@ class _HeaderWidgetState extends State<HeaderWidget> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                   colors: [
-                    widget.fromScanner == false ? Theme.of(context).primaryColor : Colors.grey.shade900,
+                    widget.fromScanner == false
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey.shade900,
                     widget.fromScanner == false
                         ? Theme.of(context).colorScheme.secondary
                         : widget.fromScanner == false
@@ -112,7 +122,12 @@ class _HeaderWidgetState extends State<HeaderWidget> {
                 child: Icon(widget.icon,
                     size: 30,
                     color: Colors.white,
-                    shadows: const [Shadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 5.0)]),
+                    shadows: const [
+                      Shadow(
+                          color: Colors.black26,
+                          offset: Offset(0, 4),
+                          blurRadius: 5.0)
+                    ]),
               )
             : Visibility(
                 visible: showIcon,
@@ -163,8 +178,10 @@ class ShapeClipper extends CustomClipper<Path> {
     // path.quadraticBezierTo(size.width/5, size.height, size.width/2, size.height-40);
     // path.quadraticBezierTo(size.width/5*4, size.height-80, size.width, size.height-20);
 
-    path.quadraticBezierTo(offsets[0].dx, offsets[0].dy, offsets[1].dx, offsets[1].dy);
-    path.quadraticBezierTo(offsets[2].dx, offsets[2].dy, offsets[3].dx, offsets[3].dy);
+    path.quadraticBezierTo(
+        offsets[0].dx, offsets[0].dy, offsets[1].dx, offsets[1].dy);
+    path.quadraticBezierTo(
+        offsets[2].dx, offsets[2].dy, offsets[3].dx, offsets[3].dy);
 
     // path.lineTo(size.width, size.height-20);
     path.lineTo(size.width, 0.0);

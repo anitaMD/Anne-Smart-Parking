@@ -37,7 +37,10 @@ class TestDashboardHomePage extends StatefulWidget {
 
 class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
   FirebaseMessaging firebaseMessaging = FirebaseMessaging.instance;
-  int timeUntilResStarts = 0, timeUntilBookingEnds = 0, countStop = 0, stopSettingStateAfterNewBookingMade = 0;
+  int timeUntilResStarts = 0,
+      timeUntilBookingEnds = 0,
+      countStop = 0,
+      stopSettingStateAfterNewBookingMade = 0;
 
   String walletFirstAndOnlyDocID = '';
   late String defaultCarModelDetail = "", defaultCarBrand = 'dacia';
@@ -59,15 +62,20 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
       showBookingDetails = false,
       isReservationCanceled = false;
 
-  List<Map<String, dynamic>> allUserBookings = [], allBookedParkingsDetails = [], allUserVehiculesUsedForBooking = [];
+  List<Map<String, dynamic>> allUserBookings = [],
+      allBookedParkingsDetails = [],
+      allUserVehiculesUsedForBooking = [];
   List<TimeOfDay> fetchedParkingTimeSlots = [];
   Map<String, dynamic> allReservationInfoNeeded = {};
   final CountDownController _countdownController = CountDownController();
-  ScrollController bookingInfoScrollController = ScrollController(), singleChildScrollController = ScrollController();
+  ScrollController bookingInfoScrollController = ScrollController(),
+      singleChildScrollController = ScrollController();
   int settingState = 0, bookingDuration = 0, infSliverCount = 3;
   late ValueNotifier<bool> bookingOnGoingListenable = ValueNotifier(false);
-  Map<String, dynamic> latestQuerySnapshotCarriedInMapAfterArchive = {}, newDocsAfterNewBookingMade = {};
-  Color modelDetailColor = Colors.black, infSliverCardColor = Colors.white; //.grey[300]!;
+  Map<String, dynamic> latestQuerySnapshotCarriedInMapAfterArchive = {},
+      newDocsAfterNewBookingMade = {};
+  Color modelDetailColor = Colors.black,
+      infSliverCardColor = Colors.white; //.grey[300]!;
   Timestamp bookingEndTS = Timestamp.now(), bookingStartTS = Timestamp.now();
   final sliverkEY = GlobalKey();
   double infSliverHeight = 50, infSliverSpace = 10;
@@ -78,7 +86,9 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     //CHECK CONNEXION STATUS
     NotificationListenerProvider().getMessage(context);
     getToken();
-    widget.timeUntilResStartsFromBookingOverview != 0 ? canDisplayVehicule = true : null;
+    widget.timeUntilResStartsFromBookingOverview != 0
+        ? canDisplayVehicule = true
+        : null;
     firebaseService.auth.currentUser != null
         ? {
             setState(() {
@@ -89,7 +99,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             widget.timeUntilResStartsFromBookingOverview != 0
                 ? getNewSlotsReservationsData(currentlySignedInUser!)
                 : null,
-            loadVehiculeInfo(currentlySignedInUser!).whenComplete(() => setState(() {}))
+            loadVehiculeInfo(currentlySignedInUser!)
+                .whenComplete(() => setState(() {}))
           }
         : currentlySignedInUser = null;
 
@@ -112,16 +123,18 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     super.dispose();
   }
 
-  updateWalletFields(QuerySnapshot<Map<String, dynamic>> walletCollection, String walletFirstAndOnlyDocID) {
+  void updateWalletFields(QuerySnapshot<Map<String, dynamic>> walletCollection,
+      String walletFirstAndOnlyDocID) {
     // ignore: unused_local_variable
-    CollectionReference debitsCollection =
-        myDB.collection("users/${currentlySignedInUser?.uid}/wallet/$walletFirstAndOnlyDocID/debits");
-    CollectionReference topUpsCollection =
-        myDB.collection("users/${currentlySignedInUser?.uid}/wallet/$walletFirstAndOnlyDocID/topUps");
+    CollectionReference debitsCollection = myDB.collection(
+        "users/${currentlySignedInUser?.uid}/wallet/$walletFirstAndOnlyDocID/debits");
+    CollectionReference topUpsCollection = myDB.collection(
+        "users/${currentlySignedInUser?.uid}/wallet/$walletFirstAndOnlyDocID/topUps");
 
     debugPrint("WALLETDOCS :${walletCollection.docs.first.id}");
-    final theDocToUpdate =
-        myDB.collection("users/${currentlySignedInUser?.uid}/wallet").doc(walletCollection.docs.first.id);
+    final theDocToUpdate = myDB
+        .collection("users/${currentlySignedInUser?.uid}/wallet")
+        .doc(walletCollection.docs.first.id);
 
     /*  var ok = walletCollection.docs.first.data()['Transactions']['Top Ups'] as Map<String, dynamic>; */
     topUpsCollection.get().then((value) {
@@ -136,10 +149,15 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
   }
 
   Future<void> initializeWalletForUser(User currentlySignedInUser) async {
-    myDB.collection("users/${currentlySignedInUser.uid}/wallet").get().then((value) async {
+    myDB
+        .collection("users/${currentlySignedInUser.uid}/wallet")
+        .get()
+        .then((value) async {
       value.docs.isEmpty
           ? {
-              await firestoreWalletService.addUserWalletInfoToFirebase(currentlySignedInUser).then((value) {
+              await firestoreWalletService
+                  .addUserWalletInfoToFirebase(currentlySignedInUser)
+                  .then((value) {
                 myDB
                     .collection("users/${currentlySignedInUser.uid}/wallet")
                     .get()
@@ -165,11 +183,16 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         if (value.docs.isNotEmpty) {
           var docs = value.docs;
 
-          hasUserAnyRes = getUserReservationDetails(currentlySignedInUser, myDB, docs, value, forInitiState: true);
+          hasUserAnyRes = getUserReservationDetails(
+              currentlySignedInUser, myDB, docs, value,
+              forInitiState: true);
         }
       });
       debugPrint("FROM INITSATAE $hasUserAnyRes");
-      await FirebaseFirestore.instance.collection("users/${currentlySignedInUser.uid}/vehicules").get().then((value) {
+      await FirebaseFirestore.instance
+          .collection("users/${currentlySignedInUser.uid}/vehicules")
+          .get()
+          .then((value) {
         if (!hasUserAnyRes) {
           if (value.docs.isNotEmpty) {
             var ok = value.docs.where(
@@ -179,8 +202,12 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             );
             ok.isNotEmpty
                 ? setState(() {
-                    defaultCarModelDetail = ok.first.data()['Specs']['Model Detail'].toString();
-                    defaultCarBrand = ok.first.data()['Specs']['Brand'].toString().toLowerCase();
+                    defaultCarModelDetail =
+                        ok.first.data()['Specs']['Model Detail'].toString();
+                    defaultCarBrand = ok.first
+                        .data()['Specs']['Brand']
+                        .toString()
+                        .toLowerCase();
                   })
                 : setState(() {
                     defaultCarModelDetail = "";
@@ -195,11 +222,15 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
               allUserVehiculesUsedForBooking.isNotEmpty &&
               allBookedParkingsDetails.isNotEmpty) {
             var moreUrgentReservationInfo = fetchMoreUrgentReservationInfo();
-            var moreUrgentResCarInfo = fetchMoreUrgentResCarInfo(moreUrgentReservationInfo);
+            var moreUrgentResCarInfo =
+                fetchMoreUrgentResCarInfo(moreUrgentReservationInfo);
             //  var moreUrgentResParkingInfo = fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
             setState(() {
-              defaultCarModelDetail = moreUrgentResCarInfo['Specs']['Model Detail'].toString();
-              defaultCarBrand = moreUrgentResCarInfo['Specs']['Brand'].toString().toLowerCase();
+              defaultCarModelDetail =
+                  moreUrgentResCarInfo['Specs']['Model Detail'].toString();
+              defaultCarBrand = moreUrgentResCarInfo['Specs']['Brand']
+                  .toString()
+                  .toLowerCase();
               canDisplayVehicule = true;
             });
           }
@@ -214,7 +245,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    double panelHeightClosed = kToolbarHeight /* MediaQuery.of(context).size.height * 0.05 */;
+    double panelHeightClosed =
+        kToolbarHeight /* MediaQuery.of(context).size.height * 0.05 */;
     double panelHeightOpened = MediaQuery.of(context).size.height * 0.4;
 
     //testForWalletInit
@@ -224,31 +256,39 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             canUpdateFields == true
                 ? null
                 : {
-                    myDB.collection("users/${currentlySignedInUser?.uid}/wallet").get().then((value) async {
+                    myDB
+                        .collection(
+                            "users/${currentlySignedInUser?.uid}/wallet")
+                        .get()
+                        .then((value) async {
                       //debugPrint("CHECK MIC: ${value.docs.length}");
                     }),
                     firestoreWalletService
-                        .initializeWalletDebitTopUp(currentlySignedInUser, walletFirstAndOnlyDocID)
-                        .whenComplete(() => {
-                              count < 1
-                                  ? Future.delayed(const Duration(seconds: 2)).then(
-                                      (value) {
-                                        setState(
-                                          () {
-                                            canUpdateFields = true;
-                                          },
-                                        );
-                                      },
-                                    )
-                                  : null,
-                              count += 1,
-                            })
+                        .initializeWalletDebitTopUp(
+                            currentlySignedInUser, walletFirstAndOnlyDocID)
+                        .whenComplete(() {
+                      count < 1
+                          ? Future.delayed(const Duration(seconds: 2)).then(
+                              (value) {
+                                setState(
+                                  () {
+                                    canUpdateFields = true;
+                                  },
+                                );
+                              },
+                            )
+                          : null;
+                      count += 1;
+                    })
                   }
           };
     canUpdateFields == false && countStop < 1
         ? null
         : {
-            myDB.collection("users/${currentlySignedInUser?.uid}/wallet").get().then((value) async {
+            myDB
+                .collection("users/${currentlySignedInUser?.uid}/wallet")
+                .get()
+                .then((value) async {
               updateWalletFields(value, walletFirstAndOnlyDocID);
               //debugPrint("DOUBLE MIC: ${value.docs.length}");
             }),
@@ -283,16 +323,19 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     );
   }
 
-  updateDashboardCar(String carModelFromPanel, String carBrandFromPanel) {
+  void updateDashboardCar(String carModelFromPanel, String carBrandFromPanel) {
     settingState = 0;
     defaultCarModelDetail = carModelFromPanel;
     defaultCarBrand = carBrandFromPanel;
     setState(() {});
   }
 
-  dashBSlidingUpPanel(double panelHeightClosed, double panelHeightOpened) {
+  StreamBuilder<QuerySnapshot<Map<String, dynamic>>> dashBSlidingUpPanel(
+      double panelHeightClosed, double panelHeightOpened) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance.collection("slotsReservations").snapshots(includeMetadataChanges: true),
+        stream: FirebaseFirestore.instance
+            .collection("slotsReservations")
+            .snapshots(includeMetadataChanges: true),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Text(''); //Text('Loading brand logos');
@@ -301,7 +344,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             var reservationsSnapshotsData = snapshot.data!;
             if (latestQuerySnapshotCarriedInMapAfterArchive.isNotEmpty) {
               QuerySnapshot<Map<String, dynamic>> latest =
-                  latestQuerySnapshotCarriedInMapAfterArchive.values.first as QuerySnapshot<Map<String, dynamic>>;
+                  latestQuerySnapshotCarriedInMapAfterArchive.values.first
+                      as QuerySnapshot<Map<String, dynamic>>;
               for (var element in latest.docs) {
                 debugPrint("UPDATE : ${element.id}");
               }
@@ -310,7 +354,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
 
             if (newDocsAfterNewBookingMade.isNotEmpty && !bookingHasEnded) {
               QuerySnapshot<Map<String, dynamic>> latest =
-                  newDocsAfterNewBookingMade.values.elementAt(0) as QuerySnapshot<Map<String, dynamic>>;
+                  newDocsAfterNewBookingMade.values.elementAt(0)
+                      as QuerySnapshot<Map<String, dynamic>>;
               for (var element in latest.docs) {
                 debugPrint("SUITE A RES : ${element.id}");
               }
@@ -320,10 +365,15 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             }
             var allReservationsFromAllAppUsers = reservationsSnapshotsData;
 
-            debugPrint("ALL RES LENGTH : ${allReservationsFromAllAppUsers.docs.length}");
-            if (reservationsSnapshotsData.docs.isNotEmpty && widget.newMoreUrgentBooking.isEmpty) {
+            debugPrint(
+                "ALL RES LENGTH : ${allReservationsFromAllAppUsers.docs.length}");
+            if (reservationsSnapshotsData.docs.isNotEmpty &&
+                widget.newMoreUrgentBooking.isEmpty) {
               doesUserHaveAnyReservation = getUserReservationDetails(
-                  currentlySignedInUser, myDB, reservationsSnapshotsData.docs, reservationsSnapshotsData,
+                  currentlySignedInUser,
+                  myDB,
+                  reservationsSnapshotsData.docs,
+                  reservationsSnapshotsData,
                   forInitiState: false);
             }
             // if(aReservationJustEnded)
@@ -343,28 +393,34 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                   panelScrollController: panelScrollController,
                   dragHandlePanelController: dragHandlePanelController,
                   updateDashboardCar: updateDashboardCar),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              body: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+              body:
+                  Column(mainAxisAlignment: MainAxisAlignment.start, children: [
                 welcomeToDashboardCard(currentlySignedInUser!.displayName),
-                !doesUserHaveAnyReservation ? noBookingSoFar() : reservationHappening(allReservationsFromAllAppUsers),
+                !doesUserHaveAnyReservation
+                    ? noBookingSoFar()
+                    : reservationHappening(allReservationsFromAllAppUsers),
                 !doesUserHaveAnyReservation
                     ? Container()
-                    : bookingInfoListView(allUserBookings.first.values.elementAt(0))
+                    : bookingInfoListView(
+                        allUserBookings.first.values.elementAt(0))
               ]),
             );
           }
         });
   }
 
-  welcomeToDashboardCard(String? displayName) {
-    var dashboardWelcomeTextStyle = const TextStyle(fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold);
+  Container welcomeToDashboardCard(String? displayName) {
+    var dashboardWelcomeTextStyle = const TextStyle(
+        fontSize: 15, color: Colors.black, fontWeight: FontWeight.bold);
 
     return Container(
       margin: const EdgeInsets.all(15),
       height: 100,
       width: double.infinity,
       child: Card(
-        color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
+        color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.9),
         // shadowColor: const Color(0xff7986CB),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
@@ -392,8 +448,10 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                   Text("Hi $displayName,", style: dashboardWelcomeTextStyle),
                 ],
               ),
-              Text("Here, you can visualize your upcoming or ongoing booking's details anytime.",
-                  style: dashboardWelcomeTextStyle.copyWith(fontWeight: FontWeight.w500)),
+              Text(
+                  "Here, you can visualize your upcoming or ongoing booking's details anytime.",
+                  style: dashboardWelcomeTextStyle.copyWith(
+                      fontWeight: FontWeight.w500)),
               /*    Row(
                 children: [
                   const Icon(
@@ -417,13 +475,16 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     );
   }
 
-  noBookingSoFar() {
-    const timeLeftHeaderText =
-        TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, fontFamily: 'OpenSans');
+  Column noBookingSoFar() {
+    const timeLeftHeaderText = TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w900,
+        fontFamily: 'OpenSans');
     // ignore: unused_local_variable
     var ringFillGradientResStartsIn = LinearGradient(
         colors: [
-          Theme.of(context).primaryColor.withOpacity(0.4),
+          Theme.of(context).primaryColor.withValues(alpha: 0.4),
 
           Theme.of(context).colorScheme.secondary, //this one do not touch
         ],
@@ -453,8 +514,11 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                 backgroundGradient: null,
                 strokeWidth: 18.0,
                 strokeCap: StrokeCap.butt,
-                textStyle:
-                    const TextStyle(fontSize: 25.0, color: Colors.white, fontWeight: FontWeight.bold, height: -3.5),
+                textStyle: const TextStyle(
+                    fontSize: 25.0,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    height: -3.5),
                 textFormat: CountdownTextFormat.HH_MM_SS,
                 isReverseAnimation: true,
                 isTimerTextShown: true,
@@ -526,11 +590,13 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                               top: 10,
                               child: Card(
                                 //color: Colors.orange,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
                                 elevation: 20,
                                 child: Container(
-                                  decoration:
-                                      BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(10)),
+                                  decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      borderRadius: BorderRadius.circular(10)),
                                   height: 50,
                                   width: 80,
                                   child: Column(
@@ -539,30 +605,38 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                                       const FittedBox(
                                         child: Text(
                                           'Duration',
-                                          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
+                                          style: TextStyle(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w700),
                                         ),
                                       ),
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         children: [
                                           RichText(
                                             text: TextSpan(
                                               style: const TextStyle(
-                                                  color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                                                  color: Colors.white,
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.w900),
                                               children: [
                                                 const TextSpan(
                                                   text: "00",
                                                 ),
                                                 WidgetSpan(
                                                   child: Transform.translate(
-                                                    offset: const Offset(0.0, -7.0),
+                                                    offset:
+                                                        const Offset(0.0, -7.0),
                                                     child: const Text(
                                                       'H',
                                                       style: TextStyle(
                                                           color: Colors.white,
                                                           fontSize: 12,
-                                                          fontWeight: FontWeight.w900),
+                                                          fontWeight:
+                                                              FontWeight.w900),
                                                     ),
                                                   ),
                                                 ),
@@ -583,9 +657,11 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                               visible: canDisplayVehicule ? true : false,
                               child: GestureDetector(
                                 child: Image(
-                                  image: AssetImage('assets/images/carRep/$defaultCarBrand.png'),
+                                  image: AssetImage(
+                                      'assets/images/carRep/$defaultCarBrand.png'),
                                   // width: 400,
-                                  height: MediaQuery.of(context).size.height / 3.2 -
+                                  height: MediaQuery.of(context).size.height /
+                                          3.2 -
                                       120, //50 is toolbar height and 10 is the padding above bottombar
                                   fit: BoxFit.scaleDown,
                                 ),
@@ -608,7 +684,10 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             ? FittedBox(
                 child: Text(
                   "${defaultCarBrand.toUpperCase()} $defaultCarModelDetail",
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500, color: modelDetailColor),
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                      color: modelDetailColor),
                 ),
               )
             : const SizedBox(
@@ -618,10 +697,14 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     );
   }
 
-  getUserReservationDetails(User? currentlySignedInUser, FirebaseFirestore myDB,
-      List<QueryDocumentSnapshot<Map<String, dynamic>>> resDocs, QuerySnapshot<Map<String, dynamic>> value,
+  bool getUserReservationDetails(
+      User? currentlySignedInUser,
+      FirebaseFirestore myDB,
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> resDocs,
+      QuerySnapshot<Map<String, dynamic>> value,
       {required bool forInitiState}) {
-    var userHasBooking = resDocs.any((element) => element.data()['ClientID'] == currentlySignedInUser?.uid);
+    var userHasBooking = resDocs.any(
+        (element) => element.data()['ClientID'] == currentlySignedInUser?.uid);
     if (userHasBooking) {
       var tempOutadedRes = resDocs.where((element) {
         var bookingEndTS = element.data()['BookingEnd'] as Timestamp;
@@ -645,20 +728,27 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
           allBookedParkingsDetails.isNotEmpty) {
         for (var singleOutdatedRes in tempOutadedRes) {
           if (stopDeletingCount < tempOutadedRes.length) {
-            debugPrint("THE SINGLE OUTDATED : ${singleOutdatedRes.id} _____ $stopDeletingCount");
-            var resThatJustEndedEntries = {singleOutdatedRes.id: singleOutdatedRes.data()};
+            debugPrint(
+                "THE SINGLE OUTDATED : ${singleOutdatedRes.id} _____ $stopDeletingCount");
+            var resThatJustEndedEntries = {
+              singleOutdatedRes.id: singleOutdatedRes.data()
+            };
             var moreUrgentReservationInfo = fetchMoreUrgentReservationInfo();
-            var moreUrgentResParkingInfo = fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
+            var moreUrgentResParkingInfo =
+                fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
             var castedMoreUrgentParkingInfo = moreUrgentResParkingInfo;
-            archiveResThatJustEnded(castedMoreUrgentParkingInfo, resThatJustEndedEntries, value,
+            archiveResThatJustEnded(
+                castedMoreUrgentParkingInfo, resThatJustEndedEntries, value,
                 action: 'completed', fromInitiState: forInitiState);
             stopDeletingCount += 1;
           }
         }
       }
 
-      var userBookings = resDocs.where((element) => element.data()['ClientID'] == currentlySignedInUser?.uid);
-      debugPrint("ALL USER BOOKINGS ${allUserBookings.length} _____ ${userBookings.length}");
+      var userBookings = resDocs.where((element) =>
+          element.data()['ClientID'] == currentlySignedInUser?.uid);
+      debugPrint(
+          "ALL USER BOOKINGS ${allUserBookings.length} _____ ${userBookings.length}");
 
       //IHAVE TO REMOVE THE ENTRY IN HERE BY UPDATING ALL USERBOOKINGS, ALLPARKINGIDSCONCERNED AND ALLVEHICULESUSEDFORBOOKING
       if (allUserBookings.length < userBookings.length) {
@@ -693,21 +783,28 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         for (var element in allUserBookings) {
           var reservationData = element.values.first as Map<String, dynamic>;
           allParkingIDsConcerned.add(reservationData['ParkingID']);
-          DocumentReference parkingsCollection = myDB.collection("locations").doc(reservationData['ParkingID']);
+          DocumentReference parkingsCollection =
+              myDB.collection("locations").doc(reservationData['ParkingID']);
           parkingsCollection.get().then((value) {
             allBookedParkingsDetails.add({value.id: value.data()});
-            debugPrint("SORTED : ____ ${value.data()} ____ ${allBookedParkingsDetails.length}");
+            debugPrint(
+                "SORTED : ____ ${value.data()} ____ ${allBookedParkingsDetails.length}");
           }) /* .whenComplete(() => setState(() {})) */;
         }
       }
 
       if (allParkingIDsConcerned.length > allUserBookings.length) {
-        debugPrint("ALL PARKINGIDCONCERNED first ID : ${allParkingIDsConcerned.length}");
+        debugPrint(
+            "ALL PARKINGIDCONCERNED first ID : ${allParkingIDsConcerned.length}");
         for (var element in allUserBookings) {
           var reservationData = element.values.first as Map<String, dynamic>;
-          var ok = allParkingIDsConcerned.difference({reservationData['ParkingID']});
+          var ok =
+              allParkingIDsConcerned.difference({reservationData['ParkingID']});
           //debugPrint("THE DIFFERENCE $ok");
-          ok.isNotEmpty ? allParkingIDsConcerned.removeWhere((element) => element == ok.first) : null;
+          ok.isNotEmpty
+              ? allParkingIDsConcerned
+                  .removeWhere((element) => element == ok.first)
+              : null;
           /* .whenComplete(() => setState(() {})) */
         }
       }
@@ -718,17 +815,24 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
       }
       debugPrint("ALL Set allVehiculesUsedIDs : ${allVehiculesUsedIDs.length}");
 
-      myDB.collection('users/${currentlySignedInUser?.uid}/vehicules').get().then((vehiculesDocs) {
+      myDB
+          .collection('users/${currentlySignedInUser?.uid}/vehicules')
+          .get()
+          .then((vehiculesDocs) {
         if (vehiculesDocs.size != 0) {
           debugPrint("vehiculesDocs ${vehiculesDocs.size}");
           for (var vehiculeID in allVehiculesUsedIDs) {
-            var matchingVehiculeDocList = vehiculesDocs.docs.where((element) => element.id == vehiculeID);
+            var matchingVehiculeDocList =
+                vehiculesDocs.docs.where((element) => element.id == vehiculeID);
             allUserVehiculesUsedForBooking.length < allVehiculesUsedIDs.length
-                ? allUserVehiculesUsedForBooking
-                    .add({matchingVehiculeDocList.first.id: matchingVehiculeDocList.first.data()})
+                ? allUserVehiculesUsedForBooking.add({
+                    matchingVehiculeDocList.first.id:
+                        matchingVehiculeDocList.first.data()
+                  })
                 : null;
           }
-          debugPrint("ALL allUserVehiculesUsedForBooking ${allUserVehiculesUsedForBooking.length}");
+          debugPrint(
+              "ALL allUserVehiculesUsedForBooking ${allUserVehiculesUsedForBooking.length}");
         } else {
           userHasNoVehicules = true;
         }
@@ -749,10 +853,13 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     return userHasBooking;
   }
 
-  reservationHappening(QuerySnapshot<Map<String, dynamic>> allReservationsFromAllAppUsers) {
+  ValueListenableBuilder<bool> reservationHappening(
+      QuerySnapshot<Map<String, dynamic>> allReservationsFromAllAppUsers) {
     TimeRange selectedTimeInterval;
     // Timestamp bookingEndTS, bookingStartTS;
-    Map<String, dynamic> moreUrgentReservationInfo = {}, moreUrgentResParkingInfo = {}, moreUrgentResCarInfo = {};
+    Map<String, dynamic> moreUrgentReservationInfo = {},
+        moreUrgentResParkingInfo = {},
+        moreUrgentResCarInfo = {};
 
     //debugPrint("ALL USER BOOKINGS $allUserBookings");
     if (allUserBookings.isNotEmpty &&
@@ -760,8 +867,10 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         allBookedParkingsDetails.isNotEmpty) {
       // listeningToReservationsRT(allReservationsFromAllAppUsers);
       moreUrgentReservationInfo = fetchMoreUrgentReservationInfo();
-      moreUrgentResCarInfo = fetchMoreUrgentResCarInfo(moreUrgentReservationInfo);
-      moreUrgentResParkingInfo = fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
+      moreUrgentResCarInfo =
+          fetchMoreUrgentResCarInfo(moreUrgentReservationInfo);
+      moreUrgentResParkingInfo =
+          fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
 
       bookingEndTS = moreUrgentReservationInfo['BookingEnd'] as Timestamp;
       bookingStartTS = moreUrgentReservationInfo['BookingStart'] as Timestamp;
@@ -772,14 +881,18 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
           startTime: TimeOfDay.fromDateTime(bookingStartTS.toDate()),
           endTime: TimeOfDay.fromDateTime(bookingEndTS.toDate()));
 
-      bookingDuration = (selectedTimeInterval.endTime.hour * 60 + selectedTimeInterval.endTime.minute) -
-          (selectedTimeInterval.startTime.hour * 60 + selectedTimeInterval.startTime.minute);
+      bookingDuration = (selectedTimeInterval.endTime.hour * 60 +
+              selectedTimeInterval.endTime.minute) -
+          (selectedTimeInterval.startTime.hour * 60 +
+              selectedTimeInterval.startTime.minute);
 
       (bookingStartTS.toDate().difference(DateTime.now())).inSeconds > 0
-          ? timeUntilResStarts = (bookingStartTS.toDate().difference(DateTime.now())).inSeconds
+          ? timeUntilResStarts =
+              (bookingStartTS.toDate().difference(DateTime.now())).inSeconds
           : null;
       (bookingEndTS.toDate().difference(DateTime.now())).inSeconds > 0
-          ? timeUntilBookingEnds = (bookingEndTS.toDate().difference(DateTime.now())).inSeconds
+          ? timeUntilBookingEnds =
+              (bookingEndTS.toDate().difference(DateTime.now())).inSeconds
           : null;
       if (widget.timeUntilResStartsFromBookingOverview != 0) {
         debugPrint(
@@ -818,14 +931,23 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     return ValueListenableBuilder<bool>(
         valueListenable: bookingOnGoingListenable,
         builder: (context, bookingOnGoingValue, child) {
-          debugPrint("LISTENABLE VALUE $bookingOnGoingValue _ $timeUntilBookingEnds _ $bookingHasStarted }");
+          debugPrint(
+              "LISTENABLE VALUE $bookingOnGoingValue _ $timeUntilBookingEnds _ $bookingHasStarted }");
 
           return (!bookingOnGoingValue && timeUntilResStarts > 0)
-              ? bookingStartsIn(bookingDuration, durationToString(bookingDuration), timeUntilResStarts,
-                  moreUrgentResParkingInfo, moreUrgentResCarInfo, timeUntilBookingEnds, allReservationsFromAllAppUsers)
+              ? bookingStartsIn(
+                  bookingDuration,
+                  durationToString(bookingDuration),
+                  timeUntilResStarts,
+                  moreUrgentResParkingInfo,
+                  moreUrgentResCarInfo,
+                  timeUntilBookingEnds,
+                  allReservationsFromAllAppUsers)
               : bookingHasStarted == true ||
                       bookingOnGoingValue ||
-                      bookingDuration > 0 && timeUntilBookingEnds > 0 && timeUntilResStarts == 0
+                      bookingDuration > 0 &&
+                          timeUntilBookingEnds > 0 &&
+                          timeUntilResStarts == 0
                   ? bookingTimeLeft(
                       timeUntilBookingEnds,
                       bookingDuration,
@@ -849,11 +971,13 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         ? widget.newMoreUrgentBooking
         : allUserBookings.elementAt(0).values.first as Map<String, dynamic>;
     var ok = result['BookingEnd'] as Timestamp;
-    debugPrint("more urgent reservation info : $result ________ ${ok.toDate()}");
+    debugPrint(
+        "more urgent reservation info : $result ________ ${ok.toDate()}");
     return result; // needed values.first because the res_id is the first key
   }
 
-  Map<String, dynamic> fetchMoreUrgentResCarInfo(Map<String, dynamic> moreUrgentReservationInfo) {
+  Map<String, dynamic> fetchMoreUrgentResCarInfo(
+      Map<String, dynamic> moreUrgentReservationInfo) {
     allUserVehiculesUsedForBooking.where(
       (element) {
         var b = element.values.first as Map<String, dynamic>;
@@ -862,14 +986,17 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
       },
     ); //puts the more uregtn res's car first
 
-    var result = allUserVehiculesUsedForBooking.elementAt(0).values.first as Map<String, dynamic>;
+    var result = allUserVehiculesUsedForBooking.elementAt(0).values.first
+        as Map<String, dynamic>;
     debugPrint("MORE URGENT RES VEHICULE INFO: _____ $result");
     return result; //data without the car id as key
   }
 
-  Map<String, dynamic> fetchMoreUrgentResParkingInfo(Map<String, dynamic> moreUrgentReservationInfo) {
+  Map<String, dynamic> fetchMoreUrgentResParkingInfo(
+      Map<String, dynamic> moreUrgentReservationInfo) {
     var result = allBookedParkingsDetails.where((singleParkingDetail) {
-      return singleParkingDetail.keys.first == moreUrgentReservationInfo['ParkingID'];
+      return singleParkingDetail.keys.first ==
+          moreUrgentReservationInfo['ParkingID'];
     }).first;
     debugPrint("MORE URGENT PARKING INFO: __ $result");
 
@@ -883,7 +1010,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     return '${parts[0].padLeft(2, '0')}h ${parts[1].padLeft(2, '0')}mn';
   }
 
-  bookingStartsIn(
+  dynamic bookingStartsIn(
       int bookingDur,
       String durationToString,
       int timeUntilResStarts,
@@ -891,8 +1018,11 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
       Map<String, dynamic> moreUrgentResCarInfo,
       int timeUntilBookingEnds,
       QuerySnapshot<Map<String, dynamic>> allReservationsFromAllAppUsers) {
-    const timeLeftHeaderText =
-        TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, fontFamily: 'OpenSans');
+    const timeLeftHeaderText = TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w900,
+        fontFamily: 'OpenSans');
     return countDownTemplate(
         countdownDuration: bookingDuration,
         timeUntilBookingStarts: timeUntilResStarts,
@@ -906,7 +1036,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         allReservationsFromAllAppUsers: allReservationsFromAllAppUsers);
   }
 
-  countDownTemplate(
+  Padding countDownTemplate(
       {required int countdownDuration,
       required int timeUntilBookingStarts,
       required int timeUntilBookingEnds,
@@ -916,16 +1046,18 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
       required TextStyle templateTextStyle,
       required bool bookingOnGoingListenValue,
       required Color ringBackgroundColor,
-      required QuerySnapshot<Map<String, dynamic>> allReservationsFromAllAppUsers}) {
+      required QuerySnapshot<Map<String, dynamic>>
+          allReservationsFromAllAppUsers}) {
     TextStyle timeLeftHeaderText = templateTextStyle;
-    String vehiculeBrand = moreUrgentResCarInfo['Specs']['Brand'].toString().toLowerCase(),
+    String vehiculeBrand =
+            moreUrgentResCarInfo['Specs']['Brand'].toString().toLowerCase(),
         vehiculeModelDetail = moreUrgentResCarInfo['Specs']['Model Detail'];
     debugPrint(bookingOnGoingListenValue
         ? "TIME UNTIL ENDS $timeUntilBookingEnds"
         : "TIME UNTIL STARTS $timeUntilBookingStarts");
     var ringFillGradientResStartsIn = LinearGradient(
         colors: [
-          Theme.of(context).primaryColor.withOpacity(0.4),
+          Theme.of(context).primaryColor.withValues(alpha: 0.4),
 
           Theme.of(context).colorScheme.secondary, //this one do not touch
         ],
@@ -935,7 +1067,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         tileMode: TileMode.clamp);
     var ringFillGradientResStarted = LinearGradient(
         colors: [
-          Colors.green.withOpacity(0.6),
+          Colors.green.withValues(alpha: 0.6),
 
           Theme.of(context).colorScheme.secondary, //this one do not touch
         ],
@@ -951,7 +1083,9 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         fit: StackFit.passthrough,
         children: [
           CircularCountDownTimer(
-            duration: bookingOnGoingListenValue ? timeUntilBookingEnds : timeUntilBookingStarts, //timeUntilBookingEnds,
+            duration: bookingOnGoingListenValue
+                ? timeUntilBookingEnds
+                : timeUntilBookingStarts, //timeUntilBookingEnds,
             isReverse: true,
             initialDuration: 0,
             controller: _countdownController,
@@ -961,7 +1095,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             ringGradient: null,
             fillColor: bookingOnGoingListenValue
                 ? Colors.lightGreen.shade900
-                : Colors.orange, //if fillIngredient specified, fillColor won't be taken into account.
+                : Colors
+                    .orange, //if fillIngredient specified, fillColor won't be taken into account.
             fillGradient: bookingOnGoingListenValue
                 ? ringFillGradientResStarted
                 : ringFillGradientResStartsIn, //ringFillGradient,
@@ -969,7 +1104,11 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             backgroundGradient: null,
             strokeWidth: 20.0,
             strokeCap: StrokeCap.square,
-            textStyle: const TextStyle(fontSize: 33.0, color: Colors.white, fontWeight: FontWeight.bold, height: -3.5),
+            textStyle: const TextStyle(
+                fontSize: 33.0,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                height: -3.5),
             textFormat: CountdownTextFormat.HH_MM_SS,
             isReverseAnimation: true,
             isTimerTextShown: true,
@@ -993,16 +1132,23 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                             "'Hello ${currentlySignedInUser!.displayName}, Your booking in ${moreUrgentResParkingInfo.values.first['Name']} has just ended! We hope to see you again soon.'"),
                         actions: [
                           TextButton(
-                            style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black38)),
+                            style: ButtonStyle(
+                                backgroundColor:
+                                    WidgetStateProperty.all(Colors.black38)),
                             onPressed: () async {
-                              var castedMoreUrgentParkingInfo = moreUrgentResParkingInfo;
+                              var castedMoreUrgentParkingInfo =
+                                  moreUrgentResParkingInfo;
                               await archiveResThatJustEnded(
-                                  castedMoreUrgentParkingInfo, allUserBookings.first, allReservationsFromAllAppUsers,
+                                  castedMoreUrgentParkingInfo,
+                                  allUserBookings.first,
+                                  allReservationsFromAllAppUsers,
                                   action: 'completed');
 
-                              Future.delayed(const Duration(seconds: 2)).then((value) {
+                              Future.delayed(const Duration(seconds: 2))
+                                  .then((value) {
                                 if (!mounted) return;
-                                Navigator.of(context).pop(); //pop with the updated list
+                                Navigator.of(context)
+                                    .pop(); //pop with the updated list
                               });
                             },
                             child: const Text(
@@ -1033,16 +1179,20 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                     }).then((value) => setState(() {
                       bookingHasStarted = true;
                       bookingOnGoingListenable.value = true;
-                      _countdownController.restart(duration: timeUntilBookingEnds);
+                      _countdownController.restart(
+                          duration: timeUntilBookingEnds);
                       //updateResdocs and set "ReservationStatus""Started'" to true
                     }));
               }
             },
             onChange: (String timeStamp) {
-              debugPrint('Countdown Changed $timeStamp  ______ ${timeStamp.split(':').elementAt(0).trim()}');
+              debugPrint(
+                  'Countdown Changed $timeStamp  ______ ${timeStamp.split(':').elementAt(0).trim()}');
               (int.parse(timeStamp.split(':').elementAt(0).trim()) * 3600 +
-                          int.parse(timeStamp.split(':').elementAt(1).trim()) * 60 +
-                          int.parse(timeStamp.split(':').elementAt(2).trim())) ==
+                          int.parse(timeStamp.split(':').elementAt(1).trim()) *
+                              60 +
+                          int.parse(
+                              timeStamp.split(':').elementAt(2).trim())) ==
                       300
                   ? {
                       if (bookingOnGoingListenValue)
@@ -1075,7 +1225,9 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                   visible: canDisplayVehicule ? true : false,
                   child: FittedBox(
                     child: Text(
-                      bookingOnGoingListenValue ? "UNTIL BOOKING ENDS" : "UNTIL BOOKING STARTS",
+                      bookingOnGoingListenValue
+                          ? "UNTIL BOOKING ENDS"
+                          : "UNTIL BOOKING STARTS",
                       style: timeLeftHeaderText,
                     ),
                   ),
@@ -1090,12 +1242,17 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         TextButton.icon(
-                            style: TextButton.styleFrom(backgroundColor: Colors.black.withOpacity(0.5), elevation: 5),
+                            style: TextButton.styleFrom(
+                                backgroundColor:
+                                    Colors.black.withValues(alpha: 0.5),
+                                elevation: 5),
                             onPressed: () {
-                              var ok = moreUrgentResParkingInfo.values.first as Map<String, dynamic>;
+                              var ok = moreUrgentResParkingInfo.values.first
+                                  as Map<String, dynamic>;
 
                               var infos = ok['Positions'] as GeoPoint;
-                              MapsLauncher.launchCoordinates(infos.latitude, infos.longitude);
+                              MapsLauncher.launchCoordinates(
+                                  infos.latitude, infos.longitude);
                             },
                             label: SizedBox(
                               width: 200,
@@ -1105,14 +1262,18 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                                       text: "Navigate to ",
                                       children: [
                                         TextSpan(
-                                            text: moreUrgentResParkingInfo.values.first['Name'],
-                                            style: TextStyle(color: Theme.of(context).primaryColorLight))
+                                            text: moreUrgentResParkingInfo
+                                                .values.first['Name'],
+                                            style: TextStyle(
+                                                color: Theme.of(context)
+                                                    .primaryColorLight))
                                       ],
                                       style: const TextStyle(
                                           overflow: TextOverflow.fade,
                                           fontSize: 10,
                                           fontWeight: FontWeight.w900,
-                                          color: Color.fromARGB(255, 242, 242, 242))),
+                                          color: Color.fromARGB(
+                                              255, 242, 242, 242))),
                                 ),
                               ),
                             ),
@@ -1134,10 +1295,13 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                           top: 10,
                           child: Card(
                             //color: Colors.orange,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
                             elevation: 20,
                             child: Container(
-                              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(10)),
+                              decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(10)),
                               height: 50,
                               width: 80,
                               child: Column(
@@ -1146,20 +1310,26 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                                   const FittedBox(
                                     child: Text(
                                       'Duration',
-                                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.w700),
                                     ),
                                   ),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       RichText(
                                         text: TextSpan(
                                           style: const TextStyle(
-                                              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w900),
                                           children: [
                                             TextSpan(
-                                              text: durationToString.substring(0, 2),
+                                              text: durationToString.substring(
+                                                  0, 2),
                                             ),
                                             WidgetSpan(
                                               child: Transform.translate(
@@ -1167,12 +1337,16 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                                                 child: const Text(
                                                   'H',
                                                   style: TextStyle(
-                                                      color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900),
+                                                      color: Colors.white,
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w900),
                                                 ),
                                               ),
                                             ),
                                             TextSpan(
-                                              text: ' ${durationToString.substring(4, 6)}',
+                                              text:
+                                                  ' ${durationToString.substring(4, 6)}',
                                             ),
                                           ],
                                         ),
@@ -1185,7 +1359,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                           ),
                         ),
                         Image(
-                          image: AssetImage('assets/images/carRep/$vehiculeBrand.png'),
+                          image: AssetImage(
+                              'assets/images/carRep/$vehiculeBrand.png'),
                           // width: 400,
                           height: MediaQuery.of(context).size.height / 3 -
                               120, //50 is toolbar height and 10 is the padding above bottombar
@@ -1200,7 +1375,9 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                 child: Text(
                   vehiculeModelDetail,
                   style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w700, color: Color.fromARGB(255, 82, 35, 35)),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color.fromARGB(255, 82, 35, 35)),
                 ),
               ),
             ],
@@ -1210,7 +1387,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     );
   }
 
-  bookingTimeLeft(
+  dynamic bookingTimeLeft(
       int timeUntilBookingEnds,
       int bookingDuration,
       String durationToString,
@@ -1218,8 +1395,11 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
       Map<String, dynamic> moreUrgentResParkingInfo,
       int timeUntilResStarts,
       QuerySnapshot<Map<String, dynamic>> allReservationsFromAllAppUsers) {
-    const timeLeftHeaderText =
-        TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, fontFamily: 'OpenSans');
+    const timeLeftHeaderText = TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w900,
+        fontFamily: 'OpenSans');
     debugPrint("TIME UNTIL ENDS $timeUntilBookingEnds}");
     return countDownTemplate(
         countdownDuration: bookingDuration,
@@ -1234,26 +1414,38 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         allReservationsFromAllAppUsers: allReservationsFromAllAppUsers);
   }
 
-  archiveResThatJustEnded(Map<String, dynamic> castedMoreUrgentParkingInfo,
-      Map<String, dynamic> resThatJustEndedEntries, QuerySnapshot<Map<String, dynamic>> allReservationsFromAllAppUsers,
-      {required String action, bool fromInitiState = false, String bookingEndString = ""}) async {
+  Future<void> archiveResThatJustEnded(
+      Map<String, dynamic> castedMoreUrgentParkingInfo,
+      Map<String, dynamic> resThatJustEndedEntries,
+      QuerySnapshot<Map<String, dynamic>> allReservationsFromAllAppUsers,
+      {required String action,
+      bool fromInitiState = false,
+      String bookingEndString = ""}) async {
     //thinkOfAddingButtons to cancel reservation or edit the date of reservation . put thel under the car model and updateResStatus
-    var docToArchivedataNotSnapshot = resThatJustEndedEntries.values.elementAt(0) as Map<String, dynamic>;
+    var docToArchivedataNotSnapshot =
+        resThatJustEndedEntries.values.elementAt(0) as Map<String, dynamic>;
     String theSpotIDConcerned = docToArchivedataNotSnapshot['SlotID'];
-    var firebaseResToUpdate = myDB.collection('slotsReservations').doc(resThatJustEndedEntries.keys.first);
+    var firebaseResToUpdate = myDB
+        .collection('slotsReservations')
+        .doc(resThatJustEndedEntries.keys.first);
     try {
       if (action == 'completed') {
-        var ok = resThatJustEndedEntries.values.elementAt(0) as Map<String, dynamic>;
+        var ok =
+            resThatJustEndedEntries.values.elementAt(0) as Map<String, dynamic>;
         var bookingEndTS = ok['BookingEnd'] as Timestamp;
         firebaseResToUpdate.update({
           'ReservationStatus.Completed': {
             'Status': true,
-            'TimeStamp': fromInitiState ? bookingEndTS : FieldValue.serverTimestamp()
+            'TimeStamp':
+                fromInitiState ? bookingEndTS : FieldValue.serverTimestamp()
           },
         });
       } else if (action == 'canceled before start') {
         firebaseResToUpdate.update({
-          'ReservationStatus.Canceled Before Start': {'Status': true, 'TimeStamp': Timestamp.now()}
+          'ReservationStatus.Canceled Before Start': {
+            'Status': true,
+            'TimeStamp': Timestamp.now()
+          }
         });
       } else {
         //timeAdded
@@ -1264,22 +1456,26 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
 
       var numberOfEntries = allReservationsFromAllAppUsers.docs.where((docu) {
         return docu.data()['SlotID'] == docToArchivedataNotSnapshot['SlotID'] &&
-            docu.data()['ParkingID'] == docToArchivedataNotSnapshot['ParkingID'];
+            docu.data()['ParkingID'] ==
+                docToArchivedataNotSnapshot['ParkingID'];
       }).length;
       //oneEntryOnlyMeans this was the last res for this spot in the same parking
 
-      debugPrint("numberOfEntries $numberOfEntries _ $castedMoreUrgentParkingInfo");
+      debugPrint(
+          "numberOfEntries $numberOfEntries _ $castedMoreUrgentParkingInfo");
 
       if (numberOfEntries == 1) {
         await myDB
-            .collection("locations/${castedMoreUrgentParkingInfo.keys.first}/insideParkingInfo")
+            .collection(
+                "locations/${castedMoreUrgentParkingInfo.keys.first}/insideParkingInfo")
             .get()
             .then((insideParkingInfo) {
           //debugPrint("ALL REG SPOTS : ${insideParkingInfo.docs.length}");
 
           if (insideParkingInfo.docs.isNotEmpty) {
             var theInsideParkingDocToUpdateInFirebase = myDB
-                .collection("locations/${castedMoreUrgentParkingInfo.keys.first}/insideParkingInfo")
+                .collection(
+                    "locations/${castedMoreUrgentParkingInfo.keys.first}/insideParkingInfo")
                 .doc(insideParkingInfo.docs.first.id);
 
             var concernedDoc = insideParkingInfo.docs.first;
@@ -1288,41 +1484,55 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             String regularOrSpecialString = 'Regular';
             List updatedBookedList = [];
 
-            if (allRegSpots.contains(docToArchivedataNotSnapshot['SlotID'].toString())) {
+            if (allRegSpots
+                .contains(docToArchivedataNotSnapshot['SlotID'].toString())) {
               debugPrint("BOOKED SPOT WAS A REGULAR ONE");
             } else {
               regularOrSpecialString = 'Special';
               debugPrint("BOOKED SPOT WAS A SPECIAL ONE");
             }
 
-            var bookedIDs = concernedDoc.data()[regularOrSpecialString]['Booked']['IDs'] as List;
+            var bookedIDs = concernedDoc.data()[regularOrSpecialString]
+                ['Booked']['IDs'] as List;
 
             var occupiedFromBookingIDs =
-                concernedDoc.data()[regularOrSpecialString]['Occupied']['From Booking']['IDs'] as List;
+                concernedDoc.data()[regularOrSpecialString]['Occupied']
+                    ['From Booking']['IDs'] as List;
 
-            var availableIDs = concernedDoc.data()[regularOrSpecialString]['Available']['IDs'] as List;
+            var availableIDs = concernedDoc.data()[regularOrSpecialString]
+                ['Available']['IDs'] as List;
 
             availableIDs.add(theSpotIDConcerned);
 
-            if (docToArchivedataNotSnapshot['VehiculeStatus']['Status'].toString() == "Not Yet Parked") {
+            if (docToArchivedataNotSnapshot['VehiculeStatus']['Status']
+                    .toString() ==
+                "Not Yet Parked") {
               //then the user never came so the ID must be in "booked" . make a booked List. check parkingslots creation and attributions file with the lists and how I updated the doc. update totla bookeds
-              updatedBookedList = bookedIDs.toSet().difference({theSpotIDConcerned}).toList();
+              updatedBookedList =
+                  bookedIDs.toSet().difference({theSpotIDConcerned}).toList();
 
               theInsideParkingDocToUpdateInFirebase.update({
                 "$regularOrSpecialString.Available.IDs": availableIDs,
                 '$regularOrSpecialString.Available.Total': availableIDs.length,
                 '$regularOrSpecialString.Booked.IDs': updatedBookedList,
-                '$regularOrSpecialString.Booked.Total': updatedBookedList.length,
+                '$regularOrSpecialString.Booked.Total':
+                    updatedBookedList.length,
               });
-            } else if (docToArchivedataNotSnapshot['VehiculeStatus']['Status'].toString() == "Gone") {
+            } else if (docToArchivedataNotSnapshot['VehiculeStatus']['Status']
+                    .toString() ==
+                "Gone") {
               //gone as soon as the ultrasound doesn't detect the car anymore in there
-              updatedBookedList = occupiedFromBookingIDs.toSet().difference({theSpotIDConcerned}).toList();
+              updatedBookedList = occupiedFromBookingIDs
+                  .toSet()
+                  .difference({theSpotIDConcerned}).toList();
 
               theInsideParkingDocToUpdateInFirebase.update({
                 "$regularOrSpecialString.Available.IDs": availableIDs,
                 '$regularOrSpecialString.Available.Total': availableIDs.length,
-                '$regularOrSpecialString.Occupied.From Booking.IDs': updatedBookedList,
-                '$regularOrSpecialString.Occupied.From Booking.Total': updatedBookedList.length,
+                '$regularOrSpecialString.Occupied.From Booking.IDs':
+                    updatedBookedList,
+                '$regularOrSpecialString.Occupied.From Booking.Total':
+                    updatedBookedList.length,
               });
             } else {
               //meaning 'Parked
@@ -1332,8 +1542,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
       }
 
       await myDB.collection("slotsReservations").get().then((value) async {
-        var finalDocToArchiveWitUpdatedData =
-            value.docs.where((element) => element.id == resThatJustEndedEntries.keys.first);
+        var finalDocToArchiveWitUpdatedData = value.docs.where(
+            (element) => element.id == resThatJustEndedEntries.keys.first);
         await myDB
             .collection('archivedReservations')
             .doc(resThatJustEndedEntries.keys.first)
@@ -1417,7 +1627,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     });
   }
  */
-  freshlyCreatedRes() {
+  dynamic freshlyCreatedRes() {
     var moreUrgentResCarInfo = <String, dynamic>{},
         moreUrgentResParkingInfo = <String, dynamic>{},
         bookingEndTS = Timestamp.now(),
@@ -1431,7 +1641,10 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         widget.newMoreUrgentBooking.isNotEmpty) {
       var theRightDoc = widget.newMoreUrgentBooking;
 
-      myDB.collection("slotsReservations").get().then((value) => allReservationsFromAllAppUsers = value);
+      myDB
+          .collection("slotsReservations")
+          .get()
+          .then((value) => allReservationsFromAllAppUsers = value);
       moreUrgentResCarInfo = fetchMoreUrgentResCarInfo(theRightDoc);
       moreUrgentResParkingInfo = fetchMoreUrgentResParkingInfo(theRightDoc);
       bookingEndTS = theRightDoc['BookingEnd'] as Timestamp;
@@ -1443,14 +1656,18 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
           startTime: TimeOfDay.fromDateTime(bookingStartTS.toDate()),
           endTime: TimeOfDay.fromDateTime(bookingEndTS.toDate()));
 
-      bookingDuration = (selectedTimeInterval.endTime.hour * 60 + selectedTimeInterval.endTime.minute) -
-          (selectedTimeInterval.startTime.hour * 60 + selectedTimeInterval.startTime.minute);
+      bookingDuration = (selectedTimeInterval.endTime.hour * 60 +
+              selectedTimeInterval.endTime.minute) -
+          (selectedTimeInterval.startTime.hour * 60 +
+              selectedTimeInterval.startTime.minute);
 
       (bookingStartTS.toDate().difference(DateTime.now())).inSeconds > 0
-          ? timeUntilResStarts = (bookingStartTS.toDate().difference(DateTime.now())).inSeconds
+          ? timeUntilResStarts =
+              (bookingStartTS.toDate().difference(DateTime.now())).inSeconds
           : null;
       (bookingEndTS.toDate().difference(DateTime.now())).inSeconds > 0
-          ? timeUntilBookingEnds = (bookingEndTS.toDate().difference(DateTime.now())).inSeconds
+          ? timeUntilBookingEnds =
+              (bookingEndTS.toDate().difference(DateTime.now())).inSeconds
           : null;
 
       if (widget.timeUntilResStartsFromBookingOverview != 0) {
@@ -1462,10 +1679,22 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
       }
 
       return timeUntilResStarts > 0
-          ? bookingStartsIn(bookingDuration, durationToString(bookingDuration), timeUntilResStarts,
-              moreUrgentResParkingInfo, moreUrgentResCarInfo, timeUntilBookingEnds, allReservationsFromAllAppUsers)
-          : bookingTimeLeft(timeUntilBookingEnds, bookingDuration, durationToString(bookingDuration),
-              moreUrgentResCarInfo, moreUrgentResParkingInfo, timeUntilResStarts, allReservationsFromAllAppUsers);
+          ? bookingStartsIn(
+              bookingDuration,
+              durationToString(bookingDuration),
+              timeUntilResStarts,
+              moreUrgentResParkingInfo,
+              moreUrgentResCarInfo,
+              timeUntilBookingEnds,
+              allReservationsFromAllAppUsers)
+          : bookingTimeLeft(
+              timeUntilBookingEnds,
+              bookingDuration,
+              durationToString(bookingDuration),
+              moreUrgentResCarInfo,
+              moreUrgentResParkingInfo,
+              timeUntilResStarts,
+              allReservationsFromAllAppUsers);
     } else {
       return const CircularProgressIndicator(
         color: Colors.pink,
@@ -1473,7 +1702,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     }
   }
 
-  bookingInfoListView(Map<String, dynamic> first) {
+  Column bookingInfoListView(Map<String, dynamic> first) {
     var firstFullIfnfoWithID = allUserBookings.first;
     var castedStartTime = first['BookingStart'] as Timestamp;
     var startTimeToHour = TimeOfDay.fromDateTime(castedStartTime.toDate());
@@ -1486,7 +1715,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     debugPrint("FIRST INF: $first _ ${startTimeToHour.format(context)}");
     var ringFillGradientResStartsIn = LinearGradient(
         colors: [
-          Theme.of(context).primaryColor.withOpacity(0.4),
+          Theme.of(context).primaryColor.withValues(alpha: 0.4),
 
           Theme.of(context).colorScheme.secondary, //this one do not touch
         ],
@@ -1496,7 +1725,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         tileMode: TileMode.clamp);
     var ringFillGradientResStarted = LinearGradient(
         colors: [
-          Colors.green.withOpacity(0.6),
+          Colors.green.withValues(alpha: 0.6),
 
           Theme.of(context).colorScheme.secondary, //this one do not touch
         ],
@@ -1511,18 +1740,22 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
       children: [
         Card(
           //color: Theme.of(context).primaryColorDark,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
           elevation: 10,
           child: Container(
             //padding: EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(25),
-                gradient: bookingHasStarted == true || bookingOnGoingListenable.value == true
+                gradient: bookingHasStarted == true ||
+                        bookingOnGoingListenable.value == true
                     ? ringFillGradientResStarted
                     : ringFillGradientResStartsIn),
             child: Container(
               width: (infSliverHeight * infSliverCount) +
-                  (infSliverSpace * (infSliverCount - 1)), //containerheight * count + (space * count-1)
+                  (infSliverSpace *
+                      (infSliverCount -
+                          1)), //containerheight * count + (space * count-1)
               margin: const EdgeInsets.symmetric(
                 horizontal: 20, /*  vertical: 20 */
               ),
@@ -1550,8 +1783,12 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                         crossAxisSpacing: 10.0,
                         childAspectRatio: 1,
                         children: [
-                          sliverCardTexts(title: "Start", content: startTimeToHour.format(context)),
-                          sliverCardTexts(title: "End ", content: endTimeToHour.format(context)),
+                          sliverCardTexts(
+                              title: "Start",
+                              content: startTimeToHour.format(context)),
+                          sliverCardTexts(
+                              title: "End ",
+                              content: endTimeToHour.format(context)),
                           sliverCardTexts(title: "Spot ID", content: thePSpot),
                         ],
                       ),
@@ -1575,7 +1812,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                 )), //passthevdehicule to edit as an argument with onTap (onTap allows to select a vehicule only)
             editingDashBookingButtons(
               buttonLabel: 'Details',
-              buttonIcon: showBookingDetails ? Icons.visibility_off : Icons.visibility,
+              buttonIcon:
+                  showBookingDetails ? Icons.visibility_off : Icons.visibility,
               iconColor: Colors.green,
               concernedBookingWithID: firstFullIfnfoWithID,
             ),
@@ -1594,7 +1832,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     );
   }
 
-  getNewSlotsReservationsData(User currentlySignedInUser) async {
+  Future<void> getNewSlotsReservationsData(User currentlySignedInUser) async {
     //debugPrint("CALLED GETNEW");
     try {
       await myDB
@@ -1613,7 +1851,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     }
   }
 
-  editingDashBookingButtons(
+  Column editingDashBookingButtons(
       {required String buttonLabel,
       required IconData buttonIcon,
       required MaterialColor iconColor,
@@ -1633,7 +1871,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             }); */
             buttonLabel == 'Cancel'
                 ? {
-                    await removeBookingFromFirebase(concernedBookingWithID).then((carRemoveResult) {
+                    await removeBookingFromFirebase(concernedBookingWithID)
+                        .then((carRemoveResult) {
                       isReservationCanceled
                           ? {
                               setState(
@@ -1641,12 +1880,16 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                               ),
                             }
                           : null;
-                    }).whenComplete(() => isReservationCanceled ? Navigator.pop(context) : null),
+                    }).whenComplete(() => isReservationCanceled
+                            ? Navigator.pop(context)
+                            : null),
                   } //archiverResBlabla with "canceled before end"
                 : buttonLabel == 'Details'
                     ? {
                         setState(() {
-                          showBookingDetails ? showBookingDetails = false : showBookingDetails = true;
+                          showBookingDetails
+                              ? showBookingDetails = false
+                              : showBookingDetails = true;
                         })
                       }
                     : editReservation(concernedBookingWithID);
@@ -1676,7 +1919,7 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     );
   }
 
-  sliverCardTexts({required String title, required content}) {
+  Card sliverCardTexts({required String title, required content}) {
     TextStyle titleTextStyle = TextStyle(
       color: Colors.black,
       fontFamily: 'OpenSans',
@@ -1690,41 +1933,48 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         child: Container(
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 3),
-          child: Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            Flexible(
-              child: FittedBox(
-                child: Text(
-                  title,
-                  style: titleTextStyle,
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Flexible(
+                  child: FittedBox(
+                    child: Text(
+                      title,
+                      style: titleTextStyle,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Flexible(
-              child: FittedBox(
-                child: Text(
-                  content,
-                  style: titleTextStyle.copyWith(fontSize: 11, fontWeight: FontWeight.w100),
+                Flexible(
+                  child: FittedBox(
+                    child: Text(
+                      content,
+                      style: titleTextStyle.copyWith(
+                          fontSize: 11, fontWeight: FontWeight.w100),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ]),
+              ]),
         ));
   }
 
-  Future<String> removeBookingFromFirebase(Map<String, dynamic> concernedBooking) async {
+  Future<String> removeBookingFromFirebase(
+      Map<String, dynamic> concernedBooking) async {
     //var theBookingDocID = concernedBooking.keys.elementAt(0);
     return await showDialog(
       barrierDismissible: false,
       useRootNavigator: false,
       context: context,
-      builder: (dialcontext) => StatefulBuilder(builder: (dialcontext, setState) {
+      builder: (dialcontext) =>
+          StatefulBuilder(builder: (dialcontext, setState) {
         return AlertDialog(
           scrollable: true,
           title: const Text("Cancelation Confirmation"),
-          content: const Text("Your current booking will be canceled if you proceed."),
+          content: const Text(
+              "Your current booking will be canceled if you proceed."),
           actions: [
             TextButton(
-              style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black38)),
+              style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(Colors.black38)),
               onPressed: () {
                 Navigator.of(context).pop("REMOVE BOOKING");
               },
@@ -1734,7 +1984,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
               ),
             ),
             TextButton(
-              style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black38)),
+              style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(Colors.black38)),
               onPressed: () {
                 Navigator.of(context).pop('CANCEL REMOVAL');
               },
@@ -1752,11 +2003,13 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         awaitActionDialog("Canceling booking, please wait.");
 
         var moreUrgentReservationInfo = fetchMoreUrgentReservationInfo();
-        var moreUrgentResParkingInfo = fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
+        var moreUrgentResParkingInfo =
+            fetchMoreUrgentResParkingInfo(moreUrgentReservationInfo);
         var castedMoreUrgentParkingInfo = moreUrgentResParkingInfo;
-        await myDB.collection("slotsReservations").get().then((value) => archiveResThatJustEnded(
-            castedMoreUrgentParkingInfo, concernedBooking, value,
-            action: 'canceled before start'));
+        await myDB.collection("slotsReservations").get().then((value) =>
+            archiveResThatJustEnded(
+                castedMoreUrgentParkingInfo, concernedBooking, value,
+                action: 'canceled before start'));
         setState(() {
           isReservationCanceled = true;
         });
@@ -1768,14 +2021,15 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     });
   }
 
-  awaitActionDialog(
+  Future<dynamic> awaitActionDialog(
     String actionTitle,
   ) async {
     return await showDialog(
         barrierDismissible: false,
         useRootNavigator: false,
         context: context,
-        builder: (dialcontext) => StatefulBuilder(builder: (dialcontext, setState) {
+        builder: (dialcontext) =>
+            StatefulBuilder(builder: (dialcontext, setState) {
               /*   isReservationCanceled
                   ? Future.delayed(const Duration(seconds: 5)).then(
                       (value) {
@@ -1788,20 +2042,23 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                   title: Center(
                       child: Text(
                     actionTitle,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w500),
                   )),
                   content: SpinKitFadingCircle(
                     size: 40,
                     itemBuilder: (BuildContext context, int index) {
                       return const DecoratedBox(
-                        decoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                            color: Colors.green, shape: BoxShape.circle),
                       );
                     },
                   ));
             }));
   }
 
-  editReservation(Map<String, dynamic> concernedBookingWithID) async {
+  Future<dynamic> editReservation(
+      Map<String, dynamic> concernedBookingWithID) async {
     bool autoValidate = true;
     bool readOnly = false;
     bool showSegmentedControl = true;
@@ -1811,8 +2068,10 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     var genderOptions = ['Male', 'Female', 'Other'];
 
     void onChanged(dynamic val) => debugPrint(val.toString());
-    var bookingWOid = concernedBookingWithID.values.elementAt(0) as Map<String, dynamic>;
-    Timestamp initialValueBookingStart = bookingWOid['BookingStart'] as Timestamp;
+    var bookingWOid =
+        concernedBookingWithID.values.elementAt(0) as Map<String, dynamic>;
+    Timestamp initialValueBookingStart =
+        bookingWOid['BookingStart'] as Timestamp;
     Timestamp initialValueBookingEnd = bookingWOid['BookingEnd'] as Timestamp;
 
     var stateManagerRead = context.read<BookingStateManagement>();
@@ -1820,20 +2079,36 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
     fetchParkingIDforCurrentRes(bookingWOid).then((value) {
       theParkingGeneralInfo = value;
       stateManagerRead.updateOpeningAndClosingHours(
-          theParkingGeneralInfo['Opening Hour'], theParkingGeneralInfo['Closing Hour']);
+          theParkingGeneralInfo['Opening Hour'],
+          theParkingGeneralInfo['Closing Hour']);
     });
 
     /*  stateManagerRead.updateOpeningAndClosingHours(
         theParkingGeneralInfo['Opening Hour'], theParkingGeneralInfo['Closing Hour']);
  */
     TimeOfDay startTime = TimeOfDay(
-            hour: int.parse(context.read<BookingStateManagement>().openingHour.split(":")[0]),
-            minute: int.parse(context.read<BookingStateManagement>().openingHour.split(":")[1])),
+            hour: int.parse(context
+                .read<BookingStateManagement>()
+                .openingHour
+                .split(":")[0]),
+            minute: int.parse(context
+                .read<BookingStateManagement>()
+                .openingHour
+                .split(":")[1])),
         endTime = TimeOfDay(
-            hour: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[0]),
-            minute: int.parse(context.read<BookingStateManagement>().closingHour.split(":")[1]));
+            hour: int.parse(context
+                .read<BookingStateManagement>()
+                .closingHour
+                .split(":")[0]),
+            minute: int.parse(context
+                .read<BookingStateManagement>()
+                .closingHour
+                .split(":")[1]));
 
-    stateManagerRead.getTimeSlotsIntervals(startTime, endTime, const Duration(minutes: 30)).toList().then((value) {
+    stateManagerRead
+        .getTimeSlotsIntervals(startTime, endTime, const Duration(minutes: 30))
+        .toList()
+        .then((value) {
       debugPrint("OK LISTENING LIST $value");
       fetchedParkingTimeSlots = value;
     });
@@ -1842,7 +2117,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         barrierDismissible: true,
         useRootNavigator: false,
         context: context,
-        builder: (dialcontext) => StatefulBuilder(builder: (dialcontext, setState) {
+        builder: (dialcontext) =>
+            StatefulBuilder(builder: (dialcontext, setState) {
               return AlertDialog(
                 scrollable: true,
                 content: SizedBox(
@@ -1885,11 +2161,14 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                                   suffixIcon: IconButton(
                                     icon: const Icon(Icons.close),
                                     onPressed: () {
-                                      formKey.currentState!.fields['bookingStart']?.didChange(null);
+                                      formKey
+                                          .currentState!.fields['bookingStart']
+                                          ?.didChange(null);
                                     },
                                   ),
                                 ),
-                                initialTime: TimeOfDay.fromDateTime(initialValueBookingStart.toDate()),
+                                initialTime: TimeOfDay.fromDateTime(
+                                    initialValueBookingStart.toDate()),
                                 // locale: const Locale.fromSubtags(languageCode: 'fr'),
                               ),
                               FormBuilderDateTimePicker(
@@ -1902,11 +2181,13 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                                   suffixIcon: IconButton(
                                     icon: const Icon(Icons.close),
                                     onPressed: () {
-                                      formKey.currentState!.fields['bookingEnd']?.didChange(null);
+                                      formKey.currentState!.fields['bookingEnd']
+                                          ?.didChange(null);
                                     },
                                   ),
                                 ),
-                                initialTime: TimeOfDay.fromDateTime(initialValueBookingEnd.toDate()),
+                                initialTime: TimeOfDay.fromDateTime(
+                                    initialValueBookingEnd.toDate()),
                                 // locale: const Locale.fromSubtags(languageCode: 'fr'),
                               ),
                               FormBuilderDateRangePicker(
@@ -1922,7 +2203,8 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                                   suffixIcon: IconButton(
                                     icon: const Icon(Icons.close),
                                     onPressed: () {
-                                      formKey.currentState!.fields['date_range']?.didChange(null);
+                                      formKey.currentState!.fields['date_range']
+                                          ?.didChange(null);
                                     },
                                   ),
                                 ),
@@ -1948,20 +2230,27 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                                 name: 'gender',
                                 decoration: InputDecoration(
                                   labelText: 'Gender',
-                                  suffix: genderHasError ? const Icon(Icons.error) : const Icon(Icons.check),
+                                  suffix: genderHasError
+                                      ? const Icon(Icons.error)
+                                      : const Icon(Icons.check),
                                   hintText: 'Select Gender',
                                 ),
-                                validator: FormBuilderValidators.compose([FormBuilderValidators.required()]),
+                                validator: FormBuilderValidators.compose(
+                                    [FormBuilderValidators.required()]),
                                 items: genderOptions
                                     .map((gender) => DropdownMenuItem(
-                                          alignment: AlignmentDirectional.center,
+                                          alignment:
+                                              AlignmentDirectional.center,
                                           value: gender,
                                           child: Text(gender),
                                         ))
                                     .toList(),
                                 onChanged: (val) {
                                   setState(() {
-                                    genderHasError = !(formKey.currentState?.fields['gender']?.validate() ?? false);
+                                    genderHasError = !(formKey
+                                            .currentState?.fields['gender']
+                                            ?.validate() ??
+                                        false);
                                   });
                                 },
                                 valueTransformer: (val) => val?.toString(),
@@ -1974,10 +2263,13 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  if (formKey.currentState?.saveAndValidate() ?? false) {
-                                    debugPrint(formKey.currentState?.value.toString());
+                                  if (formKey.currentState?.saveAndValidate() ??
+                                      false) {
+                                    debugPrint(
+                                        formKey.currentState?.value.toString());
                                   } else {
-                                    debugPrint(formKey.currentState?.value.toString());
+                                    debugPrint(
+                                        formKey.currentState?.value.toString());
                                     debugPrint('validation failed');
                                   }
                                 },
@@ -1996,7 +2288,10 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
                                 // color: Theme.of(context).colorScheme.secondary,
                                 child: Text(
                                   'Reset',
-                                  style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+                                  style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary),
                                 ),
                               ),
                             ),
@@ -2010,9 +2305,14 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
             }));
   }
 
-  Future<Map<String, dynamic>> fetchParkingIDforCurrentRes(Map<String, dynamic> bookingWOid) async {
+  Future<Map<String, dynamic>> fetchParkingIDforCurrentRes(
+      Map<String, dynamic> bookingWOid) async {
     Map<String, dynamic> theParkingGeneralInfo = {};
-    await myDB.collection("locations").doc(bookingWOid['ParkingID']).get().then((value) {
+    await myDB
+        .collection("locations")
+        .doc(bookingWOid['ParkingID'])
+        .get()
+        .then((value) {
       debugPrint("CONTEXT READ: ${value.data()}");
       theParkingGeneralInfo = value.data() as Map<String, dynamic>;
     });

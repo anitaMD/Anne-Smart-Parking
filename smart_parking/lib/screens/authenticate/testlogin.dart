@@ -23,8 +23,7 @@ import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/screens/authenticate/reset_password.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
 import 'package:smart_parking/models/user.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:phone_number/phone_number.dart' as prefix;
+import 'package:smart_parking/l10n/generated/app_localizations.dart';
 
 class TestLogin extends StatefulWidget {
   const TestLogin({Key? key}) : super(key: key);
@@ -40,15 +39,30 @@ class TestLoginState extends State<TestLogin> {
   int _start = 5, otpTimeoutDuration = 40;
   List<Map<String, dynamic>> countries = [
     {"name": "Afghanistan", "flag": "🇦🇫", "code": "AF", "dial_code": "+93"},
-    {"name": "Åland Islands", "flag": "🇦🇽", "code": "AX", "dial_code": "+358"},
+    {
+      "name": "Åland Islands",
+      "flag": "🇦🇽",
+      "code": "AX",
+      "dial_code": "+358"
+    },
     {"name": "Albania", "flag": "🇦🇱", "code": "AL", "dial_code": "+355"},
     {"name": "Algeria", "flag": "🇩🇿", "code": "DZ", "dial_code": "+213"},
-    {"name": "American Samoa", "flag": "🇦🇸", "code": "AS", "dial_code": "+1684"},
+    {
+      "name": "American Samoa",
+      "flag": "🇦🇸",
+      "code": "AS",
+      "dial_code": "+1684"
+    },
     {"name": "Andorra", "flag": "🇦🇩", "code": "AD", "dial_code": "+376"},
     {"name": "Angola", "flag": "🇦🇴", "code": "AO", "dial_code": "+244"},
     {"name": "Anguilla", "flag": "🇦🇮", "code": "AI", "dial_code": "+1264"},
     {"name": "Antarctica", "flag": "🇦🇶", "code": "AQ", "dial_code": "+672"},
-    {"name": "Antigua and Barbuda", "flag": "🇦🇬", "code": "AG", "dial_code": "+1268"},
+    {
+      "name": "Antigua and Barbuda",
+      "flag": "🇦🇬",
+      "code": "AG",
+      "dial_code": "+1268"
+    },
     {"name": "Argentina", "flag": "🇦🇷", "code": "AR", "dial_code": "+54"},
     {"name": "Armenia", "flag": "🇦🇲", "code": "AM", "dial_code": "+374"},
     {"name": "Aruba", "flag": "🇦🇼", "code": "AW", "dial_code": "+297"},
@@ -65,13 +79,33 @@ class TestLoginState extends State<TestLogin> {
     {"name": "Benin", "flag": "🇧🇯", "code": "BJ", "dial_code": "+229"},
     {"name": "Bermuda", "flag": "🇧🇲", "code": "BM", "dial_code": "+1441"},
     {"name": "Bhutan", "flag": "🇧🇹", "code": "BT", "dial_code": "+975"},
-    {"name": "Bolivia, Plurinational State of bolivia", "flag": "🇧🇴", "code": "BO", "dial_code": "+591"},
-    {"name": "Bosnia and Herzegovina", "flag": "🇧🇦", "code": "BA", "dial_code": "+387"},
+    {
+      "name": "Bolivia, Plurinational State of bolivia",
+      "flag": "🇧🇴",
+      "code": "BO",
+      "dial_code": "+591"
+    },
+    {
+      "name": "Bosnia and Herzegovina",
+      "flag": "🇧🇦",
+      "code": "BA",
+      "dial_code": "+387"
+    },
     {"name": "Botswana", "flag": "🇧🇼", "code": "BW", "dial_code": "+267"},
     {"name": "Bouvet Island", "flag": "🇧🇻", "code": "BV", "dial_code": "+47"},
     {"name": "Brazil", "flag": "🇧🇷", "code": "BR", "dial_code": "+55"},
-    {"name": "British Indian Ocean Territory", "flag": "🇮🇴", "code": "IO", "dial_code": "+246"},
-    {"name": "Brunei Darussalam", "flag": "🇧🇳", "code": "BN", "dial_code": "+673"},
+    {
+      "name": "British Indian Ocean Territory",
+      "flag": "🇮🇴",
+      "code": "IO",
+      "dial_code": "+246"
+    },
+    {
+      "name": "Brunei Darussalam",
+      "flag": "🇧🇳",
+      "code": "BN",
+      "dial_code": "+673"
+    },
     {"name": "Bulgaria", "flag": "🇧🇬", "code": "BG", "dial_code": "+359"},
     {"name": "Burkina Faso", "flag": "🇧🇫", "code": "BF", "dial_code": "+226"},
     {"name": "Burundi", "flag": "🇧🇮", "code": "BI", "dial_code": "+257"},
@@ -79,43 +113,113 @@ class TestLoginState extends State<TestLogin> {
     {"name": "Cameroon", "flag": "🇨🇲", "code": "CM", "dial_code": "+237"},
     {"name": "Canada", "flag": "🇨🇦", "code": "CA", "dial_code": "+1"},
     {"name": "Cape Verde", "flag": "🇨🇻", "code": "CV", "dial_code": "+238"},
-    {"name": "Cayman Islands", "flag": "🇰🇾", "code": "KY", "dial_code": "+345"},
-    {"name": "Central African Republic", "flag": "🇨🇫", "code": "CF", "dial_code": "+236"},
+    {
+      "name": "Cayman Islands",
+      "flag": "🇰🇾",
+      "code": "KY",
+      "dial_code": "+345"
+    },
+    {
+      "name": "Central African Republic",
+      "flag": "🇨🇫",
+      "code": "CF",
+      "dial_code": "+236"
+    },
     {"name": "Chad", "flag": "🇹🇩", "code": "TD", "dial_code": "+235"},
     {"name": "Chile", "flag": "🇨🇱", "code": "CL", "dial_code": "+56"},
     {"name": "China", "flag": "🇨🇳", "code": "CN", "dial_code": "+86"},
-    {"name": "Christmas Island", "flag": "🇨🇽", "code": "CX", "dial_code": "+61"},
-    {"name": "Cocos (Keeling) Islands", "flag": "🇨🇨", "code": "CC", "dial_code": "+61"},
+    {
+      "name": "Christmas Island",
+      "flag": "🇨🇽",
+      "code": "CX",
+      "dial_code": "+61"
+    },
+    {
+      "name": "Cocos (Keeling) Islands",
+      "flag": "🇨🇨",
+      "code": "CC",
+      "dial_code": "+61"
+    },
     {"name": "Colombia", "flag": "🇨🇴", "code": "CO", "dial_code": "+57"},
     {"name": "Comoros", "flag": "🇰🇲", "code": "KM", "dial_code": "+269"},
     {"name": "Congo", "flag": "🇨🇬", "code": "CG", "dial_code": "+242"},
-    {"name": "Congo, The Democratic Republic of the Congo", "flag": "🇨🇩", "code": "CD", "dial_code": "+243"},
+    {
+      "name": "Congo, The Democratic Republic of the Congo",
+      "flag": "🇨🇩",
+      "code": "CD",
+      "dial_code": "+243"
+    },
     {"name": "Cook Islands", "flag": "🇨🇰", "code": "CK", "dial_code": "+682"},
     {"name": "Costa Rica", "flag": "🇨🇷", "code": "CR", "dial_code": "+506"},
-    {"name": "Cote d'Ivoire", "flag": "🇨🇮", "code": "CI", "dial_code": "+225"},
+    {
+      "name": "Cote d'Ivoire",
+      "flag": "🇨🇮",
+      "code": "CI",
+      "dial_code": "+225"
+    },
     {"name": "Croatia", "flag": "🇭🇷", "code": "HR", "dial_code": "+385"},
     {"name": "Cuba", "flag": "🇨🇺", "code": "CU", "dial_code": "+53"},
     {"name": "Cyprus", "flag": "🇨🇾", "code": "CY", "dial_code": "+357"},
-    {"name": "Czech Republic", "flag": "🇨🇿", "code": "CZ", "dial_code": "+420"},
+    {
+      "name": "Czech Republic",
+      "flag": "🇨🇿",
+      "code": "CZ",
+      "dial_code": "+420"
+    },
     {"name": "Denmark", "flag": "🇩🇰", "code": "DK", "dial_code": "+45"},
     {"name": "Djibouti", "flag": "🇩🇯", "code": "DJ", "dial_code": "+253"},
     {"name": "Dominica", "flag": "🇩🇲", "code": "DM", "dial_code": "+1767"},
-    {"name": "Dominican Republic", "flag": "🇩🇴", "code": "DO", "dial_code": "+1849"},
+    {
+      "name": "Dominican Republic",
+      "flag": "🇩🇴",
+      "code": "DO",
+      "dial_code": "+1849"
+    },
     {"name": "Ecuador", "flag": "🇪🇨", "code": "EC", "dial_code": "+593"},
     {"name": "Egypt", "flag": "🇪🇬", "code": "EG", "dial_code": "+20"},
     {"name": "El Salvador", "flag": "🇸🇻", "code": "SV", "dial_code": "+503"},
-    {"name": "Equatorial Guinea", "flag": "🇬🇶", "code": "GQ", "dial_code": "+240"},
+    {
+      "name": "Equatorial Guinea",
+      "flag": "🇬🇶",
+      "code": "GQ",
+      "dial_code": "+240"
+    },
     {"name": "Eritrea", "flag": "🇪🇷", "code": "ER", "dial_code": "+291"},
     {"name": "Estonia", "flag": "🇪🇪", "code": "EE", "dial_code": "+372"},
     {"name": "Ethiopia", "flag": "🇪🇹", "code": "ET", "dial_code": "+251"},
-    {"name": "Falkland Islands (Malvinas)", "flag": "🇫🇰", "code": "FK", "dial_code": "+500"},
-    {"name": "Faroe Islands", "flag": "🇫🇴", "code": "FO", "dial_code": "+298"},
+    {
+      "name": "Falkland Islands (Malvinas)",
+      "flag": "🇫🇰",
+      "code": "FK",
+      "dial_code": "+500"
+    },
+    {
+      "name": "Faroe Islands",
+      "flag": "🇫🇴",
+      "code": "FO",
+      "dial_code": "+298"
+    },
     {"name": "Fiji", "flag": "🇫🇯", "code": "FJ", "dial_code": "+679"},
     {"name": "Finland", "flag": "🇫🇮", "code": "FI", "dial_code": "+358"},
     {"name": "France", "flag": "🇫🇷", "code": "FR", "dial_code": "+33"},
-    {"name": "French Guiana", "flag": "🇬🇫", "code": "GF", "dial_code": "+594"},
-    {"name": "French Polynesia", "flag": "🇵🇫", "code": "PF", "dial_code": "+689"},
-    {"name": "French Southern Territories", "flag": "🇹🇫", "code": "TF", "dial_code": "+262"},
+    {
+      "name": "French Guiana",
+      "flag": "🇬🇫",
+      "code": "GF",
+      "dial_code": "+594"
+    },
+    {
+      "name": "French Polynesia",
+      "flag": "🇵🇫",
+      "code": "PF",
+      "dial_code": "+689"
+    },
+    {
+      "name": "French Southern Territories",
+      "flag": "🇹🇫",
+      "code": "TF",
+      "dial_code": "+262"
+    },
     {"name": "Gabon", "flag": "🇬🇦", "code": "GA", "dial_code": "+241"},
     {"name": "Gambia", "flag": "🇬🇲", "code": "GM", "dial_code": "+220"},
     {"name": "Georgia", "flag": "🇬🇪", "code": "GE", "dial_code": "+995"},
@@ -130,18 +234,38 @@ class TestLoginState extends State<TestLogin> {
     {"name": "Guatemala", "flag": "🇬🇹", "code": "GT", "dial_code": "+502"},
     {"name": "Guernsey", "flag": "🇬🇬", "code": "GG", "dial_code": "+44"},
     {"name": "Guinea", "flag": "🇬🇳", "code": "GN", "dial_code": "+224"},
-    {"name": "Guinea-Bissau", "flag": "🇬🇼", "code": "GW", "dial_code": "+245"},
+    {
+      "name": "Guinea-Bissau",
+      "flag": "🇬🇼",
+      "code": "GW",
+      "dial_code": "+245"
+    },
     {"name": "Guyana", "flag": "🇬🇾", "code": "GY", "dial_code": "+592"},
     {"name": "Haiti", "flag": "🇭🇹", "code": "HT", "dial_code": "+509"},
-    {"name": "Heard Island and Mcdonald Islands", "flag": "🇭🇲", "code": "HM", "dial_code": "+672"},
-    {"name": "Holy See (Vatican City State)", "flag": "🇻🇦", "code": "VA", "dial_code": "+379"},
+    {
+      "name": "Heard Island and Mcdonald Islands",
+      "flag": "🇭🇲",
+      "code": "HM",
+      "dial_code": "+672"
+    },
+    {
+      "name": "Holy See (Vatican City State)",
+      "flag": "🇻🇦",
+      "code": "VA",
+      "dial_code": "+379"
+    },
     {"name": "Honduras", "flag": "🇭🇳", "code": "HN", "dial_code": "+504"},
     {"name": "Hong Kong", "flag": "🇭🇰", "code": "HK", "dial_code": "+852"},
     {"name": "Hungary", "flag": "🇭🇺", "code": "HU", "dial_code": "+36"},
     {"name": "Iceland", "flag": "🇮🇸", "code": "IS", "dial_code": "+354"},
     {"name": "India", "flag": "🇮🇳", "code": "IN", "dial_code": "+91"},
     {"name": "Indonesia", "flag": "🇮🇩", "code": "ID", "dial_code": "+62"},
-    {"name": "Iran, Islamic Republic of Persian Gulf", "flag": "🇮🇷", "code": "IR", "dial_code": "+98"},
+    {
+      "name": "Iran, Islamic Republic of Persian Gulf",
+      "flag": "🇮🇷",
+      "code": "IR",
+      "dial_code": "+98"
+    },
     {"name": "Iraq", "flag": "🇮🇶", "code": "IQ", "dial_code": "+964"},
     {"name": "Ireland", "flag": "🇮🇪", "code": "IE", "dial_code": "+353"},
     {"name": "Isle of Man", "flag": "🇮🇲", "code": "IM", "dial_code": "+44"},
@@ -154,8 +278,18 @@ class TestLoginState extends State<TestLogin> {
     {"name": "Kazakhstan", "flag": "🇰🇿", "code": "KZ", "dial_code": "+7"},
     {"name": "Kenya", "flag": "🇰🇪", "code": "KE", "dial_code": "+254"},
     {"name": "Kiribati", "flag": "🇰🇮", "code": "KI", "dial_code": "+686"},
-    {"name": "Korea, Democratic People's Republic of Korea", "flag": "🇰🇵", "code": "KP", "dial_code": "+850"},
-    {"name": "Korea, Republic of South Korea", "flag": "🇰🇷", "code": "KR", "dial_code": "+82"},
+    {
+      "name": "Korea, Democratic People's Republic of Korea",
+      "flag": "🇰🇵",
+      "code": "KP",
+      "dial_code": "+850"
+    },
+    {
+      "name": "Korea, Republic of South Korea",
+      "flag": "🇰🇷",
+      "code": "KR",
+      "dial_code": "+82"
+    },
     {"name": "Kosovo", "flag": "🇽🇰", "code": "XK", "dial_code": "+383"},
     {"name": "Kuwait", "flag": "🇰🇼", "code": "KW", "dial_code": "+965"},
     {"name": "Kyrgyzstan", "flag": "🇰🇬", "code": "KG", "dial_code": "+996"},
@@ -164,8 +298,18 @@ class TestLoginState extends State<TestLogin> {
     {"name": "Lebanon", "flag": "🇱🇧", "code": "LB", "dial_code": "+961"},
     {"name": "Lesotho", "flag": "🇱🇸", "code": "LS", "dial_code": "+266"},
     {"name": "Liberia", "flag": "🇱🇷", "code": "LR", "dial_code": "+231"},
-    {"name": "Libyan Arab Jamahiriya", "flag": "🇱🇾", "code": "LY", "dial_code": "+218"},
-    {"name": "Liechtenstein", "flag": "🇱🇮", "code": "LI", "dial_code": "+423"},
+    {
+      "name": "Libyan Arab Jamahiriya",
+      "flag": "🇱🇾",
+      "code": "LY",
+      "dial_code": "+218"
+    },
+    {
+      "name": "Liechtenstein",
+      "flag": "🇱🇮",
+      "code": "LI",
+      "dial_code": "+423"
+    },
     {"name": "Lithuania", "flag": "🇱🇹", "code": "LT", "dial_code": "+370"},
     {"name": "Luxembourg", "flag": "🇱🇺", "code": "LU", "dial_code": "+352"},
     {"name": "Macao", "flag": "🇲🇴", "code": "MO", "dial_code": "+853"},
@@ -176,13 +320,23 @@ class TestLoginState extends State<TestLogin> {
     {"name": "Maldives", "flag": "🇲🇻", "code": "MV", "dial_code": "+960"},
     {"name": "Mali", "flag": "🇲🇱", "code": "ML", "dial_code": "+223"},
     {"name": "Malta", "flag": "🇲🇹", "code": "MT", "dial_code": "+356"},
-    {"name": "Marshall Islands", "flag": "🇲🇭", "code": "MH", "dial_code": "+692"},
+    {
+      "name": "Marshall Islands",
+      "flag": "🇲🇭",
+      "code": "MH",
+      "dial_code": "+692"
+    },
     {"name": "Martinique", "flag": "🇲🇶", "code": "MQ", "dial_code": "+596"},
     {"name": "Mauritania", "flag": "🇲🇷", "code": "MR", "dial_code": "+222"},
     {"name": "Mauritius", "flag": "🇲🇺", "code": "MU", "dial_code": "+230"},
     {"name": "Mayotte", "flag": "🇾🇹", "code": "YT", "dial_code": "+262"},
     {"name": "Mexico", "flag": "🇲🇽", "code": "MX", "dial_code": "+52"},
-    {"name": "Micronesia, Federated States of Micronesia", "flag": "🇫🇲", "code": "FM", "dial_code": "+691"},
+    {
+      "name": "Micronesia, Federated States of Micronesia",
+      "flag": "🇫🇲",
+      "code": "FM",
+      "dial_code": "+691"
+    },
     {"name": "Moldova", "flag": "🇲🇩", "code": "MD", "dial_code": "+373"},
     {"name": "Monaco", "flag": "🇲🇨", "code": "MC", "dial_code": "+377"},
     {"name": "Mongolia", "flag": "🇲🇳", "code": "MN", "dial_code": "+976"},
@@ -195,22 +349,52 @@ class TestLoginState extends State<TestLogin> {
     {"name": "Nauru", "flag": "🇳🇷", "code": "NR", "dial_code": "+674"},
     {"name": "Nepal", "flag": "🇳🇵", "code": "NP", "dial_code": "+977"},
     {"name": "Netherlands", "flag": "🇳🇱", "code": "NL", "dial_code": "+31"},
-    {"name": "Netherlands Antilles", "flag": "", "code": "AN", "dial_code": "+599"},
-    {"name": "New Caledonia", "flag": "🇳🇨", "code": "NC", "dial_code": "+687"},
+    {
+      "name": "Netherlands Antilles",
+      "flag": "",
+      "code": "AN",
+      "dial_code": "+599"
+    },
+    {
+      "name": "New Caledonia",
+      "flag": "🇳🇨",
+      "code": "NC",
+      "dial_code": "+687"
+    },
     {"name": "New Zealand", "flag": "🇳🇿", "code": "NZ", "dial_code": "+64"},
     {"name": "Nicaragua", "flag": "🇳🇮", "code": "NI", "dial_code": "+505"},
     {"name": "Niger", "flag": "🇳🇪", "code": "NE", "dial_code": "+227"},
     {"name": "Nigeria", "flag": "🇳🇬", "code": "NG", "dial_code": "+234"},
     {"name": "Niue", "flag": "🇳🇺", "code": "NU", "dial_code": "+683"},
-    {"name": "Norfolk Island", "flag": "🇳🇫", "code": "NF", "dial_code": "+672"},
-    {"name": "Northern Mariana Islands", "flag": "🇲🇵", "code": "MP", "dial_code": "+1670"},
+    {
+      "name": "Norfolk Island",
+      "flag": "🇳🇫",
+      "code": "NF",
+      "dial_code": "+672"
+    },
+    {
+      "name": "Northern Mariana Islands",
+      "flag": "🇲🇵",
+      "code": "MP",
+      "dial_code": "+1670"
+    },
     {"name": "Norway", "flag": "🇳🇴", "code": "NO", "dial_code": "+47"},
     {"name": "Oman", "flag": "🇴🇲", "code": "OM", "dial_code": "+968"},
     {"name": "Pakistan", "flag": "🇵🇰", "code": "PK", "dial_code": "+92"},
     {"name": "Palau", "flag": "🇵🇼", "code": "PW", "dial_code": "+680"},
-    {"name": "Palestinian Territory, Occupied", "flag": "🇵🇸", "code": "PS", "dial_code": "+970"},
+    {
+      "name": "Palestinian Territory, Occupied",
+      "flag": "🇵🇸",
+      "code": "PS",
+      "dial_code": "+970"
+    },
     {"name": "Panama", "flag": "🇵🇦", "code": "PA", "dial_code": "+507"},
-    {"name": "Papua New Guinea", "flag": "🇵🇬", "code": "PG", "dial_code": "+675"},
+    {
+      "name": "Papua New Guinea",
+      "flag": "🇵🇬",
+      "code": "PG",
+      "dial_code": "+675"
+    },
     {"name": "Paraguay", "flag": "🇵🇾", "code": "PY", "dial_code": "+595"},
     {"name": "Peru", "flag": "🇵🇪", "code": "PE", "dial_code": "+51"},
     {"name": "Philippines", "flag": "🇵🇭", "code": "PH", "dial_code": "+63"},
@@ -223,16 +407,46 @@ class TestLoginState extends State<TestLogin> {
     {"name": "Russia", "flag": "🇷🇺", "code": "RU", "dial_code": "+7"},
     {"name": "Rwanda", "flag": "🇷🇼", "code": "RW", "dial_code": "+250"},
     {"name": "Reunion", "flag": "🇷🇪", "code": "RE", "dial_code": "+262"},
-    {"name": "Saint Barthelemy", "flag": "🇧🇱", "code": "BL", "dial_code": "+590"},
-    {"name": "Saint Helena, Ascension and Tristan Da Cunha", "flag": "🇸🇭", "code": "SH", "dial_code": "+290"},
-    {"name": "Saint Kitts and Nevis", "flag": "🇰🇳", "code": "KN", "dial_code": "+1869"},
+    {
+      "name": "Saint Barthelemy",
+      "flag": "🇧🇱",
+      "code": "BL",
+      "dial_code": "+590"
+    },
+    {
+      "name": "Saint Helena, Ascension and Tristan Da Cunha",
+      "flag": "🇸🇭",
+      "code": "SH",
+      "dial_code": "+290"
+    },
+    {
+      "name": "Saint Kitts and Nevis",
+      "flag": "🇰🇳",
+      "code": "KN",
+      "dial_code": "+1869"
+    },
     {"name": "Saint Lucia", "flag": "🇱🇨", "code": "LC", "dial_code": "+1758"},
     {"name": "Saint Martin", "flag": "🇲🇫", "code": "MF", "dial_code": "+590"},
-    {"name": "Saint Pierre and Miquelon", "flag": "🇵🇲", "code": "PM", "dial_code": "+508"},
-    {"name": "Saint Vincent and the Grenadines", "flag": "🇻🇨", "code": "VC", "dial_code": "+1784"},
+    {
+      "name": "Saint Pierre and Miquelon",
+      "flag": "🇵🇲",
+      "code": "PM",
+      "dial_code": "+508"
+    },
+    {
+      "name": "Saint Vincent and the Grenadines",
+      "flag": "🇻🇨",
+      "code": "VC",
+      "dial_code": "+1784"
+    },
     {"name": "Samoa", "flag": "🇼🇸", "code": "WS", "dial_code": "+685"},
     {"name": "San Marino", "flag": "🇸🇲", "code": "SM", "dial_code": "+378"},
-    {"name": "Sao Tome and Principe", "flag": "🇸🇹", "code": "ST", "dial_code": "+239"},
+    {
+      "name": "Sao Tome and Principe",
+      "flag": "🇸🇹",
+      "code": "ST",
+      "dial_code": "+239"
+    },
     {"name": "Saudi Arabia", "flag": "🇸🇦", "code": "SA", "dial_code": "+966"},
     {"name": "Senegal", "flag": "🇸🇳", "code": "SN", "dial_code": "+221"},
     {"name": "Serbia", "flag": "🇷🇸", "code": "RS", "dial_code": "+381"},
@@ -241,47 +455,112 @@ class TestLoginState extends State<TestLogin> {
     {"name": "Singapore", "flag": "🇸🇬", "code": "SG", "dial_code": "+65"},
     {"name": "Slovakia", "flag": "🇸🇰", "code": "SK", "dial_code": "+421"},
     {"name": "Slovenia", "flag": "🇸🇮", "code": "SI", "dial_code": "+386"},
-    {"name": "Solomon Islands", "flag": "🇸🇧", "code": "SB", "dial_code": "+677"},
+    {
+      "name": "Solomon Islands",
+      "flag": "🇸🇧",
+      "code": "SB",
+      "dial_code": "+677"
+    },
     {"name": "Somalia", "flag": "🇸🇴", "code": "SO", "dial_code": "+252"},
     {"name": "South Africa", "flag": "🇿🇦", "code": "ZA", "dial_code": "+27"},
     {"name": "South Sudan", "flag": "🇸🇸", "code": "SS", "dial_code": "+211"},
-    {"name": "South Georgia and the South Sandwich Islands", "flag": "🇬🇸", "code": "GS", "dial_code": "+500"},
+    {
+      "name": "South Georgia and the South Sandwich Islands",
+      "flag": "🇬🇸",
+      "code": "GS",
+      "dial_code": "+500"
+    },
     {"name": "Spain", "flag": "🇪🇸", "code": "ES", "dial_code": "+34"},
     {"name": "Sri Lanka", "flag": "🇱🇰", "code": "LK", "dial_code": "+94"},
     {"name": "Sudan", "flag": "🇸🇩", "code": "SD", "dial_code": "+249"},
     {"name": "Suriname", "flag": "🇸🇷", "code": "SR", "dial_code": "+597"},
-    {"name": "Svalbard and Jan Mayen", "flag": "🇸🇯", "code": "SJ", "dial_code": "+47"},
+    {
+      "name": "Svalbard and Jan Mayen",
+      "flag": "🇸🇯",
+      "code": "SJ",
+      "dial_code": "+47"
+    },
     {"name": "Swaziland", "flag": "🇸🇿", "code": "SZ", "dial_code": "+268"},
     {"name": "Sweden", "flag": "🇸🇪", "code": "SE", "dial_code": "+46"},
     {"name": "Switzerland", "flag": "🇨🇭", "code": "CH", "dial_code": "+41"},
-    {"name": "Syrian Arab Republic", "flag": "🇸🇾", "code": "SY", "dial_code": "+963"},
+    {
+      "name": "Syrian Arab Republic",
+      "flag": "🇸🇾",
+      "code": "SY",
+      "dial_code": "+963"
+    },
     {"name": "Taiwan", "flag": "🇹🇼", "code": "TW", "dial_code": "+886"},
     {"name": "Tajikistan", "flag": "🇹🇯", "code": "TJ", "dial_code": "+992"},
-    {"name": "Tanzania, United Republic of Tanzania", "flag": "🇹🇿", "code": "TZ", "dial_code": "+255"},
+    {
+      "name": "Tanzania, United Republic of Tanzania",
+      "flag": "🇹🇿",
+      "code": "TZ",
+      "dial_code": "+255"
+    },
     {"name": "Thailand", "flag": "🇹🇭", "code": "TH", "dial_code": "+66"},
     {"name": "Timor-Leste", "flag": "🇹🇱", "code": "TL", "dial_code": "+670"},
     {"name": "Togo", "flag": "🇹🇬", "code": "TG", "dial_code": "+228"},
     {"name": "Tokelau", "flag": "🇹🇰", "code": "TK", "dial_code": "+690"},
     {"name": "Tonga", "flag": "🇹🇴", "code": "TO", "dial_code": "+676"},
-    {"name": "Trinidad and Tobago", "flag": "🇹🇹", "code": "TT", "dial_code": "+1868"},
+    {
+      "name": "Trinidad and Tobago",
+      "flag": "🇹🇹",
+      "code": "TT",
+      "dial_code": "+1868"
+    },
     {"name": "Tunisia", "flag": "🇹🇳", "code": "TN", "dial_code": "+216"},
     {"name": "Turkey", "flag": "🇹🇷", "code": "TR", "dial_code": "+90"},
     {"name": "Turkmenistan", "flag": "🇹🇲", "code": "TM", "dial_code": "+993"},
-    {"name": "Turks and Caicos Islands", "flag": "🇹🇨", "code": "TC", "dial_code": "+1649"},
+    {
+      "name": "Turks and Caicos Islands",
+      "flag": "🇹🇨",
+      "code": "TC",
+      "dial_code": "+1649"
+    },
     {"name": "Tuvalu", "flag": "🇹🇻", "code": "TV", "dial_code": "+688"},
     {"name": "Uganda", "flag": "🇺🇬", "code": "UG", "dial_code": "+256"},
     {"name": "Ukraine", "flag": "🇺🇦", "code": "UA", "dial_code": "+380"},
-    {"name": "United Arab Emirates", "flag": "🇦🇪", "code": "AE", "dial_code": "+971"},
-    {"name": "United Kingdom", "flag": "🇬🇧", "code": "GB", "dial_code": "+44"},
+    {
+      "name": "United Arab Emirates",
+      "flag": "🇦🇪",
+      "code": "AE",
+      "dial_code": "+971"
+    },
+    {
+      "name": "United Kingdom",
+      "flag": "🇬🇧",
+      "code": "GB",
+      "dial_code": "+44"
+    },
     {"name": "United States", "flag": "🇺🇸", "code": "US", "dial_code": "+1"},
     {"name": "Uruguay", "flag": "🇺🇾", "code": "UY", "dial_code": "+598"},
     {"name": "Uzbekistan", "flag": "🇺🇿", "code": "UZ", "dial_code": "+998"},
     {"name": "Vanuatu", "flag": "🇻🇺", "code": "VU", "dial_code": "+678"},
-    {"name": "Venezuela, Bolivarian Republic of Venezuela", "flag": "🇻🇪", "code": "VE", "dial_code": "+58"},
+    {
+      "name": "Venezuela, Bolivarian Republic of Venezuela",
+      "flag": "🇻🇪",
+      "code": "VE",
+      "dial_code": "+58"
+    },
     {"name": "Vietnam", "flag": "🇻🇳", "code": "VN", "dial_code": "+84"},
-    {"name": "Virgin Islands, British", "flag": "🇻🇬", "code": "VG", "dial_code": "+1284"},
-    {"name": "Virgin Islands, U.S.", "flag": "🇻🇮", "code": "VI", "dial_code": "+1340"},
-    {"name": "Wallis and Futuna", "flag": "🇼🇫", "code": "WF", "dial_code": "+681"},
+    {
+      "name": "Virgin Islands, British",
+      "flag": "🇻🇬",
+      "code": "VG",
+      "dial_code": "+1284"
+    },
+    {
+      "name": "Virgin Islands, U.S.",
+      "flag": "🇻🇮",
+      "code": "VI",
+      "dial_code": "+1340"
+    },
+    {
+      "name": "Wallis and Futuna",
+      "flag": "🇼🇫",
+      "code": "WF",
+      "dial_code": "+681"
+    },
     {"name": "Yemen", "flag": "🇾🇪", "code": "YE", "dial_code": "+967"},
     {"name": "Zambia", "flag": "🇿🇲", "code": "ZM", "dial_code": "+260"},
     {"name": "Zimbabwe", "flag": "🇿🇼", "code": "ZW", "dial_code": "+263"}
@@ -297,14 +576,17 @@ class TestLoginState extends State<TestLogin> {
       showOtpUi = false,
       loadingSigningUserEmail = false;
   int? tokenToResend;
-  String selectedLoginMethodDropDown = 'Select A Login Method', theCodeForPhone = 'ok', otpPin = '';
+  String selectedLoginMethodDropDown = 'Select A Login Method',
+      theCodeForPhone = 'ok',
+      otpPin = '';
 
   ConnectivityResult connectionStatus = ConnectivityResult.none;
   final Connectivity _connectivity = Connectivity();
-  late StreamSubscription<ConnectivityResult> connectivitySubscription;
+  late StreamSubscription<List<ConnectivityResult>> connectivitySubscription;
   final OtpFieldController otpFieldController = OtpFieldController();
 
-  final internatKey = GlobalKey<FormState>(), _pinMobileFormKey = GlobalKey<FormState>();
+  final internatKey = GlobalKey<FormState>(),
+      _pinMobileFormKey = GlobalKey<FormState>();
   PhoneNumber initializedNumber = PhoneNumber(
         isoCode: 'US',
         dialCode: '+1',
@@ -316,9 +598,19 @@ class TestLoginState extends State<TestLogin> {
         phoneNumber: '',
       );
   UserProfile userProfile = UserProfile(
-      id: '', fullName: '', email: '', phoneNumber: '', timeStamp: FieldValue.serverTimestamp(), profileImage: '');
-  final logEmailformKey = GlobalKey<FormState>(), phonelogFormKey = GlobalKey<FormState>();
-  final List<String> loginMethodsDropDown = <String>['Select A Login Method', 'Email - Password', 'Phone Number'];
+      id: '',
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      timeStamp: FieldValue.serverTimestamp(),
+      profileImage: '');
+  final logEmailformKey = GlobalKey<FormState>(),
+      phonelogFormKey = GlobalKey<FormState>();
+  final List<String> loginMethodsDropDown = <String>[
+    'Select A Login Method',
+    'Email - Password',
+    'Phone Number'
+  ];
 
   final TextEditingController _emailController = TextEditingController(),
       _passwordController = TextEditingController(),
@@ -342,15 +634,22 @@ class TestLoginState extends State<TestLogin> {
       statusBarColor: Colors.transparent,
     ));
     myFocusNode = FocusNode();
+
     getCarrierCode(countries).then((value) {
       setState(() {
-        var ok = countries.where((element) => element['code'] == value.toUpperCase());
-        initializedNumber =
-            PhoneNumber(isoCode: value.toUpperCase(), dialCode: ok.first['dial_code'], phoneNumber: ' ');
+        var ok = countries
+            .where((element) => element['code'] == value.toUpperCase());
+        initializedNumber = PhoneNumber(
+            isoCode: value.toUpperCase(),
+            dialCode: ok.first['dial_code'],
+            phoneNumber: ' ');
       });
     });
+
     initConnectivity();
-    connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+
+    connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
     setState(
       () {},
     );
@@ -372,12 +671,15 @@ class TestLoginState extends State<TestLogin> {
 //for AUTH LIMITS, check https://firebase.google.com/docs/auth/limits
 // for otp timer, check https://medium.com/codex/resend-otp-timer-dd0d899a424f
   Future<String> getCarrierCode(List<Map<String, dynamic>> countries) async {
-    String code = await prefix.PhoneNumberUtil().carrierRegionCode();
+    //String code = await prefix.PhoneNumberUtil().carrierRegionCode();
+    String code = await PhoneNumber.getRegionInfoFromPhoneNumber('', 'US')
+        .then((value) => value.isoCode ?? 'US');
+
     return code;
   }
 
   Future<void> initConnectivity() async {
-    late ConnectivityResult result;
+    late List<ConnectivityResult> result;
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       result = await _connectivity.checkConnectivity();
@@ -396,9 +698,9 @@ class TestLoginState extends State<TestLogin> {
     return _updateConnectionStatus(result);
   }
 
-  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
+  Future<void> _updateConnectionStatus(List<ConnectivityResult> result) async {
     setState(() {
-      connectionStatus = result;
+      connectionStatus = result.first;
     });
   }
 
@@ -420,24 +722,28 @@ class TestLoginState extends State<TestLogin> {
     );
   }
 
-  logInWithEmailPassword(AppLocalizations localLnSetting) async {
+  Future<void> logInWithEmailPassword(AppLocalizations localLnSetting) async {
     UserCredential? theUser;
     try {
       setState(() {
         loadingSigningUserEmail = true;
       });
-      theUser =
-          await _auth.signInWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
+      theUser = await _auth.signInWithEmailAndPassword(
+          email: _emailController.text, password: _passwordController.text);
 
       theUser.user != null
           ? {
-              await firestoreService.testgetUserFullName(theUser.user!).then((value) {
+              await firestoreService
+                  .testgetUserFullName(theUser.user!)
+                  .then((value) {
                 theUser!.user!.updateDisplayName(value);
                 print("DISPNAME :$value");
               }),
               await firestoreService
                   .testgetUserProfileImage(theUser.user!)
-                  .then((value) => value == 'none' ? null : theUser!.user!.updatePhotoURL(value))
+                  .then((value) => value == 'none'
+                      ? null
+                      : theUser!.user!.updatePhotoURL(value))
             }
           : null;
 
@@ -452,7 +758,8 @@ class TestLoginState extends State<TestLogin> {
       Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
               builder: (context) => const TestHome(
-                    timeUntilReservationStarts: 0, newMoreUrgentBooking: {},
+                    timeUntilReservationStarts: 0,
+                    newMoreUrgentBooking: {},
                   )),
           (Route<dynamic> route) => false);
       _auth.idTokenChanges().listen((user) async {
@@ -502,7 +809,6 @@ class TestLoginState extends State<TestLogin> {
                 timeInSecForIosWeb: 1,
                 fontSize: 16.0);
             print(e.code); //for me to see on the debugging console
-
           }
           break;
 
@@ -515,7 +821,6 @@ class TestLoginState extends State<TestLogin> {
                 timeInSecForIosWeb: 1,
                 fontSize: 16.0);
             print(e.code); //for me to see on the debugging console
-
           }
           break;
 
@@ -544,10 +849,12 @@ class TestLoginState extends State<TestLogin> {
   Widget build(BuildContext context) {
     var localLnSetting = AppLocalizations.of(context)!;
     print("listeningForOTP : $listeningForOTP");
-    var theCountry = countries.where((element) => element['code'].toString().toLowerCase() == theCodeForPhone);
+    var theCountry = countries.where((element) =>
+        element['code'].toString().toLowerCase() == theCodeForPhone);
     theCountry.isNotEmpty
         ? {
-            print('HA ${theCountry.first} ${theCountry.first['flag'].runtimeType}'),
+            print(
+                'HA ${theCountry.first} ${theCountry.first['flag'].runtimeType}'),
           }
         : null;
 
@@ -569,7 +876,8 @@ class TestLoginState extends State<TestLogin> {
                           height: _headerHeight,
                           child: GestureDetector(
                             onTap: () {
-                              print("TAPPED ON BACK TO CHNAGE LOGIN NUMBER listeningForOTP $listeningForOTP");
+                              print(
+                                  "TAPPED ON BACK TO CHNAGE LOGIN NUMBER listeningForOTP $listeningForOTP");
                               listeningForOTP
                                   ? null
                                   : setState(() {
@@ -587,7 +895,7 @@ class TestLoginState extends State<TestLogin> {
                           ), //let's create a common header widget
                         ),
                         CircleAvatar(
-                          backgroundColor: Colors.white.withOpacity(0.5),
+                          backgroundColor: Colors.white.withValues(alpha: 0.5),
                           radius: 60,
                           child: Image.asset(
                             'assets/images/logo.png',
@@ -600,30 +908,39 @@ class TestLoginState extends State<TestLogin> {
                         ? otpUI(localLnSetting)
                         : SafeArea(
                             child: Container(
-                                padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                                margin: const EdgeInsets.fromLTRB(20, 10, 20, 10), // This will be the login form
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                                margin: const EdgeInsets.fromLTRB(20, 10, 20,
+                                    10), // This will be the login form
                                 child: Column(
                                   children: [
                                     Text(
                                       localLnSetting.welcomeToApp,
                                       textAlign: TextAlign.center,
                                       overflow: TextOverflow.visible,
-                                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), //fontSize: 60,
+                                      style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight:
+                                              FontWeight.bold), //fontSize: 60,
                                     ),
                                     const SizedBox(height: 15),
                                     Text(
                                       localLnSetting.login,
                                       style: const TextStyle(
-                                          color: Colors.grey, fontSize: 15, fontWeight: FontWeight.w500),
+                                          color: Colors.grey,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500),
                                     ),
                                     const SizedBox(height: 30.0),
                                     loginMethod == LoginMethod.none
                                         ? DropdownButton<String>(
                                             value: selectedLoginMethodDropDown,
-                                            icon: const Icon(Icons.arrow_downward),
+                                            icon: const Icon(
+                                                Icons.arrow_downward),
                                             elevation: 16,
                                             alignment: Alignment.center,
-                                            style: const TextStyle(color: Colors.deepPurple),
+                                            style: const TextStyle(
+                                                color: Colors.deepPurple),
                                             underline: Container(
                                               height: 2,
                                               color: Colors.deepPurpleAccent,
@@ -631,10 +948,13 @@ class TestLoginState extends State<TestLogin> {
                                             onChanged: (String? value) {
                                               // This is called when the user selects an item.
                                               setState(() {
-                                                selectedLoginMethodDropDown = value!;
+                                                selectedLoginMethodDropDown =
+                                                    value!;
                                               });
                                             },
-                                            items: loginMethodsDropDown.map<DropdownMenuItem<String>>((String value) {
+                                            items: loginMethodsDropDown
+                                                .map<DropdownMenuItem<String>>(
+                                                    (String value) {
                                               return DropdownMenuItem<String>(
                                                 value: value,
                                                 child: Text(value),
@@ -645,99 +965,161 @@ class TestLoginState extends State<TestLogin> {
                                     loginMethod == LoginMethod.emailPassword
                                         ? Form(
                                             key: logEmailformKey,
-                                            autovalidateMode: AutovalidateMode.disabled,
+                                            autovalidateMode:
+                                                AutovalidateMode.disabled,
                                             child: Column(
                                               children: [
                                                 Container(
-                                                  decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                                                  decoration: ThemeHelper()
+                                                      .inputBoxDecorationShaddow(),
                                                   child: TextFormField(
-                                                    validator: FormBuilderValidators.compose([
-                                                      FormBuilderValidators.required(),
+                                                    validator:
+                                                        FormBuilderValidators
+                                                            .compose([
+                                                      FormBuilderValidators
+                                                          .required(),
                                                       FormBuilderValidators.match(
-                                                          r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$",
-                                                          errorText: localLnSetting.logErrorBadEmailFormat)
+                                                          RegExp(
+                                                              r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$"),
+                                                          errorText: localLnSetting
+                                                              .logErrorBadEmailFormat)
                                                     ]),
-                                                    controller: _emailController,
-                                                    keyboardType: TextInputType.emailAddress,
+                                                    controller:
+                                                        _emailController,
+                                                    keyboardType: TextInputType
+                                                        .emailAddress,
                                                     onChanged: (value) {
-                                                      print("THAT'S THE VALUE $value");
+                                                      print(
+                                                          "THAT'S THE VALUE $value");
                                                     },
-                                                    decoration: ThemeHelper().textInputDecoration(
-                                                        Icons.mail,
-                                                        localLnSetting.loginEmailLabel,
-                                                        localLnSetting.loginEmailPlaceholder),
+                                                    decoration: ThemeHelper()
+                                                        .textInputDecoration(
+                                                            Icons.mail,
+                                                            localLnSetting
+                                                                .loginEmailLabel,
+                                                            localLnSetting
+                                                                .loginEmailPlaceholder),
                                                   ),
                                                 ),
                                                 const SizedBox(height: 30.0),
                                                 Container(
-                                                  decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                                                  decoration: ThemeHelper()
+                                                      .inputBoxDecorationShaddow(),
                                                   child: TextFormField(
-                                                      autovalidateMode: AutovalidateMode.disabled,
-                                                      validator: FormBuilderValidators.compose([
-                                                        FormBuilderValidators.required(),
+                                                      autovalidateMode:
+                                                          AutovalidateMode
+                                                              .disabled,
+                                                      validator:
+                                                          FormBuilderValidators
+                                                              .compose([
+                                                        FormBuilderValidators
+                                                            .required(),
                                                       ]),
-                                                      controller: _passwordController,
+                                                      controller:
+                                                          _passwordController,
                                                       obscureText: obscurText,
-                                                      decoration: InputDecoration(
+                                                      decoration:
+                                                          InputDecoration(
                                                         prefixIcon: const Icon(
                                                           Icons.lock,
                                                           size: 25,
                                                           //color: Color.fromARGB(173, 0, 0, 0),
                                                         ),
-                                                        suffixIcon: GestureDetector(
+                                                        suffixIcon:
+                                                            GestureDetector(
                                                           onTap: () {
                                                             setState(() {
                                                               obscurText == true
-                                                                  ? obscurText = false
-                                                                  : obscurText = true;
+                                                                  ? obscurText =
+                                                                      false
+                                                                  : obscurText =
+                                                                      true;
                                                             });
                                                           },
                                                           child: Icon(obscurText
-                                                              ? Icons.visibility_off_outlined
-                                                              : Icons.visibility_outlined),
+                                                              ? Icons
+                                                                  .visibility_off_outlined
+                                                              : Icons
+                                                                  .visibility_outlined),
                                                         ),
-                                                        labelText: localLnSetting.loginPasswordLabel,
-                                                        hintText: localLnSetting.loginPasswordPlaceholder,
+                                                        labelText: localLnSetting
+                                                            .loginPasswordLabel,
+                                                        hintText: localLnSetting
+                                                            .loginPasswordPlaceholder,
                                                         fillColor: Colors.white,
                                                         filled: true,
-                                                        contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                                                        contentPadding:
+                                                            const EdgeInsets
+                                                                .fromLTRB(
+                                                                20, 10, 20, 10),
                                                         focusedBorder: OutlineInputBorder(
-                                                            borderRadius: BorderRadius.circular(100.0),
-                                                            borderSide: const BorderSide(color: Colors.grey)),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        100.0),
+                                                            borderSide:
+                                                                const BorderSide(
+                                                                    color: Colors
+                                                                        .grey)),
                                                         enabledBorder: OutlineInputBorder(
-                                                            borderRadius: BorderRadius.circular(100.0),
-                                                            borderSide: BorderSide(color: Colors.grey.shade400)),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        100.0),
+                                                            borderSide: BorderSide(
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade400)),
                                                         errorBorder: OutlineInputBorder(
-                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        100.0),
                                                             borderSide:
-                                                                const BorderSide(color: Colors.red, width: 2.0)),
+                                                                const BorderSide(
+                                                                    color: Colors
+                                                                        .red,
+                                                                    width:
+                                                                        2.0)),
                                                         focusedErrorBorder: OutlineInputBorder(
-                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        100.0),
                                                             borderSide:
-                                                                const BorderSide(color: Colors.red, width: 2.0)),
+                                                                const BorderSide(
+                                                                    color: Colors
+                                                                        .red,
+                                                                    width:
+                                                                        2.0)),
                                                       )),
                                                 ),
                                                 const SizedBox(height: 15.0),
                                                 Container(
-                                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          10, 0, 10, 20),
                                                   alignment: Alignment.topRight,
                                                   child: GestureDetector(
                                                     onTap: () {
                                                       Navigator.push(
                                                           context,
                                                           MaterialPageRoute(
-                                                              builder: (context) => const ResetPassword()));
+                                                              builder: (context) =>
+                                                                  const ResetPassword()));
                                                       /*   Navigator.push(
                                         context,
                                         MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
                                       ); */
                                                     },
                                                     child: Text(
-                                                      localLnSetting.forgotPassword,
+                                                      localLnSetting
+                                                          .forgotPassword,
                                                       style: const TextStyle(
                                                           color: Colors.grey,
                                                           fontSize: 12,
-                                                          fontWeight: FontWeight.w500),
+                                                          fontWeight:
+                                                              FontWeight.w500),
                                                     ),
                                                   ),
                                                 ),
@@ -763,25 +1145,38 @@ class TestLoginState extends State<TestLogin> {
                                               ),
                                             ),
                                              */
-                                                loginButton(loginMethod, localLnSetting),
+                                                loginButton(loginMethod,
+                                                    localLnSetting),
                                                 Container(
-                                                  margin: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          10, 20, 10, 20),
                                                   //child: Text('Don\'t have an account? Create'),
-                                                  child: Text.rich(TextSpan(children: [
-                                                    TextSpan(text: localLnSetting.noAccount),
+                                                  child: Text.rich(
+                                                      TextSpan(children: [
                                                     TextSpan(
-                                                      text: localLnSetting.createAccount,
-                                                      recognizer: TapGestureRecognizer()
-                                                        ..onTap = () {
-                                                          Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                  builder: (context) =>
-                                                                      const TestRegister() /*const TestingOTP() TestRegister() */));
-                                                        },
+                                                        text: localLnSetting
+                                                            .noAccount),
+                                                    TextSpan(
+                                                      text: localLnSetting
+                                                          .createAccount,
+                                                      recognizer:
+                                                          TapGestureRecognizer()
+                                                            ..onTap = () {
+                                                              Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                      builder:
+                                                                          (context) =>
+                                                                              const TestRegister() /*const TestingOTP() TestRegister() */));
+                                                            },
                                                       style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          color: Theme.of(context).colorScheme.secondary,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .secondary,
                                                           fontSize: 15),
                                                     ),
                                                   ])),
@@ -794,51 +1189,108 @@ class TestLoginState extends State<TestLogin> {
                                                   Form(
                                                     key: phonelogFormKey,
                                                     onChanged: () {
-                                                      phonelogFormKey.currentState!.save();
+                                                      phonelogFormKey
+                                                          .currentState!
+                                                          .save();
                                                       //print("THIS IS THE CURRENT STATE: ${regFormKey.currentState}");
                                                     },
-                                                    child: InternationalPhoneNumberInput(
+                                                    child:
+                                                        InternationalPhoneNumberInput(
                                                       key: internatKey,
-                                                      onInputChanged: (PhoneNumber changingNumber) {
-                                                        print("changingNumber ${changingNumber.phoneNumber}");
+                                                      onInputChanged:
+                                                          (PhoneNumber
+                                                              changingNumber) {
+                                                        print(
+                                                            "changingNumber ${changingNumber.phoneNumber}");
                                                       },
-                                                      locale: Get.locale!.languageCode,
-                                                      selectorConfig: const SelectorConfig(
-                                                        setSelectorButtonAsPrefixIcon: true,
+                                                      locale: Get
+                                                          .locale!.languageCode,
+                                                      selectorConfig:
+                                                          const SelectorConfig(
+                                                        setSelectorButtonAsPrefixIcon:
+                                                            true,
                                                         trailingSpace: false,
-                                                        selectorType: PhoneInputSelectorType.DROPDOWN,
+                                                        selectorType:
+                                                            PhoneInputSelectorType
+                                                                .DROPDOWN,
                                                       ),
-                                                      inputDecoration: InputDecoration(
-                                                        labelText: localLnSetting.regNumberLabel,
-                                                        hintText: localLnSetting.regNumberPlaceholder,
+                                                      inputDecoration:
+                                                          InputDecoration(
+                                                        labelText:
+                                                            localLnSetting
+                                                                .regNumberLabel,
+                                                        hintText: localLnSetting
+                                                            .regNumberPlaceholder,
                                                         fillColor: Colors.white,
                                                         filled: true,
-                                                        contentPadding: const EdgeInsets.fromLTRB(20, 10, 0, 10),
+                                                        contentPadding:
+                                                            const EdgeInsets
+                                                                .fromLTRB(
+                                                                20, 10, 0, 10),
                                                         focusedBorder: OutlineInputBorder(
-                                                            borderRadius: BorderRadius.circular(100.0),
-                                                            borderSide: const BorderSide(color: Colors.grey)),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        100.0),
+                                                            borderSide:
+                                                                const BorderSide(
+                                                                    color: Colors
+                                                                        .grey)),
                                                         enabledBorder: OutlineInputBorder(
-                                                            borderRadius: BorderRadius.circular(100.0),
-                                                            borderSide: BorderSide(color: Colors.grey.shade400)),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        100.0),
+                                                            borderSide: BorderSide(
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade400)),
                                                         errorBorder: OutlineInputBorder(
-                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        100.0),
                                                             borderSide:
-                                                                const BorderSide(color: Colors.red, width: 2.0)),
+                                                                const BorderSide(
+                                                                    color: Colors
+                                                                        .red,
+                                                                    width:
+                                                                        2.0)),
                                                         focusedErrorBorder: OutlineInputBorder(
-                                                            borderRadius: BorderRadius.circular(100.0),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        100.0),
                                                             borderSide:
-                                                                const BorderSide(color: Colors.red, width: 2.0)),
+                                                                const BorderSide(
+                                                                    color: Colors
+                                                                        .red,
+                                                                    width:
+                                                                        2.0)),
                                                       ),
                                                       ignoreBlank: false,
-                                                      errorMessage: localLnSetting.regNumberError,
-                                                      autoValidateMode: AutovalidateMode.disabled,
-                                                      selectorTextStyle: const TextStyle(color: Colors.black),
-                                                      initialValue: initializedNumber,
-                                                      textFieldController: _numberController,
+                                                      errorMessage:
+                                                          localLnSetting
+                                                              .regNumberError,
+                                                      autoValidateMode:
+                                                          AutovalidateMode
+                                                              .disabled,
+                                                      selectorTextStyle:
+                                                          const TextStyle(
+                                                              color:
+                                                                  Colors.black),
+                                                      initialValue:
+                                                          initializedNumber,
+                                                      textFieldController:
+                                                          _numberController,
                                                       formatInput: false,
-                                                      keyboardType: const TextInputType.numberWithOptions(),
-                                                      onSaved: (PhoneNumber thenumber) {
-                                                        print('On Saved: $thenumber');
+                                                      keyboardType:
+                                                          const TextInputType
+                                                              .numberWithOptions(),
+                                                      onSaved: (PhoneNumber
+                                                          thenumber) {
+                                                        print(
+                                                            'On Saved: $thenumber');
                                                         setState(() {
                                                           finalTest = thenumber;
                                                         });
@@ -846,44 +1298,81 @@ class TestLoginState extends State<TestLogin> {
                                                     ),
                                                   ),
                                                   const SizedBox(height: 30.0),
-                                                  loginButton(loginMethod, localLnSetting),
+                                                  loginButton(loginMethod,
+                                                      localLnSetting),
                                                 ],
                                               )
                                             : Container(
-                                                margin: const EdgeInsets.only(top: 30),
-                                                decoration: ThemeHelper().buttonBoxDecoration(context),
+                                                margin: const EdgeInsets.only(
+                                                    top: 30),
+                                                decoration: ThemeHelper()
+                                                    .buttonBoxDecoration(
+                                                        context),
                                                 child: ElevatedButton(
-                                                  style: selectedLoginMethodDropDown == loginMethodsDropDown.first
-                                                      ? ButtonStyle(
-                                                          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                                                            RoundedRectangleBorder(
-                                                              borderRadius: BorderRadius.circular(30.0),
-                                                            ),
-                                                          ),
-                                                          minimumSize: MaterialStateProperty.all(const Size(50, 50)),
-                                                          backgroundColor:
-                                                              MaterialStateProperty.all(Colors.white.withOpacity(0.4)),
-                                                          shadowColor: MaterialStateProperty.all(Colors.brown),
-                                                        )
-                                                      : ThemeHelper().buttonStyle(),
+                                                  style:
+                                                      selectedLoginMethodDropDown ==
+                                                              loginMethodsDropDown
+                                                                  .first
+                                                          ? ButtonStyle(
+                                                              shape: WidgetStateProperty
+                                                                  .all<
+                                                                      RoundedRectangleBorder>(
+                                                                RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              30.0),
+                                                                ),
+                                                              ),
+                                                              minimumSize:
+                                                                  WidgetStateProperty.all(
+                                                                      const Size(
+                                                                          50,
+                                                                          50)),
+                                                              backgroundColor:
+                                                                  WidgetStateProperty.all(Colors
+                                                                      .white
+                                                                      .withValues(
+                                                                          alpha:
+                                                                              0.4)),
+                                                              shadowColor:
+                                                                  WidgetStateProperty
+                                                                      .all(Colors
+                                                                          .brown),
+                                                            )
+                                                          : ThemeHelper()
+                                                              .buttonStyle(),
                                                   child: Padding(
-                                                    padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
+                                                    padding: const EdgeInsets
+                                                        .fromLTRB(
+                                                        40, 10, 40, 10),
                                                     child: Text(
-                                                      localLnSetting.regNextButton.toUpperCase(),
+                                                      localLnSetting
+                                                          .regNextButton
+                                                          .toUpperCase(),
                                                       style: const TextStyle(
                                                           fontSize: 20,
-                                                          fontWeight: FontWeight.bold,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                           color: Colors.white),
                                                     ),
                                                   ),
                                                   onPressed: () {
                                                     setState(() {
-                                                      selectedLoginMethodDropDown == loginMethodsDropDown.first
+                                                      selectedLoginMethodDropDown ==
+                                                              loginMethodsDropDown
+                                                                  .first
                                                           ? null
                                                           : selectedLoginMethodDropDown ==
-                                                                  loginMethodsDropDown.elementAt(1)
-                                                              ? loginMethod = LoginMethod.emailPassword
-                                                              : loginMethod = LoginMethod.phone;
+                                                                  loginMethodsDropDown
+                                                                      .elementAt(
+                                                                          1)
+                                                              ? loginMethod =
+                                                                  LoginMethod
+                                                                      .emailPassword
+                                                              : loginMethod =
+                                                                  LoginMethod
+                                                                      .phone;
                                                     });
 
                                                     //After successful login we will redirect to profile page. Let's create profile page now
@@ -898,41 +1387,59 @@ class TestLoginState extends State<TestLogin> {
                                               TextButton(
                                                 onPressed: () {
                                                   setState(() {
-                                                    loginMethod = LoginMethod.none;
+                                                    loginMethod =
+                                                        LoginMethod.none;
                                                   });
                                                 },
-                                                child: const Text("Choose another method"),
+                                                child: const Text(
+                                                    "Choose another method"),
                                               ),
-                                              listeningForOTP || loadingSigningUserEmail
+                                              listeningForOTP ||
+                                                      loadingSigningUserEmail
                                                   ? SpinKitFadingCircle(
                                                       size: 50,
-                                                      itemBuilder: (BuildContext context, int index) {
+                                                      itemBuilder:
+                                                          (BuildContext context,
+                                                              int index) {
                                                         return const DecoratedBox(
-                                                          decoration: BoxDecoration(
-                                                              color: Colors.green, shape: BoxShape.circle),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                                  color: Colors
+                                                                      .green,
+                                                                  shape: BoxShape
+                                                                      .circle),
                                                         );
                                                       })
                                                   : Container(),
                                             ],
                                           )
                                         : Container(
-                                            margin: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                                            margin: const EdgeInsets.fromLTRB(
+                                                10, 20, 10, 20),
                                             //child: Text('Don\'t have an account? Create'),
-                                            child: Text.rich(TextSpan(children: [
-                                              TextSpan(text: localLnSetting.noAccount),
+                                            child:
+                                                Text.rich(TextSpan(children: [
                                               TextSpan(
-                                                text: localLnSetting.createAccount,
-                                                recognizer: TapGestureRecognizer()
-                                                  ..onTap = () {
-                                                    Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                const TestRegister() /*const TestingOTP() TestRegister() */));
-                                                  },
+                                                  text:
+                                                      localLnSetting.noAccount),
+                                              TextSpan(
+                                                text: localLnSetting
+                                                    .createAccount,
+                                                recognizer:
+                                                    TapGestureRecognizer()
+                                                      ..onTap = () {
+                                                        Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                                builder:
+                                                                    (context) =>
+                                                                        const TestRegister() /*const TestingOTP() TestRegister() */));
+                                                      },
                                                 style: TextStyle(
                                                     fontWeight: FontWeight.bold,
-                                                    color: Theme.of(context).colorScheme.secondary,
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .secondary,
                                                     fontSize: 15),
                                               ),
                                             ])),
@@ -946,7 +1453,7 @@ class TestLoginState extends State<TestLogin> {
             )));
   }
 
-  otpUI(AppLocalizations localLnSetting) {
+  SafeArea otpUI(AppLocalizations localLnSetting) {
     return SafeArea(
       child: Container(
         margin: const EdgeInsets.only(top: 50),
@@ -963,7 +1470,10 @@ class TestLoginState extends State<TestLogin> {
                 children: [
                   Text(
                     localLnSetting.numVerifHeader,
-                    style: const TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color: Colors.black54),
+                    style: const TextStyle(
+                        fontSize: 35,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black54),
                     // textAlign: TextAlign.center,
                   ),
                   const SizedBox(
@@ -1035,10 +1545,13 @@ class TestLoginState extends State<TestLogin> {
                                     });
                                     // enableResend = true; this is set to true when timer is over and no code received
                                     enableResend
-                                        ? resendCode("${finalTest.dialCode.toString()} ${_numberController.text}")
+                                        ? resendCode(
+                                            "${finalTest.dialCode.toString()} ${_numberController.text}")
                                         : null;
                                   },
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.orange),
                               ),
                             ],
                           ),
@@ -1055,7 +1568,9 @@ class TestLoginState extends State<TestLogin> {
                             const SizedBox(width: 10),
                             Text(
                               _start.toString(),
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange),
                             ),
                           ],
                         ),
@@ -1069,7 +1584,7 @@ class TestLoginState extends State<TestLogin> {
     );
   }
 
-  loginButton(LoginMethod loginMethod, AppLocalizations localLnSetting) {
+  Column loginButton(LoginMethod loginMethod, AppLocalizations localLnSetting) {
     return Column(
       children: [
         Container(
@@ -1080,12 +1595,16 @@ class TestLoginState extends State<TestLogin> {
                 padding: const EdgeInsets.fromLTRB(40, 10, 40, 10),
                 child: Text(
                   localLnSetting.signin.toUpperCase(),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
                 ),
               ),
               onPressed: () async {
                 connectionStatus.toString() != 'ConnectivityResult.none'
-                    ? loginMethod == LoginMethod.emailPassword || loginMethod == LoginMethod.phone
+                    ? loginMethod == LoginMethod.emailPassword ||
+                            loginMethod == LoginMethod.phone
                         ? submitLoginForm(localLnSetting, loginMethod)
                         : null
                     : listeningForOTP
@@ -1151,11 +1670,14 @@ class TestLoginState extends State<TestLogin> {
   }
  */
 
-  void showSnackBarText(String text, [TextStyle snackStyle = const TextStyle(color: Colors.white, fontSize: 15)]) {
+  void showSnackBarText(String text,
+      [TextStyle snackStyle =
+          const TextStyle(color: Colors.white, fontSize: 15)]) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           elevation: 50,
           behavior: SnackBarBehavior.floating,
           content: Text(
@@ -1167,7 +1689,8 @@ class TestLoginState extends State<TestLogin> {
     }
   }
 
-  Future<void> verifyPhone(String number, {required bool resendSMS, int? resendToken = 0}) async {
+  Future<void> verifyPhone(String number,
+      {required bool resendSMS, int? resendToken = 0}) async {
     await FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: number,
       timeout: Duration(seconds: otpTimeoutDuration),
@@ -1182,19 +1705,27 @@ class TestLoginState extends State<TestLogin> {
         }
         // phoneNumberAlreadyExists(finalTest);
         try {
-          await _auth.signInWithCredential(phoneAuthCredential).then((theUser) async {
-            await firestoreService.testgetUserFullName(theUser.user!).then((value) {
+          await _auth
+              .signInWithCredential(phoneAuthCredential)
+              .then((theUser) async {
+            await firestoreService
+                .testgetUserFullName(theUser.user!)
+                .then((value) {
               theUser.user!.updateDisplayName(value);
               print("DISPNAME :$value");
             });
           }).whenComplete(() => setState(
-                () {
-                  listeningForOTP = false;
-                },
-              ));
+                    () {
+                      listeningForOTP = false;
+                    },
+                  ));
           if (!mounted) return;
           Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const TestHome(newMoreUrgentBooking: {},)), (Route<dynamic> route) => false);
+              MaterialPageRoute(
+                  builder: (context) => const TestHome(
+                        newMoreUrgentBooking: {},
+                      )),
+              (Route<dynamic> route) => false);
 
           _auth.idTokenChanges().listen((user) async {
             if (user != null) {
@@ -1248,7 +1779,9 @@ class TestLoginState extends State<TestLogin> {
           },
         );
         startTimer();
-        resendSMS ? showSnackBarText("OTP Sent!") : {showSnackBarText("OTP Resent!")};
+        resendSMS
+            ? showSnackBarText("OTP Sent!")
+            : {showSnackBarText("OTP Resent!")};
         setState(() {
           //verID = verificationId;
           //savedNumber = _numberController.text;
@@ -1274,27 +1807,34 @@ class TestLoginState extends State<TestLogin> {
     if (form!.validate()) {
       form.save();
       formKey == logEmailformKey
-          ? {print('Form is valid. Email: $_emailController , Password: $_passwordController')}
+          ? {
+              print(
+                  'Form is valid. Email: $_emailController , Password: $_passwordController')
+            }
           : print("Form is valid. PhoneNumber ${finalTest.phoneNumber}");
       return true;
     }
     return false;
   }
 
-  void submitLoginForm(AppLocalizations localLnSetting, LoginMethod loginMethod) async {
+  void submitLoginForm(
+      AppLocalizations localLnSetting, LoginMethod loginMethod) async {
     if (loginMethod == LoginMethod.emailPassword) {
       if (savedFormFields(logEmailformKey)) {
         logInWithEmailPassword(localLnSetting);
       }
     } else {
       if (savedFormFields(phonelogFormKey)) {
-        await phoneNumberAlreadyExists(finalTest);
+        phoneNumberAlreadyExists(finalTest);
       }
     }
   }
 
-  phoneNumberAlreadyExists(PhoneNumber finalTest) {
-    firestoreService.doesPhoneNumberAlreadyExist(phoneNumber: finalTest.phoneNumber.toString()).then((value) {
+  void phoneNumberAlreadyExists(PhoneNumber finalTest) {
+    firestoreService
+        .doesPhoneNumberAlreadyExist(
+            phoneNumber: finalTest.phoneNumber.toString())
+        .then((value) {
       print("VALUE IS : $value __ ${finalTest.phoneNumber}");
       setState(
         () => numberAlreadyRegistered = value,
@@ -1305,7 +1845,9 @@ class TestLoginState extends State<TestLogin> {
           () => listeningForOTP = true,
         );
 
-        verifyPhone('${finalTest.dialCode.toString()} ${_numberController.text}', resendSMS: false);
+        verifyPhone(
+            '${finalTest.dialCode.toString()} ${_numberController.text}',
+            resendSMS: false);
       } else {
         showSnackBarText('No account linked to this number');
       }
@@ -1318,5 +1860,3 @@ class TestLoginState extends State<TestLogin> {
 }
 
 ///ending crochet
-
-

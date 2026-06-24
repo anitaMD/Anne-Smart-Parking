@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:country_state_city_picker/country_state_city_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -15,18 +14,26 @@ import 'package:smart_parking/services/local_notifications/notification.dart';
 import 'package:smart_parking/styling/styling.dart';
 
 class TestMyVehiculesTab extends StatefulWidget {
-  final Function(String carModelFromPanel, String carBrandFromPanel) updateDashboardCar;
-  const TestMyVehiculesTab({Key? key, required this.updateDashboardCar}) : super(key: key);
+  final Function(String carModelFromPanel, String carBrandFromPanel)
+      updateDashboardCar;
+  const TestMyVehiculesTab({Key? key, required this.updateDashboardCar})
+      : super(key: key);
 
   @override
   State<TestMyVehiculesTab> createState() => _TestMyVehiculesTabState();
 }
 
-class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTickerProviderStateMixin {
+class _TestMyVehiculesTabState extends State<TestMyVehiculesTab>
+    with SingleTickerProviderStateMixin {
   Set<String> fetchedCarLogosAssets = {};
   bool singleTapVehiculeSelected = false, isVehiculeDeleted = false;
-  int current = 0, alertIndex = 0, totalStates = 0, totalCities = 0, selectedVehiculeIndex = 0;
-  Map<String, dynamic> selectedVehiculeInfoMappedFromSelectVehicule = {}, formFetchedInf = {};
+  int current = 0,
+      alertIndex = 0,
+      totalStates = 0,
+      totalCities = 0,
+      selectedVehiculeIndex = 0;
+  Map<String, dynamic> selectedVehiculeInfoMappedFromSelectVehicule = {},
+      formFetchedInf = {};
   User? currentUser = FirebaseAuth.instance.currentUser;
   double cardHeight = 100;
   String country = '',
@@ -40,7 +47,8 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
       newlySelectedCarModel = '',
       newlySelectedCarBrand = '';
 
-  Color cardCol = Colors.white, defaultVehiculeColor = const Color.fromARGB(255, 169, 194, 215);
+  Color cardCol = Colors.white,
+      defaultVehiculeColor = const Color.fromARGB(255, 169, 194, 215);
 
   ScrollController infoListViewController = ScrollController();
   late AnimationController _animationController;
@@ -50,7 +58,8 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
 
   @override
   void initState() {
-    _animationController = AnimationController(vsync: this, duration: const Duration(seconds: 2));
+    _animationController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2));
     _animationController.repeat(reverse: true);
     super.initState();
   }
@@ -78,11 +87,14 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
           );
   }
 
-  void showSnackBarText(String text, [TextStyle snackStyle = const TextStyle(color: Colors.white, fontSize: 15)]) {
+  void showSnackBarText(String text,
+      [TextStyle snackStyle =
+          const TextStyle(color: Colors.white, fontSize: 15)]) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           elevation: 50,
           behavior: SnackBarBehavior.floating,
           content: Text(
@@ -94,7 +106,7 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
     }
   }
 
-  fetchSelectedVehiculeInfo(Map<String, dynamic> selectedVehiculeInf) {
+  void fetchSelectedVehiculeInfo(Map<String, dynamic> selectedVehiculeInf) {
     setState(() {
       selectedVehiculeInfoMappedFromSelectVehicule.addAll(selectedVehiculeInf);
     });
@@ -112,9 +124,13 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
     widgetReshow == true ? fetchedAlertIndex = widget.selectedCarDetails['alertIndex'] : null; */
     return  */
 
-  expandedCardForCarousel(Function(String carModelFromPanel, String carBrandFromPanel) updateDashboardCar) {
+  StreamBuilder<QuerySnapshot<Map<String, dynamic>>> expandedCardForCarousel(
+      Function(String carModelFromPanel, String carBrandFromPanel)
+          updateDashboardCar) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance.collection("users/${currentUser!.uid}/vehicules").snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection("users/${currentUser!.uid}/vehicules")
+            .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Text('Loading vehicules');
@@ -143,26 +159,32 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
         });
   }
 
-  List<String> getVehiculeModelDetail(List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched) {
+  List<String> getVehiculeModelDetail(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched) {
     List<String> allVehiculesModelsDetails = [];
 
     //contains is case sensitive so be careful
     for (var element in vehiculesInfoFetched) {
-      element['Type'] == "Car" ? allVehiculesModelsDetails.add(element.data()['Specs']['Model Detail']) : null;
+      element['Type'] == "Car"
+          ? allVehiculesModelsDetails
+              .add(element.data()['Specs']['Model Detail'])
+          : null;
     }
 
     debugPrint("ALL MODEL DETAILS OF CURRENT USER $allVehiculesModelsDetails");
     return allVehiculesModelsDetails.toList();
   }
 
-  List<String> getAllLicensePlates(List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched) {
+  List<String> getAllLicensePlates(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched) {
     Set<String> allVehiculesLicensePlates = {};
 
     //contains is case sensitive so be careful
     for (var element in vehiculesInfoFetched) {
       element['Type'] == "Car"
           ? {
-              allVehiculesLicensePlates.add(element.data()['Specs']['License Plate N°']),
+              allVehiculesLicensePlates
+                  .add(element.data()['Specs']['License Plate N°']),
             }
           : null;
     }
@@ -171,11 +193,14 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
     return allVehiculesLicensePlates.toList();
   }
 
-  Widget getCardForSlider(List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched, int listViewIndex) {
+  Widget getCardForSlider(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched,
+      int listViewIndex) {
     return SizedBox(
       width: 230,
       child: Card(
-          color: singleTapVehiculeSelected && selectedVehiculeIndex == listViewIndex
+          color: singleTapVehiculeSelected &&
+                  selectedVehiculeIndex == listViewIndex
               ? Colors.indigo.withAlpha(400)
               : listViewIndex != 0
                   ? Colors.white
@@ -193,7 +218,9 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
                 borderRadius: BorderRadius.circular(50),
               ),
               child: Column(
-                  mainAxisAlignment: listViewIndex == 0 ? MainAxisAlignment.center : MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: listViewIndex == 0
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.spaceEvenly,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Flexible(
@@ -205,18 +232,29 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
                             setState(
                               () {
                                 singleTapVehiculeSelected
-                                    ? {singleTapVehiculeSelected = false, selectedVehiculeIndex = 0}
-                                    : {singleTapVehiculeSelected = true, selectedVehiculeIndex = listViewIndex};
+                                    ? {
+                                        singleTapVehiculeSelected = false,
+                                        selectedVehiculeIndex = 0
+                                      }
+                                    : {
+                                        singleTapVehiculeSelected = true,
+                                        selectedVehiculeIndex = listViewIndex
+                                      };
                               },
                             );
                           }),
                           onDoubleTap: () async {
                             listViewIndex != 0
                                 ? {
-                                    await setDefaultCarToDisplay(vehiculesInfoFetched.elementAt(listViewIndex),
-                                            vehiculesInfoFetched, widget.updateDashboardCar)
+                                    await setDefaultCarToDisplay(
+                                            vehiculesInfoFetched
+                                                .elementAt(listViewIndex),
+                                            vehiculesInfoFetched,
+                                            widget.updateDashboardCar)
                                         .whenComplete(() =>
-                                            widget.updateDashboardCar(newlySelectedCarModel, newlySelectedCarBrand)),
+                                            widget.updateDashboardCar(
+                                                newlySelectedCarModel,
+                                                newlySelectedCarBrand)),
                                   }
                                 : null;
                           },
@@ -228,14 +266,20 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
                                   Flexible(
                                     child: Container(
                                         height: cardHeight,
-                                        padding: const EdgeInsets.only(left: 5, right: 5),
-                                        color: const Color.fromARGB(255, 11, 73, 150),
+                                        padding: const EdgeInsets.only(
+                                            left: 5, right: 5),
+                                        color: const Color.fromARGB(
+                                            255, 11, 73, 150),
                                         child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceAround,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
                                           children: [
                                             Flag.fromString(
-                                              vehiculesInfoFetched.elementAt(listViewIndex)['Other Details']
+                                              vehiculesInfoFetched.elementAt(
+                                                          listViewIndex)[
+                                                      'Other Details']
                                                   ['Reg. Country ISO'],
                                               width: 120,
                                               height: 20,
@@ -243,7 +287,9 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
                                             Align(
                                               child: FittedBox(
                                                 child: Text(
-                                                  vehiculesInfoFetched.elementAt(listViewIndex)['Other Details']
+                                                  vehiculesInfoFetched.elementAt(
+                                                              listViewIndex)[
+                                                          'Other Details']
                                                       ['Reg. Country ISO'],
                                                   style: const TextStyle(
                                                     color: Colors.white,
@@ -262,12 +308,19 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
                                     //LICENSEPLATE + logo + MODELDETAIL
                                     flex: 6,
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
                                       children: [
-                                        Expanded(flex: 2, child: showVehiculeLogo(vehiculesInfoFetched, listViewIndex)),
+                                        Expanded(
+                                            flex: 2,
+                                            child: showVehiculeLogo(
+                                                vehiculesInfoFetched,
+                                                listViewIndex)),
                                         FittedBox(
                                           child: Text(
-                                              getAllLicensePlates(vehiculesInfoFetched).elementAt(listViewIndex),
+                                              getAllLicensePlates(
+                                                      vehiculesInfoFetched)
+                                                  .elementAt(listViewIndex),
                                               style: const TextStyle(
                                                   letterSpacing: 2.0,
                                                   fontSize: 25,
@@ -280,7 +333,9 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
                                             width: 70,
                                             child: FittedBox(
                                               child: Text(
-                                                  getVehiculeModelDetail(vehiculesInfoFetched).elementAt(listViewIndex),
+                                                  getVehiculeModelDetail(
+                                                          vehiculesInfoFetched)
+                                                      .elementAt(listViewIndex),
                                                   style: const TextStyle(
                                                     // letterSpacing: 1.0,
                                                     fontSize: 5,
@@ -296,16 +351,21 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
                                     //CITY CODE AND YEAR
                                     child: Container(
                                         color: Colors.transparent,
-                                        padding: const EdgeInsets.only(left: 5, right: 5),
+                                        padding: const EdgeInsets.only(
+                                            left: 5, right: 5),
                                         height: cardHeight,
                                         child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceAround,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
                                           children: [
                                             Align(
                                               child: FittedBox(
                                                 child: Text(
-                                                  vehiculesInfoFetched.elementAt(listViewIndex)['Other Details']
+                                                  vehiculesInfoFetched.elementAt(
+                                                              listViewIndex)[
+                                                          'Other Details']
                                                       ['Reg. City ISO'],
                                                   style: const TextStyle(
                                                     color: Colors.black,
@@ -320,7 +380,9 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
                                               child: FittedBox(
                                                 child: Text(
                                                   vehiculesInfoFetched
-                                                      .elementAt(listViewIndex)['Specs']['Registration Year']
+                                                      .elementAt(listViewIndex)[
+                                                          'Specs']
+                                                          ['Registration Year']
                                                       .toString()
                                                       .substring(1, 3),
                                                   style: const TextStyle(
@@ -344,20 +406,26 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
     );
   }
 
-  List<String> getAllVehiculesBrands(List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched) {
+  List<String> getAllVehiculesBrands(
+      List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched) {
     List<String> allVehiculesBrands =
         []; //went from Set to List because user can have cars with same brand but model detail and licene p numbers will always be unique so will need a Set
 
     //contains is case sensitive so be careful
     for (var element in vehiculesInfoFetched) {
-      element['Type'] == "Car" ? allVehiculesBrands.add(element.data()['Specs']['Brand']) : null;
+      element['Type'] == "Car"
+          ? allVehiculesBrands.add(element.data()['Specs']['Brand'])
+          : null;
     }
 
     debugPrint("ALL BRANDS OF CURRENT USER $allVehiculesBrands");
     return allVehiculesBrands.toList();
   }
 
-  buildCarousel(/* List<Widget> carSlider, */ List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched,
+  Container buildCarousel(
+      /* List<Widget> carSlider, */ List<
+              QueryDocumentSnapshot<Map<String, dynamic>>>
+          vehiculesInfoFetched,
       [int newValue = 0]) {
     return Container(
       margin: const EdgeInsets.only(left: 15, right: 15),
@@ -388,8 +456,10 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
                         scrollDirection: Axis.horizontal,
                         itemBuilder: (context, index) {
                           debugPrint("INDEXES $index");
-                          Iterable<Widget> carSlider = getAllLicensePlates(vehiculesInfoFetched)
-                              .map((e) => getCardForSlider(vehiculesInfoFetched, index));
+                          Iterable<Widget> carSlider =
+                              getAllLicensePlates(vehiculesInfoFetched).map(
+                                  (e) => getCardForSlider(
+                                      vehiculesInfoFetched, index));
                           debugPrint("CAROUSEL LEGNTH: ${carSlider.length}");
 
                           final item = carSlider.elementAt(index);
@@ -416,12 +486,16 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
                     Colors.blue,
                     vehiculesInfoFetched.elementAt(selectedVehiculeIndex),
                     vehiculesInfoFetched)), //passthevdehicule to edit as an argument with onTap (onTap allows to select a vehicule only)
-            editingVehiculeButtons(
-                'Add', Icons.add, Colors.green, vehiculesInfoFetched.elementAt(0), vehiculesInfoFetched),
+            editingVehiculeButtons('Add', Icons.add, Colors.green,
+                vehiculesInfoFetched.elementAt(0), vehiculesInfoFetched),
             Visibility(
               visible: singleTapVehiculeSelected ? true : false,
-              child: editingVehiculeButtons('Remove', Icons.remove, Colors.red,
-                  vehiculesInfoFetched.elementAt(selectedVehiculeIndex), vehiculesInfoFetched),
+              child: editingVehiculeButtons(
+                  'Remove',
+                  Icons.remove,
+                  Colors.red,
+                  vehiculesInfoFetched.elementAt(selectedVehiculeIndex),
+                  vehiculesInfoFetched),
             ) //passthevdehicule to edit as an argument for
           ],
         )
@@ -429,20 +503,28 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
     );
   }
 
-  showVehiculeLogo(
+  StreamBuilder<QuerySnapshot<Map<String, dynamic>>> showVehiculeLogo(
 //named like this because all vehicules logos and brands are the same, be it for a car or motorcycle
       List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched,
       int listViewIndex) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance.collection("carBrandLogos").snapshots(),
+        stream:
+            FirebaseFirestore.instance.collection("carBrandLogos").snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Text(''); //Text('Loading brand logos');
           } else {
-            List<QueryDocumentSnapshot<Map<String, dynamic>>> allVehiculesTypesLogosFetched = snapshot.data!.docs;
-            var currentVehiculeLogoInfo = allVehiculesTypesLogosFetched.where((element) {
-              return element.data()['Brand Info']['Name'].toString().toLowerCase() ==
-                  getAllVehiculesBrands(vehiculesInfoFetched).elementAt(listViewIndex).toLowerCase();
+            List<QueryDocumentSnapshot<Map<String, dynamic>>>
+                allVehiculesTypesLogosFetched = snapshot.data!.docs;
+            var currentVehiculeLogoInfo =
+                allVehiculesTypesLogosFetched.where((element) {
+              return element
+                      .data()['Brand Info']['Name']
+                      .toString()
+                      .toLowerCase() ==
+                  getAllVehiculesBrands(vehiculesInfoFetched)
+                      .elementAt(listViewIndex)
+                      .toLowerCase();
 
               /* return useAlertIndex == false &&
                       widgetReShowSelectedCarCard == false
@@ -481,7 +563,8 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
                                   .toLowerCase(); */
             });
 
-            debugPrint("Currently displayed vehicule's logo info: ${currentVehiculeLogoInfo.first.data()}");
+            debugPrint(
+                "Currently displayed vehicule's logo info: ${currentVehiculeLogoInfo.first.data()}");
             return CircleAvatar(
                 backgroundColor: Colors.transparent,
                 child: Image.asset(
@@ -493,7 +576,7 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab> with SingleTick
         });
   }
 
-  showTotalRegCars(vehiculesInfoFetched) {
+  SizedBox showTotalRegCars(vehiculesInfoFetched) {
 /* USE THIS IN CASE NETWORK EXCEPTION AGAIN
 Future<String> getCountryName() async {
     Position position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
@@ -556,8 +639,10 @@ Future<String> getCountryName() async {
    Directory("assets/whatever") didn't <ork because During a build, Flutter places assets into a special archive called the asset bundle that apps read from at runtime. 
    Check link above
    */
-    final assetsManifest = await DefaultAssetBundle.of(context).loadString('AssetManifest.json');
-    final allAssets = json.decode(assetsManifest).keys; //or values, would still work fine
+    final assetsManifest =
+        await DefaultAssetBundle.of(context).loadString('AssetManifest.json');
+    final allAssets =
+        json.decode(assetsManifest).keys; //or values, would still work fine
     Set<String> carLogosAssets = {};
     for (var asset in allAssets) {
       if (asset.toString().contains("carLogos")) {
@@ -568,12 +653,20 @@ Future<String> getCountryName() async {
     return carLogosAssets;
   }
 
-  Future<QuerySnapshot<Map<String, dynamic>>> addVehiculeInfoToFirebase(Map<String, dynamic> formRes) {
-    CollectionReference vehiculesCollectionRef = myDB.collection("users/${currentUser!.uid}/vehicules");
+  Future<QuerySnapshot<Map<String, dynamic>>> addVehiculeInfoToFirebase(
+      Map<String, dynamic> formRes) {
+    CollectionReference vehiculesCollectionRef =
+        myDB.collection("users/${currentUser!.uid}/vehicules");
     WriteBatch batch = myDB.batch();
-    myDB.collection("users/${currentUser!.uid}/vehicules").get().then((value) async {
+    myDB
+        .collection("users/${currentUser!.uid}/vehicules")
+        .get()
+        .then((value) async {
       if (value.docs.isEmpty) {
-        myDB.doc("users/${currentUser!.uid}").collection("vehicules").add({'initialized': true});
+        myDB
+            .doc("users/${currentUser!.uid}")
+            .collection("vehicules")
+            .add({'initialized': true});
       }
 
       batch.set(
@@ -595,31 +688,56 @@ Future<String> getCountryName() async {
             },
             'Other Details': {
               'Reg. City ISO': formRes['city iso'],
-              'Reg. Country ISO':
-                  EmojiParser().unemojify(realCountryValue).split("-").last.split(':').first.toUpperCase(),
+              'Reg. Country ISO': EmojiParser()
+                  .unemojify(realCountryValue)
+                  .split("-")
+                  .last
+                  .split(':')
+                  .first
+                  .toUpperCase(),
             },
             'Currently Selected': false
           });
-      await batch.commit().whenComplete(() => debugPrint("CAR SUCCESSFULLY ADDED IN FIREBASE"));
+      await batch
+          .commit()
+          .whenComplete(() => debugPrint("CAR SUCCESSFULLY ADDED IN FIREBASE"));
 
-      await myDB.collection("users/${currentUser!.uid}/vehicules").get().then((value) async {
-        var firstInitializedDoc = value.docs.where((element) => element.data().keys.contains('initialized'));
+      await myDB
+          .collection("users/${currentUser!.uid}/vehicules")
+          .get()
+          .then((value) async {
+        var firstInitializedDoc = value.docs
+            .where((element) => element.data().keys.contains('initialized'));
 
-        firstInitializedDoc.isNotEmpty ? await vehiculesCollectionRef.doc(firstInitializedDoc.first.id).delete() : null;
+        firstInitializedDoc.isNotEmpty
+            ? await vehiculesCollectionRef
+                .doc(firstInitializedDoc.first.id)
+                .delete()
+            : null;
       });
     });
     return myDB.collection("users/${currentUser!.uid}/vehicules").get();
   }
 
-  registerOrEditCarForm(
-      {required String action, required QueryDocumentSnapshot<Map<String, dynamic>> vehiculeToEditOnly}) {
+  Future<Null> registerOrEditCarForm(
+      {required String action,
+      required QueryDocumentSnapshot<Map<String, dynamic>>
+          vehiculeToEditOnly}) {
     // https://stackoverflow.com/questions/71792773/how-to-pop-out-double-alert-message/
     List<String> carOptions = [];
     getDirectory().then((value) {
       fetchedCarLogosAssets.addAll(value);
       for (var single in fetchedCarLogosAssets) {
-        var carBrand = single.split('/').toList().elementAt(3).toUpperCase().split('.').first.toString();
-        String carBrandFormatted = carBrand[0].toUpperCase() + carBrand.substring(1).toLowerCase();
+        var carBrand = single
+            .split('/')
+            .toList()
+            .elementAt(3)
+            .toUpperCase()
+            .split('.')
+            .first
+            .toString();
+        String carBrandFormatted =
+            carBrand[0].toUpperCase() + carBrand.substring(1).toLowerCase();
         carOptions.add(carBrandFormatted);
       }
       carOptions.add('OTHER');
@@ -645,7 +763,8 @@ Future<String> getCountryName() async {
         barrierDismissible: false,
         useRootNavigator: false,
         context: context,
-        builder: (dialcontext) => StatefulBuilder(builder: (dialcontext, setState) {
+        builder: (dialcontext) =>
+            StatefulBuilder(builder: (dialcontext, setState) {
               return AlertDialog(
                 title: showEditingCarUI
                     ? const Row(
@@ -718,11 +837,16 @@ Future<String> getCountryName() async {
                                           flex: 2,
                                           child: Container(
                                               height: cardHeight,
-                                              padding: const EdgeInsets.only(left: 5, right: 5),
-                                              color: const Color.fromARGB(255, 11, 73, 150),
+                                              padding: const EdgeInsets.only(
+                                                  left: 5, right: 5),
+                                              color: const Color.fromARGB(
+                                                  255, 11, 73, 150),
                                               child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceAround,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
                                                 children: [
                                                   Container(
                                                     color: Colors.black,
@@ -734,8 +858,10 @@ Future<String> getCountryName() async {
                                                         style: TextStyle(
                                                           color: Colors.white,
                                                           fontSize: 15,
-                                                          fontFamily: 'OpenSans',
-                                                          fontWeight: FontWeight.w900,
+                                                          fontFamily:
+                                                              'OpenSans',
+                                                          fontWeight:
+                                                              FontWeight.w900,
                                                         ),
                                                       ),
                                                     ),
@@ -753,8 +879,10 @@ Future<String> getCountryName() async {
                                                         style: TextStyle(
                                                           color: Colors.white,
                                                           fontSize: 15,
-                                                          fontFamily: 'OpenSans',
-                                                          fontWeight: FontWeight.w900,
+                                                          fontFamily:
+                                                              'OpenSans',
+                                                          fontWeight:
+                                                              FontWeight.w900,
                                                         ),
                                                       ),
                                                     ),
@@ -767,9 +895,11 @@ Future<String> getCountryName() async {
                                           //LICENSEPLATE
                                           flex: 8,
                                           child: Container(
-                                            margin: const EdgeInsets.only(left: 10),
+                                            margin:
+                                                const EdgeInsets.only(left: 10),
                                             child: const Column(
-                                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceAround,
                                               children: [
                                                 Expanded(
                                                   flex: 2,
@@ -780,12 +910,16 @@ Future<String> getCountryName() async {
                                                 Expanded(
                                                   flex: 2,
                                                   child: FittedBox(
-                                                    child: Text('License Plate N° ',
+                                                    child: Text(
+                                                        'License Plate N° ',
                                                         style: TextStyle(
                                                             //letterSpacing: 2.0,
                                                             fontSize: 15,
-                                                            fontFamily: 'OpenSans',
-                                                            fontWeight: FontWeight.w500)),
+                                                            fontFamily:
+                                                                'OpenSans',
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500)),
                                                   ),
                                                 ),
                                                 Expanded(
@@ -793,12 +927,14 @@ Future<String> getCountryName() async {
                                                   child: SizedBox(
                                                     width: 80,
                                                     child: FittedBox(
-                                                      child: Text('Model Detail',
-                                                          style: TextStyle(
-                                                            // letterSpacing: 1.0,
-                                                            fontSize: 5,
-                                                            fontFamily: 'OpenSans',
-                                                          )),
+                                                      child:
+                                                          Text('Model Detail',
+                                                              style: TextStyle(
+                                                                // letterSpacing: 1.0,
+                                                                fontSize: 5,
+                                                                fontFamily:
+                                                                    'OpenSans',
+                                                              )),
                                                     ),
                                                   ),
                                                 ),
@@ -810,11 +946,15 @@ Future<String> getCountryName() async {
                                           flex: 2,
                                           child: Container(
                                               height: cardHeight,
-                                              padding: const EdgeInsets.only(left: 5, right: 5),
+                                              padding: const EdgeInsets.only(
+                                                  left: 5, right: 5),
                                               color: Colors.transparent,
                                               child: const Column(
-                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceAround,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
                                                 children: [
                                                   FittedBox(
                                                     child: Text(
@@ -823,7 +963,8 @@ Future<String> getCountryName() async {
                                                         color: Colors.black,
                                                         fontSize: 15,
                                                         fontFamily: 'OpenSans',
-                                                        fontWeight: FontWeight.w900,
+                                                        fontWeight:
+                                                            FontWeight.w900,
                                                       ),
                                                     ),
                                                   ),
@@ -840,8 +981,10 @@ Future<String> getCountryName() async {
                                                         style: TextStyle(
                                                           color: Colors.black,
                                                           fontSize: 15,
-                                                          fontFamily: 'OpenSans',
-                                                          fontWeight: FontWeight.bold,
+                                                          fontFamily:
+                                                              'OpenSans',
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                         ),
                                                       ),
                                                     ),
@@ -857,11 +1000,14 @@ Future<String> getCountryName() async {
                             :  */
                         SizedBox(
                           child: SelectState(
-                            style: realCountryValue.contains("Reg.") || realStateCityValue.contains("Reg.")
-                                ? const TextStyle(color: Color.fromARGB(163, 0, 0, 0))
+                            style: realCountryValue.contains("Reg.") ||
+                                    realStateCityValue.contains("Reg.")
+                                ? const TextStyle(
+                                    color: Color.fromARGB(163, 0, 0, 0))
                                 : const TextStyle(color: Colors.black),
                             decoration: const InputDecoration(
-                              contentPadding: EdgeInsets.only(top: 8, bottom: 8),
+                              contentPadding:
+                                  EdgeInsets.only(top: 8, bottom: 8),
                             ),
                             onCityTap: () {
                               debugPrint("CITY TAPPED ");
@@ -904,7 +1050,8 @@ Future<String> getCountryName() async {
                           // enabled: false,
                           onChanged: () {
                             formKey.currentState!.save();
-                            debugPrint("USER INPUT FROM FORM ${formKey.currentState!.value.toString()}");
+                            debugPrint(
+                                "USER INPUT FROM FORM ${formKey.currentState!.value.toString()}");
                           },
                           autovalidateMode: AutovalidateMode.disabled,
                           skipDisabled: true,
@@ -912,42 +1059,58 @@ Future<String> getCountryName() async {
                             children: [
                               FormBuilderTextField(
                                 initialValue: showEditingCarUI
-                                    ? vehiculeToEditOnly.data()['Other Details']['Reg. City ISO']
+                                    ? vehiculeToEditOnly.data()['Other Details']
+                                        ['Reg. City ISO']
                                     : null,
                                 maxLength: 3,
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.allow(RegExp("[A-Z*]*"), replacementString: ''),
-                                  FilteringTextInputFormatter.deny(RegExp(r'[/\\0-9]')),
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp("[A-Z*]*"),
+                                      replacementString: ''),
+                                  FilteringTextInputFormatter.deny(
+                                      RegExp(r'[/\\0-9]')),
                                 ],
-                                textCapitalization: TextCapitalization.characters,
-                                autovalidateMode: AutovalidateMode.onUserInteraction,
+                                textCapitalization:
+                                    TextCapitalization.characters,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
                                 name: 'city iso',
                                 decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.only(bottom: 15, top: 15),
+                                  contentPadding: const EdgeInsets.only(
+                                      bottom: 15, top: 15),
                                   counterStyle: const TextStyle(
                                     color: Colors.green,
                                     fontSize: 8,
                                     height: 0.2,
                                   ),
                                   hintText: 'Example for Dakar : DK',
-                                  labelStyle: cityIsoFieldInitiallyEmpty ? null : customlabelStyleAddCar,
+                                  labelStyle: cityIsoFieldInitiallyEmpty
+                                      ? null
+                                      : customlabelStyleAddCar,
                                   labelText: 'City ISO-3166 code',
                                   suffixIcon: cityIsoHasError == true
-                                      ? const Icon(Icons.error, color: Colors.red)
+                                      ? const Icon(Icons.error,
+                                          color: Colors.red)
                                       : cityIsoFieldInitiallyEmpty
                                           ? null
-                                          : const Icon(Icons.check, color: Colors.green),
+                                          : const Icon(Icons.check,
+                                              color: Colors.green),
                                 ),
                                 onChanged: (val) {
                                   setState(() {
                                     cityIsoFieldInitiallyEmpty = false;
-                                    cityIsoHasError = !(formKey.currentState?.fields['city iso']?.validate() ?? false);
+                                    cityIsoHasError = !(formKey
+                                            .currentState?.fields['city iso']
+                                            ?.validate() ??
+                                        false);
                                   });
                                 },
                                 // valueTransformer: (text) => num.tryParse(text),
                                 validator: FormBuilderValidators.compose([
                                   FormBuilderValidators.required(),
-                                  FormBuilderValidators.match("[A-Z*]{2,3}", errorText: "2-3 letters required."),
+                                  FormBuilderValidators.match(
+                                      RegExp("[A-Z*]{2,3}"),
+                                      errorText: "2-3 letters required."),
                                   FormBuilderValidators.max(70),
                                 ]),
                                 //initialValue: '?',
@@ -956,7 +1119,10 @@ Future<String> getCountryName() async {
                               ),
 
                               FormBuilderDropdown<String>(
-                                initialValue: showEditingCarUI ? vehiculeToEditOnly.data()['Specs']['Brand'] : null,
+                                initialValue: showEditingCarUI
+                                    ? vehiculeToEditOnly.data()['Specs']
+                                        ['Brand']
+                                    : null,
                                 autofocus: true,
                                 name: 'car brand',
                                 decoration: InputDecoration(
@@ -968,7 +1134,8 @@ Future<String> getCountryName() async {
                                         )
                                       : brandFieldInitiallyEmpty == true
                                           ? null
-                                          : brandFieldInitiallyEmpty == false && carBrandHasError == false
+                                          : brandFieldInitiallyEmpty == false &&
+                                                  carBrandHasError == false
                                               ? const Icon(
                                                   Icons.check,
                                                   color: Colors.green,
@@ -977,10 +1144,12 @@ Future<String> getCountryName() async {
                                               : null,
                                   hintText: 'Select A Brand',
                                 ),
-                                validator: FormBuilderValidators.compose([FormBuilderValidators.required()]),
+                                validator: FormBuilderValidators.compose(
+                                    [FormBuilderValidators.required()]),
                                 items: carOptions
                                     .map((brand) => DropdownMenuItem(
-                                          alignment: AlignmentDirectional.centerStart,
+                                          alignment:
+                                              AlignmentDirectional.centerStart,
                                           value: brand,
                                           child: Text(brand),
                                         ))
@@ -988,26 +1157,36 @@ Future<String> getCountryName() async {
                                 onChanged: (val) {
                                   setState(() {
                                     brandFieldInitiallyEmpty = false;
-                                    carBrandHasError =
-                                        !(formKey.currentState?.fields['car brand']?.validate() ?? false);
+                                    carBrandHasError = !(formKey
+                                            .currentState?.fields['car brand']
+                                            ?.validate() ??
+                                        false);
                                   });
                                 },
                                 valueTransformer: (val) => val?.toString(),
                               ),
                               //LICENSE PLATE FIELD
                               FormBuilderTextField(
-                                initialValue:
-                                    showEditingCarUI ? vehiculeToEditOnly.data()['Specs']['License Plate N°'] : null,
+                                initialValue: showEditingCarUI
+                                    ? vehiculeToEditOnly.data()['Specs']
+                                        ['License Plate N°']
+                                    : null,
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.allow(RegExp(licensePlatePattern), replacementString: ''),
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp(licensePlatePattern),
+                                      replacementString: ''),
                                 ],
                                 maxLength: 8,
-                                maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                                textCapitalization: TextCapitalization.characters,
-                                autovalidateMode: AutovalidateMode.onUserInteraction,
+                                maxLengthEnforcement:
+                                    MaxLengthEnforcement.enforced,
+                                textCapitalization:
+                                    TextCapitalization.characters,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
                                 name: 'license plate',
                                 decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.only(bottom: 15, top: 15),
+                                  contentPadding: const EdgeInsets.only(
+                                      bottom: 15, top: 15),
                                   counterStyle: const TextStyle(
                                     color: Colors.green,
                                     fontSize: 8,
@@ -1016,22 +1195,29 @@ Future<String> getCountryName() async {
                                   hintText: 'Your car lincense plate',
                                   labelText: 'License Plate',
                                   suffixIcon: licensePlateHasError
-                                      ? const Icon(Icons.error, color: Colors.red)
+                                      ? const Icon(Icons.error,
+                                          color: Colors.red)
                                       : licensePlateFieldInitiallyEmpty
                                           ? null
-                                          : const Icon(Icons.check, color: Colors.green),
+                                          : const Icon(Icons.check,
+                                              color: Colors.green),
                                 ),
                                 onChanged: (val) {
                                   setState(() {
                                     licensePlateFieldInitiallyEmpty = false;
-                                    licensePlateHasError =
-                                        !(formKey.currentState?.fields['license plate']?.validate() ?? false);
+                                    licensePlateHasError = !(formKey
+                                            .currentState
+                                            ?.fields['license plate']
+                                            ?.validate() ??
+                                        false);
                                   });
                                 },
                                 // valueTransformer: (text) => num.tryParse(text),
                                 validator: FormBuilderValidators.compose([
                                   FormBuilderValidators.required(),
-                                  FormBuilderValidators.match("[A-Z0-9]{5,8}", errorText: "5-8 characters needed."),
+                                  FormBuilderValidators.match(
+                                      RegExp("[A-Z0-9]{5,8}"),
+                                      errorText: "5-8 characters needed."),
                                 ]),
                                 //initialValue: '?',
                                 keyboardType: TextInputType.text,
@@ -1040,35 +1226,46 @@ Future<String> getCountryName() async {
 
                               //MODEL DETAIL FIELD
                               FormBuilderTextField(
-                                initialValue:
-                                    showEditingCarUI ? vehiculeToEditOnly.data()['Specs']['Model Detail'] : null,
+                                initialValue: showEditingCarUI
+                                    ? vehiculeToEditOnly.data()['Specs']
+                                        ['Model Detail']
+                                    : null,
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.allow(RegExp(modelDetailPattern), replacementString: ''),
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp(modelDetailPattern),
+                                      replacementString: ''),
                                 ],
 
-                                autovalidateMode: AutovalidateMode.onUserInteraction,
-                                textCapitalization: TextCapitalization.sentences,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
                                 name: 'model detail',
                                 decoration: InputDecoration(
                                   hintText: 'Car Model Details',
                                   labelText: 'Model Detail',
                                   suffixIcon: modelDetailHasError
-                                      ? const Icon(Icons.error, color: Colors.red)
+                                      ? const Icon(Icons.error,
+                                          color: Colors.red)
                                       : modelDetailFieldInitiallyEmpty
                                           ? null
-                                          : const Icon(Icons.check, color: Colors.green),
+                                          : const Icon(Icons.check,
+                                              color: Colors.green),
                                 ),
                                 onChanged: (val) {
                                   setState(() {
                                     modelDetailFieldInitiallyEmpty = false;
-                                    modelDetailHasError =
-                                        !(formKey.currentState?.fields['model detail']?.validate() ?? false);
+                                    modelDetailHasError = !(formKey.currentState
+                                            ?.fields['model detail']
+                                            ?.validate() ??
+                                        false);
                                   });
                                 },
                                 // valueTransformer: (text) => num.tryParse(text),
                                 validator: FormBuilderValidators.compose([
                                   FormBuilderValidators.required(),
-                                  FormBuilderValidators.match(modelDetailPattern),
+                                  FormBuilderValidators.match(
+                                      RegExp(modelDetailPattern)),
                                   FormBuilderValidators.max(70),
                                 ]),
                                 //initialValue: '?',
@@ -1078,16 +1275,22 @@ Future<String> getCountryName() async {
 
                               //YEAR FIELD
                               FormBuilderTextField(
-                                initialValue:
-                                    showEditingCarUI ? vehiculeToEditOnly.data()['Specs']['Registration Year'] : null,
+                                initialValue: showEditingCarUI
+                                    ? vehiculeToEditOnly.data()['Specs']
+                                        ['Registration Year']
+                                    : null,
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.allow(RegExp('^[1-2][0-9]*'), replacementString: ''),
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp('^[1-2][0-9]*'),
+                                      replacementString: ''),
                                 ],
-                                autovalidateMode: AutovalidateMode.onUserInteraction,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
                                 maxLength: 4,
                                 name: 'year',
                                 decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.only(bottom: 15, top: 15),
+                                  contentPadding: const EdgeInsets.only(
+                                      bottom: 15, top: 15),
                                   counterStyle: const TextStyle(
                                     color: Colors.green,
                                     fontSize: 8,
@@ -1096,24 +1299,32 @@ Future<String> getCountryName() async {
                                   hintText: 'Year Of First Registration',
                                   labelText: 'Year',
                                   suffixIcon: yearHasError
-                                      ? const Icon(Icons.error, color: Colors.red)
+                                      ? const Icon(Icons.error,
+                                          color: Colors.red)
                                       : yearFieldInitiallyEmpty
                                           ? null
-                                          : const Icon(Icons.check, color: Colors.green),
+                                          : const Icon(Icons.check,
+                                              color: Colors.green),
                                 ),
                                 onChanged: (val) {
                                   setState(() {
                                     yearFieldInitiallyEmpty = false;
-                                    yearHasError = !(formKey.currentState?.fields['year']?.validate() ?? false);
+                                    yearHasError = !(formKey
+                                            .currentState?.fields['year']
+                                            ?.validate() ??
+                                        false);
                                   });
                                 },
                                 // valueTransformer: (text) => num.tryParse(text),
                                 validator: FormBuilderValidators.compose([
                                   FormBuilderValidators.required(),
                                   FormBuilderValidators.numeric(),
-                                  FormBuilderValidators.match('^([1-2]+)([0-9]){3}',
-                                      errorText: '4 digits required.'), //validator.match is diff from allow
-                                  FormBuilderValidators.max(DateTime.now().year),
+                                  FormBuilderValidators.match(
+                                      RegExp('^([1-2]+)([0-9]){3}'),
+                                      errorText:
+                                          '4 digits required.'), //validator.match is diff from allow
+                                  FormBuilderValidators.max(
+                                      DateTime.now().year),
                                 ]),
                                 //initialValue: '1960',
                                 keyboardType: TextInputType.number,
@@ -1128,39 +1339,64 @@ Future<String> getCountryName() async {
                               child: ElevatedButton(
                                 onPressed: () async {
                                   //debugPrint("OK DUDE $realCountryValue  èè $realCityDepValue  $realStateCityValue");
-                                  if (realCountryValue == 'Select Reg. Country' &&
-                                      realCityDepValue == "Select Reg. City/Department") {
-                                    setState(() => noCountryCityReselectedDuringEdit = true);
+                                  if (realCountryValue ==
+                                          'Select Reg. Country' &&
+                                      realCityDepValue ==
+                                          "Select Reg. City/Department") {
+                                    setState(() =>
+                                        noCountryCityReselectedDuringEdit =
+                                            true);
                                     debugPrint("CAN'T PROCEED");
                                     //showSnackBarText("CAN'T PROCEED");
                                   } else {
-                                    setState(() => noCountryCityReselectedDuringEdit = false);
-                                    if (formKey.currentState?.saveAndValidate() ?? false) {
-                                      formFetchedInf.addAll(formKey.currentState!.value);
-                                      debugPrint("FETCHED FORM RESULT $formFetchedInf");
+                                    setState(() =>
+                                        noCountryCityReselectedDuringEdit =
+                                            false);
+                                    if (formKey.currentState
+                                            ?.saveAndValidate() ??
+                                        false) {
+                                      formFetchedInf
+                                          .addAll(formKey.currentState!.value);
+                                      debugPrint(
+                                          "FETCHED FORM RESULT $formFetchedInf");
 
                                       formFetchedInf.addAll({
-                                        'reg country': realCountryValue.split("    ").last,
+                                        'reg country':
+                                            realCountryValue.split("    ").last,
                                         'reg city': realStateCityValue,
                                       });
 
-                                      debugPrint("FORM VALIDATION SUCCESS ${formKey.currentState!.value}");
+                                      debugPrint(
+                                          "FORM VALIDATION SUCCESS ${formKey.currentState!.value}");
                                       showEditingCarUI
-                                          ? await updateVehiculeInfoFirebase(formFetchedInf, vehiculeToEditOnly)
+                                          ? await updateVehiculeInfoFirebase(
+                                                  formFetchedInf,
+                                                  vehiculeToEditOnly)
                                               .then((fireSnap) {
-                                              Future.delayed(const Duration(seconds: 2)).then((value) {
-                                                Navigator.of(context).pop('CAR INFO UPDATED');
-                                                showSnackBarText("Car info updated successfully!");
+                                              Future.delayed(const Duration(
+                                                      seconds: 2))
+                                                  .then((value) {
+                                                Navigator.of(context)
+                                                    .pop('CAR INFO UPDATED');
+                                                showSnackBarText(
+                                                    "Car info updated successfully!");
                                               });
                                             })
-                                          : await addVehiculeInfoToFirebase(formFetchedInf).then((fireSnap) {
-                                              Future.delayed(const Duration(seconds: 2)).then((value) {
-                                                Navigator.of(context).pop('NEW CAR ADDED');
-                                                showSnackBarText("Car added successfully");
+                                          : await addVehiculeInfoToFirebase(
+                                                  formFetchedInf)
+                                              .then((fireSnap) {
+                                              Future.delayed(const Duration(
+                                                      seconds: 2))
+                                                  .then((value) {
+                                                Navigator.of(context)
+                                                    .pop('NEW CAR ADDED');
+                                                showSnackBarText(
+                                                    "Car added successfully");
                                               });
                                             });
                                     } else {
-                                      debugPrint(formKey.currentState?.value.toString());
+                                      debugPrint(formKey.currentState?.value
+                                          .toString());
                                       debugPrint('Form validation failed');
                                     }
                                   }
@@ -1178,12 +1414,16 @@ Future<String> getCountryName() async {
                                       formKey.currentState?.reset();
 
                                       realCountryValue = 'Select Reg. Country';
-                                      realStateCityValue = 'Select Reg. State/City';
+                                      realStateCityValue =
+                                          'Select Reg. State/City';
                                     },
                                     // color: Theme.of(context).colorScheme.secondary,
                                     child: Text(
                                       'Reset',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary),
                                     )))
                           ],
                         ),
@@ -1194,7 +1434,10 @@ Future<String> getCountryName() async {
               );
             })).then((value) {
       if (value == 'NEW CAR ADDED' || value == "CAR INFO UPDATED") {
-        myDB.collection("users/${currentUser!.uid}/vehicules").get().then((snapshotV) async {
+        myDB
+            .collection("users/${currentUser!.uid}/vehicules")
+            .get()
+            .then((snapshotV) async {
           setState(() {});
         });
       } else {
@@ -1203,12 +1446,15 @@ Future<String> getCountryName() async {
     });
   }
 
-  getDisplayVehiculeStatusColor(String status) {
+  Container getDisplayVehiculeStatusColor(String status) {
     return Container(
       width: 10,
       height: 10,
       decoration: BoxDecoration(
-          color: status == 'selected' ? Colors.blue : Colors.yellow, //for unbookable as it's already past datetime.now
+          color: status == 'selected'
+              ? Colors.blue
+              : Colors
+                  .yellow, //for unbookable as it's already past datetime.now
           shape: BoxShape.circle),
     );
   }
@@ -1216,25 +1462,31 @@ Future<String> getCountryName() async {
   Future<bool> setDefaultCarToDisplay(
       QueryDocumentSnapshot<Map<String, dynamic>> newlySelectedVehicule,
       List<QueryDocumentSnapshot<Map<String, dynamic>>> vehiculesInfoFetched,
-      Function(String carModelFromPanel, String carBrandFromPanel) updateDashboardCar) async {
+      Function(String carModelFromPanel, String carBrandFromPanel)
+          updateDashboardCar) async {
     await myDB
         .collection("users/${currentUser!.uid}/vehicules")
         .doc(newlySelectedVehicule.id)
         .update({'Currently Selected': true});
-    var previouslySelectedCar = vehiculesInfoFetched.where((element) => element.data()['Currently Selected'] == true);
+    var previouslySelectedCar = vehiculesInfoFetched
+        .where((element) => element.data()['Currently Selected'] == true);
     await myDB
         .collection("users/${currentUser!.uid}/vehicules")
         .doc(previouslySelectedCar.first.id)
         .update({'Currently Selected': false}).then((value) {
       setState(() {
-        newlySelectedCarModel = newlySelectedVehicule.data()['Specs']['Model Detail'].toString();
-        newlySelectedCarBrand = newlySelectedVehicule.data()['Specs']['Brand'].toString().toLowerCase();
+        newlySelectedCarModel =
+            newlySelectedVehicule.data()['Specs']['Model Detail'].toString();
+        newlySelectedCarBrand = newlySelectedVehicule
+            .data()['Specs']['Brand']
+            .toString()
+            .toLowerCase();
       });
     });
     return true;
   }
 
-  editingVehiculeButtons(
+  Column editingVehiculeButtons(
       String label,
       IconData icon,
       MaterialColor iconColor,
@@ -1254,16 +1506,22 @@ Future<String> getCountryName() async {
                     callSelectVehiculeAfterAdd = true; */
             });
             label == 'Add'
-                ? await registerOrEditCarForm(action: "registerCar", vehiculeToEditOnly: selectedVehiculeToEdit)
+                ? await registerOrEditCarForm(
+                    action: "registerCar",
+                    vehiculeToEditOnly: selectedVehiculeToEdit)
                 : label == 'Remove'
                     ? {
-                        await removeCarFromFirebase(selectedVehiculeToEdit).then((carRemoveResult) {
-                          carRemoveResult == 'REMOVE CAR' ? postCarDeletionUpdate(vehiculesInfoFetched) : null;
+                        await removeCarFromFirebase(selectedVehiculeToEdit)
+                            .then((carRemoveResult) {
+                          carRemoveResult == 'REMOVE CAR'
+                              ? postCarDeletionUpdate(vehiculesInfoFetched)
+                              : null;
                         })
                       }
                     : await registerOrEditCarForm(
                         action: "editCar",
-                        vehiculeToEditOnly: selectedVehiculeToEdit); //editCarInfo(selectedVehiculeToEdit);
+                        vehiculeToEditOnly:
+                            selectedVehiculeToEdit); //editCarInfo(selectedVehiculeToEdit);
           },
           child: Icon(
             icon,
@@ -1289,18 +1547,23 @@ Future<String> getCountryName() async {
     );
   }
 
-  Future<String> removeCarFromFirebase(QueryDocumentSnapshot<Map<String, dynamic>> selectedVehiculeToEdit) async {
+  Future<String> removeCarFromFirebase(
+      QueryDocumentSnapshot<Map<String, dynamic>>
+          selectedVehiculeToEdit) async {
     return await showDialog(
       barrierDismissible: true,
       useRootNavigator: false,
       context: context,
-      builder: (dialcontext) => StatefulBuilder(builder: (dialcontext, setState) {
+      builder: (dialcontext) =>
+          StatefulBuilder(builder: (dialcontext, setState) {
         return AlertDialog(
           title: const Text("Removal Confirmation"),
-          content: const Text("The selected vehicule will be permanently deleted if you proceed."),
+          content: const Text(
+              "The selected vehicule will be permanently deleted if you proceed."),
           actions: [
             TextButton(
-              style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black38)),
+              style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(Colors.black38)),
               onPressed: () {
                 Navigator.of(context).pop("REMOVE CAR");
               },
@@ -1310,7 +1573,8 @@ Future<String> getCountryName() async {
               ),
             ),
             TextButton(
-              style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black38)),
+              style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(Colors.black38)),
               onPressed: () {
                 Navigator.of(context).pop('CANCEL REMOVAL');
               },
@@ -1325,7 +1589,10 @@ Future<String> getCountryName() async {
     ).then((carAction) async {
       debugPrint("CAR ACTION: $carAction");
       if (carAction == 'REMOVE CAR') {
-        await myDB.collection("users/${currentUser!.uid}/vehicules").doc(selectedVehiculeToEdit.id).delete();
+        await myDB
+            .collection("users/${currentUser!.uid}/vehicules")
+            .doc(selectedVehiculeToEdit.id)
+            .delete();
         setState(() {
           isVehiculeDeleted = true;
         });
@@ -1336,8 +1603,10 @@ Future<String> getCountryName() async {
     });
   }
 
-  postCarDeletionUpdate(vehiculesInfoFetched) {
-    if (isVehiculeDeleted && selectedVehiculeIndex == 0 && vehiculesInfoFetched.length - 1 > 0) {
+  void postCarDeletionUpdate(vehiculesInfoFetched) {
+    if (isVehiculeDeleted &&
+        selectedVehiculeIndex == 0 &&
+        vehiculesInfoFetched.length - 1 > 0) {
       // meaning the default vehicule was deleted, then set the second element to selected as it's gonna become the first one after everything is updated)
       myDB
           .collection("users/${currentUser!.uid}/vehicules")
@@ -1346,21 +1615,38 @@ Future<String> getCountryName() async {
     }
     vehiculesInfoFetched.length - 1 > 0
         ? selectedVehiculeIndex == 0
-            ? widget.updateDashboardCar(vehiculesInfoFetched.elementAt(1).data()['Specs']['Model Detail'].toString(),
-                vehiculesInfoFetched.elementAt(1).data()['Specs']['Brand'].toString().toLowerCase())
-            : widget.updateDashboardCar(vehiculesInfoFetched.first.data()['Specs']['Model Detail'].toString(),
-                vehiculesInfoFetched.first.data()['Specs']['Brand'].toString().toLowerCase())
+            ? widget.updateDashboardCar(
+                vehiculesInfoFetched
+                    .elementAt(1)
+                    .data()['Specs']['Model Detail']
+                    .toString(),
+                vehiculesInfoFetched
+                    .elementAt(1)
+                    .data()['Specs']['Brand']
+                    .toString()
+                    .toLowerCase())
+            : widget.updateDashboardCar(
+                vehiculesInfoFetched.first
+                    .data()['Specs']['Model Detail']
+                    .toString(),
+                vehiculesInfoFetched.first
+                    .data()['Specs']['Brand']
+                    .toString()
+                    .toLowerCase())
         : widget.updateDashboardCar('', 'dacia');
 
     isVehiculeDeleted = false;
   }
 
-  editCarInfo(QueryDocumentSnapshot<Map<String, dynamic>> selectedVehiculeToEdit) async {
+  Future<dynamic> editCarInfo(
+      QueryDocumentSnapshot<Map<String, dynamic>>
+          selectedVehiculeToEdit) async {
     return showDialog(
       barrierDismissible: true,
       useRootNavigator: false,
       context: context,
-      builder: (dialcontext) => StatefulBuilder(builder: (dialcontext, setState) {
+      builder: (dialcontext) =>
+          StatefulBuilder(builder: (dialcontext, setState) {
         return AlertDialog(
           content: SizedBox(
             width: double.maxFinite,
@@ -1380,8 +1666,8 @@ Future<String> getCountryName() async {
     );
   }
 
-  Future<String> updateVehiculeInfoFirebase(
-      Map<String, dynamic> formFetchedInf, QueryDocumentSnapshot<Map<String, dynamic>> vehiculeToEditOnly) async {
+  Future<String> updateVehiculeInfoFirebase(Map<String, dynamic> formFetchedInf,
+      QueryDocumentSnapshot<Map<String, dynamic>> vehiculeToEditOnly) async {
     Map<String, dynamic> newData = ({
       'Type': 'Car',
       'Specs': {
@@ -1399,11 +1685,20 @@ Future<String> getCountryName() async {
       },
       'Other Details': {
         'Reg. City ISO': formFetchedInf['city iso'],
-        'Reg. Country ISO': EmojiParser().unemojify(realCountryValue).split("-").last.split(':').first.toUpperCase(),
+        'Reg. Country ISO': EmojiParser()
+            .unemojify(realCountryValue)
+            .split("-")
+            .last
+            .split(':')
+            .first
+            .toUpperCase(),
       },
       'Currently Selected': false
     });
-    await myDB.collection("users/${currentUser!.uid}/vehicules").doc(vehiculeToEditOnly.id).update(newData);
+    await myDB
+        .collection("users/${currentUser!.uid}/vehicules")
+        .doc(vehiculeToEditOnly.id)
+        .update(newData);
     return 'ok';
   }
   /* if (value.docs.isEmpty) {

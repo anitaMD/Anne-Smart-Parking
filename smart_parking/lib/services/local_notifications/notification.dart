@@ -6,7 +6,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 var myDB = FirebaseFirestore.instance;
 
 void sendNotification({String? title, String? body}) async {
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
   debugPrint("FROM NOTIF${FirebaseAuth.instance.currentUser?.uid}");
 
   ////Set the settings for various platform
@@ -14,28 +15,38 @@ void sendNotification({String? title, String? body}) async {
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
-  const LinuxInitializationSettings initializationSettingsLinux = LinuxInitializationSettings(
+  const LinuxInitializationSettings initializationSettingsLinux =
+      LinuxInitializationSettings(
     defaultActionName: 'hello',
   );
-  const InitializationSettings initializationSettings =
-      InitializationSettings(android: initializationSettingsAndroid, linux: initializationSettingsLinux);
+  const InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      linux: initializationSettingsLinux);
+
   await flutterLocalNotificationsPlugin.initialize(
-    initializationSettings,
+    settings: initializationSettings,
   );
 
   ///
-  const AndroidNotificationChannel channel = AndroidNotificationChannel('high_channel', 'High Importance Notification',
-      description: "This channel is for important notification", importance: Importance.max);
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'high_channel', 'High Importance Notification',
+      description: "This channel is for important notification",
+      importance: Importance.max);
 
   flutterLocalNotificationsPlugin.show(
-    0,
-    title,
-    body,
-    NotificationDetails(
-      android: AndroidNotificationDetails(channel.id, channel.name, channelDescription: channel.description),
+    id: 0,
+    title: title,
+    body: body,
+    notificationDetails: NotificationDetails(
+      android: AndroidNotificationDetails(channel.id, channel.name,
+          channelDescription: channel.description),
     ),
   );
-  myDB.collection('users/${FirebaseAuth.instance.currentUser?.uid}/notifications').add({
+
+  myDB
+      .collection(
+          'users/${FirebaseAuth.instance.currentUser?.uid}/notifications')
+      .add({
     'Received': FieldValue.serverTimestamp(),
     'Notification': {'title': title, 'body': body}
   });

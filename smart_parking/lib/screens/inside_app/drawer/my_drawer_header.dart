@@ -17,7 +17,7 @@ class MyHeaderDrawerState extends State<MyHeaderDrawer> {
   User? currentUser = FirebaseAuth.instance.currentUser;
   String headerProfilePic2 = '';
 
-  assetOrNetworkImageDrawerHeader(String headerPic) {
+  DecorationImage assetOrNetworkImageDrawerHeader(String headerPic) {
     if (headerPic.contains('assets/images')) {
       return DecorationImage(image: AssetImage(headerPic), fit: BoxFit.cover);
     } else {
@@ -76,4 +76,4 @@ class MyHeaderDrawerState extends State<MyHeaderDrawer> {
       ),
     );
   }
-}//closing bracks
+} //closing bracks

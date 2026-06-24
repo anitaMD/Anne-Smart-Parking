@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:phone_number/phone_number.dart';
+import 'package:phone_numbers_parser/phone_numbers_parser.dart';
 import 'package:smart_parking/screens/inside_app/home.dart';
 import 'package:smart_parking/screens/inside_app/googgle_si_landingpage.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
@@ -48,7 +48,12 @@ class LoginRegisterState extends State<LoginRegister> {
   }
 
   UserProfile userProfile = UserProfile(
-      id: '', fullName: '', email: '', phoneNumber: '', timeStamp: FieldValue.serverTimestamp(), profileImage: '');
+      id: '',
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      timeStamp: FieldValue.serverTimestamp(),
+      profileImage: '');
   final formKey = GlobalKey<FormState>();
   FormType _formType = FormType.login;
   //UserType _userType = UserType.normalUser;
@@ -60,22 +65,24 @@ class LoginRegisterState extends State<LoginRegister> {
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _numberController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
 
-  final GoogleSignIn _myGoogleSignIn = GoogleSignIn();
+  final GoogleSignIn _myGoogleSignIn = GoogleSignIn.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   FirebaseService service = FirebaseService();
   FirestoreUserService firestoreService = FirestoreUserService();
   User? currentUser;
 
-  logInWithEmailPassword() async {
+  Future<void> logInWithEmailPassword() async {
     isLogView = true;
 
     try {
-      await _auth.signInWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
+      await _auth.signInWithEmailAndPassword(
+          email: _emailController.text, password: _passwordController.text);
 
       Fluttertoast.showToast(
           msg: 'Successfully logged in',
@@ -131,13 +138,14 @@ class LoginRegisterState extends State<LoginRegister> {
     }
   } //closing brackets
 
-  myValidateNumber() async {
+  Future<bool> myValidateNumber() async {
     bool validSnPhoneNumber = false;
     String fetchedNumber = _numberController.text;
-    RegionInfo region = const RegionInfo(name: 'Senegal', code: 'SN', prefix: 221);
+    const isoCode = IsoCode.SN;
 
     try {
-      validSnPhoneNumber = await PhoneNumberUtil().validate(fetchedNumber, regionCode: region.code);
+      final phone = PhoneNumber.parse(fetchedNumber, callerCountry: isoCode);
+      validSnPhoneNumber = phone.isValid();
       if (!validSnPhoneNumber) {
         Fluttertoast.showToast(
             msg: 'Please check number format.',
@@ -162,15 +170,16 @@ class LoginRegisterState extends State<LoginRegister> {
       checkedValidNumber = false;
     }
     print(' CHECKED VALID NUMBER IS $checkedValidNumber');
+    return checkedValidNumber;
   }
 
-  registerWithEmailPassword() async {
+  Future<void> registerWithEmailPassword() async {
     isLogView = false;
 
     //UserProfile fetchedUP = userProfile;
     try {
-      UserCredential user =
-          await _auth.createUserWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
+      UserCredential user = await _auth.createUserWithEmailAndPassword(
+          email: _emailController.text, password: _passwordController.text);
 
       await firestoreService.createUser(UserProfile(
         id: user.user!.uid,
@@ -261,13 +270,16 @@ class LoginRegisterState extends State<LoginRegister> {
     if (_formType == FormType.login) {
       if (form!.validate()) {
         form.save();
-        print('Form is valid. Email: $_emailController , Password: $_passwordController');
+        print(
+            'Form is valid. Email: $_emailController , Password: $_passwordController');
         return true;
       }
       return false;
     } else {
       myValidateNumber();
-      if (form!.validate() && checkedValidNumber && _passwordController.text == _confirmPasswordController.text) {
+      if (form!.validate() &&
+          checkedValidNumber &&
+          _passwordController.text == _confirmPasswordController.text) {
         form.save();
         print(
             'Form is valid. Full Name : $_fullNameController, Email: $_emailController , Password: $_passwordController, Phone number: $_numberController');
@@ -326,10 +338,16 @@ class LoginRegisterState extends State<LoginRegister> {
     // to deal with the PlatformException error, I had to  edit the method invokeMethod in C:\flutter\packages\flutter\lib\src\services\platform_channel.dart and add a try catch block. Follow this link:
     // link : https://github.com/flutter/flutter/issues/44431
     try {
-      GoogleSignInAccount? googleSignInAccount = await _myGoogleSignIn.signIn();
-      GoogleSignInAuthentication googleSingInAuthentication = await googleSignInAccount!.authentication;
+      GoogleSignInAccount? googleSignInAccount =
+          await _myGoogleSignIn.authenticate();
+      GoogleSignInAuthentication googleSingInAuthentication =
+          googleSignInAccount.authentication;
+      final GoogleSignInClientAuthorization clientAuthorization =
+          await googleSignInAccount.authorizationClient
+              .authorizeScopes(['email', 'profile']);
       AuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleSingInAuthentication.accessToken, idToken: googleSingInAuthentication.idToken);
+          accessToken: clientAuthorization.accessToken,
+          idToken: googleSingInAuthentication.idToken);
       await FirebaseAuth.instance.signInWithCredential(credential);
       _auth.authStateChanges().listen((user) {
         currentUser = FirebaseAuth.instance.currentUser;
@@ -341,7 +359,8 @@ class LoginRegisterState extends State<LoginRegister> {
       });
       if (mounted) {
         return Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const GoogleSignInLandingPage()),
+          MaterialPageRoute(
+              builder: (context) => const GoogleSignInLandingPage()),
         );
       }
     } catch (e) {
@@ -352,7 +371,7 @@ class LoginRegisterState extends State<LoginRegister> {
   /* ------------- SIGNIN WITH GOOGLE - END -------------*/
 
   /* ------------- BUILD LOGIN FORM -------------*/
-  logInFormView() {
+  Form logInFormView() {
     return Form(
       key: formKey,
       child: Column(
@@ -440,12 +459,15 @@ class LoginRegisterState extends State<LoginRegister> {
                 ],
               ),
               TextButton(
-                onPressed: () =>
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const ResetPassword())),
+                onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ResetPassword())),
                 style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Colors.white12),
-                  shape: MaterialStateProperty.all(
-                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                  backgroundColor: WidgetStateProperty.all(Colors.white12),
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0)),
                   ),
                 ),
                 child: const Text(
@@ -465,8 +487,8 @@ class LoginRegisterState extends State<LoginRegister> {
               autofocus: true,
               onPressed: submitForm,
               style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(Colors.white),
-                shape: MaterialStateProperty.all(
+                backgroundColor: WidgetStateProperty.all(Colors.white),
+                shape: WidgetStateProperty.all(
                   RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
@@ -474,8 +496,11 @@ class LoginRegisterState extends State<LoginRegister> {
               ),
               child: const Text(
                 "LOGIN",
-                style:
-                    TextStyle(color: Colors.black, fontSize: 18, fontFamily: 'OpenSans', fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                    fontFamily: 'OpenSans',
+                    fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -486,7 +511,7 @@ class LoginRegisterState extends State<LoginRegister> {
   /* ------------- BUILD LOGIN FORM - END -------------*/
 
   /* ------------- GOOGLE & FACEBOOK SIGN IN OPTIONS -------------*/
-  signInButtonsInLoginView() {
+  Column signInButtonsInLoginView() {
     return Column(
       children: [
         const Padding(
@@ -542,7 +567,7 @@ class LoginRegisterState extends State<LoginRegister> {
   /* ------------- GOOGLE & FACEBOOK SIGN IN OPTIONS - END -------------*/
 
   /* ------------- BACK TO LOGIN SCREEN BUTTON -------------*/
-  signInButtonInRegisterView() {
+  Row signInButtonInRegisterView() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -558,8 +583,8 @@ class LoginRegisterState extends State<LoginRegister> {
         TextButton(
           onPressed: moveToLogIn,
           style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.all(Colors.black),
-            shape: MaterialStateProperty.all(
+            backgroundColor: WidgetStateProperty.all(Colors.black),
+            shape: WidgetStateProperty.all(
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
             ),
           ),
@@ -578,7 +603,7 @@ class LoginRegisterState extends State<LoginRegister> {
   /* ------------- BACK TO LOGIN SCREEN BUTTON - END -------------*/
 
   /* ------------- GO TO REGISTER SCREEN BUTTON -------------*/
-  signUpButtonInLoginView() {
+  Row signUpButtonInLoginView() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -594,8 +619,8 @@ class LoginRegisterState extends State<LoginRegister> {
         TextButton(
           onPressed: moveToRegister,
           style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.all(Colors.black),
-            shape: MaterialStateProperty.all(
+            backgroundColor: WidgetStateProperty.all(Colors.black),
+            shape: WidgetStateProperty.all(
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
             ),
           ),
@@ -614,7 +639,7 @@ class LoginRegisterState extends State<LoginRegister> {
   /* ------------- GO TO REGISTER SCREEN BUTTON - END -------------*/
 
   /* ------------- BUILD REGISTER FORM -------------*/
-  signuPFormView() {
+  Form signuPFormView() {
     return Form(
       key: formKey,
       child: Column(
@@ -756,8 +781,8 @@ class LoginRegisterState extends State<LoginRegister> {
               autofocus: true,
               onPressed: submitForm,
               style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(Colors.white),
-                shape: MaterialStateProperty.all(
+                backgroundColor: WidgetStateProperty.all(Colors.white),
+                shape: WidgetStateProperty.all(
                   RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
@@ -765,8 +790,11 @@ class LoginRegisterState extends State<LoginRegister> {
               ),
               child: const Text(
                 "SIGN UP",
-                style:
-                    TextStyle(color: Colors.black, fontSize: 18, fontFamily: 'OpenSans', fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                    fontFamily: 'OpenSans',
+                    fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -778,7 +806,7 @@ class LoginRegisterState extends State<LoginRegister> {
   /* ------------- BUILD REGISTER FORM - END -------------*/
 
   /* ------------- BUILD SCREEN -------------*/
-  buildView() {
+  Column buildView() {
     if (_formType == FormType.login) {
       return Column(
         children: [
@@ -813,7 +841,7 @@ class LoginRegisterState extends State<LoginRegister> {
   /* ------------- BUILD SCREEN - END -------------*/
 
   /* ------------- SET VIEW LOGIC -------------*/
-  viewSet() {
+  Container viewSet() {
     if (_formType == FormType.login) {
       return Container(
         decoration: logDecoration,
@@ -852,5 +880,3 @@ class LoginRegisterState extends State<LoginRegister> {
 }
 
 ///ending crochet
-
-

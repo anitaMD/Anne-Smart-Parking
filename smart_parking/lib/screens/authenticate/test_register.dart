@@ -8,7 +8,8 @@ import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
-import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,7 +19,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:otp_text_field/otp_field.dart';
 import 'package:otp_text_field/style.dart';
-import 'package:phone_number/phone_number.dart' as prefix;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,7 +30,8 @@ import 'package:smart_parking/screens/inside_app/testhome.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/services/firebase/firebase_storage.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:smart_parking/l10n/generated/app_localizations.dart';
+
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class TestRegister extends StatefulWidget {
@@ -40,7 +41,8 @@ class TestRegister extends StatefulWidget {
   TestRegisterState createState() => TestRegisterState();
 }
 
-class TestRegisterState extends State<TestRegister> with SingleTickerProviderStateMixin {
+class TestRegisterState extends State<TestRegister>
+    with SingleTickerProviderStateMixin {
   User? currentUser;
   XFile? profilePicture;
   List<XFile?> equalityCardRectoVerso = [];
@@ -50,12 +52,13 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
   String? otpCode;
 
   final List<BarcodeFormat> formats = [BarcodeFormat.qrCode];
-  final TextRecognizer _textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+  final TextRecognizer _textRecognizer =
+      TextRecognizer(script: TextRecognitionScript.latin);
   String? theCardRecognizedText;
 
   ConnectivityResult _connectionStatus = ConnectivityResult.none;
   final Connectivity _connectivity = Connectivity();
-  late StreamSubscription<ConnectivityResult> _connectivitySubscription;
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
 
   double headerHeight = 300;
 
@@ -68,19 +71,35 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
   var firestoreWalletService = FirestoreWalletService();
 
   late AnimationController _animationController;
-  final rectoScreenshotController = ScreenshotController(), versoScreenshotController = ScreenshotController();
+  final rectoScreenshotController = ScreenshotController(),
+      versoScreenshotController = ScreenshotController();
 
   List<Map<String, dynamic>> countries = [
     {"name": "Afghanistan", "flag": "🇦🇫", "code": "AF", "dial_code": "+93"},
-    {"name": "Åland Islands", "flag": "🇦🇽", "code": "AX", "dial_code": "+358"},
+    {
+      "name": "Åland Islands",
+      "flag": "🇦🇽",
+      "code": "AX",
+      "dial_code": "+358"
+    },
     {"name": "Albania", "flag": "🇦🇱", "code": "AL", "dial_code": "+355"},
     {"name": "Algeria", "flag": "🇩🇿", "code": "DZ", "dial_code": "+213"},
-    {"name": "American Samoa", "flag": "🇦🇸", "code": "AS", "dial_code": "+1684"},
+    {
+      "name": "American Samoa",
+      "flag": "🇦🇸",
+      "code": "AS",
+      "dial_code": "+1684"
+    },
     {"name": "Andorra", "flag": "🇦🇩", "code": "AD", "dial_code": "+376"},
     {"name": "Angola", "flag": "🇦🇴", "code": "AO", "dial_code": "+244"},
     {"name": "Anguilla", "flag": "🇦🇮", "code": "AI", "dial_code": "+1264"},
     {"name": "Antarctica", "flag": "🇦🇶", "code": "AQ", "dial_code": "+672"},
-    {"name": "Antigua and Barbuda", "flag": "🇦🇬", "code": "AG", "dial_code": "+1268"},
+    {
+      "name": "Antigua and Barbuda",
+      "flag": "🇦🇬",
+      "code": "AG",
+      "dial_code": "+1268"
+    },
     {"name": "Argentina", "flag": "🇦🇷", "code": "AR", "dial_code": "+54"},
     {"name": "Armenia", "flag": "🇦🇲", "code": "AM", "dial_code": "+374"},
     {"name": "Aruba", "flag": "🇦🇼", "code": "AW", "dial_code": "+297"},
@@ -97,13 +116,33 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     {"name": "Benin", "flag": "🇧🇯", "code": "BJ", "dial_code": "+229"},
     {"name": "Bermuda", "flag": "🇧🇲", "code": "BM", "dial_code": "+1441"},
     {"name": "Bhutan", "flag": "🇧🇹", "code": "BT", "dial_code": "+975"},
-    {"name": "Bolivia, Plurinational State of bolivia", "flag": "🇧🇴", "code": "BO", "dial_code": "+591"},
-    {"name": "Bosnia and Herzegovina", "flag": "🇧🇦", "code": "BA", "dial_code": "+387"},
+    {
+      "name": "Bolivia, Plurinational State of bolivia",
+      "flag": "🇧🇴",
+      "code": "BO",
+      "dial_code": "+591"
+    },
+    {
+      "name": "Bosnia and Herzegovina",
+      "flag": "🇧🇦",
+      "code": "BA",
+      "dial_code": "+387"
+    },
     {"name": "Botswana", "flag": "🇧🇼", "code": "BW", "dial_code": "+267"},
     {"name": "Bouvet Island", "flag": "🇧🇻", "code": "BV", "dial_code": "+47"},
     {"name": "Brazil", "flag": "🇧🇷", "code": "BR", "dial_code": "+55"},
-    {"name": "British Indian Ocean Territory", "flag": "🇮🇴", "code": "IO", "dial_code": "+246"},
-    {"name": "Brunei Darussalam", "flag": "🇧🇳", "code": "BN", "dial_code": "+673"},
+    {
+      "name": "British Indian Ocean Territory",
+      "flag": "🇮🇴",
+      "code": "IO",
+      "dial_code": "+246"
+    },
+    {
+      "name": "Brunei Darussalam",
+      "flag": "🇧🇳",
+      "code": "BN",
+      "dial_code": "+673"
+    },
     {"name": "Bulgaria", "flag": "🇧🇬", "code": "BG", "dial_code": "+359"},
     {"name": "Burkina Faso", "flag": "🇧🇫", "code": "BF", "dial_code": "+226"},
     {"name": "Burundi", "flag": "🇧🇮", "code": "BI", "dial_code": "+257"},
@@ -111,43 +150,113 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     {"name": "Cameroon", "flag": "🇨🇲", "code": "CM", "dial_code": "+237"},
     {"name": "Canada", "flag": "🇨🇦", "code": "CA", "dial_code": "+1"},
     {"name": "Cape Verde", "flag": "🇨🇻", "code": "CV", "dial_code": "+238"},
-    {"name": "Cayman Islands", "flag": "🇰🇾", "code": "KY", "dial_code": "+345"},
-    {"name": "Central African Republic", "flag": "🇨🇫", "code": "CF", "dial_code": "+236"},
+    {
+      "name": "Cayman Islands",
+      "flag": "🇰🇾",
+      "code": "KY",
+      "dial_code": "+345"
+    },
+    {
+      "name": "Central African Republic",
+      "flag": "🇨🇫",
+      "code": "CF",
+      "dial_code": "+236"
+    },
     {"name": "Chad", "flag": "🇹🇩", "code": "TD", "dial_code": "+235"},
     {"name": "Chile", "flag": "🇨🇱", "code": "CL", "dial_code": "+56"},
     {"name": "China", "flag": "🇨🇳", "code": "CN", "dial_code": "+86"},
-    {"name": "Christmas Island", "flag": "🇨🇽", "code": "CX", "dial_code": "+61"},
-    {"name": "Cocos (Keeling) Islands", "flag": "🇨🇨", "code": "CC", "dial_code": "+61"},
+    {
+      "name": "Christmas Island",
+      "flag": "🇨🇽",
+      "code": "CX",
+      "dial_code": "+61"
+    },
+    {
+      "name": "Cocos (Keeling) Islands",
+      "flag": "🇨🇨",
+      "code": "CC",
+      "dial_code": "+61"
+    },
     {"name": "Colombia", "flag": "🇨🇴", "code": "CO", "dial_code": "+57"},
     {"name": "Comoros", "flag": "🇰🇲", "code": "KM", "dial_code": "+269"},
     {"name": "Congo", "flag": "🇨🇬", "code": "CG", "dial_code": "+242"},
-    {"name": "Congo, The Democratic Republic of the Congo", "flag": "🇨🇩", "code": "CD", "dial_code": "+243"},
+    {
+      "name": "Congo, The Democratic Republic of the Congo",
+      "flag": "🇨🇩",
+      "code": "CD",
+      "dial_code": "+243"
+    },
     {"name": "Cook Islands", "flag": "🇨🇰", "code": "CK", "dial_code": "+682"},
     {"name": "Costa Rica", "flag": "🇨🇷", "code": "CR", "dial_code": "+506"},
-    {"name": "Cote d'Ivoire", "flag": "🇨🇮", "code": "CI", "dial_code": "+225"},
+    {
+      "name": "Cote d'Ivoire",
+      "flag": "🇨🇮",
+      "code": "CI",
+      "dial_code": "+225"
+    },
     {"name": "Croatia", "flag": "🇭🇷", "code": "HR", "dial_code": "+385"},
     {"name": "Cuba", "flag": "🇨🇺", "code": "CU", "dial_code": "+53"},
     {"name": "Cyprus", "flag": "🇨🇾", "code": "CY", "dial_code": "+357"},
-    {"name": "Czech Republic", "flag": "🇨🇿", "code": "CZ", "dial_code": "+420"},
+    {
+      "name": "Czech Republic",
+      "flag": "🇨🇿",
+      "code": "CZ",
+      "dial_code": "+420"
+    },
     {"name": "Denmark", "flag": "🇩🇰", "code": "DK", "dial_code": "+45"},
     {"name": "Djibouti", "flag": "🇩🇯", "code": "DJ", "dial_code": "+253"},
     {"name": "Dominica", "flag": "🇩🇲", "code": "DM", "dial_code": "+1767"},
-    {"name": "Dominican Republic", "flag": "🇩🇴", "code": "DO", "dial_code": "+1849"},
+    {
+      "name": "Dominican Republic",
+      "flag": "🇩🇴",
+      "code": "DO",
+      "dial_code": "+1849"
+    },
     {"name": "Ecuador", "flag": "🇪🇨", "code": "EC", "dial_code": "+593"},
     {"name": "Egypt", "flag": "🇪🇬", "code": "EG", "dial_code": "+20"},
     {"name": "El Salvador", "flag": "🇸🇻", "code": "SV", "dial_code": "+503"},
-    {"name": "Equatorial Guinea", "flag": "🇬🇶", "code": "GQ", "dial_code": "+240"},
+    {
+      "name": "Equatorial Guinea",
+      "flag": "🇬🇶",
+      "code": "GQ",
+      "dial_code": "+240"
+    },
     {"name": "Eritrea", "flag": "🇪🇷", "code": "ER", "dial_code": "+291"},
     {"name": "Estonia", "flag": "🇪🇪", "code": "EE", "dial_code": "+372"},
     {"name": "Ethiopia", "flag": "🇪🇹", "code": "ET", "dial_code": "+251"},
-    {"name": "Falkland Islands (Malvinas)", "flag": "🇫🇰", "code": "FK", "dial_code": "+500"},
-    {"name": "Faroe Islands", "flag": "🇫🇴", "code": "FO", "dial_code": "+298"},
+    {
+      "name": "Falkland Islands (Malvinas)",
+      "flag": "🇫🇰",
+      "code": "FK",
+      "dial_code": "+500"
+    },
+    {
+      "name": "Faroe Islands",
+      "flag": "🇫🇴",
+      "code": "FO",
+      "dial_code": "+298"
+    },
     {"name": "Fiji", "flag": "🇫🇯", "code": "FJ", "dial_code": "+679"},
     {"name": "Finland", "flag": "🇫🇮", "code": "FI", "dial_code": "+358"},
     {"name": "France", "flag": "🇫🇷", "code": "FR", "dial_code": "+33"},
-    {"name": "French Guiana", "flag": "🇬🇫", "code": "GF", "dial_code": "+594"},
-    {"name": "French Polynesia", "flag": "🇵🇫", "code": "PF", "dial_code": "+689"},
-    {"name": "French Southern Territories", "flag": "🇹🇫", "code": "TF", "dial_code": "+262"},
+    {
+      "name": "French Guiana",
+      "flag": "🇬🇫",
+      "code": "GF",
+      "dial_code": "+594"
+    },
+    {
+      "name": "French Polynesia",
+      "flag": "🇵🇫",
+      "code": "PF",
+      "dial_code": "+689"
+    },
+    {
+      "name": "French Southern Territories",
+      "flag": "🇹🇫",
+      "code": "TF",
+      "dial_code": "+262"
+    },
     {"name": "Gabon", "flag": "🇬🇦", "code": "GA", "dial_code": "+241"},
     {"name": "Gambia", "flag": "🇬🇲", "code": "GM", "dial_code": "+220"},
     {"name": "Georgia", "flag": "🇬🇪", "code": "GE", "dial_code": "+995"},
@@ -162,18 +271,38 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     {"name": "Guatemala", "flag": "🇬🇹", "code": "GT", "dial_code": "+502"},
     {"name": "Guernsey", "flag": "🇬🇬", "code": "GG", "dial_code": "+44"},
     {"name": "Guinea", "flag": "🇬🇳", "code": "GN", "dial_code": "+224"},
-    {"name": "Guinea-Bissau", "flag": "🇬🇼", "code": "GW", "dial_code": "+245"},
+    {
+      "name": "Guinea-Bissau",
+      "flag": "🇬🇼",
+      "code": "GW",
+      "dial_code": "+245"
+    },
     {"name": "Guyana", "flag": "🇬🇾", "code": "GY", "dial_code": "+592"},
     {"name": "Haiti", "flag": "🇭🇹", "code": "HT", "dial_code": "+509"},
-    {"name": "Heard Island and Mcdonald Islands", "flag": "🇭🇲", "code": "HM", "dial_code": "+672"},
-    {"name": "Holy See (Vatican City State)", "flag": "🇻🇦", "code": "VA", "dial_code": "+379"},
+    {
+      "name": "Heard Island and Mcdonald Islands",
+      "flag": "🇭🇲",
+      "code": "HM",
+      "dial_code": "+672"
+    },
+    {
+      "name": "Holy See (Vatican City State)",
+      "flag": "🇻🇦",
+      "code": "VA",
+      "dial_code": "+379"
+    },
     {"name": "Honduras", "flag": "🇭🇳", "code": "HN", "dial_code": "+504"},
     {"name": "Hong Kong", "flag": "🇭🇰", "code": "HK", "dial_code": "+852"},
     {"name": "Hungary", "flag": "🇭🇺", "code": "HU", "dial_code": "+36"},
     {"name": "Iceland", "flag": "🇮🇸", "code": "IS", "dial_code": "+354"},
     {"name": "India", "flag": "🇮🇳", "code": "IN", "dial_code": "+91"},
     {"name": "Indonesia", "flag": "🇮🇩", "code": "ID", "dial_code": "+62"},
-    {"name": "Iran, Islamic Republic of Persian Gulf", "flag": "🇮🇷", "code": "IR", "dial_code": "+98"},
+    {
+      "name": "Iran, Islamic Republic of Persian Gulf",
+      "flag": "🇮🇷",
+      "code": "IR",
+      "dial_code": "+98"
+    },
     {"name": "Iraq", "flag": "🇮🇶", "code": "IQ", "dial_code": "+964"},
     {"name": "Ireland", "flag": "🇮🇪", "code": "IE", "dial_code": "+353"},
     {"name": "Isle of Man", "flag": "🇮🇲", "code": "IM", "dial_code": "+44"},
@@ -186,8 +315,18 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     {"name": "Kazakhstan", "flag": "🇰🇿", "code": "KZ", "dial_code": "+7"},
     {"name": "Kenya", "flag": "🇰🇪", "code": "KE", "dial_code": "+254"},
     {"name": "Kiribati", "flag": "🇰🇮", "code": "KI", "dial_code": "+686"},
-    {"name": "Korea, Democratic People's Republic of Korea", "flag": "🇰🇵", "code": "KP", "dial_code": "+850"},
-    {"name": "Korea, Republic of South Korea", "flag": "🇰🇷", "code": "KR", "dial_code": "+82"},
+    {
+      "name": "Korea, Democratic People's Republic of Korea",
+      "flag": "🇰🇵",
+      "code": "KP",
+      "dial_code": "+850"
+    },
+    {
+      "name": "Korea, Republic of South Korea",
+      "flag": "🇰🇷",
+      "code": "KR",
+      "dial_code": "+82"
+    },
     {"name": "Kosovo", "flag": "🇽🇰", "code": "XK", "dial_code": "+383"},
     {"name": "Kuwait", "flag": "🇰🇼", "code": "KW", "dial_code": "+965"},
     {"name": "Kyrgyzstan", "flag": "🇰🇬", "code": "KG", "dial_code": "+996"},
@@ -196,8 +335,18 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     {"name": "Lebanon", "flag": "🇱🇧", "code": "LB", "dial_code": "+961"},
     {"name": "Lesotho", "flag": "🇱🇸", "code": "LS", "dial_code": "+266"},
     {"name": "Liberia", "flag": "🇱🇷", "code": "LR", "dial_code": "+231"},
-    {"name": "Libyan Arab Jamahiriya", "flag": "🇱🇾", "code": "LY", "dial_code": "+218"},
-    {"name": "Liechtenstein", "flag": "🇱🇮", "code": "LI", "dial_code": "+423"},
+    {
+      "name": "Libyan Arab Jamahiriya",
+      "flag": "🇱🇾",
+      "code": "LY",
+      "dial_code": "+218"
+    },
+    {
+      "name": "Liechtenstein",
+      "flag": "🇱🇮",
+      "code": "LI",
+      "dial_code": "+423"
+    },
     {"name": "Lithuania", "flag": "🇱🇹", "code": "LT", "dial_code": "+370"},
     {"name": "Luxembourg", "flag": "🇱🇺", "code": "LU", "dial_code": "+352"},
     {"name": "Macao", "flag": "🇲🇴", "code": "MO", "dial_code": "+853"},
@@ -208,13 +357,23 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     {"name": "Maldives", "flag": "🇲🇻", "code": "MV", "dial_code": "+960"},
     {"name": "Mali", "flag": "🇲🇱", "code": "ML", "dial_code": "+223"},
     {"name": "Malta", "flag": "🇲🇹", "code": "MT", "dial_code": "+356"},
-    {"name": "Marshall Islands", "flag": "🇲🇭", "code": "MH", "dial_code": "+692"},
+    {
+      "name": "Marshall Islands",
+      "flag": "🇲🇭",
+      "code": "MH",
+      "dial_code": "+692"
+    },
     {"name": "Martinique", "flag": "🇲🇶", "code": "MQ", "dial_code": "+596"},
     {"name": "Mauritania", "flag": "🇲🇷", "code": "MR", "dial_code": "+222"},
     {"name": "Mauritius", "flag": "🇲🇺", "code": "MU", "dial_code": "+230"},
     {"name": "Mayotte", "flag": "🇾🇹", "code": "YT", "dial_code": "+262"},
     {"name": "Mexico", "flag": "🇲🇽", "code": "MX", "dial_code": "+52"},
-    {"name": "Micronesia, Federated States of Micronesia", "flag": "🇫🇲", "code": "FM", "dial_code": "+691"},
+    {
+      "name": "Micronesia, Federated States of Micronesia",
+      "flag": "🇫🇲",
+      "code": "FM",
+      "dial_code": "+691"
+    },
     {"name": "Moldova", "flag": "🇲🇩", "code": "MD", "dial_code": "+373"},
     {"name": "Monaco", "flag": "🇲🇨", "code": "MC", "dial_code": "+377"},
     {"name": "Mongolia", "flag": "🇲🇳", "code": "MN", "dial_code": "+976"},
@@ -227,22 +386,52 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     {"name": "Nauru", "flag": "🇳🇷", "code": "NR", "dial_code": "+674"},
     {"name": "Nepal", "flag": "🇳🇵", "code": "NP", "dial_code": "+977"},
     {"name": "Netherlands", "flag": "🇳🇱", "code": "NL", "dial_code": "+31"},
-    {"name": "Netherlands Antilles", "flag": "", "code": "AN", "dial_code": "+599"},
-    {"name": "New Caledonia", "flag": "🇳🇨", "code": "NC", "dial_code": "+687"},
+    {
+      "name": "Netherlands Antilles",
+      "flag": "",
+      "code": "AN",
+      "dial_code": "+599"
+    },
+    {
+      "name": "New Caledonia",
+      "flag": "🇳🇨",
+      "code": "NC",
+      "dial_code": "+687"
+    },
     {"name": "New Zealand", "flag": "🇳🇿", "code": "NZ", "dial_code": "+64"},
     {"name": "Nicaragua", "flag": "🇳🇮", "code": "NI", "dial_code": "+505"},
     {"name": "Niger", "flag": "🇳🇪", "code": "NE", "dial_code": "+227"},
     {"name": "Nigeria", "flag": "🇳🇬", "code": "NG", "dial_code": "+234"},
     {"name": "Niue", "flag": "🇳🇺", "code": "NU", "dial_code": "+683"},
-    {"name": "Norfolk Island", "flag": "🇳🇫", "code": "NF", "dial_code": "+672"},
-    {"name": "Northern Mariana Islands", "flag": "🇲🇵", "code": "MP", "dial_code": "+1670"},
+    {
+      "name": "Norfolk Island",
+      "flag": "🇳🇫",
+      "code": "NF",
+      "dial_code": "+672"
+    },
+    {
+      "name": "Northern Mariana Islands",
+      "flag": "🇲🇵",
+      "code": "MP",
+      "dial_code": "+1670"
+    },
     {"name": "Norway", "flag": "🇳🇴", "code": "NO", "dial_code": "+47"},
     {"name": "Oman", "flag": "🇴🇲", "code": "OM", "dial_code": "+968"},
     {"name": "Pakistan", "flag": "🇵🇰", "code": "PK", "dial_code": "+92"},
     {"name": "Palau", "flag": "🇵🇼", "code": "PW", "dial_code": "+680"},
-    {"name": "Palestinian Territory, Occupied", "flag": "🇵🇸", "code": "PS", "dial_code": "+970"},
+    {
+      "name": "Palestinian Territory, Occupied",
+      "flag": "🇵🇸",
+      "code": "PS",
+      "dial_code": "+970"
+    },
     {"name": "Panama", "flag": "🇵🇦", "code": "PA", "dial_code": "+507"},
-    {"name": "Papua New Guinea", "flag": "🇵🇬", "code": "PG", "dial_code": "+675"},
+    {
+      "name": "Papua New Guinea",
+      "flag": "🇵🇬",
+      "code": "PG",
+      "dial_code": "+675"
+    },
     {"name": "Paraguay", "flag": "🇵🇾", "code": "PY", "dial_code": "+595"},
     {"name": "Peru", "flag": "🇵🇪", "code": "PE", "dial_code": "+51"},
     {"name": "Philippines", "flag": "🇵🇭", "code": "PH", "dial_code": "+63"},
@@ -255,16 +444,46 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     {"name": "Russia", "flag": "🇷🇺", "code": "RU", "dial_code": "+7"},
     {"name": "Rwanda", "flag": "🇷🇼", "code": "RW", "dial_code": "+250"},
     {"name": "Reunion", "flag": "🇷🇪", "code": "RE", "dial_code": "+262"},
-    {"name": "Saint Barthelemy", "flag": "🇧🇱", "code": "BL", "dial_code": "+590"},
-    {"name": "Saint Helena, Ascension and Tristan Da Cunha", "flag": "🇸🇭", "code": "SH", "dial_code": "+290"},
-    {"name": "Saint Kitts and Nevis", "flag": "🇰🇳", "code": "KN", "dial_code": "+1869"},
+    {
+      "name": "Saint Barthelemy",
+      "flag": "🇧🇱",
+      "code": "BL",
+      "dial_code": "+590"
+    },
+    {
+      "name": "Saint Helena, Ascension and Tristan Da Cunha",
+      "flag": "🇸🇭",
+      "code": "SH",
+      "dial_code": "+290"
+    },
+    {
+      "name": "Saint Kitts and Nevis",
+      "flag": "🇰🇳",
+      "code": "KN",
+      "dial_code": "+1869"
+    },
     {"name": "Saint Lucia", "flag": "🇱🇨", "code": "LC", "dial_code": "+1758"},
     {"name": "Saint Martin", "flag": "🇲🇫", "code": "MF", "dial_code": "+590"},
-    {"name": "Saint Pierre and Miquelon", "flag": "🇵🇲", "code": "PM", "dial_code": "+508"},
-    {"name": "Saint Vincent and the Grenadines", "flag": "🇻🇨", "code": "VC", "dial_code": "+1784"},
+    {
+      "name": "Saint Pierre and Miquelon",
+      "flag": "🇵🇲",
+      "code": "PM",
+      "dial_code": "+508"
+    },
+    {
+      "name": "Saint Vincent and the Grenadines",
+      "flag": "🇻🇨",
+      "code": "VC",
+      "dial_code": "+1784"
+    },
     {"name": "Samoa", "flag": "🇼🇸", "code": "WS", "dial_code": "+685"},
     {"name": "San Marino", "flag": "🇸🇲", "code": "SM", "dial_code": "+378"},
-    {"name": "Sao Tome and Principe", "flag": "🇸🇹", "code": "ST", "dial_code": "+239"},
+    {
+      "name": "Sao Tome and Principe",
+      "flag": "🇸🇹",
+      "code": "ST",
+      "dial_code": "+239"
+    },
     {"name": "Saudi Arabia", "flag": "🇸🇦", "code": "SA", "dial_code": "+966"},
     {"name": "Senegal", "flag": "🇸🇳", "code": "SN", "dial_code": "+221"},
     {"name": "Serbia", "flag": "🇷🇸", "code": "RS", "dial_code": "+381"},
@@ -273,53 +492,119 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     {"name": "Singapore", "flag": "🇸🇬", "code": "SG", "dial_code": "+65"},
     {"name": "Slovakia", "flag": "🇸🇰", "code": "SK", "dial_code": "+421"},
     {"name": "Slovenia", "flag": "🇸🇮", "code": "SI", "dial_code": "+386"},
-    {"name": "Solomon Islands", "flag": "🇸🇧", "code": "SB", "dial_code": "+677"},
+    {
+      "name": "Solomon Islands",
+      "flag": "🇸🇧",
+      "code": "SB",
+      "dial_code": "+677"
+    },
     {"name": "Somalia", "flag": "🇸🇴", "code": "SO", "dial_code": "+252"},
     {"name": "South Africa", "flag": "🇿🇦", "code": "ZA", "dial_code": "+27"},
     {"name": "South Sudan", "flag": "🇸🇸", "code": "SS", "dial_code": "+211"},
-    {"name": "South Georgia and the South Sandwich Islands", "flag": "🇬🇸", "code": "GS", "dial_code": "+500"},
+    {
+      "name": "South Georgia and the South Sandwich Islands",
+      "flag": "🇬🇸",
+      "code": "GS",
+      "dial_code": "+500"
+    },
     {"name": "Spain", "flag": "🇪🇸", "code": "ES", "dial_code": "+34"},
     {"name": "Sri Lanka", "flag": "🇱🇰", "code": "LK", "dial_code": "+94"},
     {"name": "Sudan", "flag": "🇸🇩", "code": "SD", "dial_code": "+249"},
     {"name": "Suriname", "flag": "🇸🇷", "code": "SR", "dial_code": "+597"},
-    {"name": "Svalbard and Jan Mayen", "flag": "🇸🇯", "code": "SJ", "dial_code": "+47"},
+    {
+      "name": "Svalbard and Jan Mayen",
+      "flag": "🇸🇯",
+      "code": "SJ",
+      "dial_code": "+47"
+    },
     {"name": "Swaziland", "flag": "🇸🇿", "code": "SZ", "dial_code": "+268"},
     {"name": "Sweden", "flag": "🇸🇪", "code": "SE", "dial_code": "+46"},
     {"name": "Switzerland", "flag": "🇨🇭", "code": "CH", "dial_code": "+41"},
-    {"name": "Syrian Arab Republic", "flag": "🇸🇾", "code": "SY", "dial_code": "+963"},
+    {
+      "name": "Syrian Arab Republic",
+      "flag": "🇸🇾",
+      "code": "SY",
+      "dial_code": "+963"
+    },
     {"name": "Taiwan", "flag": "🇹🇼", "code": "TW", "dial_code": "+886"},
     {"name": "Tajikistan", "flag": "🇹🇯", "code": "TJ", "dial_code": "+992"},
-    {"name": "Tanzania, United Republic of Tanzania", "flag": "🇹🇿", "code": "TZ", "dial_code": "+255"},
+    {
+      "name": "Tanzania, United Republic of Tanzania",
+      "flag": "🇹🇿",
+      "code": "TZ",
+      "dial_code": "+255"
+    },
     {"name": "Thailand", "flag": "🇹🇭", "code": "TH", "dial_code": "+66"},
     {"name": "Timor-Leste", "flag": "🇹🇱", "code": "TL", "dial_code": "+670"},
     {"name": "Togo", "flag": "🇹🇬", "code": "TG", "dial_code": "+228"},
     {"name": "Tokelau", "flag": "🇹🇰", "code": "TK", "dial_code": "+690"},
     {"name": "Tonga", "flag": "🇹🇴", "code": "TO", "dial_code": "+676"},
-    {"name": "Trinidad and Tobago", "flag": "🇹🇹", "code": "TT", "dial_code": "+1868"},
+    {
+      "name": "Trinidad and Tobago",
+      "flag": "🇹🇹",
+      "code": "TT",
+      "dial_code": "+1868"
+    },
     {"name": "Tunisia", "flag": "🇹🇳", "code": "TN", "dial_code": "+216"},
     {"name": "Turkey", "flag": "🇹🇷", "code": "TR", "dial_code": "+90"},
     {"name": "Turkmenistan", "flag": "🇹🇲", "code": "TM", "dial_code": "+993"},
-    {"name": "Turks and Caicos Islands", "flag": "🇹🇨", "code": "TC", "dial_code": "+1649"},
+    {
+      "name": "Turks and Caicos Islands",
+      "flag": "🇹🇨",
+      "code": "TC",
+      "dial_code": "+1649"
+    },
     {"name": "Tuvalu", "flag": "🇹🇻", "code": "TV", "dial_code": "+688"},
     {"name": "Uganda", "flag": "🇺🇬", "code": "UG", "dial_code": "+256"},
     {"name": "Ukraine", "flag": "🇺🇦", "code": "UA", "dial_code": "+380"},
-    {"name": "United Arab Emirates", "flag": "🇦🇪", "code": "AE", "dial_code": "+971"},
-    {"name": "United Kingdom", "flag": "🇬🇧", "code": "GB", "dial_code": "+44"},
+    {
+      "name": "United Arab Emirates",
+      "flag": "🇦🇪",
+      "code": "AE",
+      "dial_code": "+971"
+    },
+    {
+      "name": "United Kingdom",
+      "flag": "🇬🇧",
+      "code": "GB",
+      "dial_code": "+44"
+    },
     {"name": "United States", "flag": "🇺🇸", "code": "US", "dial_code": "+1"},
     {"name": "Uruguay", "flag": "🇺🇾", "code": "UY", "dial_code": "+598"},
     {"name": "Uzbekistan", "flag": "🇺🇿", "code": "UZ", "dial_code": "+998"},
     {"name": "Vanuatu", "flag": "🇻🇺", "code": "VU", "dial_code": "+678"},
-    {"name": "Venezuela, Bolivarian Republic of Venezuela", "flag": "🇻🇪", "code": "VE", "dial_code": "+58"},
+    {
+      "name": "Venezuela, Bolivarian Republic of Venezuela",
+      "flag": "🇻🇪",
+      "code": "VE",
+      "dial_code": "+58"
+    },
     {"name": "Vietnam", "flag": "🇻🇳", "code": "VN", "dial_code": "+84"},
-    {"name": "Virgin Islands, British", "flag": "🇻🇬", "code": "VG", "dial_code": "+1284"},
-    {"name": "Virgin Islands, U.S.", "flag": "🇻🇮", "code": "VI", "dial_code": "+1340"},
-    {"name": "Wallis and Futuna", "flag": "🇼🇫", "code": "WF", "dial_code": "+681"},
+    {
+      "name": "Virgin Islands, British",
+      "flag": "🇻🇬",
+      "code": "VG",
+      "dial_code": "+1284"
+    },
+    {
+      "name": "Virgin Islands, U.S.",
+      "flag": "🇻🇮",
+      "code": "VI",
+      "dial_code": "+1340"
+    },
+    {
+      "name": "Wallis and Futuna",
+      "flag": "🇼🇫",
+      "code": "WF",
+      "dial_code": "+681"
+    },
     {"name": "Yemen", "flag": "🇾🇪", "code": "YE", "dial_code": "+967"},
     {"name": "Zambia", "flag": "🇿🇲", "code": "ZM", "dial_code": "+260"},
     {"name": "Zimbabwe", "flag": "🇿🇼", "code": "ZW", "dial_code": "+263"}
   ];
 
-  TextStyle errorTextStle = const TextStyle(color: Colors.red, fontSize: 15, fontWeight: FontWeight.w600);
+  TextStyle errorTextStle = const TextStyle(
+      color: Colors.red, fontSize: 15, fontWeight: FontWeight.w600);
 
   String otpPin = '',
       verID = " ",
@@ -393,16 +678,21 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
 
     getCarrierCode(countries).then((value) {
       setState(() {
-        var ok = countries.where((element) => element['code'] == value.toUpperCase());
-        initializedNumber =
-            PhoneNumber(isoCode: value.toUpperCase(), dialCode: ok.first['dial_code'], phoneNumber: ' ');
+        var ok = countries
+            .where((element) => element['code'] == value.toUpperCase());
+        initializedNumber = PhoneNumber(
+            isoCode: value.toUpperCase(),
+            dialCode: ok.first['dial_code'],
+            phoneNumber: ' ');
       });
     });
-    _animationController = AnimationController(vsync: this, duration: const Duration(seconds: 2));
+    _animationController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2));
     _animationController.repeat(reverse: true);
     setState(() {});
     initConnectivity();
-    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+    _connectivitySubscription =
+        _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
 
     timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (listeningForOTP) {
@@ -442,12 +732,12 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
   }
 
   Future<String> getCarrierCode(List<Map<String, dynamic>> countries) async {
-    String code = await prefix.PhoneNumberUtil().carrierRegionCode();
+    String code = await countries.first['code'];
     return code;
   }
 
   Future<void> initConnectivity() async {
-    late ConnectivityResult result;
+    late List<ConnectivityResult> result;
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       result = await _connectivity.checkConnectivity();
@@ -466,9 +756,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     return _updateConnectionStatus(result);
   }
 
-  Future<void> _updateConnectionStatus(ConnectivityResult result) async {
+  Future<void> _updateConnectionStatus(List<ConnectivityResult> result) async {
     setState(() {
-      _connectionStatus = result;
+      _connectionStatus = result.first;
     });
   }
 
@@ -485,17 +775,22 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         ? null
         : equalityCardUploadedStoragePath.length == 2
             ? {
-                print("equalityCardUploadedStoragePathYES $equalityCardUploadedStoragePath"),
-                updateAndVerifNumCount < 1 ? updateEqualityCardStorageAndVerifyPhone() : null,
+                print(
+                    "equalityCardUploadedStoragePathYES $equalityCardUploadedStoragePath"),
+                updateAndVerifNumCount < 1
+                    ? updateEqualityCardStorageAndVerifyPhone()
+                    : null,
                 updateAndVerifNumCount += 1,
               }
             : null;
 
     var localLnSetting = AppLocalizations.of(context)!;
-    var theCountry = countries.where((element) => element['code'].toString().toLowerCase() == theCodeForPhone);
+    var theCountry = countries.where((element) =>
+        element['code'].toString().toLowerCase() == theCodeForPhone);
     theCountry.isNotEmpty
         ? {
-            print('HA ${theCountry.first} ${theCountry.first['flag'].runtimeType}'),
+            print(
+                'HA ${theCountry.first} ${theCountry.first['flag'].runtimeType}'),
           }
         : null;
 
@@ -504,15 +799,20 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         FocusScope.of(context).requestFocus(FocusNode());
       },
       child: Scaffold(
-        backgroundColor: activeStep == 1 && isSpecialAccessUser ? Colors.grey.shade900 : Colors.white,
+        backgroundColor: activeStep == 1 && isSpecialAccessUser
+            ? Colors.grey.shade900
+            : Colors.white,
         body: SingleChildScrollView(child: bodySwitch(localLnSetting)),
       ),
     );
   }
 
-  bodySwitch(AppLocalizations localLnSetting) {
-    print("THE DIALCODE: $dialCode ___ Connection Status: ${_connectionStatus.toString()}");
-    var yesNoRadio = isSpecialAccessUser ? localLnSetting.regRadioYes : localLnSetting.regRadioNo;
+  Widget bodySwitch(AppLocalizations localLnSetting) {
+    print(
+        "THE DIALCODE: $dialCode ___ Connection Status: ${_connectionStatus.toString()}");
+    var yesNoRadio = isSpecialAccessUser
+        ? localLnSetting.regRadioYes
+        : localLnSetting.regRadioNo;
     //email-already-exists add this case to register form ********************
 
     switch (activeStep) {
@@ -522,7 +822,11 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
           builder: (context, listenableValue, child) {
             print("LISTENBALE VALUE $listenableValue");
             !listenableValue && listenableCounter < 1
-                ? {nextButtonSendOTP(localLnSetting, regFormKey, listenableValue), listenableCounter += 1}
+                ? {
+                    nextButtonSendOTP(
+                        localLnSetting, regFormKey, listenableValue),
+                    listenableCounter += 1
+                  }
                 : null;
             return Stack(
               children: [
@@ -557,7 +861,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                     //padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(100),
-                                      border: Border.all(width: 5, color: Colors.white),
+                                      border: Border.all(
+                                          width: 5, color: Colors.white),
                                       color: Colors.white,
                                       boxShadow: const [
                                         BoxShadow(
@@ -581,10 +886,14 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                           ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.fromLTRB(80, 80, 0, 0),
+                                    padding:
+                                        const EdgeInsets.fromLTRB(80, 80, 0, 0),
                                     child: IconButton(
                                         onPressed: () {
-                                          getProfileOrCardImage('profilePicture', '', localLnSetting);
+                                          getProfileOrCardImage(
+                                              'profilePicture',
+                                              '',
+                                              localLnSetting);
                                         },
                                         icon: Icon(
                                           Icons.add_circle,
@@ -599,37 +908,48 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                               height: 30,
                             ),
                             Container(
-                              decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                              decoration:
+                                  ThemeHelper().inputBoxDecorationShaddow(),
                               child: TextFormField(
                                 controller: _fullNameController,
                                 autovalidateMode: AutovalidateMode.disabled,
                                 keyboardType: TextInputType.name,
                                 textCapitalization: TextCapitalization.words,
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.allow(RegExp("[A-Za-z' -]*"), replacementString: ''),
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp("[A-Za-z' -]*"),
+                                      replacementString: ''),
                                 ],
                                 validator: FormBuilderValidators.compose([
                                   FormBuilderValidators.required(),
                                 ]),
-                                decoration: ThemeHelper().textInputDecoration(Icons.perm_identity,
-                                    localLnSetting.regFullNameLabel, localLnSetting.regFullNamePlaceholder),
+                                decoration: ThemeHelper().textInputDecoration(
+                                    Icons.perm_identity,
+                                    localLnSetting.regFullNameLabel,
+                                    localLnSetting.regFullNamePlaceholder),
                               ),
                             ),
                             const SizedBox(
                               height: 20,
                             ),
                             Container(
-                              decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                              decoration:
+                                  ThemeHelper().inputBoxDecorationShaddow(),
                               child: TextFormField(
                                 controller: _emailController,
                                 decoration: ThemeHelper().textInputDecoration(
-                                    Icons.email, localLnSetting.regEmailLabel, localLnSetting.regEmailPlaceholder),
+                                    Icons.email,
+                                    localLnSetting.regEmailLabel,
+                                    localLnSetting.regEmailPlaceholder),
                                 keyboardType: TextInputType.emailAddress,
                                 validator: FormBuilderValidators.compose([
                                   FormBuilderValidators.required(),
                                   FormBuilderValidators.match(
-                                      r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$",
-                                      errorText: localLnSetting.logErrorBadEmailFormat)
+                                      RegExp(
+                                        r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$",
+                                      ),
+                                      errorText:
+                                          localLnSetting.logErrorBadEmailFormat)
                                 ]),
                               ),
                             ),
@@ -637,7 +957,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                             InternationalPhoneNumberInput(
                               key: internatKey,
                               onInputChanged: (PhoneNumber changingNumber) {
-                                print("changingNumber ${changingNumber.phoneNumber}");
+                                print(
+                                    "changingNumber ${changingNumber.phoneNumber}");
                               },
                               onInputValidated: (bool value) {
                                 setState(() {
@@ -656,28 +977,35 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                 hintText: localLnSetting.regNumberPlaceholder,
                                 fillColor: Colors.white,
                                 filled: true,
-                                contentPadding: const EdgeInsets.fromLTRB(20, 10, 0, 10),
+                                contentPadding:
+                                    const EdgeInsets.fromLTRB(20, 10, 0, 10),
                                 focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(100.0),
-                                    borderSide: const BorderSide(color: Colors.grey)),
+                                    borderSide:
+                                        const BorderSide(color: Colors.grey)),
                                 enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(100.0),
-                                    borderSide: BorderSide(color: Colors.grey.shade400)),
+                                    borderSide: BorderSide(
+                                        color: Colors.grey.shade400)),
                                 errorBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(100.0),
-                                    borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+                                    borderSide: const BorderSide(
+                                        color: Colors.red, width: 2.0)),
                                 focusedErrorBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(100.0),
-                                    borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+                                    borderSide: const BorderSide(
+                                        color: Colors.red, width: 2.0)),
                               ),
                               ignoreBlank: false,
                               errorMessage: localLnSetting.regNumberError,
                               autoValidateMode: AutovalidateMode.disabled,
-                              selectorTextStyle: const TextStyle(color: Colors.black),
+                              selectorTextStyle:
+                                  const TextStyle(color: Colors.black),
                               initialValue: initializedNumber,
                               textFieldController: _numberController,
                               formatInput: false,
-                              keyboardType: const TextInputType.numberWithOptions(),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(),
                               onSaved: (PhoneNumber thenumber) {
                                 print('On Saved: $thenumber');
                                 setState(() {
@@ -687,14 +1015,17 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                             ),
                             const SizedBox(height: 20.0),
                             Container(
-                              decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                              decoration:
+                                  ThemeHelper().inputBoxDecorationShaddow(),
                               child: TextFormField(
                                   autovalidateMode: AutovalidateMode.disabled,
                                   validator: FormBuilderValidators.compose([
                                     FormBuilderValidators.required(),
                                     FormBuilderValidators.match(
-                                        r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$',
-                                        errorText: localLnSetting.regPasswordHelper),
+                                        RegExp(
+                                            r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$'),
+                                        errorText:
+                                            localLnSetting.regPasswordHelper),
                                     FormBuilderValidators.minLength(8)
                                   ]),
                                   controller: _passwordController,
@@ -708,45 +1039,62 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                     suffixIcon: GestureDetector(
                                       onTap: () {
                                         setState(() {
-                                          obscurText == true ? obscurText = false : obscurText = true;
+                                          obscurText == true
+                                              ? obscurText = false
+                                              : obscurText = true;
                                         });
                                       },
-                                      child:
-                                          Icon(obscurText ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                                      child: Icon(obscurText
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined),
                                     ),
                                     labelText: localLnSetting.regPasswordLabel,
-                                    hintText: localLnSetting.regPasswordPlaceholder,
+                                    hintText:
+                                        localLnSetting.regPasswordPlaceholder,
                                     fillColor: Colors.white,
                                     filled: true,
-                                    helperText: localLnSetting.regPasswordHelper,
+                                    helperText:
+                                        localLnSetting.regPasswordHelper,
                                     helperMaxLines: 1,
 
                                     // helperStyle: TextStyle(height: 0.4),
-                                    contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                                    contentPadding: const EdgeInsets.fromLTRB(
+                                        20, 10, 20, 10),
                                     focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(100.0),
-                                        borderSide: const BorderSide(color: Colors.grey)),
+                                        borderRadius:
+                                            BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(
+                                            color: Colors.grey)),
                                     enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(100.0),
-                                        borderSide: BorderSide(color: Colors.grey.shade400)),
+                                        borderRadius:
+                                            BorderRadius.circular(100.0),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade400)),
                                     errorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(100.0),
-                                        borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+                                        borderRadius:
+                                            BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(
+                                            color: Colors.red, width: 2.0)),
                                     focusedErrorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(100.0),
-                                        borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+                                        borderRadius:
+                                            BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(
+                                            color: Colors.red, width: 2.0)),
                                   )),
                             ),
                             const SizedBox(height: 20.0),
                             Container(
-                              decoration: ThemeHelper().inputBoxDecorationShaddow(),
+                              decoration:
+                                  ThemeHelper().inputBoxDecorationShaddow(),
                               child: TextFormField(
                                   autovalidateMode: AutovalidateMode.disabled,
                                   validator: FormBuilderValidators.compose([
                                     FormBuilderValidators.required(),
                                     FormBuilderValidators.match(
-                                        r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$',
-                                        errorText: localLnSetting.regConfirmPassError),
+                                        RegExp(
+                                            r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$'),
+                                        errorText:
+                                            localLnSetting.regConfirmPassError),
                                     FormBuilderValidators.minLength(8),
                                   ]),
                                   controller: _confirmPasswordController,
@@ -769,23 +1117,34 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                           ? Icons.visibility_off_outlined
                                           : Icons.visibility_outlined),
                                     ),
-                                    labelText: localLnSetting.regConfirmPassLabel,
-                                    hintText: localLnSetting.regConfirmPassPlaceholder,
+                                    labelText:
+                                        localLnSetting.regConfirmPassLabel,
+                                    hintText: localLnSetting
+                                        .regConfirmPassPlaceholder,
                                     fillColor: Colors.white,
                                     filled: true,
-                                    contentPadding: const EdgeInsets.fromLTRB(20, 10, 0, 10),
+                                    contentPadding: const EdgeInsets.fromLTRB(
+                                        20, 10, 0, 10),
                                     focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(100.0),
-                                        borderSide: const BorderSide(color: Colors.grey)),
+                                        borderRadius:
+                                            BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(
+                                            color: Colors.grey)),
                                     enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(100.0),
-                                        borderSide: BorderSide(color: Colors.grey.shade400)),
+                                        borderRadius:
+                                            BorderRadius.circular(100.0),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade400)),
                                     errorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(100.0),
-                                        borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+                                        borderRadius:
+                                            BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(
+                                            color: Colors.red, width: 2.0)),
                                     focusedErrorBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(100.0),
-                                        borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+                                        borderRadius:
+                                            BorderRadius.circular(100.0),
+                                        borderSide: const BorderSide(
+                                            color: Colors.red, width: 2.0)),
                                   )),
                             ),
                             FormBuilderRadioGroup(
@@ -801,7 +1160,10 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                             context: context,
                                             builder: (context) {
                                               return ThemeHelper().alartDialog(
-                                                  'Description', localLnSetting.regEgaliteChancesDescription, context);
+                                                  'Description',
+                                                  localLnSetting
+                                                      .regEgaliteChancesDescription,
+                                                  context);
                                             });
                                       },
                                       child: const Icon(
@@ -813,7 +1175,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                 alignLabelWithHint: true,
                                 labelText: localLnSetting.regEgaliteDesChances,
                                 labelStyle: const TextStyle(height: 2),
-                                contentPadding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+                                contentPadding:
+                                    const EdgeInsets.fromLTRB(0, 10, 0, 0),
                               ),
                               name: 'egaliteDesChances',
                               validator: FormBuilderValidators.required(),
@@ -825,7 +1188,10 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                 });
                                 print("ISSPECIALACCESS $isSpecialAccessUser");
                               },
-                              options: [localLnSetting.regRadioYes, localLnSetting.regRadioNo]
+                              options: [
+                                localLnSetting.regRadioYes,
+                                localLnSetting.regRadioNo
+                              ]
                                   .map((lang) => FormBuilderFieldOption(
                                         value: lang,
                                       ))
@@ -833,22 +1199,30 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                             ),
                             const SizedBox(height: 55.0),
                             nextAndAnimatedSmoothIndic(
-                                localLnSetting, localLnSetting.regNextButton.toUpperCase(), listenableValue),
+                                localLnSetting,
+                                localLnSetting.regNextButton.toUpperCase(),
+                                listenableValue),
                             Container(
                               margin: const EdgeInsets.fromLTRB(10, 20, 10, 20),
                               //child: Text('Don\'t have an account? Create'),
                               child: Text.rich(TextSpan(children: [
-                                TextSpan(text: localLnSetting.alreadyHaveAccount),
+                                TextSpan(
+                                    text: localLnSetting.alreadyHaveAccount),
                                 TextSpan(
                                   text: localLnSetting.regGoToLogInLink,
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () {
                                       Navigator.pushReplacement(
-                                          context, MaterialPageRoute(builder: (context) => const TestLogin()));
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const TestLogin()));
                                     },
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.secondary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
                                       fontSize: 15),
                                 ),
                               ])),
@@ -866,13 +1240,16 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         );
 
       case 1:
-        const republiqueSenegalStyle = TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
+        const republiqueSenegalStyle =
+            TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
         const cardContentForLabel = TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w500,
         );
-        const cardlabelName =
-            TextStyle(fontSize: 15, fontWeight: FontWeight.w500, decoration: TextDecoration.underline);
+        const cardlabelName = TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            decoration: TextDecoration.underline);
         return isSpecialAccessUser == false
             ? Stack(children: [
                 SizedBox(
@@ -908,14 +1285,19 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                               Icons.keyboard_backspace_rounded,
                               size: 30,
                               color: Colors.white,
-                              shadows: [Shadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 5.0)],
+                              shadows: [
+                                Shadow(
+                                    color: Colors.black26,
+                                    offset: Offset(0, 4),
+                                    blurRadius: 5.0)
+                              ],
                             ),
                             splashRadius: 20,
                           ),
                         ],
                       ),
                       CircleAvatar(
-                        backgroundColor: Colors.white.withOpacity(0.5),
+                        backgroundColor: Colors.white.withValues(alpha: 0.5),
                         radius: 70,
                         child: Image.asset(
                           'assets/images/logo.png',
@@ -939,7 +1321,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                     Text(
                                       localLnSetting.numVerifHeader,
                                       style: const TextStyle(
-                                          fontSize: 35, fontWeight: FontWeight.bold, color: Colors.black54),
+                                          fontSize: 35,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black54),
                                       // textAlign: TextAlign.center,
                                     ),
                                     const SizedBox(
@@ -971,8 +1355,10 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                               width: 200,
                                               controller: otpFieldController,
                                               fieldWidth: 30,
-                                              style: const TextStyle(fontSize: 30),
-                                              textFieldAlignment: MainAxisAlignment.spaceAround,
+                                              style:
+                                                  const TextStyle(fontSize: 30),
+                                              textFieldAlignment:
+                                                  MainAxisAlignment.spaceAround,
                                               fieldStyle: FieldStyle.underline,
                                               onChanged: (value) {
                                                 setState(
@@ -996,13 +1382,15 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                       TextSpan(
                                         children: [
                                           TextSpan(
-                                            text: localLnSetting.numVerifDidntReceiveCode,
+                                            text: localLnSetting
+                                                .numVerifDidntReceiveCode,
                                             style: const TextStyle(
                                               color: Colors.black38,
                                             ),
                                           ),
                                           TextSpan(
-                                            text: localLnSetting.numVerifResendCode,
+                                            text: localLnSetting
+                                                .numVerifResendCode,
                                             recognizer: TapGestureRecognizer()
                                               ..onTap = () {
                                                 enableResend
@@ -1011,20 +1399,28 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                                     : null;
                                                 showDialog(
                                                   context: context,
-                                                  builder: (BuildContext context) {
-                                                    return ThemeHelper().alartDialog(
-                                                        "Successful", "Verification code resend successful.", context);
+                                                  builder:
+                                                      (BuildContext context) {
+                                                    return ThemeHelper()
+                                                        .alartDialog(
+                                                            "Successful",
+                                                            "Verification code resend successful.",
+                                                            context);
                                                   },
                                                 );
                                               },
-                                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.orange),
                                           ),
                                         ],
                                       ),
                                     ),
                                     const SizedBox(height: 40.0),
                                     nextAndAnimatedSmoothIndic(
-                                        localLnSetting, localLnSetting.numVerifButtonLabel.toUpperCase()),
+                                        localLnSetting,
+                                        localLnSetting.numVerifButtonLabel
+                                            .toUpperCase()),
                                   ],
                                 ),
                               )
@@ -1042,7 +1438,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                     height: 150,
                     child: GestureDetector(
                       onTap: () {
-                        print("JUST TAPPED ON BACK _ backgriundwaiitng $backgroundWaiting");
+                        print(
+                            "JUST TAPPED ON BACK _ backgriundwaiitng $backgroundWaiting");
                         backgroundWaiting
                             ? null
                             : setState(() {
@@ -1094,12 +1491,14 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                             child: Padding(
                                 padding: const EdgeInsets.all(20),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Flexible(
                                       child: equalityCardRectoVerso.isNotEmpty
                                           ? Image.file(
-                                              File(equalityCardRectoVerso.first!.path),
+                                              File(equalityCardRectoVerso
+                                                  .first!.path),
                                             )
                                           : Container(),
                                     ),
@@ -1107,7 +1506,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                     Flexible(
                                       child: equalityCardRectoVerso.length == 2
                                           ? Image.file(
-                                              File(equalityCardRectoVerso.last!.path),
+                                              File(equalityCardRectoVerso
+                                                  .last!.path),
                                             )
                                           : Container(),
                                     )
@@ -1120,7 +1520,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                             children: [
                               canShowCameraButtons == false
                                   ? Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 5),
                                       padding: const EdgeInsets.only(top: 10),
                                       child: ElevatedButton(
                                         style: ElevatedButton.styleFrom(
@@ -1128,13 +1529,17 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                           backgroundColor: Colors.white,
                                           shadowColor: Colors.grey[400],
                                           elevation: 10,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0)),
                                         ),
                                         onPressed: () {
-                                          getProfileOrCardImage('cardGallery', '', localLnSetting);
+                                          getProfileOrCardImage('cardGallery',
+                                              '', localLnSetting);
                                         },
                                         child: Container(
-                                          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                          margin: const EdgeInsets.symmetric(
+                                              vertical: 5, horizontal: 5),
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
@@ -1144,7 +1549,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                               ),
                                               Text(
                                                 "Gallery",
-                                                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                                style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey[600]),
                                               )
                                             ],
                                           ),
@@ -1153,7 +1560,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                   : Container(),
                               canShowCameraButtons == true
                                   ? Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 5),
                                       padding: const EdgeInsets.only(top: 10),
                                       child: ElevatedButton(
                                         style: ElevatedButton.styleFrom(
@@ -1161,13 +1569,17 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                           backgroundColor: Colors.white,
                                           shadowColor: Colors.grey[400],
                                           elevation: 10,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0)),
                                         ),
                                         onPressed: () {
-                                          getProfileOrCardImage('camera', 'recto', localLnSetting);
+                                          getProfileOrCardImage('camera',
+                                              'recto', localLnSetting);
                                         },
                                         child: Container(
-                                          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                          margin: const EdgeInsets.symmetric(
+                                              vertical: 5, horizontal: 5),
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
@@ -1177,7 +1589,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                               ),
                                               Text(
                                                 "Recto",
-                                                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                                style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey[600]),
                                               )
                                             ],
                                           ),
@@ -1186,7 +1600,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                   : Container(),
                               canShowCameraButtons == true
                                   ? Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 5),
                                       padding: const EdgeInsets.only(top: 10),
                                       child: ElevatedButton(
                                         style: ElevatedButton.styleFrom(
@@ -1194,13 +1609,17 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                           backgroundColor: Colors.white,
                                           shadowColor: Colors.grey[400],
                                           elevation: 10,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0)),
                                         ),
                                         onPressed: () {
-                                          getProfileOrCardImage('camera', 'verso', localLnSetting);
+                                          getProfileOrCardImage('camera',
+                                              'verso', localLnSetting);
                                         },
                                         child: Container(
-                                          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                          margin: const EdgeInsets.symmetric(
+                                              vertical: 5, horizontal: 5),
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
@@ -1210,7 +1629,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                               ),
                                               Text(
                                                 "Verso",
-                                                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                                style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey[600]),
                                               )
                                             ],
                                           ),
@@ -1219,7 +1640,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                   : Container(),
                               canShowCameraButtons == false
                                   ? Container(
-                                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 5),
                                       padding: const EdgeInsets.only(top: 10),
                                       child: ElevatedButton(
                                         style: ElevatedButton.styleFrom(
@@ -1227,7 +1649,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                           backgroundColor: Colors.white,
                                           shadowColor: Colors.yellow[400],
                                           elevation: 10,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0)),
                                         ),
                                         onPressed: () {
                                           setState(() {
@@ -1237,7 +1661,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                           });
                                         },
                                         child: Container(
-                                          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                          margin: const EdgeInsets.symmetric(
+                                              vertical: 5, horizontal: 5),
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
@@ -1247,7 +1672,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                               ),
                                               Text(
                                                 "Camera",
-                                                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                                style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey[600]),
                                               )
                                             ],
                                           ),
@@ -1271,13 +1698,16 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
               );
 
       case 2:
-        const republiqueSenegalStyle = TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
+        const republiqueSenegalStyle =
+            TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
         const cardContentForLabel = TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w500,
         );
-        const cardlabelName =
-            TextStyle(fontSize: 15, fontWeight: FontWeight.w500, decoration: TextDecoration.underline);
+        const cardlabelName = TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            decoration: TextDecoration.underline);
         return Stack(children: [
           SizedBox(
             height: 300,
@@ -1316,7 +1746,7 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                   ],
                 ), */
                 CircleAvatar(
-                  backgroundColor: Colors.white.withOpacity(0.5),
+                  backgroundColor: Colors.white.withValues(alpha: 0.5),
                   radius: 70,
                   child: Image.asset(
                     'assets/images/logo.png',
@@ -1339,8 +1769,10 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                             children: [
                               Text(
                                 localLnSetting.numVerifHeader,
-                                style:
-                                    const TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color: Colors.black54),
+                                style: const TextStyle(
+                                    fontSize: 35,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black54),
                                 // textAlign: TextAlign.center,
                               ),
                               const SizedBox(
@@ -1392,7 +1824,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                         controller: otpFieldController,
                                         fieldWidth: 30,
                                         style: const TextStyle(fontSize: 30),
-                                        textFieldAlignment: MainAxisAlignment.spaceAround,
+                                        textFieldAlignment:
+                                            MainAxisAlignment.spaceAround,
                                         fieldStyle: FieldStyle.underline,
                                         onChanged: (value) {
                                           setState(
@@ -1416,7 +1849,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                 TextSpan(
                                   children: [
                                     TextSpan(
-                                      text: localLnSetting.numVerifDidntReceiveCode,
+                                      text: localLnSetting
+                                          .numVerifDidntReceiveCode,
                                       style: const TextStyle(
                                         color: Colors.black38,
                                       ),
@@ -1426,24 +1860,31 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                       recognizer: TapGestureRecognizer()
                                         ..onTap = () {
                                           enableResend
-                                              ? resendCode("${finalTest.dialCode.toString()} ${_numberController.text}")
+                                              ? resendCode(
+                                                  "${finalTest.dialCode.toString()} ${_numberController.text}")
                                               : null;
                                           showDialog(
                                             context: context,
                                             builder: (BuildContext context) {
                                               return ThemeHelper().alartDialog(
-                                                  "Successful", "Verification code resend successful.", context);
+                                                  "Successful",
+                                                  "Verification code resend successful.",
+                                                  context);
                                             },
                                           );
                                         },
-                                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.orange),
                                     ),
                                   ],
                                 ),
                               ),
                               const SizedBox(height: 40.0),
                               nextAndAnimatedSmoothIndic(
-                                  localLnSetting, localLnSetting.numVerifButtonLabel.toUpperCase()),
+                                  localLnSetting,
+                                  localLnSetting.numVerifButtonLabel
+                                      .toUpperCase()),
 
                               /*    AnimatedSmoothIndicator(
                                 activeIndex: activeStep,
@@ -1504,10 +1945,15 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
             ),
           )
         ]);
+
+      default:
+        return const SizedBox.shrink();
     }
   }
 
-  nextAndAnimatedSmoothIndic(AppLocalizations localLnSetting, String buttonLabel, [bool listenableValue = true]) {
+  Column nextAndAnimatedSmoothIndic(
+      AppLocalizations localLnSetting, String buttonLabel,
+      [bool listenableValue = true]) {
     return Column(
       children: [
         AnimatedSmoothIndicator(
@@ -1522,8 +1968,12 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
               dotHeight: 10.0,
               paintStyle: PaintingStyle.stroke,
               strokeWidth: 1.5,
-              dotColor: activeStep == 1 && isSpecialAccessUser ? Colors.white : Colors.black,
-              activeDotColor: activeStep == 1 && isSpecialAccessUser ? Colors.brown : Colors.indigo),
+              dotColor: activeStep == 1 && isSpecialAccessUser
+                  ? Colors.white
+                  : Colors.black,
+              activeDotColor: activeStep == 1 && isSpecialAccessUser
+                  ? Colors.brown
+                  : Colors.indigo),
         ),
         const SizedBox(height: 25.0),
         Container(
@@ -1549,12 +1999,14 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                   ),
                   onPressed: () {
                     if (activeStep == 0 && isSpecialAccessUser) {
-                      nextButtonGoToCardScanner(localLnSetting, regFormKey, listenableValue);
+                      nextButtonGoToCardScanner(
+                          localLnSetting, regFormKey, listenableValue);
                     } else {
                       print("BACKGROUND WAITING? $backgroundWaiting");
                       !backgroundWaiting
                           ? {
-                              nextButtonSendOTP(localLnSetting, regFormKey, listenableValue),
+                              nextButtonSendOTP(
+                                  localLnSetting, regFormKey, listenableValue),
                             }
                           : null;
                     }
@@ -1564,26 +2016,33 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     );
   }
 
-  void nextButtonSendOTP(AppLocalizations localLnSetting, GlobalKey<FormState> regFormKey, bool listenableValue) async {
+  void nextButtonSendOTP(AppLocalizations localLnSetting,
+      GlobalKey<FormState> regFormKey, bool listenableValue) async {
     if (_connectionStatus.toString() == 'ConnectivityResult.none') {
       showSnackBarText(localLnSetting.noInternetError);
     } else {
-      await formFieldsValidationAndAction(localLnSetting, listenableValue, regFormKey, action: 'sendOTP')
+      await formFieldsValidationAndAction(
+              localLnSetting, listenableValue, regFormKey,
+              action: 'sendOTP')
           .then((fieldsValideAndNoNumberEmailMatch) {
-        print("I WAITED. Proceed ? $fieldsValideAndNoNumberEmailMatch ________ $listenableValue ");
+        print(
+            "I WAITED. Proceed ? $fieldsValideAndNoNumberEmailMatch ________ $listenableValue ");
         listenableValue == false && fieldsValideAndNoNumberEmailMatch == true ||
-                activeStep == 1 && fieldsValideAndNoNumberEmailMatch == true //put back true
+                activeStep == 1 &&
+                    fieldsValideAndNoNumberEmailMatch == true //put back true
             ? {
                 //setState(() => backgroundWaiting = true),
                 Future.delayed(
                     Duration.zero,
                     (() async => await showDialog(
-                            barrierColor:
-                                activeStep != 1 ? Colors.black.withOpacity(0.4) : Colors.black87.withOpacity(0.7),
+                            barrierColor: activeStep != 1
+                                ? Colors.black.withValues(alpha: 0.4)
+                                : Colors.black87.withValues(alpha: 0.7),
                             context: context,
                             barrierDismissible: false,
                             builder: (context) {
-                              return waitingBackgoundProcessDialog(context, localLnSetting);
+                              return waitingBackgoundProcessDialog(
+                                  context, localLnSetting);
                             }).then((value) {
                           /* setState(
                             () => backgroundWaiting = false,
@@ -1611,11 +2070,13 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     }
   }
 
-  AlertDialog waitingBackgoundProcessDialog(BuildContext context, AppLocalizations localLnSetting) {
+  AlertDialog waitingBackgoundProcessDialog(
+      BuildContext context, AppLocalizations localLnSetting) {
     registerUserWithMailPass(localLnSetting);
     return AlertDialog(
-        backgroundColor:
-            activeStep != 1 ? const Color.fromARGB(218, 255, 255, 255).withOpacity(0.8) : Colors.white.withOpacity(0.6),
+        backgroundColor: activeStep != 1
+            ? const Color.fromARGB(218, 255, 255, 255).withValues(alpha: 0.8)
+            : Colors.white.withValues(alpha: 0.6),
         scrollable: true,
         content: Padding(
           padding: const EdgeInsets.only(top: 20, bottom: 20),
@@ -1623,8 +2084,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
               size: activeStep != 1 ? 50 : 60,
               itemBuilder: (BuildContext context, int index) {
                 return DecoratedBox(
-                  decoration:
-                      BoxDecoration(color: activeStep != 1 ? Colors.green : Colors.brown, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                      color: activeStep != 1 ? Colors.green : Colors.brown,
+                      shape: BoxShape.circle),
                 );
               }),
         )
@@ -1644,16 +2106,19 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         );
   }
 
-  Future<bool> formFieldsValidationAndAction(
-      AppLocalizations localLnSetting, bool listenableValue, GlobalKey<FormState> regFormKey,
+  Future<bool> formFieldsValidationAndAction(AppLocalizations localLnSetting,
+      bool listenableValue, GlobalKey<FormState> regFormKey,
       {required String action}) async {
     print("formFieldsValidationAndAction CALLED FIRST");
     var proceed = !listenableValue;
     action == 'goToScanner'
-        ? print("THIS IS THE CURRENT STATE GO SCANNER: ${_emailController.text}")
+        ? print(
+            "THIS IS THE CURRENT STATE GO SCANNER: ${_emailController.text}")
         : print("THIS IS THE CURRENT STATE SEND OTP}");
 
-    var matchingPasswords = toastValidationMessages(_confirmPasswordController.text, localLnSetting).toString();
+    var matchingPasswords =
+        toastValidationMessages(_confirmPasswordController.text, localLnSetting)
+            .toString();
 
     if (activeStep == 0) {
       /* MEANING action == 'goToScanner' || (action == 'sendOTP' &&  */
@@ -1685,18 +2150,21 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     if (_connectionStatus.toString() == 'ConnectivityResult.none') {
       showSnackBarText(localLnSetting.noInternetError);
     } else {
-      formFieldsValidationAndAction(localLnSetting, listenableValue, regFormKey, action: 'goToScanner');
+      formFieldsValidationAndAction(localLnSetting, listenableValue, regFormKey,
+          action: 'goToScanner');
     }
   }
 
-  updateEqualityCardStorageAndVerifyPhone() async {
+  Future<void> updateEqualityCardStorageAndVerifyPhone() async {
     print("UPDATING EQUALITY CARD");
     if (currentUser != null) {
       print("ID OF USER ${currentUser!.uid}");
       await FirebaseFirestore.instance
           .collection('users')
           .doc(currentUser!.uid)
-          .update({'Equality Card Images': equalityCardUploadedStoragePath}).whenComplete(() {
+          .update({
+        'Equality Card Images': equalityCardUploadedStoragePath
+      }).whenComplete(() {
         setState(
           () {
             backgroundWaiting = false;
@@ -1704,14 +2172,15 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
           },
         );
         Navigator.pop(context);
-        verifyPhone('${finalTest.dialCode.toString()} ${_numberController.text}');
+        verifyPhone(
+            '${finalTest.dialCode.toString()} ${_numberController.text}');
       });
     } else {
       print("NOT EQUAL TO TWO");
     }
   }
 
-  registerUserWithMailPass(AppLocalizations localLnSetting) async {
+  Future<void> registerUserWithMailPass(AppLocalizations localLnSetting) async {
     backgroundWaiting = true;
     List<String> testEquality = [];
     if (_connectionStatus.toString() != 'ConnectivityResult.none') {
@@ -1726,29 +2195,39 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                 .then((value) => profilePictureStoragePath = value)
             : null;
         if (currentUser != null) {
-          myDB.collection("users/${currentUser!.uid}/wallet").get().then((walletValue) async {
+          myDB
+              .collection("users/${currentUser!.uid}/wallet")
+              .get()
+              .then((walletValue) async {
             debugPrint("CHECK MIC: ${walletValue.docs.length}");
             await firestoreWalletService
-                .initializeWalletDebitTopUp(currentUser, walletValue.docs.first.id)
-                .whenComplete(() => Future.delayed(const Duration(seconds: 2)).then(
-                      (value) {
-                        updateWalletFields(walletValue, walletValue.docs.first.id, currentUser!);
-                      },
-                    ));
+                .initializeWalletDebitTopUp(
+                    currentUser, walletValue.docs.first.id)
+                .whenComplete(
+                    () => Future.delayed(const Duration(seconds: 2)).then(
+                          (value) {
+                            updateWalletFields(walletValue,
+                                walletValue.docs.first.id, currentUser!);
+                          },
+                        ));
           });
         }
       });
       if (isSpecialAccessUser) {
         if (isEqualityCardValid) {
           equalityCardRectoVerso.forEach((element) async {
-            await StorageService().updloadEqualityCard(File(element!.path), element.hashCode.toString()).then((value) {
+            await StorageService()
+                .updloadEqualityCard(
+                    File(element!.path), element.hashCode.toString())
+                .then((value) {
               print("RESULT FROM UPLOAD :$value");
               equalityCardUploadedStoragePath.length < 2
                   ? equalityCardUploadedStoragePath.add(value)
                   : equalityCardUploadedStoragePath.length == 2
                       ? updateEqualityCardStorageAndVerifyPhone()
                       : null;
-              print("testEquality.length :${equalityCardUploadedStoragePath.length}");
+              print(
+                  "testEquality.length :${equalityCardUploadedStoragePath.length}");
               setState(() {});
             });
           });
@@ -1766,14 +2245,15 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         if (!mounted) return;
         Navigator.pop(context);
 
-        verifyPhone('${finalTest.dialCode.toString()} ${_numberController.text}');
+        verifyPhone(
+            '${finalTest.dialCode.toString()} ${_numberController.text}');
       }
     } else {
       showSnackBarText(localLnSetting.noInternetError);
     }
   }
 
-  takeQrScreenshot() async {
+  Future<void> takeQrScreenshot() async {
     final rectoScreenshot = await rectoScreenshotController.capture();
     if (rectoScreenshot == null) return;
     await saveImage(rectoScreenshot);
@@ -1782,19 +2262,24 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     await saveImage(versoScreenshot);
   }
 
-  saveImage(Uint8List imageBytes) async {
-    final result = await ImageGallerySaver.saveImage(imageBytes, name: 'cardScreenshot');
+  Future<dynamic> saveImage(Uint8List imageBytes) async {
+    final result =
+        await ImageGallerySaver.saveImage(imageBytes, name: 'cardScreenshot');
     return result['filePath'];
   }
 
-  displayEqualityCard(String codeBarQrPathImage, String wheelchairEmergentPathImage, TextStyle republiqueSenegalStyle,
-      TextStyle cardContentForLabel, TextStyle cardlabelName) {
+  Container displayEqualityCard(
+      String codeBarQrPathImage,
+      String wheelchairEmergentPathImage,
+      TextStyle republiqueSenegalStyle,
+      TextStyle cardContentForLabel,
+      TextStyle cardlabelName) {
     return Container(
       width: 400,
       height: 600,
       decoration: BoxDecoration(boxShadow: [
         BoxShadow(
-          color: Colors.grey.withOpacity(0.1), //color of shadow
+          color: Colors.grey.withValues(alpha: 0.1), //color of shadow
           spreadRadius: 5, //spread radius
           blurRadius: 7, // blur radius
           offset: const Offset(0, 5), // changes position of shadow
@@ -1807,14 +2292,19 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         color: Colors.white24,
         shadowColor: Colors.black,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25), side: const BorderSide(color: Colors.white)),
+            borderRadius: BorderRadius.circular(25),
+            side: const BorderSide(color: Colors.white)),
         child: Column(children: [
           Container(
             decoration: const BoxDecoration(
                 color: Colors.white, //Colors.red,
-                borderRadius: BorderRadius.only(topRight: Radius.circular(25), topLeft: Radius.circular(25))),
+                borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(25),
+                    topLeft: Radius.circular(25))),
             height: 40,
-            child: Align(child: Text('République du Sénégal', style: republiqueSenegalStyle)),
+            child: Align(
+                child: Text('République du Sénégal',
+                    style: republiqueSenegalStyle)),
           ),
           Container(
             height: 100,
@@ -1822,7 +2312,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
               image: DecorationImage(
                 image: const AssetImage('assets/images/mayneed.png'),
                 fit: BoxFit.fitWidth,
-                colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.25), BlendMode.dstATop),
+                colorFilter: ColorFilter.mode(
+                    Colors.black.withValues(alpha: 0.25), BlendMode.dstATop),
               ),
               gradient: const LinearGradient(
                 begin: Alignment.topRight,
@@ -1845,15 +2336,19 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                 Flexible(
                     child: Container(
                         margin: const EdgeInsets.only(left: 15, right: 15),
-                        child: const Text("Direction Générale de l'Action Sociale",
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))))
+                        child: const Text(
+                            "Direction Générale de l'Action Sociale",
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.w800))))
               ],
             ),
           ),
           Flexible(
               child: Container(
             decoration: const BoxDecoration(
-              borderRadius: BorderRadius.only(bottomRight: Radius.circular(25), bottomLeft: Radius.circular(25)),
+              borderRadius: BorderRadius.only(
+                  bottomRight: Radius.circular(25),
+                  bottomLeft: Radius.circular(25)),
               color: Colors.white,
             ),
             child: Row(
@@ -1868,7 +2363,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                               child: Container(
                                 decoration: BoxDecoration(
                                     image: const DecorationImage(
-                                        image: AssetImage('assets/images/no_profile_picture_grey.png'),
+                                        image: AssetImage(
+                                            'assets/images/no_profile_picture_grey.png'),
                                         fit: BoxFit.contain),
                                     color: Colors.grey.shade200 //Colors.blue,
                                     ),
@@ -1879,7 +2375,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                 padding: kTabLabelPadding,
                                 //color: Colors.brown,
                                 child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Flexible(
@@ -1900,10 +2397,12 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                       height: 10,
                                     ),
                                     FittedBox(
-                                      child: Text('Prénom', style: cardlabelName),
+                                      child:
+                                          Text('Prénom', style: cardlabelName),
                                     ),
                                     FittedBox(
-                                      child: Text('PRENOM', style: cardContentForLabel),
+                                      child: Text('PRENOM',
+                                          style: cardContentForLabel),
                                     ),
                                     const SizedBox(
                                       height: 10,
@@ -1914,7 +2413,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                       style: cardlabelName,
                                     )),
                                     FittedBox(
-                                      child: Text('JJ/MM/AAAA', style: cardContentForLabel),
+                                      child: Text('JJ/MM/AAAA',
+                                          style: cardContentForLabel),
                                     ),
                                     const SizedBox(
                                       height: 10,
@@ -1925,7 +2425,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                         style: cardlabelName,
                                       ),
                                     ),
-                                    FittedBox(child: Text('LIEU', style: cardContentForLabel)),
+                                    FittedBox(
+                                        child: Text('LIEU',
+                                            style: cardContentForLabel)),
                                   ],
                                 ),
                               ),
@@ -1943,28 +2445,41 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                       // ignore: avoid_unnecessary_containers
                                       child: Container(
                                     // color: Colors.pinkAccent,
-                                    padding: const EdgeInsets.only(top: 10.0, left: 10, bottom: 10),
+                                    padding: const EdgeInsets.only(
+                                        top: 10.0, left: 10, bottom: 10),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: wheelchairEmergentPathImage == 'assets/images/wheelchair.png'
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: wheelchairEmergentPathImage ==
+                                              'assets/images/wheelchair.png'
                                           ? [
-                                              const RotatedBox(quarterTurns: -1, child: Text('0000000000')),
+                                              const RotatedBox(
+                                                  quarterTurns: -1,
+                                                  child: Text('0000000000')),
                                               SizedBox(
                                                   width: 100,
                                                   child: QrImageView(
-                                                    data: '00000000000000000000',
-                                                    padding: const EdgeInsets.only(left: 10.0),
+                                                    data:
+                                                        '00000000000000000000',
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            left: 10.0),
                                                   ))
                                             ]
                                           : [
-                                              const RotatedBox(quarterTurns: -1, child: Text('12345678')),
+                                              const RotatedBox(
+                                                  quarterTurns: -1,
+                                                  child: Text('12345678')),
                                               Flexible(
                                                 child: Padding(
-                                                  padding: const EdgeInsets.fromLTRB(15, 10, 0, 10),
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          15, 10, 0, 10),
                                                   child: Container(
                                                     decoration: BoxDecoration(
                                                         image: DecorationImage(
-                                                      image: AssetImage(codeBarQrPathImage),
+                                                      image: AssetImage(
+                                                          codeBarQrPathImage),
                                                       fit: BoxFit.fitWidth,
                                                     )),
                                                   ),
@@ -1977,23 +2492,29 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                       child: Container(
                                     width: 200,
                                     decoration: const BoxDecoration(
-                                      borderRadius: BorderRadius.only(bottomLeft: Radius.circular(25)),
+                                      borderRadius: BorderRadius.only(
+                                          bottomLeft: Radius.circular(25)),
                                       color: Colors.black87,
                                     ),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
                                       children: [
                                         Text(
                                           'ME',
                                           style: cardContentForLabel.copyWith(
-                                              fontSize: 25, fontWeight: FontWeight.w900, color: Colors.white),
+                                              fontSize: 25,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white),
                                         ),
                                         Text('00000',
                                             style: cardContentForLabel.copyWith(
-                                                color: Colors.white, fontWeight: FontWeight.w700)),
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w700)),
                                         Text('LIEU DELIVRANCE',
                                             style: cardContentForLabel.copyWith(
-                                                color: Colors.white, fontWeight: FontWeight.w600)),
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600)),
                                       ],
                                     ),
                                   ))
@@ -2009,8 +2530,10 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                                 child: Container(
                                   decoration: BoxDecoration(
                                       image: DecorationImage(
-                                    //  colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.25), BlendMode.dstATop),
-                                    image: AssetImage(wheelchairEmergentPathImage), fit: BoxFit.contain,
+                                    //  colorFilter: ColorFilter.mode(Colors.black.withValues(alpha:0.25), BlendMode.dstATop),
+                                    image:
+                                        AssetImage(wheelchairEmergentPathImage),
+                                    fit: BoxFit.contain,
                                   )),
                                 ),
 
@@ -2033,7 +2556,11 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                     quarterTurns: -1,
                     child: Text(
                       'Certification de handicap',
-                      style: TextStyle(color: Colors.black, wordSpacing: 2, letterSpacing: 2, fontSize: 18),
+                      style: TextStyle(
+                          color: Colors.black,
+                          wordSpacing: 2,
+                          letterSpacing: 2,
+                          fontSize: 18),
                     ),
                   ),
                 )
@@ -2045,19 +2572,24 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     );
   }
 
-  void getProfileOrCardImage(String purpose, String cardRectoOrVerso, AppLocalizations localLnSetting) async {
+  void getProfileOrCardImage(String purpose, String cardRectoOrVerso,
+      AppLocalizations localLnSetting) async {
     purpose == 'profilePicture'
         ? getProfilePicture(ImageSource.gallery)
         : purpose == 'cardGallery'
             ? getEqualityCardImage(ImageSource.gallery, '', localLnSetting)
-            : getEqualityCardImage(ImageSource.camera, cardRectoOrVerso, localLnSetting);
+            : getEqualityCardImage(
+                ImageSource.camera, cardRectoOrVerso, localLnSetting);
   }
 
-  void showSnackBarText(String text, [TextStyle snackStyle = const TextStyle(color: Colors.white, fontSize: 15)]) {
+  void showSnackBarText(String text,
+      [TextStyle snackStyle =
+          const TextStyle(color: Colors.white, fontSize: 15)]) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           elevation: 50,
           behavior: SnackBarBehavior.floating,
           content: Text(
@@ -2069,9 +2601,11 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     }
   }
 
-  String? toastValidationMessages(String? value, AppLocalizations localLnSetting) {
+  String? toastValidationMessages(
+      String? value, AppLocalizations localLnSetting) {
     String theMessage = '';
-    if (_passwordController.text != _confirmPasswordController.text && _passwordController.text.isNotEmpty) {
+    if (_passwordController.text != _confirmPasswordController.text &&
+        _passwordController.text.isNotEmpty) {
       theMessage = localLnSetting.regPasswordsNoMatch;
       Fluttertoast.showToast(
         msg: theMessage,
@@ -2137,18 +2671,20 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     );
   }
 
-  updateWalletFields(QuerySnapshot<Map<String, dynamic>> walletCollection, String walletFirstAndOnlyDocID,
-      User currentlySignedInUser) {
-    CollectionReference debitsCollection =
-        myDB.collection("users/${currentlySignedInUser.uid}/wallet/$walletFirstAndOnlyDocID/debits");
-    CollectionReference topUpsCollection =
-        myDB.collection("users/${currentlySignedInUser.uid}/wallet/$walletFirstAndOnlyDocID/topUps");
+  void updateWalletFields(QuerySnapshot<Map<String, dynamic>> walletCollection,
+      String walletFirstAndOnlyDocID, User currentlySignedInUser) {
+    CollectionReference debitsCollection = myDB.collection(
+        "users/${currentlySignedInUser.uid}/wallet/$walletFirstAndOnlyDocID/debits");
+    CollectionReference topUpsCollection = myDB.collection(
+        "users/${currentlySignedInUser.uid}/wallet/$walletFirstAndOnlyDocID/topUps");
 
     debugPrint("WALLETDOCS :${walletCollection.docs.first.id}");
-    final theDocToUpdate =
-        myDB.collection("users/${currentlySignedInUser.uid}/wallet").doc(walletCollection.docs.first.id);
+    final theDocToUpdate = myDB
+        .collection("users/${currentlySignedInUser.uid}/wallet")
+        .doc(walletCollection.docs.first.id);
 
-    var ok = walletCollection.docs.first.data()['Transactions']['Top Ups'] as Map<String, dynamic>;
+    var ok = walletCollection.docs.first.data()['Transactions']['Top Ups']
+        as Map<String, dynamic>;
     topUpsCollection.get().then((value) {
       List allIDList = [];
       for (var element in value.docs) {
@@ -2166,8 +2702,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     String walletFirstAndOnlyDocID = '';
     bool canUpdateFields = false;
     try {
-      user =
-          await _auth.createUserWithEmailAndPassword(email: _emailController.text, password: _passwordController.text);
+      user = await _auth.createUserWithEmailAndPassword(
+          email: _emailController.text, password: _passwordController.text);
       user.user != null
           ? {
               user.user!.updateDisplayName(_fullNameController.text),
@@ -2177,13 +2713,21 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
                   fullName: _fullNameController.text,
                   email: _emailController.text,
                   phoneNumber: finalTest.phoneNumber.toString(),
-                  profileImage: !isProfilePicturePicked ? 'none' : profilePictureStoragePath,
+                  profileImage: !isProfilePicturePicked
+                      ? 'none'
+                      : profilePictureStoragePath,
                   isSpecialAccessUser: isSpecialAccessUser,
-                  equalityCardUploadedStoragePath: equalityCardUploadedStoragePath)),
+                  equalityCardUploadedStoragePath:
+                      equalityCardUploadedStoragePath)),
 
-              await myDB.collection("users/${user.user!.uid}/wallet").get().then((value) async {
+              await myDB
+                  .collection("users/${user.user!.uid}/wallet")
+                  .get()
+                  .then((value) async {
                 value.docs.isEmpty
-                    ? await firestoreWalletService.addUserWalletInfoToFirebase(user!.user).then((value) {
+                    ? await firestoreWalletService
+                        .addUserWalletInfoToFirebase(user!.user)
+                        .then((value) {
                         myDB
                             .collection("users/${user!.user!.uid}/wallet")
                             .get()
@@ -2218,7 +2762,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
 
       _auth.authStateChanges().listen((user) async {
         if (user != null) {
-          print("THE CURRENT USER ${FirebaseAuth.instance.currentUser} ____ profilePicPath $profilePictureStoragePath");
+          print(
+              "THE CURRENT USER ${FirebaseAuth.instance.currentUser} ____ profilePicPath $profilePictureStoragePath");
           SharedPreferences prefs = await SharedPreferences.getInstance();
           prefs.setBool("isLoggedIn", false);
           user.updateDisplayName(_fullNameController.text);
@@ -2299,7 +2844,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     return false;
   }
  */
-  getEqualityCardImage(ImageSource cameraOrGallery, String rectoOrVerso, AppLocalizations localLnSetting) async {
+  Future<void> getEqualityCardImage(ImageSource cameraOrGallery,
+      String rectoOrVerso, AppLocalizations localLnSetting) async {
     try {
       final cardImage = await ImagePicker().pickImage(source: cameraOrGallery);
       if (cameraOrGallery == ImageSource.camera) {
@@ -2310,14 +2856,16 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
               addedRectoCardImage = true;
             });
           }
-          if (equalityCardRectoVerso.length == 1 && addedRectoCardImage == false) {
+          if (equalityCardRectoVerso.length == 1 &&
+              addedRectoCardImage == false) {
             equalityCardRectoVerso.insert(0, cardImage);
             setState(() {
               addedRectoCardImage = true;
             });
           }
 
-          if (equalityCardRectoVerso.length == 1 && addedRectoCardImage == true) {
+          if (equalityCardRectoVerso.length == 1 &&
+              addedRectoCardImage == true) {
             equalityCardRectoVerso.first = cardImage;
             // getBarCodeText(equalityCardRectoVerso.first!, 'camera');
 
@@ -2325,9 +2873,12 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
           }
           if (equalityCardRectoVerso.length == 2) {
             equalityCardRectoVerso.first = cardImage;
-            getBarCodeText(equalityCardRectoVerso.first!, 'camera', localLnSetting);
+            getBarCodeText(
+                equalityCardRectoVerso.first!, 'camera', localLnSetting);
             setState(() {
-              canShowCameraButtons == true ? addedRectoCardImage = true : addedRectoCardImage = false;
+              canShowCameraButtons == true
+                  ? addedRectoCardImage = true
+                  : addedRectoCardImage = false;
             });
           }
         }
@@ -2339,7 +2890,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
               addedVersoCardImage = true;
             });
           }
-          if (equalityCardRectoVerso.length == 1 && addedVersoCardImage == false) {
+          if (equalityCardRectoVerso.length == 1 &&
+              addedVersoCardImage == false) {
             equalityCardRectoVerso.add(cardImage);
 
             setState(() {
@@ -2347,30 +2899,37 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
             });
           }
 
-          if (equalityCardRectoVerso.length == 1 && addedVersoCardImage == true) {
+          if (equalityCardRectoVerso.length == 1 &&
+              addedVersoCardImage == true) {
             equalityCardRectoVerso.first = cardImage;
             setState(() {});
           }
           if (equalityCardRectoVerso.length == 2) {
             equalityCardRectoVerso.last = cardImage;
-            getBarCodeText(equalityCardRectoVerso.first!, 'camera', localLnSetting);
+            getBarCodeText(
+                equalityCardRectoVerso.first!, 'camera', localLnSetting);
             setState(() {
-              canShowCameraButtons == true ? addedVersoCardImage = true : addedVersoCardImage = false;
+              canShowCameraButtons == true
+                  ? addedVersoCardImage = true
+                  : addedVersoCardImage = false;
             });
           }
         }
-        print("CAN YOU SHOW CAMERA BUTTONS $addedRectoCardImage _______ $addedVersoCardImage");
+        print(
+            "CAN YOU SHOW CAMERA BUTTONS $addedRectoCardImage _______ $addedVersoCardImage");
         addedRectoCardImage && addedVersoCardImage
             ? setState(() {
                 canShowCameraButtons = false;
               })
             : null;
       } else {
-        final List<XFile?> selectedImages = await cardImagePicker.pickMultiImage();
+        final List<XFile?> selectedImages =
+            await cardImagePicker.pickMultiImage();
         if (selectedImages.isNotEmpty && selectedImages.length == 2) {
           equalityCardRectoVerso = selectedImages;
           setState(() {});
-          getBarCodeText(equalityCardRectoVerso.first!, 'gallery', localLnSetting, equalityCardRectoVerso);
+          getBarCodeText(equalityCardRectoVerso.first!, 'gallery',
+              localLnSetting, equalityCardRectoVerso);
         }
         //print("Image List Length:" + imageFileList!.length.toString());
       }
@@ -2379,7 +2938,7 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     }
   }
 
-  getProfilePicture(ImageSource gallery) async {
+  Future<void> getProfilePicture(ImageSource gallery) async {
     try {
       final pickedImage = await ImagePicker().pickImage(source: gallery);
       if (pickedImage != null) {
@@ -2392,13 +2951,15 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     }
   }
 
-  void getBarCodeText(XFile image, String fromGalleryOrCamera, AppLocalizations localLnSetting,
+  void getBarCodeText(
+      XFile image, String fromGalleryOrCamera, AppLocalizations localLnSetting,
       [List<XFile?> localEqualityCardRectoVersoList = const []]) async {
     InputImage rectoInputImage, versoInputImage;
     int theRightGalleryCardImageIndex = -1;
     final barcodeScanner = BarcodeScanner(formats: formats);
     List<Barcode> barcodesList = [];
-    debugPrint("image.path^equalityCardRectoVersoList${localEqualityCardRectoVersoList.length}");
+    debugPrint(
+        "image.path^equalityCardRectoVersoList${localEqualityCardRectoVersoList.length}");
     if (fromGalleryOrCamera == 'gallery') {
       for (XFile? element in localEqualityCardRectoVersoList) {
         rectoInputImage = InputImage.fromFilePath(element!.path);
@@ -2407,33 +2968,42 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         barcodesList.isNotEmpty
             ? {
                 setState(() {
-                  theRightGalleryCardImageIndex = localEqualityCardRectoVersoList.indexOf(element);
+                  theRightGalleryCardImageIndex =
+                      localEqualityCardRectoVersoList.indexOf(element);
                 }),
               }
             : print("DEFINITELY EMPYT");
         print("THE RIGHT IMAGE: $theRightGalleryCardImageIndex");
       }
       rectoInputImage = theRightGalleryCardImageIndex != -1
-          ? InputImage.fromFilePath(localEqualityCardRectoVersoList.elementAt(theRightGalleryCardImageIndex)!.path)
-          : InputImage.fromFilePath(localEqualityCardRectoVersoList.first!.path);
+          ? InputImage.fromFilePath(localEqualityCardRectoVersoList
+              .elementAt(theRightGalleryCardImageIndex)!
+              .path)
+          : InputImage.fromFilePath(
+              localEqualityCardRectoVersoList.first!.path);
       versoInputImage = theRightGalleryCardImageIndex != -1
           ? InputImage.fromFilePath(localEqualityCardRectoVersoList
-              .elementAt(localEqualityCardRectoVersoList.length - 1 - theRightGalleryCardImageIndex)!
+              .elementAt(localEqualityCardRectoVersoList.length -
+                  1 -
+                  theRightGalleryCardImageIndex)!
               .path)
           : InputImage.fromFilePath(localEqualityCardRectoVersoList.last!.path);
     } else {
       rectoInputImage = InputImage.fromFilePath(image.path);
-      versoInputImage = InputImage.fromFilePath(equalityCardRectoVerso.last!.path);
+      versoInputImage =
+          InputImage.fromFilePath(equalityCardRectoVerso.last!.path);
       barcodesList = await barcodeScanner.processImage(rectoInputImage);
       debugPrint("SOURCE IS :$barcodesList ___ ${barcodesList.length}");
     }
     await barcodeScanner.close();
 
-    final textDetector = GoogleMlKit.vision.textRecognizer();
-    RecognizedText recognisedTextRecto = await textDetector.processImage(rectoInputImage);
+    final textDetector = TextRecognizer(script: TextRecognitionScript.latin);
+    RecognizedText recognisedTextRecto =
+        await textDetector.processImage(rectoInputImage);
     await textDetector.close();
 
-    RecognizedText recognisedTextVerso = await textDetector.processImage(versoInputImage);
+    RecognizedText recognisedTextVerso =
+        await textDetector.processImage(versoInputImage);
     await textDetector.close();
 
     String textFetchedCardRecto = "", textFetchedCardVerso = '';
@@ -2453,8 +3023,10 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
     debugPrint("recognisedText recto $textFetchedCardRecto");
     debugPrint("recognisedText verso $textFetchedCardVerso");
 
-    bool rectoContainsAll = textFetchedCardRecto.isCaseInsensitiveContains('DGAS') &&
-        textFetchedCardRecto.isCaseInsensitiveContains('Certification de handicap') &&
+    bool rectoContainsAll = textFetchedCardRecto
+            .isCaseInsensitiveContains('DGAS') &&
+        textFetchedCardRecto
+            .isCaseInsensitiveContains('Certification de handicap') &&
         textFetchedCardRecto.isCaseInsensitiveContains('Direction Générale') &&
         textFetchedCardRecto.isCaseInsensitiveContains("de l'action sociale");
 
@@ -2462,7 +3034,9 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         textFetchedCardVerso.isCaseInsensitiveContains('SENEGAL') &&
         textFetchedCardVerso.isCaseInsensitiveContains('EMERGENT');
 
-    rectoContainsAll && versoContainsAll ? isEqualityCardValid = true : isEqualityCardValid = false;
+    rectoContainsAll && versoContainsAll
+        ? isEqualityCardValid = true
+        : isEqualityCardValid = false;
     print("CONTAINS ALL? $versoContainsAll");
 
     /* !rectoContainsAll
@@ -2473,7 +3047,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
         : !versoContainsAll && rectoContainsAll
             ? showSnackBarText(localLnSetting.scanCECversoError, errorTextStle)
             : !rectoContainsAll && !versoContainsAll
-                ? showSnackBarText(localLnSetting.scanCECbothRectoVersoError, errorTextStle)
+                ? showSnackBarText(
+                    localLnSetting.scanCECbothRectoVersoError, errorTextStle)
                 : null;
 
     debugPrint("containsAll $rectoContainsAll __________ $versoContainsAll");
@@ -2496,7 +3071,8 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
           break;
 
         default:
-          print("THE SCANNED BARCODE IS ENCRYPTED ${barcode.displayValue.toString()}");
+          print(
+              "THE SCANNED BARCODE IS ENCRYPTED ${barcode.displayValue.toString()}");
           break;
       }
     }
@@ -2522,7 +3098,10 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
   Future<bool> findMatchingPhoneAndEmailInDatabase(String action) async {
     var theEmail = _emailController.text;
     try {
-      var foundMatchForBoth = await FirebaseFirestore.instance.collection("users").get().then((element) {
+      var foundMatchForBoth = await FirebaseFirestore.instance
+          .collection("users")
+          .get()
+          .then((element) {
         /*  element.docChanges.forEach((change) {
           print("SOMETHING CHANGED ${change.type} ____ ${change.doc.exists}");
           change.type == DocumentChangeType.removed ? theEmail = '' : null;
@@ -2538,19 +3117,24 @@ class TestRegisterState extends State<TestRegister> with SingleTickerProviderSta
 
         var matchingPhone = element.docs.any((element1) {
           Map<String, dynamic> data = element1.data();
-          return data['Phone Number'] == finalTest.phoneNumber.toString(); //== finalTest.phoneNumber.toString()
+          return data['Phone Number'] ==
+              finalTest.phoneNumber
+                  .toString(); //== finalTest.phoneNumber.toString()
         });
         matchingPhone
             ? print("NUMBER EXISTS IN THE DATABASE FROM FIRESTORE")
             : print("NUMBER DOES NOT EXISTS IN THE DATABASE FROM FIRESTORE");
 
-        if (matchingPhone && !matchingEmail) /*  if (numberAlreadyRegistered && !emailAlreadyRegistered) */ {
+        if (matchingPhone &&
+            !matchingEmail) /*  if (numberAlreadyRegistered && !emailAlreadyRegistered) */ {
           showSnackBarText('Number already in use.');
         }
-        if (matchingEmail && !matchingPhone) /*if (emailAlreadyRegistered && !numberAlreadyRegistered)  */ {
+        if (matchingEmail &&
+            !matchingPhone) /*if (emailAlreadyRegistered && !numberAlreadyRegistered)  */ {
           showSnackBarText('Email already in use.');
         }
-        if (matchingEmail && matchingPhone) /*if (emailAlreadyRegistered && numberAlreadyRegistered)  */ {
+        if (matchingEmail &&
+            matchingPhone) /*if (emailAlreadyRegistered && numberAlreadyRegistered)  */ {
           showSnackBarText('Email and number already in use.');
         }
         if (!matchingEmail && !matchingPhone) {

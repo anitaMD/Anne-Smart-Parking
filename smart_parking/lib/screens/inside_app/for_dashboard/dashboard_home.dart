@@ -36,16 +36,23 @@ class DashboardHomePageState extends State<DashboardHomePage> {
   var firebaseService = FirebaseService();
   var firestoreWalletService = FirestoreWalletService();
   bool canUpdateFields = false, userHasNoVehicules = false;
-  List<Map<String, dynamic>> allUserBookings = [], allBookedParkingsDetails = [], allUserVehiculesUsedForBooking = [];
+  List<Map<String, dynamic>> allUserBookings = [],
+      allBookedParkingsDetails = [],
+      allUserVehiculesUsedForBooking = [];
   Map<String, dynamic> allReservationInfoNeeded = {}, ok = {};
 
   @override
   void initState() {
     User? currentlySignedInUser = firebaseService.auth.currentUser;
-    myDB.collection("users/${currentlySignedInUser?.uid}/wallet").get().then((value) async {
+    myDB
+        .collection("users/${currentlySignedInUser?.uid}/wallet")
+        .get()
+        .then((value) async {
       value.docs.isEmpty
           ? {
-              await firestoreWalletService.addUserWalletInfoToFirebase(currentlySignedInUser).then((value) {
+              await firestoreWalletService
+                  .addUserWalletInfoToFirebase(currentlySignedInUser)
+                  .then((value) {
                 myDB
                     .collection("users/${currentlySignedInUser?.uid}/wallet")
                     .get()
@@ -87,8 +94,10 @@ class DashboardHomePageState extends State<DashboardHomePage> {
       (value) {
         if (value.docs.isNotEmpty) {
           //
-          var userBookings = value.docs.where((element) => element.data()['ClientID'] == currentlySignedInUser?.uid);
-          userBookings.isNotEmpty && allUserBookings.length < userBookings.length
+          var userBookings = value.docs.where((element) =>
+              element.data()['ClientID'] == currentlySignedInUser?.uid);
+          userBookings.isNotEmpty &&
+                  allUserBookings.length < userBookings.length
               ? userBookings.forEach((element) {
                   // debugPrint("FOUND ONE :${element.doc.id}");
                   allUserBookings.add({element.id: element.data()});
@@ -108,12 +117,16 @@ class DashboardHomePageState extends State<DashboardHomePage> {
 
           if (allParkingIDsConcerned.length < allUserBookings.length) {
             for (var element in allUserBookings) {
-              var reservationData = element.values.first as Map<String, dynamic>;
+              var reservationData =
+                  element.values.first as Map<String, dynamic>;
               allParkingIDsConcerned.add(reservationData['ParkingID']);
-              DocumentReference parkingsCollection = myDB.collection("locations").doc(reservationData['ParkingID']);
+              DocumentReference parkingsCollection = myDB
+                  .collection("locations")
+                  .doc(reservationData['ParkingID']);
               parkingsCollection.get().then((value) {
                 allBookedParkingsDetails.add({value.id: value.data()});
-                debugPrint("SORTED : ____ ${value.data()} ____ ${allBookedParkingsDetails.length}");
+                debugPrint(
+                    "SORTED : ____ ${value.data()} ____ ${allBookedParkingsDetails.length}");
               }).whenComplete(() => setState(() {}));
             }
           }
@@ -122,12 +135,18 @@ class DashboardHomePageState extends State<DashboardHomePage> {
             allVehiculesUsedIDs.add(element.data()['VehiculeID']);
           }
 
-          myDB.collection('users/${currentlySignedInUser?.uid}/vehicules').get().then((vehiculesDocs) {
+          myDB
+              .collection('users/${currentlySignedInUser?.uid}/vehicules')
+              .get()
+              .then((vehiculesDocs) {
             if (vehiculesDocs.size != 0) {
               for (var vehiculeID in allVehiculesUsedIDs) {
-                var matchingVehiculeDocList = vehiculesDocs.docs.where((element) => element.id == vehiculeID);
-                allUserVehiculesUsedForBooking
-                    .add({matchingVehiculeDocList.first.id: matchingVehiculeDocList.first.data()});
+                var matchingVehiculeDocList = vehiculesDocs.docs
+                    .where((element) => element.id == vehiculeID);
+                allUserVehiculesUsedForBooking.add({
+                  matchingVehiculeDocList.first.id:
+                      matchingVehiculeDocList.first.data()
+                });
               }
             } else {
               userHasNoVehicules = true;
@@ -167,18 +186,21 @@ class DashboardHomePageState extends State<DashboardHomePage> {
     super.dispose();
   }
 
-  updateWalletFields(QuerySnapshot<Map<String, dynamic>> walletCollection, String walletFirstAndOnlyDocID) {
+  void updateWalletFields(QuerySnapshot<Map<String, dynamic>> walletCollection,
+      String walletFirstAndOnlyDocID) {
     // ignore: unused_local_variable
-    CollectionReference debitsCollection =
-        myDB.collection("users/${currentlySignedInUser?.uid}/wallet/$walletFirstAndOnlyDocID/debits");
-    CollectionReference topUpsCollection =
-        myDB.collection("users/${currentlySignedInUser?.uid}/wallet/$walletFirstAndOnlyDocID/topUps");
+    CollectionReference debitsCollection = myDB.collection(
+        "users/${currentlySignedInUser?.uid}/wallet/$walletFirstAndOnlyDocID/debits");
+    CollectionReference topUpsCollection = myDB.collection(
+        "users/${currentlySignedInUser?.uid}/wallet/$walletFirstAndOnlyDocID/topUps");
 
     debugPrint("WALLETDOCS :${walletCollection.docs.first.id}");
-    final theDocToUpdate =
-        myDB.collection("users/${currentlySignedInUser?.uid}/wallet").doc(walletCollection.docs.first.id);
+    final theDocToUpdate = myDB
+        .collection("users/${currentlySignedInUser?.uid}/wallet")
+        .doc(walletCollection.docs.first.id);
 
-    var ok = walletCollection.docs.first.data()['Transactions']['Top Ups'] as Map<String, dynamic>;
+    var ok = walletCollection.docs.first.data()['Transactions']['Top Ups']
+        as Map<String, dynamic>;
     topUpsCollection.get().then((value) {
       List allIDList = [];
       for (var element in value.docs) {
@@ -201,25 +223,30 @@ class DashboardHomePageState extends State<DashboardHomePage> {
             canUpdateFields == true
                 ? null
                 : {
-                    myDB.collection("users/${currentlySignedInUser?.uid}/wallet").get().then((value) async {
+                    myDB
+                        .collection(
+                            "users/${currentlySignedInUser?.uid}/wallet")
+                        .get()
+                        .then((value) async {
                       debugPrint("CHECK MIC: ${value.docs.length}");
                     }),
                     firestoreWalletService
-                        .initializeWalletDebitTopUp(currentlySignedInUser, walletFirstAndOnlyDocID)
-                        .whenComplete(() => {
-                              count < 1
-                                  ? Future.delayed(const Duration(seconds: 2)).then(
-                                      (value) {
-                                        setState(
-                                          () {
-                                            canUpdateFields = true;
-                                          },
-                                        );
-                                      },
-                                    )
-                                  : null,
-                              count += 1,
-                            })
+                        .initializeWalletDebitTopUp(
+                            currentlySignedInUser, walletFirstAndOnlyDocID)
+                        .whenComplete(() {
+                      count < 1
+                          ? Future.delayed(const Duration(seconds: 2)).then(
+                              (value) {
+                                setState(
+                                  () {
+                                    canUpdateFields = true;
+                                  },
+                                );
+                              },
+                            )
+                          : null;
+                      count += 1;
+                    })
                     /*  addDebitTopUp(currentlySignedInUser, walletFirstAndOnlyDocID).whenComplete(() => {
                           count < 1
                               ? Future.delayed(Duration(seconds: 2)).then(
@@ -238,7 +265,10 @@ class DashboardHomePageState extends State<DashboardHomePage> {
           };
     canUpdateFields == false
         ? null
-        : myDB.collection("users/${currentlySignedInUser?.uid}/wallet").get().then((value) async {
+        : myDB
+            .collection("users/${currentlySignedInUser?.uid}/wallet")
+            .get()
+            .then((value) async {
             updateWalletFields(value, walletFirstAndOnlyDocID);
             debugPrint("DOUBLE MIC: ${value.docs.length}");
           });
@@ -325,9 +355,12 @@ class DashboardHomePageState extends State<DashboardHomePage> {
   }
  */
 
-  dashBSlidingUpPanel(double panelHeightClosed, double panelHeightOpened) {
+  StreamBuilder<QuerySnapshot<Map<String, dynamic>>> dashBSlidingUpPanel(
+      double panelHeightClosed, double panelHeightOpened) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance.collection("slotsReservations").snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection("slotsReservations")
+            .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Text(''); //Text('Loading brand logos');
@@ -343,7 +376,8 @@ class DashboardHomePageState extends State<DashboardHomePage> {
               renderPanelSheet: true,
               margin: EdgeInsets.zero,
               panel: DashBoardPanel(
-                  panelScrollController: panelScrollController, dragHandlePanelController: dragHandlePanelController),
+                  panelScrollController: panelScrollController,
+                  dragHandlePanelController: dragHandlePanelController),
               minHeight: panelHeightClosed,
               maxHeight: panelHeightOpened,
               /* parallaxEnabled: true,
@@ -352,7 +386,8 @@ class DashboardHomePageState extends State<DashboardHomePage> {
                 panelScrollController: panelScrollController,
                 dragHandlePanelController: dragHandlePanelController,
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
               body: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
@@ -360,7 +395,8 @@ class DashboardHomePageState extends State<DashboardHomePage> {
                       allReservationInfoNeeded: allReservationInfoNeeded,
                       currentlySignedInUser: currentlySignedInUser,
                       userHasVehicules: !userHasNoVehicules,
-                      timeUntilResFetchedFromBookingOverview: widget.timeUntilResStartsFromBookingOverview,
+                      timeUntilResFetchedFromBookingOverview:
+                          widget.timeUntilResStartsFromBookingOverview,
                       canShowToggle: widget.canShowToggle,
                       getIndex: widget.getIndex)
                 ],

@@ -29,7 +29,7 @@ class LocationServiceState extends State<LocationService> {
     return coordinates;
   }
 
-  fetchLocation() async {
+  Future<void> fetchLocation() async {
     bool serviceEnabled;
     PermissionStatus permissionGranted;
 

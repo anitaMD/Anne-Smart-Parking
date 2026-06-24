@@ -17,7 +17,7 @@ class UserCurrentLocationData {
     return coordinates;
   }
 
-  enableLocationService() async {
+  Future<void> enableLocationService() async {
     bool serviceEnabled;
     PermissionStatus permissionGranted;
     try {

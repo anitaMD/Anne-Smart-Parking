@@ -26,7 +26,9 @@ class _ActivateLocationAlertBoxState extends State<ActivateLocationAlertBox> {
     timestamp: Timestamp.now().toDate(),
     accuracy: 16.805999755859375,
     altitude: 68.9000015258789,
+    altitudeAccuracy: 0.0,
     heading: 162.72528076171875,
+    headingAccuracy: 0.0,
     speed: 0.0626937747001648,
     speedAccuracy: 0.0,
   );
@@ -80,19 +82,20 @@ class _ActivateLocationAlertBoxState extends State<ActivateLocationAlertBox> {
               onTap: () async {
                 try {
                   await geolocator.Geolocator.getCurrentPosition(
-                          desiredAccuracy: geolocator.LocationAccuracy.high)
-                      .then((value) => {
-                            dummyPosition = value,
-                            currentLocationProvider
-                                .updateLocationFromAlertBox(dummyPosition),
-                            Navigator.pop(context),
-                            Navigator.pop(context),
-                            Navigator.pop(context, true),
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(const SnackBar(
-                              content: Text("Location successfully activated!"),
-                            )),
-                          });
+                      locationSettings: const geolocator.LocationSettings(
+                    accuracy: geolocator.LocationAccuracy.high,
+                  )).then((value) => {
+                        dummyPosition = value,
+                        currentLocationProvider
+                            .updateLocationFromAlertBox(dummyPosition),
+                        Navigator.pop(context),
+                        Navigator.pop(context),
+                        Navigator.pop(context, true),
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text("Location successfully activated!"),
+                        )),
+                      });
                 } catch (e) {
                   bool testEnabled;
                   testEnabled =
@@ -101,7 +104,6 @@ class _ActivateLocationAlertBoxState extends State<ActivateLocationAlertBox> {
                     // Location services are not enabled don't continue
                     // accessing the position and request users of the
                     // App to enable the location services.
-
                   }
                 }
               },

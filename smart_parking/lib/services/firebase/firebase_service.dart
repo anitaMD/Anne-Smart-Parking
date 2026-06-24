@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class FirebaseService {
   //FirebaseService();
   FirebaseAuth auth = FirebaseAuth.instance;
-  GoogleSignIn googleSignIn = GoogleSignIn();
+  GoogleSignIn googleSignIn = GoogleSignIn.instance;
   User? currentlySignedInUser;
   /*  static final instance = FirebaseService();
   Completer? _completer;
@@ -28,7 +28,7 @@ class FirebaseService {
     _completer!.complete();
   } */
 
-  signInWithGoogleFailed(e) {
+  void signInWithGoogleFailed(e) {
     {
       print(e);
     }
@@ -36,11 +36,18 @@ class FirebaseService {
 
   Future<String?> signInWithFacebook() async {
     try {
-      googleSignIn.disconnect(); //pour déconnecter le précédent email utilisé to sign in.
-      GoogleSignInAccount? googleSignInAccount = await googleSignIn.signIn();
-      GoogleSignInAuthentication googleSingInAuthentication = await googleSignInAccount!.authentication;
+      googleSignIn
+          .disconnect(); //pour déconnecter le précédent email utilisé to sign in.
+      GoogleSignInAccount? googleSignInAccount =
+          await googleSignIn.authenticate();
+      GoogleSignInAuthentication googleSingInAuthentication =
+          googleSignInAccount.authentication;
+      final GoogleSignInClientAuthorization clientAuthorization =
+          await googleSignInAccount.authorizationClient
+              .authorizeScopes(['email', 'profile']);
       AuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleSingInAuthentication.accessToken, idToken: googleSingInAuthentication.idToken);
+          accessToken: clientAuthorization.accessToken,
+          idToken: googleSingInAuthentication.idToken);
       await auth.signInWithCredential(credential);
     } on FirebaseAuthException catch (e) {
       print(e.message);
@@ -64,4 +71,6 @@ class FirebaseService {
           prefs.setBool("isLoggedIn", true),
         });
   }
-}///closing brackets
+}
+
+///closing brackets

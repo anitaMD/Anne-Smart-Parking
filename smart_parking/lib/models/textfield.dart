@@ -4,7 +4,7 @@ import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:smart_parking/styling/styling.dart';
-import 'package:phone_number/phone_number.dart';
+import 'package:phone_numbers_parser/phone_numbers_parser.dart';
 
 class MyTextField extends StatefulWidget {
   final Icon icon;
@@ -36,14 +36,13 @@ class _MyTextFieldState extends State<MyTextField> {
   // bool isObscure = false;
   bool isObscure = true;
   /* ------------- NUMBER VALIDATION FUNCTION -------------*/
-  validateNumber() async {
+  Future<void> validateNumber() async {
     String fetchedNumber = widget.controller.text;
-    RegionInfo region =
-        const RegionInfo(name: 'Senegal', code: 'SN', prefix: 221);
+    const isoCode = IsoCode.SN;
 
     try {
-      bool validSnPhoneNumber = await PhoneNumberUtil()
-          .validate(fetchedNumber, regionCode: region.code);
+      final phone = PhoneNumber.parse(fetchedNumber, callerCountry: isoCode);
+      bool validSnPhoneNumber = phone.isValid();
       if (!validSnPhoneNumber) {
         Fluttertoast.showToast(
             msg: 'Please check number format.',
@@ -141,7 +140,7 @@ class _MyTextFieldState extends State<MyTextField> {
     );
   }
 
-  passwordVisibility() {
+  InputDecoration passwordVisibility() {
     if (widget.isPassword) {
       return InputDecoration(
         errorStyle: const TextStyle(

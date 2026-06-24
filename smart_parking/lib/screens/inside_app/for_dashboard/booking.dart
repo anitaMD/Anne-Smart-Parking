@@ -14,14 +14,14 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:smart_parking/notifiers/location_notifier.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/location_alert_box.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/for_sliding_up_panel.dart/slider_inf_loaded.dart';
-import 'package:smart_parking/screens/inside_app/for_booking/refresh_and_slideup.dart';
 import 'package:smart_parking/screens/inside_app/for_booking/slots_map/no_alert.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
 
 class BookingPage extends StatefulWidget {
   //final String mapStyle;
   final Map<String, dynamic> parkingToNavigateTo;
-  const BookingPage({Key? key, required this.parkingToNavigateTo}) : super(key: key);
+  const BookingPage({Key? key, required this.parkingToNavigateTo})
+      : super(key: key);
   @override
   BookingPageState createState() => BookingPageState();
 }
@@ -32,7 +32,8 @@ class BookingPageState extends State<BookingPage> {
     //call SUBCOLLECTION FUNCTION
     FocusNode();
     BitmapDescriptor.fromAssetImage(
-            const ImageConfiguration(devicePixelRatio: 5.5), 'assets/images/parking_marker_icon.png')
+            const ImageConfiguration(devicePixelRatio: 5.5),
+            'assets/images/parking_marker_icon.png')
         .then((onValue) {
       setState(() {
         smartParkingIconMarker = onValue;
@@ -47,7 +48,9 @@ class BookingPageState extends State<BookingPage> {
       print("RESULT FROM FirestoreParkingLocationService SERVICE : $themap");
       fetchedMappingResult.addAll(themap);
 
-      widget.parkingToNavigateTo.isNotEmpty ? getPolyPoints() : debugPrint('IS VERY EMPTY');
+      widget.parkingToNavigateTo.isNotEmpty
+          ? getPolyPoints()
+          : debugPrint('IS VERY EMPTY');
       /* displaySearchResult.addAll(
           myPlacesAutocompleteService.showPlacesList(fetchedMappingResult)); */
       //print("FETCHED MAPPING RESULT CHECK :  $fetchedMappingResult");
@@ -58,14 +61,17 @@ class BookingPageState extends State<BookingPage> {
 
   // VARIABLES------------------------
   FocusNode mapFocus = FocusNode();
-  bool isParkingLocationIconNotClicked = true, isNewCameraPositionAvailable = false;
-  CameraPosition newCameraPosition = const CameraPosition(target: LatLng(0.0, 0.0));
+  bool isParkingLocationIconNotClicked = true,
+      isNewCameraPositionAvailable = false;
+  CameraPosition newCameraPosition =
+      const CameraPosition(target: LatLng(0.0, 0.0));
   final drangHandlePanelController = PanelController();
   late String _mapStyle;
   MapType _currentMapType = MapType.normal;
   Map<String, Set<String>> displaySearchResult = {};
   late FocusNode searchBarFocus;
-  FirestoreParkingLocationService firestoreParkingLocationService = FirestoreParkingLocationService();
+  FirestoreParkingLocationService firestoreParkingLocationService =
+      FirestoreParkingLocationService();
   // ignore: prefer_typing_uninitialized_variables
   var fetchedParkingLat, fetchedParkingLng;
   double aParkingLatitude = 0.0, aParkingLongitude = 0.0;
@@ -86,29 +92,45 @@ class BookingPageState extends State<BookingPage> {
     var ok = widget.parkingToNavigateTo.values.first as Map<String, dynamic>;
 
     var infos = ok['Positions'] as GeoPoint;
+// ✅ 1. Initialize with API key ONCE
+    final polylinePoints =
+        PolylinePoints(apiKey: 'AIzaSyBFaD36PRwIAg4-WEdZpBktOMH-RwvH9YQ');
 
-    PolylinePoints polyline = PolylinePoints();
-    PolylineResult result = await polyline.getRouteBetweenCoordinates(
-        'AIzaSyBFaD36PRwIAg4-WEdZpBktOMH-RwvH9YQ',
-        PointLatLng(Provider.of<CurrentLocationNotifier>(context, listen: false).currentUserLat,
-            Provider.of<CurrentLocationNotifier>(context, listen: false).currentUserLng),
-        PointLatLng(infos.latitude, infos.longitude));
+// ✅ 2. Create request with origin/destination INSIDE
+    final request = PolylineRequest(
+      origin: PointLatLng(
+        Provider.of<CurrentLocationNotifier>(context, listen: false)
+            .currentUserLat,
+        Provider.of<CurrentLocationNotifier>(context, listen: false)
+            .currentUserLng,
+      ),
+      destination: PointLatLng(infos.latitude, infos.longitude),
+      mode: TravelMode.driving,
+    );
+
+// ✅ 3. Call with ONLY request parameter (no API key, no start/end)
+    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+      request: request,
+    );
+
     debugPrint(" widget.parkingToNavigateTo ${result.status}");
+
     if (result.points.isNotEmpty) {
       for (var pointLatLng in result.points) {
-        polylineCoordinates.add(LatLng(pointLatLng.latitude, pointLatLng.longitude));
+        polylineCoordinates
+            .add(LatLng(pointLatLng.latitude, pointLatLng.longitude));
       }
+      setState(() {});
     }
-    setState(() {});
   }
 
-  refreshParkingIconClickState(bool result) {
+  void refreshParkingIconClickState(bool result) {
     setState(() {
       isParkingLocationIconNotClicked = result;
     });
   }
 
-  initMarker(Map<String, dynamic> parkingData, parkingID) {
+  void initMarker(Map<String, dynamic> parkingData, parkingID) {
     final MarkerId parkingMarkerID = MarkerId(parkingID);
     getLatLngValues(parkingID);
     print("MARKERS RESULT: ${myMapMarkers.values}");
@@ -116,7 +138,8 @@ class BookingPageState extends State<BookingPage> {
     final Marker newMarker = Marker(
         onTap: () {
           refreshParkingIconClickState(false);
-          getSelectedParkingIDThroughMapOnTap(parkingID); //SEND THIS ID TO SLOTSBOOKINGMAP STREAM BUILDER
+          getSelectedParkingIDThroughMapOnTap(
+              parkingID); //SEND THIS ID TO SLOTSBOOKINGMAP STREAM BUILDER
           //LINK THIS TAP TO WHAT TO DISPLAY WITH THE FLOATING ACTION BUTTON, make the floating action SELECTABLE to check the parking info and layout
         },
         markerId: parkingMarkerID,
@@ -126,7 +149,8 @@ class BookingPageState extends State<BookingPage> {
             : LatLng(recupLat(parkingID), recupLng(parkingID)),
         infoWindow: (InfoWindow(
             title: parkingData['Name'],
-            snippet: "${parkingData['StreetAddress']}, ${parkingData['City']}, ${parkingData['CountryCode']}")));
+            snippet:
+                "${parkingData['StreetAddress']}, ${parkingData['City']}, ${parkingData['CountryCode']}")));
     setState(() {
       myMapMarkers[parkingMarkerID] = newMarker;
       print("PARKING MARKER ID FROM INITIMARKER: $parkingMarkerID");
@@ -153,9 +177,11 @@ class BookingPageState extends State<BookingPage> {
     return aParkingLongitude;
   }
 
-  getLatLngValues(String parkingID) {
+  void getLatLngValues(String parkingID) {
     Set<double> parkingCoordinatesList = {};
-    firestoreParkingLocationService.getParkingLocationCoordinates(parkingID).then((value) {
+    firestoreParkingLocationService
+        .getParkingLocationCoordinates(parkingID)
+        .then((value) {
       fetchedParkingLat = value.latitude;
       aParkingLatitude = fetchedParkingLat;
       //print("OK $fetchedLatitude _________ $aParkingLatitude");
@@ -163,16 +189,19 @@ class BookingPageState extends State<BookingPage> {
       aParkingLongitude = fetchedParkingLng;
       //print("OK LONG $fetchedLongitude _________ $aParkingLongitude");
       parkingCoordinatesList.addAll({aParkingLatitude, aParkingLongitude});
-      mappedParkingCoordinates.addAll({parkingID: parkingCoordinatesList.toSet()});
+      mappedParkingCoordinates
+          .addAll({parkingID: parkingCoordinatesList.toSet()});
       print("THIS IS EACH PARKING COORDINATES: $parkingCoordinatesList");
     }).whenComplete(() {
       aParkingLatitude = fetchedParkingLat;
-      print("COMPLETE PARKING COORDINATES: FetchedLng $fetchedParkingLng _________ aParkingLNG $aParkingLongitude");
+      print(
+          "COMPLETE PARKING COORDINATES: FetchedLng $fetchedParkingLng _________ aParkingLNG $aParkingLongitude");
       aParkingLongitude = fetchedParkingLng;
     });
 
     if (aParkingLatitude == 0) {
-      print("NO COMPLETE PARKING COORDINATES: FetchedLng $fetchedParkingLng _________ aParkingLNG $aParkingLongitude");
+      print(
+          "NO COMPLETE PARKING COORDINATES: FetchedLng $fetchedParkingLng _________ aParkingLNG $aParkingLongitude");
     }
   }
 
@@ -185,33 +214,36 @@ class BookingPageState extends State<BookingPage> {
   } */
 
   final Completer<GoogleMapController> _controller = Completer();
-  mapInitialize() {
+  void mapInitialize() {
     for (var parkingInfo in fetchedMappingResult.entries) {
       initMarker(parkingInfo.value, parkingInfo.key);
-      print("INFO VALUE : ${parkingInfo.value},________ INFO KEY : ${parkingInfo.key}");
+      print(
+          "INFO VALUE : ${parkingInfo.value},________ INFO KEY : ${parkingInfo.key}");
     }
   }
 
   var mapCreated = false;
-  isMapCreated() => setState(() {
+  void isMapCreated() => setState(() {
         mapCreated = true;
       }); //print("$mapCreated IS FINALLY TRUE");
 
-  refresh() => Future.delayed(const Duration(seconds: 1), () {
+  Future<Null> refresh() => Future.delayed(const Duration(seconds: 1), () {
         setState(() {});
       });
 
-  displayMyMap(CameraPosition currentLocationCameraPosition) {
+  GoogleMap displayMyMap(CameraPosition currentLocationCameraPosition) {
     return GoogleMap(
       // ignore: prefer_collection_literals
       onTap: (latLng) {
         mapFocus.requestFocus();
         refreshParkingIconClickState(true);
-        print("isParkingLocationNotClicked : $isParkingLocationIconNotClicked ");
+        print(
+            "isParkingLocationNotClicked : $isParkingLocationIconNotClicked ");
       },
       gestureRecognizers: {}
         ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
-        ..add(Factory<VerticalDragGestureRecognizer>(() => VerticalDragGestureRecognizer())),
+        ..add(Factory<VerticalDragGestureRecognizer>(
+            () => VerticalDragGestureRecognizer())),
       mapType: _currentMapType,
       markers: Set<Marker>.of(myMapMarkers.values),
       myLocationEnabled: true,
@@ -230,36 +262,49 @@ class BookingPageState extends State<BookingPage> {
     );
   }
 
-  displayLocationEnablerDialBox(bool rejectedFromTheStart, bool enabledAfterRejected) {
+  void displayLocationEnablerDialBox(
+      bool rejectedFromTheStart, bool enabledAfterRejected) {
     if (rejectedFromTheStart == true && enabledAfterRejected == false) {
       Future.delayed(const Duration(seconds: 5)).then((value) => {
             showDialog(
               barrierColor: Colors.black12,
               barrierDismissible: false,
               context: context,
-              builder: (dialContext) => StatefulBuilder(builder: (dialContext, setState) {
+              builder: (dialContext) =>
+                  StatefulBuilder(builder: (dialContext, setState) {
                 return const ActivateLocationAlertBox(
                   title: "Device Location Needed",
-                  description: "To display the map and available smart parkings, we need to access your location.",
+                  description:
+                      "To display the map and available smart parkings, we need to access your location.",
                 );
               }),
             ).then((value) async {
-              value == true ? print("LOCATION SUCCESSFULLY ENABLED FROM 'TURN ON'") : null;
+              value == true
+                  ? print("LOCATION SUCCESSFULLY ENABLED FROM 'TURN ON'")
+                  : null;
               setState(() {
                 isNewCameraPositionAvailable = true;
                 newCameraPosition = CameraPosition(
-                    target: LatLng(context.read<CurrentLocationNotifier>().locationFetchedFromAlertBox.latitude,
-                        context.read<CurrentLocationNotifier>().locationFetchedFromAlertBox.longitude),
+                    target: LatLng(
+                        context
+                            .read<CurrentLocationNotifier>()
+                            .locationFetchedFromAlertBox
+                            .latitude,
+                        context
+                            .read<CurrentLocationNotifier>()
+                            .locationFetchedFromAlertBox
+                            .longitude),
                     zoom: 11,
                     bearing: 10);
               });
 
-              await _controller.future
-                  .then((value) => value.animateCamera(CameraUpdate.newCameraPosition(newCameraPosition)));
+              await _controller.future.then((value) => value.animateCamera(
+                  CameraUpdate.newCameraPosition(newCameraPosition)));
             })
           });
     }
-    print("WATCHING CONTEXT${context.watch<CurrentLocationNotifier>().locationFetchedFromAlertBox}");
+    print(
+        "WATCHING CONTEXT${context.watch<CurrentLocationNotifier>().locationFetchedFromAlertBox}");
   }
 
   @override
@@ -267,15 +312,19 @@ class BookingPageState extends State<BookingPage> {
     double panelHeightClosed = MediaQuery.of(context).size.height * 0.1;
     double panelHeightOpened = MediaQuery.of(context).size.height * 0.5;
     //
-    final currentLocationProvider = Provider.of<CurrentLocationNotifier>(context);
+    final currentLocationProvider =
+        Provider.of<CurrentLocationNotifier>(context);
 
     if (mapCreated == true) mapInitialize(); //MAP INITIALIZATION----
 
     displayLocationEnablerDialBox(
-        currentLocationProvider.serviceRejectedFromTheStart, currentLocationProvider.serviceEnabledAfterRejected);
-    print(" MAPTYPEEUU $_currentMapType"); //TERRAIN IS THE ONE WITH COLORS AND LESS MARKERS FROM OTHER PACES
+        currentLocationProvider.serviceRejectedFromTheStart,
+        currentLocationProvider.serviceEnabledAfterRejected);
+    print(
+        " MAPTYPEEUU $_currentMapType"); //TERRAIN IS THE ONE WITH COLORS AND LESS MARKERS FROM OTHER PACES
 
-    print("POSITION AVAILABLE NOW?  ${context.watch<CurrentLocationNotifier>().positionAvailable}");
+    print(
+        "POSITION AVAILABLE NOW?  ${context.watch<CurrentLocationNotifier>().positionAvailable}");
     return Scaffold(
         backgroundColor: const Color.fromARGB(255, 246, 244, 248),
         //backgroundColor: Colors.white,
@@ -304,36 +353,66 @@ class BookingPageState extends State<BookingPage> {
                     );
                   } //
                   else if (currentLocationProvider.currentUserLat != 0.0 ||
-                      currentLocationProvider.serviceEnabledAfterRejected == true) {
+                      currentLocationProvider.serviceEnabledAfterRejected ==
+                          true) {
                     print("VOILA ${currentLocationProvider.currentUserLat}");
                     Marker currentLocationMarker = Marker(
                       markerId: const MarkerId("Your Location"),
-                      position: currentLocationProvider.locationEnabledFromAlertBox == true
-                          ? LatLng(context.read<CurrentLocationNotifier>().locationFetchedFromAlertBox.latitude,
-                              context.watch<CurrentLocationNotifier>().locationFetchedFromAlertBox.longitude)
-                          : LatLng(currentLocationProvider.currentUserLat.toDouble(),
-                              currentLocationProvider.currentUserLng.toDouble()),
+                      position: currentLocationProvider
+                                  .locationEnabledFromAlertBox ==
+                              true
+                          ? LatLng(
+                              context
+                                  .read<CurrentLocationNotifier>()
+                                  .locationFetchedFromAlertBox
+                                  .latitude,
+                              context
+                                  .watch<CurrentLocationNotifier>()
+                                  .locationFetchedFromAlertBox
+                                  .longitude)
+                          : LatLng(
+                              currentLocationProvider.currentUserLat.toDouble(),
+                              currentLocationProvider.currentUserLng
+                                  .toDouble()),
                       icon: BitmapDescriptor.defaultMarker,
                       infoWindow: InfoWindow(
                           //EDIT THE JSON.KEYS.FIRST BECAUSE ITS NOT SHOWING ANYTHING
                           title: "Current Position",
-                          snippet: currentLocationProvider.locationEnabledFromAlertBox == true
-                              ? currentLocationProvider.locationFetchedFromAlertBox.toJson().keys.first
+                          snippet: currentLocationProvider
+                                      .locationEnabledFromAlertBox ==
+                                  true
+                              ? currentLocationProvider
+                                  .locationFetchedFromAlertBox
+                                  .toJson()
+                                  .keys
+                                  .first
                               : currentLocationProvider.address.toString()),
                     );
-                    print("THIS IS THE CURRENT LOCATION MARKER : $currentLocationMarker");
-                    if (currentLocationProvider.serviceEnabledAfterRejected == true &&
+                    print(
+                        "THIS IS THE CURRENT LOCATION MARKER : $currentLocationMarker");
+                    if (currentLocationProvider.serviceEnabledAfterRejected ==
+                            true &&
                         currentLocationProvider.userLocationAsked != 0) {
-                      print("ON VERIFIE ${currentLocationProvider.locationFetchedFromAlertBox.latitude}");
+                      print(
+                          "ON VERIFIE ${currentLocationProvider.locationFetchedFromAlertBox.latitude}");
                     }
-                    myMapMarkers[currentLocationMarker.markerId] = currentLocationMarker;
+                    myMapMarkers[currentLocationMarker.markerId] =
+                        currentLocationMarker;
                     CameraPosition currentUserPositionCamera = CameraPosition(
-                        target: currentLocationProvider.serviceEnabledAfterRejected == true &&
+                        target: currentLocationProvider
+                                        .serviceEnabledAfterRejected ==
+                                    true &&
                                 currentLocationProvider.userLocationAsked != 0
-                            ? LatLng(currentLocationProvider.locationFetchedFromAlertBox.latitude,
-                                currentLocationProvider.locationFetchedFromAlertBox.longitude)
-                            : LatLng(currentLocationProvider.currentUserLat.toDouble(),
-                                currentLocationProvider.currentUserLng.toDouble()),
+                            ? LatLng(
+                                currentLocationProvider
+                                    .locationFetchedFromAlertBox.latitude,
+                                currentLocationProvider
+                                    .locationFetchedFromAlertBox.longitude)
+                            : LatLng(
+                                currentLocationProvider.currentUserLat
+                                    .toDouble(),
+                                currentLocationProvider.currentUserLng
+                                    .toDouble()),
                         zoom: 11,
                         bearing: 10); //_kGooglePlex,
 
@@ -343,7 +422,8 @@ class BookingPageState extends State<BookingPage> {
                     /* SomeMarkers(
                             notifyParent: refresh, mappedMarkers: myMapMarkers), */
                   } else {
-                    return const CircularProgressIndicator(color: Color.fromARGB(255, 238, 244, 54));
+                    return const CircularProgressIndicator(
+                        color: Color.fromARGB(255, 238, 244, 54));
                   }
                 } else {
                   return Container();
@@ -459,10 +539,11 @@ now on the blank space left, the person will see and can choose :
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => BookingThroughSlotsMapNoAlertDialog(
-                            receivedID: sentParkingIDtoSlotsBooking,
-                            mappedParkingsGeneralInfo: fetchedMappingResult,
-                            slotBooked: false),
+                        builder: (context) =>
+                            BookingThroughSlotsMapNoAlertDialog(
+                                receivedID: sentParkingIDtoSlotsBooking,
+                                mappedParkingsGeneralInfo: fetchedMappingResult,
+                                slotBooked: false),
                       ),
                     );
                   },
@@ -509,7 +590,9 @@ now on the blank space left, the person will see and can choose :
 
   void _toggleNavBarForVisibleMap() {
     setState(() {
-      _currentMapType = (_currentMapType == MapType.normal) ? MapType.terrain : MapType.normal;
+      _currentMapType = (_currentMapType == MapType.normal)
+          ? MapType.terrain
+          : MapType.normal;
     });
   }
 

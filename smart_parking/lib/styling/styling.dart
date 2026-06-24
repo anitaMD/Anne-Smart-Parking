@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 const splashDecoration = BoxDecoration(
-    gradient:
-        LinearGradient(begin: Alignment(-1.0, -1), end: Alignment(-1.0, 1),
-            // ignore: prefer_const_literals_to_create_immutables
-            colors: [
+    gradient: LinearGradient(
+        begin: Alignment(-1.0, -1),
+        end: Alignment(-1.0, 1),
+        // ignore: prefer_const_literals_to_create_immutables
+        colors: [
       /*  Color(0xff000046),
       Color(0xff1cb5e0), */ //à retenir
       /* Color(0xff4568dc), // à retenir
@@ -14,10 +15,11 @@ const splashDecoration = BoxDecoration(
     ]));
 
 const logDecoration = BoxDecoration(
-    gradient:
-        LinearGradient(begin: Alignment(-1.0, -1), end: Alignment(-1.0, 1),
-            // ignore: prefer_const_literals_to_create_immutables
-            colors: [
+    gradient: LinearGradient(
+        begin: Alignment(-1.0, -1),
+        end: Alignment(-1.0, 1),
+        // ignore: prefer_const_literals_to_create_immutables
+        colors: [
       /*  Color(0xff000046),
       Color(0xff1cb5e0), */ //à retenir
       /* Color(0xff4568dc), // à retenir
@@ -27,10 +29,11 @@ const logDecoration = BoxDecoration(
     ]));
 
 const regisDecoration = BoxDecoration(
-    gradient:
-        LinearGradient(begin: Alignment(-1.0, -1), end: Alignment(-1.0, 1),
-            // ignore: prefer_const_literals_to_create_immutables
-            colors: [
+    gradient: LinearGradient(
+        begin: Alignment(-1.0, -1),
+        end: Alignment(-1.0, 1),
+        // ignore: prefer_const_literals_to_create_immutables
+        colors: [
       /*  Color(0xff000046),
       Color(0xff1cb5e0), */ //à retenir
       /* Color(0xff4568dc), // à retenir
@@ -80,10 +83,11 @@ const customlabelStyleAddCar = TextStyle(
 );
 
 const resetPassBoxDeco = BoxDecoration(
-    gradient:
-        LinearGradient(begin: Alignment(-1.0, -1), end: Alignment(-1.0, 1),
-            // ignore: prefer_const_literals_to_create_immutables
-            colors: [
+    gradient: LinearGradient(
+        begin: Alignment(-1.0, -1),
+        end: Alignment(-1.0, 1),
+        // ignore: prefer_const_literals_to_create_immutables
+        colors: [
       /*  Color(0xff000046),
       Color(0xff1cb5e0), */ //à retenir
       /* Color(0xff4568dc), // à retenir
@@ -157,11 +161,11 @@ const slidingUpPanelWhiteStyle = TextStyle(
 
 ///DASHBOARD PANEL SLIDER
 Color dashPanelTopBarBgColor =
-    const Color.fromARGB(255, 174, 183, 235).withOpacity(0.4);
+    const Color.fromARGB(255, 174, 183, 235).withValues(alpha: 0.4);
 const Color dashPanelTabBarUnselectedTextColor = Colors.black;
 const Color dashPanelTabBarSelectedTextColor = Colors.black;
 Color dashPanelTabIndicatorColor =
-    const Color.fromARGB(255, 174, 183, 235).withOpacity(0.4);
+    const Color.fromARGB(255, 174, 183, 235).withValues(alpha: 0.4);
 const Color dashPanelMyVehiculesViewColor = Colors.white;
 const Color dashPanelFavoritesViewColor = Colors.white;
 const Color dashPanelWalletViewColor = Colors.orange;

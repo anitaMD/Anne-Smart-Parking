@@ -10,12 +10,16 @@ import 'package:smart_parking/screens/inside_app/test_dashwrapper.dart';
 import 'package:smart_parking/screens/inside_app/test_profile_inf.dart';
 import 'package:smart_parking/screens/inside_app/wallet.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:smart_parking/l10n/generated/app_localizations.dart';
 
 class TestHome extends StatefulWidget {
   final int timeUntilReservationStarts;
   final Map<String, dynamic> newMoreUrgentBooking;
-  const TestHome({Key? key, this.timeUntilReservationStarts = 0, required this.newMoreUrgentBooking}) : super(key: key);
+  const TestHome(
+      {Key? key,
+      this.timeUntilReservationStarts = 0,
+      required this.newMoreUrgentBooking})
+      : super(key: key);
 
   @override
   State<TestHome> createState() => _TestHomeState();
@@ -43,7 +47,9 @@ class _TestHomeState extends State<TestHome> {
   void initState() {
     super.initState();
     var potentialCurrentUser = parkingUserAuthService.auth.currentUser;
-    potentialCurrentUser != null ? setState(() => currentUser = potentialCurrentUser) : debugPrint("NO USER SIGNED IN");
+    potentialCurrentUser != null
+        ? setState(() => currentUser = potentialCurrentUser)
+        : debugPrint("NO USER SIGNED IN");
   }
 
   @override
@@ -61,15 +67,19 @@ class _TestHomeState extends State<TestHome> {
 
     return Scaffold(
       appBar: AppBar(
-        title: getCurrentDrawerSectionName(localLnSetting, currentPage: currentPage),
+        title: getCurrentDrawerSectionName(localLnSetting,
+            currentPage: currentPage),
         elevation: 0.5,
         iconTheme: const IconThemeData(color: Colors.white),
         flexibleSpace: Container(
           decoration: BoxDecoration(
-              gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: <Color>[
-            Theme.of(context).primaryColor,
-            Theme.of(context).colorScheme.secondary,
-          ])),
+              gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: <Color>[
+                Theme.of(context).primaryColor,
+                Theme.of(context).colorScheme.secondary,
+              ])),
         ),
         actions: [
           Container(
@@ -121,8 +131,8 @@ class _TestHomeState extends State<TestHome> {
                   0.0,
                   1.0
                 ], colors: [
-                  Theme.of(context).primaryColor.withOpacity(0.2),
-                  Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+                  Theme.of(context).primaryColor.withValues(alpha:0.2),
+                  Theme.of(context).colorScheme.secondary.withValues(alpha:0.5),
                 ])),
                 height: 200,
               ), */
@@ -131,10 +141,14 @@ class _TestHomeState extends State<TestHome> {
                 child: InkWell(
                   onTap: () async {
                     parkingUserAuthService.signOutUser();
-                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
                     prefs.setBool("isLoggedIn", true);
                     if (!mounted) return;
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const TestLogin()));
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const TestLogin()));
                   },
                   child: const Padding(
                     padding: EdgeInsets.all(15.0),
@@ -179,13 +193,17 @@ class _TestHomeState extends State<TestHome> {
       ),
       child: Column(
         children: [
-          menuItem(1, "Dashboard", Icons.dashboard_outlined, currentPage == DrawerSections.dashboard ? true : false),
-          menuItem(2, "Profile", Icons.person, currentPage == DrawerSections.profileInfo ? true : false),
-          menuItem(
-              3, "Wallet", Icons.account_balance_wallet_outlined, currentPage == DrawerSections.wallet ? true : false),
-          menuItem(4, "FAQs", Icons.question_answer_outlined, currentPage == DrawerSections.faq ? true : false),
+          menuItem(1, "Dashboard", Icons.dashboard_outlined,
+              currentPage == DrawerSections.dashboard ? true : false),
+          menuItem(2, "Profile", Icons.person,
+              currentPage == DrawerSections.profileInfo ? true : false),
+          menuItem(3, "Wallet", Icons.account_balance_wallet_outlined,
+              currentPage == DrawerSections.wallet ? true : false),
+          menuItem(4, "FAQs", Icons.question_answer_outlined,
+              currentPage == DrawerSections.faq ? true : false),
           const Divider(),
-          menuItem(5, "Settings", Icons.settings_outlined, currentPage == DrawerSections.settings ? true : false),
+          menuItem(5, "Settings", Icons.settings_outlined,
+              currentPage == DrawerSections.settings ? true : false),
           menuItem(6, "Notifications", Icons.notifications_outlined,
               currentPage == DrawerSections.notifications ? true : false),
           const Divider(),
@@ -255,7 +273,8 @@ class _TestHomeState extends State<TestHome> {
     );
   }
 
-  getCurrentDrawerSectionName(AppLocalizations localLnSetting, {required DrawerSections currentPage}) {
+  Text getCurrentDrawerSectionName(AppLocalizations localLnSetting,
+      {required DrawerSections currentPage}) {
     String textToDisplay = '';
     currentPage == DrawerSections.dashboard
         ? textToDisplay = 'Dashboard'
@@ -275,12 +294,15 @@ class _TestHomeState extends State<TestHome> {
     );
   }
 
-  Widget getBodyContent(User currentUser, int ok, Map<String, dynamic> okUrgent) {
+  Widget getBodyContent(
+      User currentUser, int ok, Map<String, dynamic> okUrgent) {
     Widget bodyContainer = Container();
     if (currentPage == DrawerSections.dashboard) {
       setState(() {
         bodyContainer = TestDashboardWrapper(
-            timeUntilResStartsFromBookingOverview: ok, parkingToNavigateTo: const {}, newMoreUrgentBooking: okUrgent);
+            timeUntilResStartsFromBookingOverview: ok,
+            parkingToNavigateTo: const {},
+            newMoreUrgentBooking: okUrgent);
       });
     } else if (currentPage == DrawerSections.profileInfo) {
       bodyContainer = const TestProfileInfo();
@@ -374,8 +396,8 @@ class _TestHomeState extends State<TestHome> {
             0.0,
             1.0
           ], colors: [
-            Theme.of(context).primaryColor.withOpacity(0.2),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+            Theme.of(context).primaryColor.withValues(alpha:0.2),
+            Theme.of(context).colorScheme.secondary.withValues(alpha:0.5),
           ])),
           child: ListView(
             children: [

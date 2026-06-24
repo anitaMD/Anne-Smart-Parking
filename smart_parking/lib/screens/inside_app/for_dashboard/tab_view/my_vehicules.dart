@@ -27,7 +27,7 @@ class _MyVehiculesTabState extends State<MyVehiculesTab> {
             child: Image.asset(item, fit: BoxFit.fitWidth, width: 350.0),
           ))
       .toList();
-  final CarouselController _controller = CarouselController();
+  final CarouselSliderController _controller = CarouselSliderController();
   //
   @override
   Widget build(BuildContext context) {
@@ -83,7 +83,7 @@ class _MyVehiculesTabState extends State<MyVehiculesTab> {
 
 /* car info: model, color, plaque immatriculation, AND EDIT OPTION + ADD CAR option (OR JUST DISPLAY THE INFO and allow the changes in a section of the profile page) */
 
-carInfoCard() {
+Card carInfoCard() {
   return Card(
     color: Colors.indigo,
     margin: const EdgeInsets.symmetric(horizontal: 8),

@@ -8,9 +8,12 @@ import 'package:time_range_picker/time_range_picker.dart';
 //import 'package:package:smart_parking/paydunya_java_latest/com/paydunya/neptune';
 
 class BookingOverviewFinal extends StatefulWidget {
-  final Map<String, dynamic> bookerFirstPageInfoFetched, bookerSecondPageInfoFetched;
+  final Map<String, dynamic> bookerFirstPageInfoFetched,
+      bookerSecondPageInfoFetched;
   const BookingOverviewFinal(
-      {Key? key, required this.bookerFirstPageInfoFetched, required this.bookerSecondPageInfoFetched})
+      {Key? key,
+      required this.bookerFirstPageInfoFetched,
+      required this.bookerSecondPageInfoFetched})
       : super(key: key);
 
   @override
@@ -32,7 +35,10 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
       for (var asset in value) {
         String brandName = asset.split('/').last.split('.').first;
         if (brandName.toLowerCase() ==
-            widget.bookerFirstPageInfoFetched['Selected Vehicule Info']['Specs']['Brand'].toString().toLowerCase()) {
+            widget.bookerFirstPageInfoFetched['Selected Vehicule Info']['Specs']
+                    ['Brand']
+                .toString()
+                .toLowerCase()) {
           debugPrint("FOUND IT");
           setState(() => currentCarPath = asset);
         }
@@ -50,12 +56,19 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
       fontSize: 20,
       fontWeight: FontWeight.w800,
     );
-    const TextStyle subtitleTextStyle =
-        TextStyle(color: Colors.white, fontFamily: 'OpenSans', fontSize: 15, fontWeight: FontWeight.w900);
-    var selectedDay = widget.bookerFirstPageInfoFetched['Selected Day'] as DateTime;
-    var selectedTimeInterval = widget.bookerSecondPageInfoFetched['Selected Time Interval'] as TimeRange;
-    var duration = (selectedTimeInterval.endTime.hour * 60 + selectedTimeInterval.endTime.minute) -
-        (selectedTimeInterval.startTime.hour * 60 + selectedTimeInterval.startTime.minute);
+    const TextStyle subtitleTextStyle = TextStyle(
+        color: Colors.white,
+        fontFamily: 'OpenSans',
+        fontSize: 15,
+        fontWeight: FontWeight.w900);
+    var selectedDay =
+        widget.bookerFirstPageInfoFetched['Selected Day'] as DateTime;
+    var selectedTimeInterval = widget
+        .bookerSecondPageInfoFetched['Selected Time Interval'] as TimeRange;
+    var duration = (selectedTimeInterval.endTime.hour * 60 +
+            selectedTimeInterval.endTime.minute) -
+        (selectedTimeInterval.startTime.hour * 60 +
+            selectedTimeInterval.startTime.minute);
 
     String durationToString(int minutes) {
       var d = Duration(minutes: minutes);
@@ -76,7 +89,9 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
     final Items item3 = Items(
       id: 2,
       title: "Fee / 30mns",
-      subtitle: widget.bookerFirstPageInfoFetched['Selected Parking Fee / 30mns'] + ' FCFA',
+      subtitle:
+          widget.bookerFirstPageInfoFetched['Selected Parking Fee / 30mns'] +
+              ' FCFA',
     );
     final Items item4 = Items(
       id: 3,
@@ -94,11 +109,16 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
       subtitle: durationToString(duration),
     );
 
-    allBookingDetailItems.length < 6 ? allBookingDetailItems.addAll({item1, item2, item3, item4, item5, item6}) : null;
-    var durationMinutePart = int.parse(durationToString(duration).split(' ').last.substring(0, 2));
+    allBookingDetailItems.length < 6
+        ? allBookingDetailItems
+            .addAll({item1, item2, item3, item4, item5, item6})
+        : null;
+    var durationMinutePart =
+        int.parse(durationToString(duration).split(' ').last.substring(0, 2));
     debugPrint(
         "THIS IS WHAT YOU GET: ${widget.bookerFirstPageInfoFetched} \t ${widget.bookerSecondPageInfoFetched} _ ${widget.bookerFirstPageInfoFetched['Selected Vehicule Info']['Specs']['Brand']} __________ $durationMinutePart");
-    widget.bookerFirstPageInfoFetched['Selected Vehicule Info']['Specs']['Brand'];
+    widget.bookerFirstPageInfoFetched['Selected Vehicule Info']['Specs']
+        ['Brand'];
 
     return SingleChildScrollView(
       child: Column(
@@ -106,7 +126,10 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
           const FittedBox(
             child: Text(
               "BOOKING OVERVIEW",
-              style: TextStyle(fontWeight: FontWeight.w900, color: Colors.black, fontSize: 40),
+              style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black,
+                  fontSize: 40),
             ),
           ),
           Column(
@@ -114,18 +137,28 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
             children: [
               FittedBox(
                 child: Text(
-                  widget.bookerFirstPageInfoFetched['Selected Vehicule Info']['Specs']['Brand'],
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white),
+                  widget.bookerFirstPageInfoFetched['Selected Vehicule Info']
+                      ['Specs']['Brand'],
+                  style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white),
                 ),
               ),
               FittedBox(
                 child: Text(
-                  widget.bookerFirstPageInfoFetched['Selected Vehicule Info']['Specs']['Model Detail'],
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white54),
+                  widget.bookerFirstPageInfoFetched['Selected Vehicule Info']
+                      ['Specs']['Model Detail'],
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white54),
                 ),
               ),
               Image(
-                image: AssetImage(currentCarPath.isEmpty ? 'assets/images/carRep/acura.png' : currentCarPath),
+                image: AssetImage(currentCarPath.isEmpty
+                    ? 'assets/images/carRep/acura.png'
+                    : currentCarPath),
                 width: 400,
                 height: MediaQuery.of(context).size.height / 3 -
                     50 -
@@ -136,8 +169,13 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
                 children: [
                   const Icon(Icons.location_pin),
                   FittedBox(
-                    child: Text(widget.bookerFirstPageInfoFetched['Selected Parking Name'],
-                        style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900, color: Colors.white)),
+                    child: Text(
+                        widget.bookerFirstPageInfoFetched[
+                            'Selected Parking Name'],
+                        style: const TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white)),
                   ),
                 ],
               ),
@@ -146,7 +184,9 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
                 child: FittedBox(
                   child: Text("Booking Details",
                       style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.w900, color: Color.fromARGB(169, 255, 255, 255))),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Color.fromARGB(169, 255, 255, 255))),
                 ),
               ),
             ],
@@ -162,9 +202,18 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
                       itemCount: allBookingDetailItems.length,
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           childAspectRatio: 1,
-                          crossAxisSpacing: MediaQuery.of(context).size.width < 373.33 ? 9 : 6,
-                          mainAxisSpacing: MediaQuery.of(context).size.width < 373.33 ? 9 : 6,
-                          crossAxisCount: MediaQuery.of(context).size.width < 373.33 ? 9 : 3),
+                          crossAxisSpacing:
+                              MediaQuery.of(context).size.width < 373.33
+                                  ? 9
+                                  : 6,
+                          mainAxisSpacing:
+                              MediaQuery.of(context).size.width < 373.33
+                                  ? 9
+                                  : 6,
+                          crossAxisCount:
+                              MediaQuery.of(context).size.width < 373.33
+                                  ? 9
+                                  : 3),
                       itemBuilder: (context, index) {
                         return Row(
                           children: [
@@ -172,37 +221,59 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
                                 child: SizedBox(
                               width: 300,
                               child: Card(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                                  color: const Color(0xff78909C), // Colors.white.withOpacity(0.6), //Colors.white10
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15)),
+                                  color: const Color(
+                                      0xff78909C), // Colors.white.withValues(alpha:0.6), //Colors.white10
                                   elevation: 15,
                                   child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Flexible(
                                         child: GridTile(
                                             child: Padding(
-                                          padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0),
+                                          padding: const EdgeInsets.only(
+                                              left: 8.0, right: 8.0, top: 8.0),
                                           child: FittedBox(
                                             child: Text(
-                                              allBookingDetailItems.elementAt(index).title,
-                                              style: allBookingDetailItems.elementAt(index).id != 5 &&
-                                                      allBookingDetailItems.elementAt(index).id != 0
+                                              allBookingDetailItems
+                                                  .elementAt(index)
+                                                  .title,
+                                              style: allBookingDetailItems
+                                                              .elementAt(index)
+                                                              .id !=
+                                                          5 &&
+                                                      allBookingDetailItems
+                                                              .elementAt(index)
+                                                              .id !=
+                                                          0
                                                   ? titleTextStyle
                                                   : const TextStyle(
                                                       color: Colors.black,
                                                       fontFamily: 'OpenSans',
                                                       fontSize: 14.5,
-                                                      fontWeight: FontWeight.w900),
+                                                      fontWeight:
+                                                          FontWeight.w900),
                                             ),
                                           ),
                                         )),
                                       ),
                                       SizedBox(
-                                        height: allBookingDetailItems.elementAt(index).id != 0 ? 20 : 0,
+                                        height: allBookingDetailItems
+                                                    .elementAt(index)
+                                                    .id !=
+                                                0
+                                            ? 20
+                                            : 0,
                                       ),
                                       Flexible(
-                                        child: Text(allBookingDetailItems.elementAt(index).subtitle,
+                                        child: Text(
+                                            allBookingDetailItems
+                                                .elementAt(index)
+                                                .subtitle,
                                             style: subtitleTextStyle),
                                       ),
                                     ],
@@ -227,8 +298,10 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
    Directory("assets/whatever") didn't <ork because During a build, Flutter places assets into a special archive called the asset bundle that apps read from at runtime. 
    Check link above
    */
-    final assetsManifest = await DefaultAssetBundle.of(context).loadString('AssetManifest.json');
-    final allAssets = json.decode(assetsManifest).keys; //or values, would still work fine
+    final assetsManifest =
+        await DefaultAssetBundle.of(context).loadString('AssetManifest.json');
+    final allAssets =
+        json.decode(assetsManifest).keys; //or values, would still work fine
     Set<String> carRepAssets = {};
     for (var asset in allAssets) {
       if (asset.toString().contains("carRep")) {

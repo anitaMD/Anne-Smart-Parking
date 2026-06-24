@@ -37,11 +37,17 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
   bool isDropped = false;
   bool isToggleDragStarted = false;
   double dragEndOffsetX = 0.0, dragEndOffsetY = 0.0;
-  Velocity initialVelocity = VelocityTracker.withKind(PointerDeviceKind.touch).getVelocity();
+  Velocity initialVelocity =
+      VelocityTracker.withKind(PointerDeviceKind.touch).getVelocity();
 
-  double toggleContainerWidth = 55, toggleContainerHeight = 105, mapTopRightIconBoxHeightDeducted = 50;
+  double toggleContainerWidth = 55,
+      toggleContainerHeight = 105,
+      mapTopRightIconBoxHeightDeducted = 50;
 
-  double previousPositionX = 0.0, previousPositionY = 0.0, appBarHeightFinal = 0.0, totalScreenHeightFinal = 0.0;
+  double previousPositionX = 0.0,
+      previousPositionY = 0.0,
+      appBarHeightFinal = 0.0,
+      totalScreenHeightFinal = 0.0;
 
   Widget getBodyNoEffect() {
     List<Widget> pages = [
@@ -73,10 +79,12 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
           }
         : null;
     //_currentIndex = widget.newIndex + 1;
-    debugPrint(" currentindex $_currentIndex  __ widgetnewindex ${widget.newIndex} _ goB $goBack");
+    debugPrint(
+        " currentindex $_currentIndex  __ widgetnewindex ${widget.newIndex} _ goB $goBack");
     List<Widget> pages = [
       TestDashboardHomePage(
-        timeUntilResStartsFromBookingOverview: widget.timeUntilResStartsFromBookingOverview,
+        timeUntilResStartsFromBookingOverview:
+            widget.timeUntilResStartsFromBookingOverview,
         newMoreUrgentBooking: widget.newMoreUrgentBooking,
         canShowToggle: canShowToggle,
         /* 
@@ -92,7 +100,7 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
     return FadeIndexedStack(index: _currentIndex, children: pages);
   }
 
-  canShowToggle(bool canShow) {
+  void canShowToggle(bool canShow) {
     if (mounted) showToggle = canShow;
 
     //do not remove this as it made the flickering STOP
@@ -104,7 +112,7 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
 
   Widget mapDashboardToggleSwitch() {
     return Material(
-      color: Colors.red, //Colors.white.withOpacity(0),
+      color: Colors.red, //Colors.white.withValues(alpha:0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(13),
       ),
@@ -114,7 +122,7 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
         padding: const EdgeInsets.fromLTRB(3, 0, 3, 0),
         decoration: BoxDecoration(
           backgroundBlendMode: BlendMode.difference,
-          color: const Color.fromARGB(255, 95, 91, 91).withOpacity(0.4),
+          color: const Color.fromARGB(255, 95, 91, 91).withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(13),
           // border: Border.all(color: Colors.black.withAlpha(40)),
         ),
@@ -128,8 +136,10 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
             child: ToggleButtons(
               splashColor: Colors.yellow,
               renderBorder: true,
-              selectedBorderColor: const Color.fromARGB(255, 95, 91, 91).withOpacity(0),
-              borderColor: const Color.fromARGB(255, 95, 91, 91).withOpacity(0),
+              selectedBorderColor:
+                  const Color.fromARGB(255, 95, 91, 91).withValues(alpha: 0),
+              borderColor:
+                  const Color.fromARGB(255, 95, 91, 91).withValues(alpha: 0),
               selectedColor: isIconSelected,
               color: Colors.white,
               fillColor: activebgColor,
@@ -180,7 +190,7 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
     );
   }
 
-  dragMapDashToggleSwitch() {
+  Draggable<Widget> dragMapDashToggleSwitch() {
     //CHECK THIS LINK FOR THE NEW OFFSET POSITION TO KEEP THE OBJECT THERE AFTER DRAG https://flutteragency.com/draggable-widget/
     return Draggable(
         hitTestBehavior: HitTestBehavior.translucent,
@@ -206,15 +216,21 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
       previousPositionY = dragEndOffsetY; */
             dragEndOffsetX = details.offset.dx;
             dragEndOffsetY = details.offset.dy;
-            if (dragEndOffsetY < appBarHeightFinal + mapTopRightIconBoxHeightDeducted) {
+            if (dragEndOffsetY <
+                appBarHeightFinal + mapTopRightIconBoxHeightDeducted) {
               debugPrint("YOU WENT TOO FAR UP!");
               dragEndOffsetY = appBarHeightFinal +
                   15 +
                   mapTopRightIconBoxHeightDeducted; //15 to not touch the appbar and see it clearly
             }
-            if (dragEndOffsetY > totalScreenHeightFinal - appBarHeightFinal - toggleContainerHeight) {
+            if (dragEndOffsetY >
+                totalScreenHeightFinal -
+                    appBarHeightFinal -
+                    toggleContainerHeight) {
               debugPrint("YOU WENT TOO FAR DOWN!");
-              dragEndOffsetY = totalScreenHeightFinal - appBarHeightFinal - toggleContainerHeight;
+              dragEndOffsetY = totalScreenHeightFinal -
+                  appBarHeightFinal -
+                  toggleContainerHeight;
             }
           });
         },
@@ -230,13 +246,16 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
     double totalScreenHeightFetched = MediaQuery.of(context).size.height;
     totalScreenHeightFinal = totalScreenHeightFetched;
     //
-    double dragTargetContainerHeight =
-        totalScreenHeightFinal - totalScreenHeightFinal * 0.25 - mapTopRightIconBoxHeightDeducted;
+    double dragTargetContainerHeight = totalScreenHeightFinal -
+        totalScreenHeightFinal * 0.25 -
+        mapTopRightIconBoxHeightDeducted;
 
     debugPrint(
         "CURRENT OFFSETS :  dragEndOffsetX $dragEndOffsetX ____  dragEndOffsetY $dragEndOffsetY ____  previousOffset $previousPositionX ________TESTING ${totalScreenHeightFinal - appBarHeightFinal - toggleContainerHeight}");
-    debugPrint("MediaQuery.of(context).size.height ${MediaQuery.of(context).size.height}");
-    debugPrint("APPBAR.height $fetchedAppBarHeight ___________ test : $appBarHeightFinal");
+    debugPrint(
+        "MediaQuery.of(context).size.height ${MediaQuery.of(context).size.height}");
+    debugPrint(
+        "APPBAR.height $fetchedAppBarHeight ___________ test : $appBarHeightFinal");
     debugPrint("CAN SHOW TOGGLE: $showToggle ____ isDropped $isDropped");
     return Scaffold(
       body: Stack(
@@ -245,28 +264,36 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
           children: [
             getBodyWFadedEffect(),
             //Positioned(left: 30, child: mapDashboardToggleSwitch()),
-            /* showToggle == false ||  */ isDropped == true ? Container() : dragMapDashToggleSwitch(),
+            /* showToggle == false ||  */ isDropped == true
+                ? Container()
+                : dragMapDashToggleSwitch(),
             Positioned(
-              top: mapTopRightIconBoxHeightDeducted, //to not hide the map location icon en haut à droite
+              top:
+                  mapTopRightIconBoxHeightDeducted, //to not hide the map location icon en haut à droite
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
                 child: Container(
-                  decoration: BoxDecoration(
-                  ),
+                  decoration: BoxDecoration(),
                   child: DragTarget(
                     builder: ((context, data, rejectedData) {
                       return DottedBorder(
-                        borderType: BorderType.RRect,
-                        radius: const Radius.circular(12),
-                        color: isToggleDragStarted ? Colors.blueGrey : Colors.white.withOpacity(0),
-                        strokeWidth: 2,
-                        dashPattern: const [6],
+                        options: RoundedRectDottedBorderOptions(
+                          radius: const Radius.circular(12),
+                          color: isToggleDragStarted
+                              ? Colors.blueGrey
+                              : Colors.white.withValues(alpha: 0),
+                          strokeWidth: 2,
+                          dashPattern: const [6],
+                        ),
                         child: ClipRRect(
-                          borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(12)),
                           child: Container(
                             height: isDropped == true
                                 ? dragTargetContainerHeight
-                                : dragTargetContainerHeight - toggleContainerHeight + 10,
+                                : dragTargetContainerHeight -
+                                    toggleContainerHeight +
+                                    10,
                             /* dragTargetContainerHeight +
                                 toggleContainerHeight -
                                  -
@@ -276,8 +303,12 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
                             child: Stack(
                               children: [
                                 Positioned(
-                                  top: dragEndOffsetY - toggleContainerHeight - toggleContainerHeight / 2,
-                                  child: isDropped == true ? dragMapDashToggleSwitch() : Container(),
+                                  top: dragEndOffsetY -
+                                      toggleContainerHeight -
+                                      toggleContainerHeight / 2,
+                                  child: isDropped == true
+                                      ? dragMapDashToggleSwitch()
+                                      : Container(),
                                 ),
                               ],
                             ),
@@ -285,8 +316,8 @@ class _TestDashboardWrapperState extends State<TestDashboardWrapper> {
                         ),
                       );
                     }),
-                    onWillAccept: (data) => true,
-                    onAccept: (data) {
+                    onWillAcceptWithDetails: (data) => true,
+                    onAcceptWithDetails: (data) {
                       /* ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Dropped successfully'),

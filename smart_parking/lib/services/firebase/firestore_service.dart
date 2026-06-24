@@ -10,7 +10,8 @@ import 'package:smart_parking/models/user.dart';
 import 'package:smart_parking/services/firebase/firebase_service.dart';
 
 class FirestoreUserService {
-  final CollectionReference _usersCollectionReference = FirebaseFirestore.instance.collection("users");
+  final CollectionReference _usersCollectionReference =
+      FirebaseFirestore.instance.collection("users");
 
   Future createUser(UserProfile user) async {
     try {
@@ -154,16 +155,18 @@ class FirestoreUserService {
       );
       var userData = await _usersCollectionReference.doc(aUser.uid).get();
       Map<String, dynamic> data = userData.data() as Map<String, dynamic>;
-      print("THIS IS FROM FIRESTORE SERVICE SETFUNCTION ${data['profileImage']}");
+      print(
+          "THIS IS FROM FIRESTORE SERVICE SETFUNCTION ${data['profileImage']}");
     } catch (e) {
       print(e);
       return e.toString().toUpperCase();
     }
   } //
 
-  getUserVehicules() {}
+  void getUserVehicules() {}
 
-  Future<bool> doesPhoneNumberAlreadyExist({required String phoneNumber}) async {
+  Future<bool> doesPhoneNumberAlreadyExist(
+      {required String phoneNumber}) async {
     var result;
     try {
       await _usersCollectionReference.get().then((element) {
@@ -228,7 +231,8 @@ class FirestoreUserService {
 class FirestoreParkingLocationService {
   /*  InsideInfo insideParkingInfoClass =
       InsideInfo(availableSlots: 0, occupiedSlots: 0, totalSlotsNumber: 0); */
-  final CollectionReference _locationsCollectionReference = FirebaseFirestore.instance.collection("locations");
+  final CollectionReference _locationsCollectionReference =
+      FirebaseFirestore.instance.collection("locations");
 
   Map<String, dynamic> allParkingsDataSnapShot = {}, allParkingsInsideInfo = {};
   late Stream insideParkingInfSnapshot;
@@ -242,7 +246,8 @@ class FirestoreParkingLocationService {
     try {
       await _locationsCollectionReference.get().then((value) {
         allParkings = value.size;
-        print("FROM FIRESTORE SERVICE PARKING : Number of parkings : $allParkings ");
+        print(
+            "FROM FIRESTORE SERVICE PARKING : Number of parkings : $allParkings ");
         right = allParkings;
 
         return allParkings;
@@ -260,12 +265,14 @@ class FirestoreParkingLocationService {
       await _locationsCollectionReference.get().then((value) {
         for (var docum in value.docs) {
           //keep everything starting after this comment as it was the original code
-          var parkingData = docum.data(); //data is a map object so parkingData will be a map too
+          var parkingData = docum
+              .data(); //data is a map object so parkingData will be a map too
           print("FROM FIRESTORE SERVICE PARKING : Parking data : $parkingData");
           allParkingsDataSnapShot.addAll({docum.id: parkingData});
         }
       });
-      print("MAP RESULT MESSAGE FROM FIRESETORE SERVICE: $allParkingsDataSnapShot");
+      print(
+          "MAP RESULT MESSAGE FROM FIRESETORE SERVICE: $allParkingsDataSnapShot");
       return allParkingsDataSnapShot;
     } catch (e) {
       print(e);
@@ -289,7 +296,8 @@ class FirestoreParkingLocationService {
 
   Future<GeoPoint> getParkingLocationCoordinates(String parkingID) async {
     try {
-      var parkingLocData = await _locationsCollectionReference.doc(parkingID).get();
+      var parkingLocData =
+          await _locationsCollectionReference.doc(parkingID).get();
       print('MESSAGE FROM SERVICE: ${parkingLocData.data()}');
       Map<String, dynamic> data = parkingLocData.data() as Map<String, dynamic>;
       var theParkingPositionCoordinates = data['Positions'];
@@ -303,7 +311,6 @@ class FirestoreParkingLocationService {
       return const GeoPoint(0, 0);
     }
   } // */
-
 }
 
 ///closing brackets
@@ -312,15 +319,22 @@ class FirestoreWalletService {
   var myDB = FirebaseFirestore.instance;
   var currentlySignedInUser = FirebaseService().currentlySignedInUser;
 
-  Future<QuerySnapshot<Map<String, dynamic>>> initializeWalletDebitTopUp(User? currentlySIUser, String walletCollId) {
+  Future<QuerySnapshot<Map<String, dynamic>>> initializeWalletDebitTopUp(
+      User? currentlySIUser, String walletCollId) {
     //creating debits collection
-    CollectionReference walletDebitCollection =
-        myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits");
+    CollectionReference walletDebitCollection = myDB.collection(
+        "users/${currentlySIUser?.uid}/wallet/$walletCollId/debits");
     WriteBatch batchDebit = myDB.batch(), batchTopUp = myDB.batch();
 
-    myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits").get().then((value) async {
+    myDB
+        .collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits")
+        .get()
+        .then((value) async {
       if (value.docs.isEmpty) {
-        myDB.doc("users/${currentlySIUser?.uid}/wallet/$walletCollId").collection("debits").add({'initialized': true});
+        myDB
+            .doc("users/${currentlySIUser?.uid}/wallet/$walletCollId")
+            .collection("debits")
+            .add({'initialized': true});
       }
 
       batchDebit.set(
@@ -333,20 +347,37 @@ class FirestoreWalletService {
             'TimeStamp': FieldValue.serverTimestamp(),
             'New Balance': 5000
           }); //{'Debit Amount': 0, 'RecipientParking ID': '', 'TimeStamp': FieldValue.serverTimestamp()});
-      await batchDebit.commit().whenComplete(() => debugPrint("DEBIT SUCCESSFULLY ADDED"));
-      await myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits").get().then((value) async {
-        var firstInitializedDoc = value.docs.where((element) => element.data().keys.contains('initialized'));
-        firstInitializedDoc.isNotEmpty ? await walletDebitCollection.doc(firstInitializedDoc.first.id).delete() : null;
+      await batchDebit
+          .commit()
+          .whenComplete(() => debugPrint("DEBIT SUCCESSFULLY ADDED"));
+      await myDB
+          .collection(
+              "users/${currentlySIUser?.uid}/wallet/$walletCollId/debits")
+          .get()
+          .then((value) async {
+        var firstInitializedDoc = value.docs
+            .where((element) => element.data().keys.contains('initialized'));
+        firstInitializedDoc.isNotEmpty
+            ? await walletDebitCollection
+                .doc(firstInitializedDoc.first.id)
+                .delete()
+            : null;
       });
     });
 
     //CreatingTopUp collection
 
-    CollectionReference walletTopUpCollection =
-        myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps");
-    myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps").get().then((value) async {
+    CollectionReference walletTopUpCollection = myDB.collection(
+        "users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps");
+    myDB
+        .collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps")
+        .get()
+        .then((value) async {
       if (value.docs.isEmpty) {
-        myDB.doc("users/${currentlySIUser?.uid}/wallet/$walletCollId").collection("topUps").add({'initialized': true});
+        myDB
+            .doc("users/${currentlySIUser?.uid}/wallet/$walletCollId")
+            .collection("topUps")
+            .add({'initialized': true});
       }
 
       batchTopUp.set(
@@ -360,19 +391,34 @@ class FirestoreWalletService {
             'New Balance': 5000
           });
 
-      await batchTopUp.commit().whenComplete(() => debugPrint("DEBIT SUCCESSFULLY ADDED"));
+      await batchTopUp
+          .commit()
+          .whenComplete(() => debugPrint("DEBIT SUCCESSFULLY ADDED"));
 
-      await myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps").get().then((value) async {
-        var firstInitializedDoc = value.docs.where((element) => element.data().keys.contains('initialized'));
-        firstInitializedDoc.isNotEmpty ? await walletTopUpCollection.doc(firstInitializedDoc.first.id).delete() : null;
+      await myDB
+          .collection(
+              "users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps")
+          .get()
+          .then((value) async {
+        var firstInitializedDoc = value.docs
+            .where((element) => element.data().keys.contains('initialized'));
+        firstInitializedDoc.isNotEmpty
+            ? await walletTopUpCollection
+                .doc(firstInitializedDoc.first.id)
+                .delete()
+            : null;
       });
     });
 
     return myDB.collection("users/${currentlySIUser?.uid}/wallet").get();
   }
 
-  Future<QuerySnapshot<Map<String, dynamic>>> addUserWalletInfoToFirebase(User? currentlySIUser) {
-    myDB.collection("users/${currentlySIUser?.uid}/wallet").get().then((value) async {
+  Future<QuerySnapshot<Map<String, dynamic>>> addUserWalletInfoToFirebase(
+      User? currentlySIUser) {
+    myDB
+        .collection("users/${currentlySIUser?.uid}/wallet")
+        .get()
+        .then((value) async {
       if (value.docs.isEmpty) {
         myDB.doc("users/${currentlySIUser?.uid}").collection("wallet").add({
           'Balance': 5000,
@@ -387,16 +433,26 @@ class FirestoreWalletService {
     return myDB.collection("users/${currentlySIUser?.uid}/wallet").get();
   }
 
-  Future<QuerySnapshot<Map<String, dynamic>>> debitAfterBooking(User? currentlySIUser, String walletCollId,
-      int bookingTotalToPay, String receivedID, linkedParkingNameAndInsideInfo) {
+  Future<QuerySnapshot<Map<String, dynamic>>> debitAfterBooking(
+      User? currentlySIUser,
+      String walletCollId,
+      int bookingTotalToPay,
+      String receivedID,
+      linkedParkingNameAndInsideInfo) {
     //creating debits collection
-    CollectionReference walletDebitCollection =
-        myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits");
+    CollectionReference walletDebitCollection = myDB.collection(
+        "users/${currentlySIUser?.uid}/wallet/$walletCollId/debits");
     WriteBatch batchDebit = myDB.batch();
 
-    myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits").get().then((value) async {
+    myDB
+        .collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits")
+        .get()
+        .then((value) async {
       if (value.docs.isEmpty) {
-        myDB.doc("users/${currentlySIUser?.uid}/wallet/$walletCollId").collection("debits").add({'initialized': true});
+        myDB
+            .doc("users/${currentlySIUser?.uid}/wallet/$walletCollId")
+            .collection("debits")
+            .add({'initialized': true});
       }
       int balance = 0;
       await myDB
@@ -414,10 +470,21 @@ class FirestoreWalletService {
             'TimeStamp': FieldValue.serverTimestamp(),
             'New Balance': balance - bookingTotalToPay
           }); //{'Debit Amount': 0, 'RecipientParking ID': '', 'TimeStamp': FieldValue.serverTimestamp()});
-      await batchDebit.commit().whenComplete(() => debugPrint("WALLET SUCCESSFULLY DEBITED"));
-      await myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/debits").get().then((value) async {
-        var firstInitializedDoc = value.docs.where((element) => element.data()['Debit Amount'] == 0);
-        firstInitializedDoc.isNotEmpty ? await walletDebitCollection.doc(firstInitializedDoc.first.id).delete() : null;
+      await batchDebit
+          .commit()
+          .whenComplete(() => debugPrint("WALLET SUCCESSFULLY DEBITED"));
+      await myDB
+          .collection(
+              "users/${currentlySIUser?.uid}/wallet/$walletCollId/debits")
+          .get()
+          .then((value) async {
+        var firstInitializedDoc =
+            value.docs.where((element) => element.data()['Debit Amount'] == 0);
+        firstInitializedDoc.isNotEmpty
+            ? await walletDebitCollection
+                .doc(firstInitializedDoc.first.id)
+                .delete()
+            : null;
       });
     });
 
@@ -426,14 +493,21 @@ class FirestoreWalletService {
     return myDB.collection("users/${currentlySIUser?.uid}/wallet").get();
   }
 
-  Future<QuerySnapshot<Map<String, dynamic>>> topUp(User? currentlySIUser, String walletCollId) {
+  Future<QuerySnapshot<Map<String, dynamic>>> topUp(
+      User? currentlySIUser, String walletCollId) {
     WriteBatch batchTopUp = myDB.batch();
 
-    CollectionReference walletTopUpCollection =
-        myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps");
-    myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps").get().then((value) async {
+    CollectionReference walletTopUpCollection = myDB.collection(
+        "users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps");
+    myDB
+        .collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps")
+        .get()
+        .then((value) async {
       if (value.docs.isEmpty) {
-        myDB.doc("users/${currentlySIUser?.uid}/wallet/$walletCollId").collection("topUps").add({'initialized': true});
+        myDB
+            .doc("users/${currentlySIUser?.uid}/wallet/$walletCollId")
+            .collection("topUps")
+            .add({'initialized': true});
       }
 
       batchTopUp.set(
@@ -446,11 +520,22 @@ class FirestoreWalletService {
             'TimeStamp': FieldValue.serverTimestamp()
           });
 
-      await batchTopUp.commit().whenComplete(() => debugPrint("DEBIT SUCCESSFULLY ADDED"));
+      await batchTopUp
+          .commit()
+          .whenComplete(() => debugPrint("DEBIT SUCCESSFULLY ADDED"));
 
-      await myDB.collection("users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps").get().then((value) async {
-        var firstInitializedDoc = value.docs.where((element) => element.data().keys.contains('initialized'));
-        firstInitializedDoc.isNotEmpty ? await walletTopUpCollection.doc(firstInitializedDoc.first.id).delete() : null;
+      await myDB
+          .collection(
+              "users/${currentlySIUser?.uid}/wallet/$walletCollId/topUps")
+          .get()
+          .then((value) async {
+        var firstInitializedDoc = value.docs
+            .where((element) => element.data().keys.contains('initialized'));
+        firstInitializedDoc.isNotEmpty
+            ? await walletTopUpCollection
+                .doc(firstInitializedDoc.first.id)
+                .delete()
+            : null;
       });
     });
 
@@ -462,7 +547,7 @@ class FirestoreReservationAndArchiveService {
   var myDB = FirebaseFirestore.instance;
   var currentlySignedInUser = FirebaseService().currentlySignedInUser;
 //listeningtofbchangeswon'twork here so I moved getUserReservationDetails to reservationCountdown direectly
-  archiveReservation(User? currentlySIUser) {
+  void archiveReservation(User? currentlySIUser) {
     myDB.collection('slotsReservations').get().then((value) => null);
   }
 }

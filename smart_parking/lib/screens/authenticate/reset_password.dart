@@ -108,9 +108,9 @@ class _ResetPasswordState extends State<ResetPassword> {
                   autofocus: true,
                   onPressed: resetPassFormSubmit,
                   style: ButtonStyle(
-                    overlayColor: MaterialStateProperty.all(Colors.brown),
-                    backgroundColor: MaterialStateProperty.all(Colors.white),
-                    shape: MaterialStateProperty.all(
+                    overlayColor: WidgetStateProperty.all(Colors.brown),
+                    backgroundColor: WidgetStateProperty.all(Colors.white),
+                    shape: WidgetStateProperty.all(
                       RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10.0),
                       ),

@@ -7,7 +7,8 @@ class ShowOperationDetails extends StatelessWidget {
   final Map<String, dynamic> transactionData;
   final String transactionType;
 
-  const ShowOperationDetails({Key? key, required this.transactionData, required this.transactionType})
+  const ShowOperationDetails(
+      {Key? key, required this.transactionData, required this.transactionType})
       : super(key: key);
 
   @override
@@ -23,36 +24,51 @@ class ShowOperationDetails extends StatelessWidget {
         : transactionDataValues['New Balance'].toString();
     var ok = transactionDataValues['TimeStamp'] as Timestamp;
     var timeStampToDate = ok.toDate();
-    const TextStyle opID =
-        TextStyle(color: LightColor.navyBlue1, fontSize: 20, fontFamily: 'OpenSans', fontWeight: FontWeight.w900);
+    const TextStyle opID = TextStyle(
+        color: LightColor.navyBlue1,
+        fontSize: 20,
+        fontFamily: 'OpenSans',
+        fontWeight: FontWeight.w900);
     const TextStyle title = TextStyle(
-        color: Color.fromARGB(255, 50, 92, 151), fontSize: 18, fontFamily: 'OpenSans', fontWeight: FontWeight.w900);
-    const TextStyle data =
-        TextStyle(color: Colors.black, fontSize: 15, fontFamily: 'OpenSans', fontWeight: FontWeight.w500);
+        color: Color.fromARGB(255, 50, 92, 151),
+        fontSize: 18,
+        fontFamily: 'OpenSans',
+        fontWeight: FontWeight.w900);
+    const TextStyle data = TextStyle(
+        color: Colors.black,
+        fontSize: 15,
+        fontFamily: 'OpenSans',
+        fontWeight: FontWeight.w500);
 
     String transactionAmount = transactionType == 'TopUp'
         ? numFormat.format(transactionDataValues['TopUp Amount'])
         : numFormat.format(transactionDataValues['Debit Amount']);
-    var toDot = transactionAmount.characters.where((p0) => int.tryParse(p0).runtimeType != int);
+    var toDot = transactionAmount.characters
+        .where((p0) => int.tryParse(p0).runtimeType != int);
     String operationAmounttWithDots = '';
 
     toDot.isNotEmpty
         ? {
             for (var element in transactionAmount.characters)
               {
-                element == toDot.first ? operationAmounttWithDots += '.' : operationAmounttWithDots += element,
+                element == toDot.first
+                    ? operationAmounttWithDots += '.'
+                    : operationAmounttWithDots += element,
               }
           }
         : null;
 
     String newBalanceCurrencyFormat = numFormat.format(int.parse(newBalance));
-    Characters newBalanceToDot = newBalanceCurrencyFormat.characters.where((p0) => int.tryParse(p0).runtimeType != int);
+    Characters newBalanceToDot = newBalanceCurrencyFormat.characters
+        .where((p0) => int.tryParse(p0).runtimeType != int);
     String newBalanceWithDots = '';
     newBalanceToDot.isNotEmpty
         ? {
             for (var element in newBalanceCurrencyFormat.characters)
               {
-                element == newBalanceToDot.first ? newBalanceWithDots += '.' : newBalanceWithDots += element,
+                element == newBalanceToDot.first
+                    ? newBalanceWithDots += '.'
+                    : newBalanceWithDots += element,
               }
           }
         : null;
@@ -71,15 +87,20 @@ class ShowOperationDetails extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const FittedBox(child: Text('Operation ID', style: opID)),
-                  Flexible(child: Text(transactionData.keys.first, style: data)),
+                  Flexible(
+                      child: Text(transactionData.keys.first, style: data)),
                 ],
               ),
               whiteSpace(50),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(transactionType == 'TopUp' ? 'Received' : "Paid", style: title),
-                  Text(transactionType == 'TopUp' ? "$operationAmounttWithDots CFA" : '- $operationAmounttWithDots CFA',
+                  Text(transactionType == 'TopUp' ? 'Received' : "Paid",
+                      style: title),
+                  Text(
+                      transactionType == 'TopUp'
+                          ? "$operationAmounttWithDots CFA"
+                          : '- $operationAmounttWithDots CFA',
                       style: data),
                 ],
               ),
@@ -87,7 +108,8 @@ class ShowOperationDetails extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(transactionType == 'TopUp' ? 'From' : "To", style: title),
+                  Text(transactionType == 'TopUp' ? 'From' : "To",
+                      style: title),
                   Text(
                       transactionType == 'TopUp'
                           ? transactionDataValues['From']
@@ -108,7 +130,11 @@ class ShowOperationDetails extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Context', style: title),
-                  Text(transactionType == 'TopUp' ? transactionDataValues['Type'] : 'Spot Booking', style: data),
+                  Text(
+                      transactionType == 'TopUp'
+                          ? transactionDataValues['Type']
+                          : 'Spot Booking',
+                      style: data),
                 ],
               ),
               whiteSpace(50),
@@ -130,7 +156,7 @@ class ShowOperationDetails extends StatelessWidget {
     );
   }
 
-  whiteSpace(double i) {
+  Container whiteSpace(double i) {
     return Container(
       color: Colors.white,
       height: i,

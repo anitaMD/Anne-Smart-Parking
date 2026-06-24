@@ -10,7 +10,8 @@ import 'package:smart_parking/styling/styling.dart';
 class TestDashBoardPanel extends StatefulWidget {
   final ScrollController panelScrollController;
   final PanelController dragHandlePanelController;
-  final Function(String carModelFromPanel, String carBrandFromPanel) updateDashboardCar;
+  final Function(String carModelFromPanel, String carBrandFromPanel)
+      updateDashboardCar;
   const TestDashBoardPanel({
     Key? key,
     required this.panelScrollController,
@@ -40,7 +41,8 @@ class _TestDashBoardPanelState extends State<TestDashBoardPanel> {
           unselectedLabelColor: dashPanelTabBarUnselectedTextColor,
           labelColor: dashPanelTabBarSelectedTextColor,
           indicator: ContainerTabIndicator(
-            padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 11.0),
+            padding:
+                const EdgeInsets.symmetric(vertical: 11.0, horizontal: 11.0),
             radius: const BorderRadius.all(Radius.circular(18)),
             color: dashPanelTabIndicatorColor,
           ),
@@ -75,7 +77,7 @@ class _TestDashBoardPanelState extends State<TestDashBoardPanel> {
   }
 }
 
-panelTabBarDisplay(String tabLabel) {
+Align panelTabBarDisplay(String tabLabel) {
   return Align(
     alignment: Alignment.center,
     child: Text(
@@ -85,14 +87,16 @@ panelTabBarDisplay(String tabLabel) {
   );
 }
 
-myVehiculesView(Function(String carModelFromPanel, String carBrandFromPanel) updateDashboardCar) {
+Container myVehiculesView(
+    Function(String carModelFromPanel, String carBrandFromPanel)
+        updateDashboardCar) {
   return Container(
     color: dashPanelMyVehiculesViewColor,
     child: TestMyVehiculesTab(updateDashboardCar: updateDashboardCar),
   );
 }
 
-myFavsView() {
+Container myFavsView() {
   return Container(
       //color: Colors.indigo,
       color: dashPanelFavoritesViewColor,

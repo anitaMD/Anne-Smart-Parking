@@ -1,29 +1,32 @@
 import 'package:flutter/material.dart';
 
 class BookingStateManagement with ChangeNotifier {
-  final initialDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+  final initialDate =
+      DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
   var selectedTime = TimeOfDay.now();
   String openingHour = '06:00', closingHour = '18:00'; //to initialize
   Duration interval = const Duration(minutes: 30);
   List<TimeOfDay> timeSlotsParsed = [];
   String buildingBookingText = 'Checking your wallet... ';
 
-  updateSelectedTime(TimeOfDay timeofday) {
+  void updateSelectedTime(TimeOfDay timeofday) {
     selectedTime = timeofday;
     notifyListeners();
   }
 
-  updateOpeningAndClosingHours(String openingHourFromFirebase, String closingHourFromFirebase) {
+  void updateOpeningAndClosingHours(
+      String openingHourFromFirebase, String closingHourFromFirebase) {
     openingHour = openingHourFromFirebase;
     closingHour = closingHourFromFirebase;
   }
 
-  updateBuildingBookingText(String newText) {
+  void updateBuildingBookingText(String newText) {
     buildingBookingText = newText;
     notifyListeners();
   }
 
-  Stream<TimeOfDay> getTimeSlotsIntervals(TimeOfDay startTime, TimeOfDay endTime, Duration interval) async* {
+  Stream<TimeOfDay> getTimeSlotsIntervals(
+      TimeOfDay startTime, TimeOfDay endTime, Duration interval) async* {
     var hour = startTime.hour;
     var minute = startTime.minute;
     yield TimeOfDay(hour: hour, minute: minute);
@@ -39,8 +42,11 @@ class BookingStateManagement with ChangeNotifier {
           ? TimeOfDay(hour: endTime.hour - 1, minute: 60 - endTime.minute - 5)
           : TimeOfDay(hour: hour, minute: minute);
       minute += 5;
-      yield TimeOfDay(hour: minute == 60 ? hour + 1 : hour, minute: minute == 60 ? 00 : minute);
-    } while (hour < endTime.hour || (hour == endTime.hour && minute <= endTime.minute));
+      yield TimeOfDay(
+          hour: minute == 60 ? hour + 1 : hour,
+          minute: minute == 60 ? 00 : minute);
+    } while (hour < endTime.hour ||
+        (hour == endTime.hour && minute <= endTime.minute));
     hour == endTime.hour && minute <= endTime.minute ? notifyListeners() : null;
     hour == endTime.hour + 2; //to break the loop
 
@@ -115,4 +121,4 @@ class BookingStateManagement with ChangeNotifier {
     hour == endTime.hour && minute <= endTime.minute ? notifyListeners() : null;
     hour == endTime.hour + 2; //to break the loop */
   }
-}//closing brack
+} //closing brack

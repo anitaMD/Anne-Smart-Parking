@@ -44,12 +44,15 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
   Timer? countdownTimer;
   final CountDownController _controller = CountDownController();
   int bookingDuration = -1;
-  bool minutes5BeforeStartReached = false, bookingHasEnded = false, bookingHasStarted = false;
+  bool minutes5BeforeStartReached = false,
+      bookingHasEnded = false,
+      bookingHasStarted = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => widget.canShowToggle(true));
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => widget.canShowToggle(true));
     NotificationListenerProvider().getMessage(context);
     debugPrint("INITIALIZING NOTIF LISTENER FROM MAIN");
     getToken();
@@ -81,8 +84,9 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
     int timeUntilResStarts = 0, timeUntilBookingEnds = 0;
     TimeRange selectedTimeInterval;
     Timestamp bookingEndTS, bookingStartTS;
-    allUserBookings =
-        widget.allReservationInfoNeeded.isNotEmpty ? widget.allReservationInfoNeeded['allUserBookings'] : [];
+    allUserBookings = widget.allReservationInfoNeeded.isNotEmpty
+        ? widget.allReservationInfoNeeded['allUserBookings']
+        : [];
     List<Map<String, dynamic>> userResEntries, userCarsEntries;
     Map<String, dynamic> moreUrgentReservationInfo, moreUrgentParkingInfo = {};
 
@@ -90,35 +94,43 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
       //widget.canShowToggle(true);
 
       userResEntries = widget.allReservationInfoNeeded.entries.first.value;
-      moreUrgentReservationInfo =
-          userResEntries.isNotEmpty ? userResEntries.first.values.first as Map<String, dynamic> : {};
+      moreUrgentReservationInfo = userResEntries.isNotEmpty
+          ? userResEntries.first.values.first as Map<String, dynamic>
+          : {};
       if (moreUrgentReservationInfo.isNotEmpty) {
         bookingEndTS = moreUrgentReservationInfo['BookingEnd'] as Timestamp;
         bookingStartTS = moreUrgentReservationInfo['BookingStart'] as Timestamp;
         selectedTimeInterval = TimeRange(
             startTime: TimeOfDay.fromDateTime(bookingStartTS.toDate()),
             endTime: TimeOfDay.fromDateTime(bookingEndTS.toDate()));
-        bookingDuration = (selectedTimeInterval.endTime.hour * 60 + selectedTimeInterval.endTime.minute) -
-            (selectedTimeInterval.startTime.hour * 60 + selectedTimeInterval.startTime.minute);
+        bookingDuration = (selectedTimeInterval.endTime.hour * 60 +
+                selectedTimeInterval.endTime.minute) -
+            (selectedTimeInterval.startTime.hour * 60 +
+                selectedTimeInterval.startTime.minute);
         (bookingStartTS.toDate().difference(DateTime.now())).inSeconds > 0
-            ? timeUntilResStarts = (bookingStartTS.toDate().difference(DateTime.now())).inSeconds
+            ? timeUntilResStarts =
+                (bookingStartTS.toDate().difference(DateTime.now())).inSeconds
             : null;
         (bookingEndTS.toDate().difference(DateTime.now())).inSeconds > 0
-            ? timeUntilBookingEnds = (bookingEndTS.toDate().difference(DateTime.now())).inSeconds
+            ? timeUntilBookingEnds =
+                (bookingEndTS.toDate().difference(DateTime.now())).inSeconds
             : null;
 
-        userCarsEntries = widget.allReservationInfoNeeded.entries.elementAt(1).value;
+        userCarsEntries =
+            widget.allReservationInfoNeeded.entries.elementAt(1).value;
         //userCarsEntries.first.values.where((element) => element)
         // moreUrgentReservationInfo
-        Iterable<Map<String, dynamic>> moreUrentResMatchingParkingIDInfo = userCarsEntries.where((element) {
+        Iterable<Map<String, dynamic>> moreUrentResMatchingParkingIDInfo =
+            userCarsEntries.where((element) {
           var ok = element.keys.first;
           ok == userResEntries.first.keys.first;
 
           return ok == moreUrgentReservationInfo['ParkingID'];
         });
 
-        moreUrgentParkingInfo =
-            moreUrentResMatchingParkingIDInfo.isNotEmpty ? moreUrentResMatchingParkingIDInfo.first : {};
+        moreUrgentParkingInfo = moreUrentResMatchingParkingIDInfo.isNotEmpty
+            ? moreUrentResMatchingParkingIDInfo.first
+            : {};
         // ignore: unnecessary_brace_in_string_interps
         debugPrint(
             "AZERTY $moreUrgentParkingInfo _ ${moreUrgentReservationInfo['ParkingID']}  ___ ${widget.currentlySignedInUser?.displayName}");
@@ -155,11 +167,19 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                 : */
             bookingDuration > 0 && timeUntilResStarts > 0
                 ? bookingStartsIn(
-                    bookingDuration, durationToString(bookingDuration), timeUntilResStarts, moreUrgentParkingInfo)
+                    bookingDuration,
+                    durationToString(bookingDuration),
+                    timeUntilResStarts,
+                    moreUrgentParkingInfo)
                 : bookingHasStarted == true ||
-                        bookingDuration > 0 && timeUntilBookingEnds > 0 && timeUntilResStarts == 0
+                        bookingDuration > 0 &&
+                            timeUntilBookingEnds > 0 &&
+                            timeUntilResStarts == 0
                     ? bookingTimeLeft(
-                        timeUntilBookingEnds, bookingDuration, durationToString(bookingDuration), moreUrgentParkingInfo)
+                        timeUntilBookingEnds,
+                        bookingDuration,
+                        durationToString(bookingDuration),
+                        moreUrgentParkingInfo)
                     : noBookingSoFar(),
         /*  buttonsRow
         
@@ -198,7 +218,8 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
           ),
         */
         FloatingActionButton(
-          onPressed: () => showNotification('Hello Maguy', 'Notifications Finally working'),
+          onPressed: () =>
+              showNotification('Hello Maguy', 'Notifications Finally working'),
           tooltip: 'Increment',
           child: const Icon(Icons.add),
         )
@@ -210,7 +231,7 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
     return Expanded(
       child: ElevatedButton(
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all(Colors.purple),
+          backgroundColor: WidgetStateProperty.all(Colors.purple),
         ),
         onPressed: onPressed,
         child: Text(
@@ -221,9 +242,13 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
     );
   }
 
-  bookingStartsIn(int bd, String durationToString, int timeUntilResStarts, Map<String, dynamic> moreUrgentParkingInfo) {
-    const timeLeftHeaderText =
-        TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, fontFamily: 'OpenSans');
+  Padding bookingStartsIn(int bd, String durationToString,
+      int timeUntilResStarts, Map<String, dynamic> moreUrgentParkingInfo) {
+    const timeLeftHeaderText = TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w900,
+        fontFamily: 'OpenSans');
 
     debugPrint(
         "TIME UNTIL STARTS $timeUntilResStarts _______ ${widget.timeUntilResFetchedFromBookingOverview}  ___ minutes5Reached $minutes5BeforeStartReached");
@@ -235,7 +260,8 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
         children: [
           CircularCountDownTimer(
             duration: //timeUntilResStarts,
-                timeUntilResStarts < widget.timeUntilResFetchedFromBookingOverview
+                timeUntilResStarts <
+                        widget.timeUntilResFetchedFromBookingOverview
                     ? timeUntilResStarts
                     : widget.timeUntilResFetchedFromBookingOverview == 0
                         ? timeUntilResStarts
@@ -253,7 +279,11 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
             backgroundGradient: null,
             strokeWidth: 20.0,
             strokeCap: StrokeCap.round,
-            textStyle: const TextStyle(fontSize: 33.0, color: Colors.white, fontWeight: FontWeight.bold, height: -3.5),
+            textStyle: const TextStyle(
+                fontSize: 33.0,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                height: -3.5),
             textFormat: CountdownTextFormat.HH_MM_SS,
             isReverseAnimation: true,
             isTimerTextShown: true,
@@ -274,10 +304,13 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                   : null;
             },
             onChange: (String timeStamp) {
-              debugPrint('Countdown Changed $timeStamp ______ ${timeStamp.split(':').elementAt(0).trim()}');
+              debugPrint(
+                  'Countdown Changed $timeStamp ______ ${timeStamp.split(':').elementAt(0).trim()}');
               (int.parse(timeStamp.split(':').elementAt(0).trim()) * 3600 +
-                          int.parse(timeStamp.split(':').elementAt(1).trim()) * 60 +
-                          int.parse(timeStamp.split(':').elementAt(2).trim())) ==
+                          int.parse(timeStamp.split(':').elementAt(1).trim()) *
+                              60 +
+                          int.parse(
+                              timeStamp.split(':').elementAt(2).trim())) ==
                       300
                   ? {
                       debugPrint('starts soon'),
@@ -319,16 +352,21 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                           width: 15,
                         ), */
                         TextButton.icon(
-                            style: TextButton.styleFrom(backgroundColor: Colors.black.withOpacity(0.5), elevation: 5),
+                            style: TextButton.styleFrom(
+                                backgroundColor:
+                                    Colors.black.withValues(alpha: 0.5),
+                                elevation: 5),
                             onPressed: () {
-                              var ok = moreUrgentParkingInfo.values.first as Map<String, dynamic>;
+                              var ok = moreUrgentParkingInfo.values.first
+                                  as Map<String, dynamic>;
 
                               var infos = ok['Positions'] as GeoPoint;
 
                               setState(() {
                                 widget.canShowToggle(false);
                               });
-                              MapsLauncher.launchCoordinates(infos.latitude, infos.longitude);
+                              MapsLauncher.launchCoordinates(
+                                  infos.latitude, infos.longitude);
 
                               //widget.getIndex(1);
 
@@ -347,12 +385,14 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                             },
                             label: SizedBox(
                               width: 100,
-                              child: Text('Navigate to ${moreUrgentParkingInfo.values.first['Name']}',
+                              child: Text(
+                                  'Navigate to ${moreUrgentParkingInfo.values.first['Name']}',
                                   style: const TextStyle(
                                       overflow: TextOverflow.fade,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w900,
-                                      color: Color.fromARGB(255, 242, 242, 242))),
+                                      color:
+                                          Color.fromARGB(255, 242, 242, 242))),
                             ),
                             icon: const Icon(Icons.navigation_rounded)),
                       ],
@@ -380,10 +420,13 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                           top: 10,
                           child: Card(
                             //color: Colors.orange,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
                             elevation: 20,
                             child: Container(
-                              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(10)),
+                              decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(10)),
                               height: 50,
                               width: 80,
                               child: Column(
@@ -392,20 +435,26 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                                   const FittedBox(
                                     child: Text(
                                       'Duration',
-                                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.w700),
                                     ),
                                   ),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       RichText(
                                         text: TextSpan(
                                           style: const TextStyle(
-                                              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w900),
                                           children: [
                                             TextSpan(
-                                              text: durationToString.substring(0, 2),
+                                              text: durationToString.substring(
+                                                  0, 2),
                                             ),
                                             WidgetSpan(
                                               child: Transform.translate(
@@ -413,12 +462,16 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                                                 child: const Text(
                                                   'H',
                                                   style: TextStyle(
-                                                      color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900),
+                                                      color: Colors.white,
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w900),
                                                 ),
                                               ),
                                             ),
                                             TextSpan(
-                                              text: ' ${durationToString.substring(4, 6)}',
+                                              text:
+                                                  ' ${durationToString.substring(4, 6)}',
                                             ),
                                           ],
                                         ),
@@ -431,7 +484,8 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                           ),
                         ),
                         Image(
-                          image: const AssetImage('assets/images/carRep/dacia.png'),
+                          image: const AssetImage(
+                              'assets/images/carRep/dacia.png'),
                           // width: 400,
                           height: MediaQuery.of(context).size.height / 3 -
                               120, //50 is toolbar height and 10 is the padding above bottombar
@@ -445,7 +499,10 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
               const FittedBox(
                 child: Text(
                   "PEUGEOT MODEL 2008",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color.fromARGB(255, 82, 35, 35)),
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color.fromARGB(255, 82, 35, 35)),
                 ),
               ),
             ],
@@ -455,10 +512,13 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
     );
   }
 
-  bookingTimeLeft(int timeUntilBookingEnds, int bookingDuration, String durationToString,
-      Map<String, dynamic> moreUrgentParkingInfo) {
-    const timeLeftHeaderText =
-        TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, fontFamily: 'OpenSans');
+  Padding bookingTimeLeft(int timeUntilBookingEnds, int bookingDuration,
+      String durationToString, Map<String, dynamic> moreUrgentParkingInfo) {
+    const timeLeftHeaderText = TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w900,
+        fontFamily: 'OpenSans');
     debugPrint("TIME UNTIL ENDS $timeUntilBookingEnds  ___ ");
     return Padding(
       padding: const EdgeInsets.only(left: 22, right: 20),
@@ -481,7 +541,11 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
             backgroundGradient: null,
             strokeWidth: 20.0,
             strokeCap: StrokeCap.round,
-            textStyle: const TextStyle(fontSize: 33.0, color: Colors.white, fontWeight: FontWeight.bold, height: -3.5),
+            textStyle: const TextStyle(
+                fontSize: 33.0,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                height: -3.5),
             textFormat: CountdownTextFormat.HH_MM_SS,
             isReverseAnimation: true,
             isTimerTextShown: true,
@@ -497,10 +561,13 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
               debugPrint('just ended');
             },
             onChange: (String timeStamp) {
-              debugPrint('Countdown Changed $timeStamp  ______ ${timeStamp.split(':').elementAt(0).trim()}');
+              debugPrint(
+                  'Countdown Changed $timeStamp  ______ ${timeStamp.split(':').elementAt(0).trim()}');
               (int.parse(timeStamp.split(':').elementAt(0).trim()) * 3600 +
-                          int.parse(timeStamp.split(':').elementAt(1).trim()) * 60 +
-                          int.parse(timeStamp.split(':').elementAt(2).trim())) ==
+                          int.parse(timeStamp.split(':').elementAt(1).trim()) *
+                              60 +
+                          int.parse(
+                              timeStamp.split(':').elementAt(2).trim())) ==
                       300
                   ? {
                       debugPrint('ends soon'),
@@ -533,12 +600,17 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         TextButton.icon(
-                            style: TextButton.styleFrom(backgroundColor: Colors.black.withOpacity(0.5), elevation: 5),
+                            style: TextButton.styleFrom(
+                                backgroundColor:
+                                    Colors.black.withValues(alpha: 0.5),
+                                elevation: 5),
                             onPressed: () {
-                              var ok = moreUrgentParkingInfo.values.first as Map<String, dynamic>;
+                              var ok = moreUrgentParkingInfo.values.first
+                                  as Map<String, dynamic>;
 
                               var infos = ok['Positions'] as GeoPoint;
-                              MapsLauncher.launchCoordinates(infos.latitude, infos.longitude);
+                              MapsLauncher.launchCoordinates(
+                                  infos.latitude, infos.longitude);
                             },
                             label: const SizedBox(
                               width: 100,
@@ -547,7 +619,8 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                                       overflow: TextOverflow.fade,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w900,
-                                      color: Color.fromARGB(255, 242, 242, 242))),
+                                      color:
+                                          Color.fromARGB(255, 242, 242, 242))),
                             ),
                             icon: const Icon(Icons.navigation_rounded)),
                       ],
@@ -567,10 +640,13 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                           top: 10,
                           child: Card(
                             //color: Colors.orange,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
                             elevation: 20,
                             child: Container(
-                              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(10)),
+                              decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(10)),
                               height: 50,
                               width: 80,
                               child: Column(
@@ -579,20 +655,26 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                                   const FittedBox(
                                     child: Text(
                                       'Duration',
-                                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.w700),
                                     ),
                                   ),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       RichText(
                                         text: TextSpan(
                                           style: const TextStyle(
-                                              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w900),
                                           children: [
                                             TextSpan(
-                                              text: durationToString.substring(0, 2),
+                                              text: durationToString.substring(
+                                                  0, 2),
                                             ),
                                             WidgetSpan(
                                               child: Transform.translate(
@@ -600,12 +682,16 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                                                 child: const Text(
                                                   'H',
                                                   style: TextStyle(
-                                                      color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900),
+                                                      color: Colors.white,
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w900),
                                                 ),
                                               ),
                                             ),
                                             TextSpan(
-                                              text: ' ${durationToString.substring(4, 6)}',
+                                              text:
+                                                  ' ${durationToString.substring(4, 6)}',
                                             ),
                                           ],
                                         ),
@@ -618,7 +704,8 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                           ),
                         ),
                         Image(
-                          image: const AssetImage('assets/images/carRep/dacia.png'),
+                          image: const AssetImage(
+                              'assets/images/carRep/dacia.png'),
                           // width: 400,
                           height: MediaQuery.of(context).size.height / 3 -
                               120, //50 is toolbar height and 10 is the padding above bottombar
@@ -632,7 +719,10 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
               const FittedBox(
                 child: Text(
                   "PEUGEOT MODEL 2008",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color.fromARGB(255, 82, 35, 35)),
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color.fromARGB(255, 82, 35, 35)),
                 ),
               ),
             ],
@@ -642,9 +732,12 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
     );
   }
 
-  noBookingSoFar() {
-    const timeLeftHeaderText =
-        TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, fontFamily: 'OpenSans');
+  Padding noBookingSoFar() {
+    const timeLeftHeaderText = TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w900,
+        fontFamily: 'OpenSans');
 
     debugPrint("NO BOOKING SO FAR");
     return Padding(
@@ -668,7 +761,11 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
             backgroundGradient: null,
             strokeWidth: 20.0,
             strokeCap: StrokeCap.round,
-            textStyle: const TextStyle(fontSize: 33.0, color: Colors.white, fontWeight: FontWeight.bold, height: -3.5),
+            textStyle: const TextStyle(
+                fontSize: 33.0,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                height: -3.5),
             textFormat: CountdownTextFormat.HH_MM_SS,
             isReverseAnimation: true,
             isTimerTextShown: true,
@@ -703,7 +800,7 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         /*      TextButton.icon(
-                            style: TextButton.styleFrom(backgroundColor: Colors.black.withOpacity(0.5), elevation: 5),
+                            style: TextButton.styleFrom(backgroundColor: Colors.black.withValues(alpha:0.5), elevation: 5),
                             onPressed: () {
                            
                               setState(() {
@@ -755,10 +852,13 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                           top: 10,
                           child: Card(
                             //color: Colors.orange,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
                             elevation: 20,
                             child: Container(
-                              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(10)),
+                              decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(10)),
                               height: 50,
                               width: 80,
                               child: Column(
@@ -767,17 +867,22 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                                   const FittedBox(
                                     child: Text(
                                       'Duration',
-                                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.w700),
                                     ),
                                   ),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       RichText(
                                         text: TextSpan(
                                           style: const TextStyle(
-                                              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w900),
                                           children: [
                                             const TextSpan(
                                               text: "00",
@@ -788,7 +893,10 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                                                 child: const Text(
                                                   'H',
                                                   style: TextStyle(
-                                                      color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900),
+                                                      color: Colors.white,
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w900),
                                                 ),
                                               ),
                                             ),
@@ -806,7 +914,8 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
                           ),
                         ),
                         Image(
-                          image: const AssetImage('assets/images/carRep/dacia.png'),
+                          image: const AssetImage(
+                              'assets/images/carRep/dacia.png'),
                           // width: 400,
                           height: MediaQuery.of(context).size.height / 3 -
                               120, //50 is toolbar height and 10 is the padding above bottombar
@@ -820,7 +929,10 @@ class _ReservationCountdownState extends State<ReservationCountdown> {
               const FittedBox(
                 child: Text(
                   "PEUGEOT MODEL 2008",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color.fromARGB(255, 82, 35, 35)),
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color.fromARGB(255, 82, 35, 35)),
                 ),
               ),
             ],
