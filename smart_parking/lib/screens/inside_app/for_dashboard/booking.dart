@@ -32,8 +32,7 @@ class BookingPageState extends State<BookingPage> {
   void initState() {
     //call SUBCOLLECTION FUNCTION
     FocusNode();
-    BitmapDescriptor.fromAssetImage(
-            const ImageConfiguration(devicePixelRatio: 5.5),
+    BitmapDescriptor.asset(const ImageConfiguration(devicePixelRatio: 5.5),
             'assets/images/parking_marker_icon.png')
         .then((onValue) {
       setState(() {
@@ -74,7 +73,7 @@ class BookingPageState extends State<BookingPage> {
   FirestoreParkingLocationService firestoreParkingLocationService =
       FirestoreParkingLocationService();
   // ignore: prefer_typing_uninitialized_variables
-  var fetchedParkingLat, fetchedParkingLng;
+  dynamic fetchedParkingLat, fetchedParkingLng;
   double aParkingLatitude = 0.0, aParkingLongitude = 0.0;
   //
   String sentParkingIDtoSlotsBooking = '';
@@ -91,14 +90,14 @@ class BookingPageState extends State<BookingPage> {
 
   void getPolyPoints() async {
     var ok = widget.parkingToNavigateTo.values.first as Map<String, dynamic>;
-
     var infos = ok['Positions'] as GeoPoint;
 
+    // Initialize with API Key in constructor (v3.x requirement)
     PolylinePoints polyline =
         PolylinePoints(apiKey: 'AIzaSyBFaD36PRwIAg4-WEdZpBktOMH-RwvH9YQ');
 
-    // ✅ 2. Create request with origin/destination INSIDE
-    final request = PolylineRequest(
+    // Create RoutesApiRequest
+    final request = RoutesApiRequest(
       origin: PointLatLng(
         Provider.of<CurrentLocationNotifier>(context, listen: false)
             .currentUserLat,
@@ -106,31 +105,38 @@ class BookingPageState extends State<BookingPage> {
             .currentUserLng,
       ),
       destination: PointLatLng(infos.latitude, infos.longitude),
-      mode: TravelMode.driving,
+      travelMode: TravelMode.driving, // Optional: specify mode
     );
 
-// ✅ 3. Call with ONLY request parameter (no API key, no start/end)
-    PolylineResult result = await polyline.getRouteBetweenCoordinates(
+    //Call getRouteBetweenCoordinatesV2 (NOT getRouteBetweenCoordinates)
+    RoutesApiResponse result = await polyline.getRouteBetweenCoordinatesV2(
       request: request,
     );
 
-    debugPrint(" widget.parkingToNavigateTo ${result.status}");
-    if (result.points.isNotEmpty) {
-      for (var pointLatLng in result.points) {
-        polylineCoordinates
-            .add(LatLng(pointLatLng.latitude, pointLatLng.longitude));
+    debugPrint("Status: ${result.status}");
+
+    if (result.routes.isNotEmpty) {
+      // Access routes.first.polylinePoints in v3.x
+      var route = result.routes.first;
+      if (route.polylinePoints != null) {
+        setState(() {
+          polylineCoordinates = route.polylinePoints!
+              .map((point) => LatLng(point.latitude, point.longitude))
+              .toList();
+        });
       }
+    } else {
+      debugPrint("Error: ${result.errorMessage}");
     }
-    setState(() {});
   }
 
-  refreshParkingIconClickState(bool result) {
+  void refreshParkingIconClickState(bool result) {
     setState(() {
       isParkingLocationIconNotClicked = result;
     });
   }
 
-  initMarker(Map<String, dynamic> parkingData, parkingID) {
+  void initMarker(Map<String, dynamic> parkingData, parkingID) {
     final MarkerId parkingMarkerID = MarkerId(parkingID);
     getLatLngValues(parkingID);
     print("MARKERS RESULT: ${myMapMarkers.values}");
@@ -177,7 +183,7 @@ class BookingPageState extends State<BookingPage> {
     return aParkingLongitude;
   }
 
-  getLatLngValues(String parkingID) {
+  void getLatLngValues(String parkingID) {
     Set<double> parkingCoordinatesList = {};
     firestoreParkingLocationService
         .getParkingLocationCoordinates(parkingID)
@@ -214,7 +220,7 @@ class BookingPageState extends State<BookingPage> {
   } */
 
   final Completer<GoogleMapController> _controller = Completer();
-  mapInitialize() {
+  void mapInitialize() {
     for (var parkingInfo in fetchedMappingResult.entries) {
       initMarker(parkingInfo.value, parkingInfo.key);
       print(
@@ -223,17 +229,18 @@ class BookingPageState extends State<BookingPage> {
   }
 
   var mapCreated = false;
-  isMapCreated() => setState(() {
+  void isMapCreated() => setState(() {
         mapCreated = true;
       }); //print("$mapCreated IS FINALLY TRUE");
 
-  refresh() => Future.delayed(const Duration(seconds: 1), () {
+  Future<Null> refresh() => Future.delayed(const Duration(seconds: 1), () {
         setState(() {});
       });
 
-  displayMyMap(CameraPosition currentLocationCameraPosition) {
+  GoogleMap displayMyMap(CameraPosition currentLocationCameraPosition) {
     return GoogleMap(
       // ignore: prefer_collection_literals
+      style: _mapStyle,
       onTap: (latLng) {
         mapFocus.requestFocus();
         refreshParkingIconClickState(true);
@@ -254,7 +261,6 @@ class BookingPageState extends State<BookingPage> {
       onMapCreated: (GoogleMapController controller) {
         try {
           _controller.complete(controller);
-          controller.setMapStyle(_mapStyle);
           isMapCreated();
           // ignore: empty_catches
         } catch (e) {}
@@ -262,7 +268,7 @@ class BookingPageState extends State<BookingPage> {
     );
   }
 
-  displayLocationEnablerDialBox(
+  void displayLocationEnablerDialBox(
       bool rejectedFromTheStart, bool enabledAfterRejected) {
     if (rejectedFromTheStart == true && enabledAfterRejected == false) {
       Future.delayed(const Duration(seconds: 5)).then((value) => {
@@ -326,149 +332,160 @@ class BookingPageState extends State<BookingPage> {
     print(
         "POSITION AVAILABLE NOW?  ${context.watch<CurrentLocationNotifier>().positionAvailable}");
     return Scaffold(
-        backgroundColor: const Color.fromARGB(255, 246, 244, 248),
-        //backgroundColor: Colors.white,
-        body: GestureDetector(
-            onTap: () {
-              FocusScope.of(context).requestFocus(FocusNode());
-            },
-            child: FutureBuilder(
-                future: firestoreParkingLocationService.getParkingInfoData(),
-                builder: (BuildContext context1, AsyncSnapshot snapshot) {
-                  if (snapshot.hasData) {
-                    //
-                    //backgroundColor: Colors.white,
+      backgroundColor: const Color.fromARGB(255, 246, 244, 248),
+      //backgroundColor: Colors.white,
+      body: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).requestFocus(FocusNode());
+        },
+        child: FutureBuilder(
+            future: firestoreParkingLocationService.getParkingInfoData(),
+            builder: (BuildContext context1, AsyncSnapshot snapshot) {
+              if (snapshot.hasData) {
+                //
 
-                    if (snapshot.hasData) {
-                      //
-
-                      if (currentLocationProvider.positionAvailable == false) {
-                        return SlidingUpPanel(
-                          panelBuilder: (sc) => Testons(controller: sc),
-                          body: const Padding(
-                            padding: EdgeInsets.only(bottom: 200.0),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.orange,
-                                backgroundColor: Colors.red,
-                              ),
-                            ),
-                          ),
-                        );
-                      } //
-                      else if (currentLocationProvider.currentUserLat != 0.0 ||
-                          currentLocationProvider.serviceEnabledAfterRejected ==
-                              true) {
-                        print(
-                            "VOILA ${currentLocationProvider.currentUserLat}");
-                        Marker currentLocationMarker = Marker(
-                          markerId: const MarkerId("Your Location"),
-                          position: currentLocationProvider
-                                      .locationEnabledFromAlertBox ==
-                                  true
-                              ? LatLng(
-                                  context
-                                      .read<CurrentLocationNotifier>()
-                                      .locationFetchedFromAlertBox
-                                      .latitude,
-                                  context
-                                      .watch<CurrentLocationNotifier>()
-                                      .locationFetchedFromAlertBox
-                                      .longitude)
-                              : LatLng(
-                                  currentLocationProvider.currentUserLat
-                                      .toDouble(),
-                                  currentLocationProvider.currentUserLng
-                                      .toDouble()),
-                          icon: BitmapDescriptor.defaultMarker,
-                          infoWindow: InfoWindow(
-                              //EDIT THE JSON.KEYS.FIRST BECAUSE ITS NOT SHOWING ANYTHING
-                              title: "Current Position",
-                              snippet: currentLocationProvider
-                                          .locationEnabledFromAlertBox ==
-                                      true
-                                  ? currentLocationProvider
-                                      .locationFetchedFromAlertBox
-                                      .toJson()
-                                      .keys
-                                      .first
-                                  : currentLocationProvider.address.toString()),
-                        );
-                        print(
-                            "THIS IS THE CURRENT LOCATION MARKER : $currentLocationMarker");
-                        if (currentLocationProvider
-                                    .serviceEnabledAfterRejected ==
-                                true &&
-                            currentLocationProvider.userLocationAsked != 0) {
-                          print(
-                              "ON VERIFIE ${currentLocationProvider.locationFetchedFromAlertBox.latitude}");
-                        }
-                        myMapMarkers[currentLocationMarker.markerId] =
-                            currentLocationMarker;
-                        CameraPosition
-                            currentUserPositionCamera =
-                            CameraPosition(
-                                target: currentLocationProvider
-                                                .serviceEnabledAfterRejected ==
-                                            true &&
-                                        currentLocationProvider
-                                                .userLocationAsked !=
-                                            0
-                                    ? LatLng(
-                                        currentLocationProvider
-                                            .locationFetchedFromAlertBox
-                                            .latitude,
-                                        currentLocationProvider
-                                            .locationFetchedFromAlertBox
-                                            .longitude)
-                                    : LatLng(
-                                        currentLocationProvider.currentUserLat
-                                            .toDouble(),
-                                        currentLocationProvider.currentUserLng
-                                            .toDouble()),
-                                zoom: 11,
-                                bearing: 10); //_kGooglePlex,
-
-                        return isNewCameraPositionAvailable == true
-                            ? displayMyMap(newCameraPosition)
-                            : displayMyMap(currentUserPositionCamera);
-                        /* SomeMarkers(
-                            notifyParent: refresh, mappedMarkers: myMapMarkers), */
-                      } else {
-                        return const CircularProgressIndicator(
-                            color: Color.fromARGB(255, 238, 244, 54));
-                      }
-                    } else {
-                      return Container();
-                    }
+                if (currentLocationProvider.positionAvailable == false) {
+                  return SlidingUpPanel(
+                    panelBuilder: (sc) => Testons(controller: sc),
+                    body: const Padding(
+                      padding: EdgeInsets.only(bottom: 200.0),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.orange,
+                          backgroundColor: Colors.red,
+                        ),
+                      ),
+                    ),
+                  );
+                } //
+                else if (currentLocationProvider.currentUserLat != 0.0 ||
+                    currentLocationProvider.serviceEnabledAfterRejected ==
+                        true) {
+                  print("VOILA ${currentLocationProvider.currentUserLat}");
+                  Marker currentLocationMarker = Marker(
+                    markerId: const MarkerId("Your Location"),
+                    position: currentLocationProvider
+                                .locationEnabledFromAlertBox ==
+                            true
+                        ? LatLng(
+                            context
+                                .read<CurrentLocationNotifier>()
+                                .locationFetchedFromAlertBox
+                                .latitude,
+                            context
+                                .watch<CurrentLocationNotifier>()
+                                .locationFetchedFromAlertBox
+                                .longitude)
+                        : LatLng(
+                            currentLocationProvider.currentUserLat.toDouble(),
+                            currentLocationProvider.currentUserLng.toDouble()),
+                    icon: BitmapDescriptor.defaultMarker,
+                    infoWindow: InfoWindow(
+                        //EDIT THE JSON.KEYS.FIRST BECAUSE ITS NOT SHOWING ANYTHING
+                        title: "Current Position",
+                        snippet: currentLocationProvider
+                                    .locationEnabledFromAlertBox ==
+                                true
+                            ? currentLocationProvider
+                                .locationFetchedFromAlertBox
+                                .toJson()
+                                .keys
+                                .first
+                            : currentLocationProvider.address.toString()),
+                  );
+                  print(
+                      "THIS IS THE CURRENT LOCATION MARKER : $currentLocationMarker");
+                  if (currentLocationProvider.serviceEnabledAfterRejected ==
+                          true &&
+                      currentLocationProvider.userLocationAsked != 0) {
+                    print(
+                        "ON VERIFIE ${currentLocationProvider.locationFetchedFromAlertBox.latitude}");
                   }
+                  myMapMarkers[currentLocationMarker.markerId] =
+                      currentLocationMarker;
+                  CameraPosition currentUserPositionCamera = CameraPosition(
+                      target: currentLocationProvider
+                                      .serviceEnabledAfterRejected ==
+                                  true &&
+                              currentLocationProvider.userLocationAsked != 0
+                          ? LatLng(
+                              currentLocationProvider
+                                  .locationFetchedFromAlertBox.latitude,
+                              currentLocationProvider
+                                  .locationFetchedFromAlertBox.longitude)
+                          : LatLng(
+                              currentLocationProvider.currentUserLat.toDouble(),
+                              currentLocationProvider.currentUserLng
+                                  .toDouble()),
+                      zoom: 11,
+                      bearing: 10); //_kGooglePlex,
 
-                  return Container(
-                      color: Colors.white,
-                      child: Column(children: const [
-                        Text(
-                            'BOOKING where you can show the user the nearby parkings [https://www.google.com/search?q=car+booking+app+flutter&tbm=isch&ved=2ahUKEwi3oLi93Iv1AhUIlBoKHbV0BGEQ2-cCegQIABAA&oq=car+booking+app+flutter&gs_lcp=CgNpbWcQAzoHCCMQ7wMQJzoGCAAQCBAeUPAHWL8RYPMUaAFwAHgAgAGIAogBjgeSAQUwLjUuMZgBAKABAaoBC2d3cy13aXotaW1nwAEB&sclient=img&ei=ksDNYbePKYioarXpkYgG&bih=714&biw=1280&client=firefox-b-d#imgrc=ddyerWq6kmcSrM] and once he clicks on one, he gets the occupation info (numbers only) of the parking and then if he decides to proceed to booking with that one, he is redirected to the page showing the parking map with: cars representing actually parked car, lock icon representing already booked and nothing with green or blue dot for available for noaml people and handicapped '),
-                      ]));
-                })));
-  }
-}
+                  return SlidingUpPanel(
+                    collapsed: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.blueGrey,
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      child: const Center(
+                          child: Text(
+                        "BOOK A CAR NOW",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15.0,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: 'OpenSans'),
+                      )),
+                    ),
 
-/*     floatingActionButton: Align(
-          alignment: Alignment.bottomCenter,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              FloatingActionButton(
-                mini: true,
-                onPressed: _toggleNavBarForVisibleMap,
-                backgroundColor: Colors.white,
-                elevation: 6.0,
-                heroTag: null,
-                child: const Icon(
-                  Icons.info_outline_rounded,
-                  color: Colors.red,
-                ),
-              ),
+                    controller: drangHandlePanelController,
+                    minHeight: panelHeightClosed,
+                    maxHeight: panelHeightOpened,
+                    parallaxEnabled: true,
+                    parallaxOffset: .5,
+                    panel: RefreshAndSlideUp(
+                        notifyParent: refresh,
+                        mappedMarkers: myMapMarkers,
+                        controller: drangHandlePanelController),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(20)),
+                    /*   panelBuilder: (panelScrollController) => RefreshAndSlideUp(
+                      notifyParent: refresh,
+                      mappedMarkers: myMapMarkers,
+                      panelScrollController: panelScrollController,
+                      dragHandlePanelController: drangHandlePanelController,
+                    ), */ //MAKE THE BLACK CONTAINER The draggable tiroir hand icon
+                    body: isNewCameraPositionAvailable == true
+                        ? displayMyMap(newCameraPosition)
+                        : displayMyMap(currentUserPositionCamera),
+
+                    /* SomeMarkers(
+                            notifyParent: refresh, mappedMarkers: myMapMarkers), */
+                  );
+                } else {
+                  return const CircularProgressIndicator(
+                      color: Color.fromARGB(255, 238, 244, 54));
+                }
+              } else {
+                return Container();
+              }
+            }),
+      ),
+
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          FloatingActionButton(
+            mini: true,
+            onPressed: _toggleNavBarForVisibleMap,
+            backgroundColor: Colors.white,
+            elevation: 6.0,
+            heroTag: null,
+            child: const Icon(
+              Icons.info_outline_rounded,
+              color: Colors.red,
+            ),
+          ),
 
 /* floating buttons aligned in a row horizontally
 . info button (will display the parking's info, nbr places total, dispo, rented, prix de la place)
@@ -479,35 +496,21 @@ now on the blank space left, the person will see and can choose :
 . The reservation time (day and hour, duration etc)
 . how to pay
 . A BOOK NOW button to validate the reservation */
-              Visibility(
-                visible: isParkingLocationIconNotClicked == true ? false : true,
-                child: FloatingActionButton(
-                  onPressed: () async {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BookingThroughSlotsMapNoAlertDialog(
-                            receivedID: sentParkingIDtoSlotsBooking,
-                            mappedParkingsGeneralInfo: fetchedMappingResult,
-                            slotBooked: false),
-                      ),
-                    );
-              Visibility(
-                visible: isParkingLocationIconNotClicked == true ? false : true,
-                child: FloatingActionButton(
-                  onPressed: () async {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BookingThroughSlotsMapNoAlertDialog(
-                            receivedID: sentParkingIDtoSlotsBooking,
-                            mappedParkingsGeneralInfo: fetchedMappingResult,
-                            slotBooked: false),
-                      ),
-                    );
+          Visibility(
+            visible: isParkingLocationIconNotClicked == true ? false : true,
+            child: FloatingActionButton(
+              onPressed: () async {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BookingThroughSlotsMapNoAlertDialog(
+                        receivedID: sentParkingIDtoSlotsBooking,
+                        mappedParkingsGeneralInfo: fetchedMappingResult,
+                        slotBooked: false),
+                  ),
+                );
 
-                    /* var obtenu = await showDialog(
-                    /* var obtenu = await showDialog(
+                /* var obtenu = await showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
                           content: BookingThroughSlotsMap(
@@ -527,88 +530,39 @@ now on the blank space left, the person will see and can choose :
                           ],
                         ));
                 print("OBTENU $obtenu"); */
-                  },
-                  mini: true,
-                  backgroundColor: Colors.black,
-                  elevation: 6.0,
-                  heroTag: null,
-                  child: const Icon(
-                    Icons.visibility,
-                    color: Colors.green,
-                  ),
-                ),
+              },
+              mini: true,
+              backgroundColor: Colors.black,
+              elevation: 6.0,
+              heroTag: null,
+              child: const Icon(
+                Icons.visibility,
+                color: Colors.green,
               ),
-              FloatingActionButton(
-                mini: true,
-                onPressed: _toggleNavBarForVisibleMap,
-                elevation: 6.0,
-                heroTag: null,
-                backgroundColor: Colors.white,
-                child: const Icon(
-                  Icons.visibility,
-                  color: Colors.red,
-                ),
-              ),
-            ],
+            ),
           ),
-        ), */
-
-        floatingActionButton: Align(
-          alignment: Alignment.topRight,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              FloatingActionButton(
-                mini: true,
-                onPressed: _toggleNavBarForVisibleMap,
-                backgroundColor: Colors.red, // Background color
-                elevation: 12.0, // Increased elevation
-                heroTag: null,
-                child: const Icon(
-                  Icons.info_outline_rounded,
-                  color: Colors.white, // Icon color
-                ),
-              ),
-              Visibility(
-                visible: isParkingLocationIconNotClicked == true ? false : true,
-                child: FloatingActionButton(
-                  onPressed: () async {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            BookingThroughSlotsMapNoAlertDialog(
-                                receivedID: sentParkingIDtoSlotsBooking,
-                                mappedParkingsGeneralInfo: fetchedMappingResult,
-                                slotBooked: false),
-                      ),
-                    );
-                  },
-                  mini: true,
-                  backgroundColor: Colors.green, // Background color
-                  elevation: 12.0, // Increased elevation
-                  heroTag: null,
-                  child: const Icon(
-                    Icons.visibility,
-                    color: Colors.white, // Icon color
-                  ),
-                ),
-              ),
-              FloatingActionButton(
-                mini: true,
-                onPressed: _toggleNavBarForVisibleMap,
-                elevation: 12.0, // Increased elevation
-                heroTag: null,
-                backgroundColor: Colors.red, // Background color
-                child: const Icon(
-                  Icons.visibility,
-                  color: Colors.white, // Icon color
-                ),
-              ),
-            ],
+          FloatingActionButton(
+            mini: true,
+            onPressed: _toggleNavBarForVisibleMap,
+            elevation: 6.0,
+            heroTag: null,
+            backgroundColor: Colors.white,
+            child: const Icon(
+              Icons.visibility,
+              color: Colors.red,
+            ),
           ),
-        ));
+        ],
+      ),
 
+      /* FloatingActionButton(
+        backgroundColor: Colors.pink,
+        child: const Icon(Icons.drag_indicator),
+        onPressed: _toggleNavBarForVisibleMap,
+        heroTag: null,
+        elevation: 6.0,
+      ), */
+    );
     /* return Container(
         color: Colors.white,
         child: Column(children: const [
@@ -633,11 +587,11 @@ now on the blank space left, the person will see and can choose :
     });
   }
 
-  void getSelectedParkingIDThroughMapOnTap(parkingID) {
+  void getSelectedParkingIDThroughMapOnTap(dynamic parkingID) {
     setState(() {
       sentParkingIDtoSlotsBooking = parkingID;
     });
   }
 
   /* 'BOOKING where you can show the user the nearby parkings [https://www.google.com/search?q=car+booking+app+flutter&tbm=isch&ved=2ahUKEwi3oLi93Iv1AhUIlBoKHbV0BGEQ2-cCegQIABAA&oq=car+booking+app+flutter&gs_lcp=CgNpbWcQAzoHCCMQ7wMQJzoGCAAQCBAeUPAHWL8RYPMUaAFwAHgAgAGIAogBjgeSAQUwLjUuMZgBAKABAaoBC2d3cy13aXotaW1nwAEB&sclient=img&ei=ksDNYbePKYioarXpkYgG&bih=714&biw=1280&client=firefox-b-d#imgrc=ddyerWq6kmcSrM] and once he clicks on one, he gets the occupation info (numbers only) of the parking and then if he decides to proceed to booking with that one, he is redirected to the page showing the parking map with: cars representing actually parked car, lock icon representing already booked and nothing with green or blue dot for available for noaml people and handicapped '), */
-}*/
+}

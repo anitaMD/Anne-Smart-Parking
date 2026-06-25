@@ -15,7 +15,7 @@ class LocationService extends StatefulWidget {
 class LocationServiceState extends State<LocationService> {
   String _address = '';
   Location location = Location();
-  var test;
+  dynamic test;
 
   @override
   void initState() {

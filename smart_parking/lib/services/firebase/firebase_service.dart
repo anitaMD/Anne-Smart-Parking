@@ -28,7 +28,7 @@ class FirebaseService {
     _completer!.complete();
   } */
 
-  void signInWithGoogleFailed(e) {
+  void signInWithGoogleFailed(dynamic e) {
     {
       print(e);
     }

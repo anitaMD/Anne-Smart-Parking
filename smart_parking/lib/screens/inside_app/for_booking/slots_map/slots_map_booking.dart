@@ -25,7 +25,7 @@ class _BookingThroughSlotsMapState extends State<BookingThroughSlotsMap> {
     super.initState();
   }
 
-  void getAlleySlotsId(parkingSlotsTotal) {
+  void getAlleySlotsId(dynamic parkingSlotsTotal) {
     int alleyBindexStart = parkingSlotsTotal ~/ 2;
 
     var j = 0;
@@ -464,7 +464,7 @@ class _BookingThroughSlotsMapState extends State<BookingThroughSlotsMap> {
     return myColor;
   }
 
-  void refreshSlotColorState(selectedSlotColorFetched) {
+  void refreshSlotColorState(dynamic selectedSlotColorFetched) {
     setState(() {
       finalSelectedColorSlot = selectedSlotColorFetched;
     });

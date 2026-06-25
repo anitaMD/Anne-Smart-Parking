@@ -2021,6 +2021,7 @@ Future<String> getCountryName() async {
                               Expanded(
                                 child: ElevatedButton(
                                   onPressed: () async {
+                                    final nav = Navigator.of(dialcontext);
                                     if (realCountryValue.contains("Reg.") ||
                                         realStateCityValue.contains("Reg.")) {
                                       null;
@@ -2053,21 +2054,23 @@ Future<String> getCountryName() async {
                                                   const Duration(seconds: 2))
                                               .then((value) {
                                             smoothIndicatorLength == 0
-                                                ? Navigator.of(dialcontext).pop(
+                                                ? nav.pop(
                                                     'NEW CAR ADDED') //to discard the "no vehicule registed ADD alert"
                                                 : null;
-                                            Navigator.of(context)
-                                                .pop('NEW CAR ADDED');
-                                            ScaffoldMessenger.of(dialcontext)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(vehiculeType
-                                                            .contains('Car') ==
-                                                        true
-                                                    ? 'Car added successfully'
-                                                    : 'Motorcycle added successfully'),
-                                              ),
-                                            );
+                                            nav.pop('NEW CAR ADDED');
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(dialcontext)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                  content: Text(vehiculeType
+                                                              .contains(
+                                                                  'Car') ==
+                                                          true
+                                                      ? 'Car added successfully'
+                                                      : 'Motorcycle added successfully'),
+                                                ),
+                                              );
+                                            }
                                           });
                                         });
                                         /*  Future.delayed(Duration(seconds: 5))

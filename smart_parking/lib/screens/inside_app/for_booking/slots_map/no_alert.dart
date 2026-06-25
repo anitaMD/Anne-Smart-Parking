@@ -323,9 +323,10 @@ class _BookingThroughSlotsMapNoAlertDialogState
               context.read<BookingStateManagement>().timeSlotsParsed = value;
             })
           : null;
-
-      debugPrint(
-          "VOIR $timesOfDayFetched ____ context.readtimeSlotsParsed ${context.read<BookingStateManagement>().timeSlotsParsed}");
+      if (context.mounted) {
+        debugPrint(
+            "VOIR $timesOfDayFetched ____ context.readtimeSlotsParsed ${context.read<BookingStateManagement>().timeSlotsParsed}");
+      }
     });
     stop += 1;
     Map<String, dynamic> selectedVehiculeInfoEmptyTest;
@@ -487,6 +488,8 @@ class _BookingThroughSlotsMapNoAlertDialogState
                               topLeft: Radius.circular(15),
                               bottomLeft: Radius.circular(15)),
                           onTap: () async {
+                            final nav = Navigator.of(context);
+
                             /*        var bookingStartDate = Timestamp.fromDate(DateTime(
                                     selectedDay.year,
                                     selectedDay.month,
@@ -574,22 +577,20 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                 debugPrint(
                                     "TIME UNTIL RES BOOK OVERV :$timeUntilResStarts");
                                 Future.delayed(const Duration(seconds: 20));
-                                if (!mounted) return;
-                                Navigator.pop(context);
+                                nav.pop();
                                 redirectingAlert();
                                 Future.delayed(const Duration(seconds: 4))
                                     .then((value) {
                                   if (mounted) {
-                                    return Navigator.of(context)
-                                        .pushAndRemoveUntil(
-                                            MaterialPageRoute(
-                                                builder: (context) => TestHome(
-                                                      timeUntilReservationStarts:
-                                                          timeUntilResStarts,
-                                                      newMoreUrgentBooking:
-                                                          yobaaler,
-                                                    )),
-                                            (Route<dynamic> route) => false);
+                                    return nav.pushAndRemoveUntil(
+                                        MaterialPageRoute(
+                                            builder: (context) => TestHome(
+                                                  timeUntilReservationStarts:
+                                                      timeUntilResStarts,
+                                                  newMoreUrgentBooking:
+                                                      yobaaler,
+                                                )),
+                                        (Route<dynamic> route) => false);
                                   }
                                 });
                               }
@@ -1204,13 +1205,13 @@ class _BookingThroughSlotsMapNoAlertDialogState
     return myColor;
   }
 
-  void refreshSlotColorState(selectedSlotColorFetched) {
+  void refreshSlotColorState(dynamic selectedSlotColorFetched) {
     setState(() {
       finalSelectedColorSlot = selectedSlotColorFetched;
     });
   }
 
-  void getAlleySlotsIdWithFBListeners(parkingSlotsTotal) {
+  void getAlleySlotsIdWithFBListeners(dynamic parkingSlotsTotal) {
     listeningToInsideParkingRealTime();
     int alleyBindexStart = parkingSlotsTotal ~/ 2;
     var j = 0;
@@ -2221,6 +2222,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                 reHasZeroDoublon = noResTimeDoublon;
 
                 if (noResTimeDoublon) {
+                  if (!mounted) return;
                   if (mappedSelectedSlotAlley
                       .where((element) => element['isSlotSelected'] == true)
                       .isNotEmpty) {
@@ -3249,6 +3251,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
 
   Future<dynamic> showAlleyAlert() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     return showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -4407,11 +4410,12 @@ class _BookingThroughSlotsMapNoAlertDialogState
                 : [
                     TextButton(
                         onPressed: () async {
+                          final nav = Navigator.of(context);
                           debugPrint(
                               "REDIRECTING TO DASH: $redirectingToDashboard");
                           if (redirectingToDashboard) {
                           } else {
-                            Navigator.pop(context);
+                            nav.pop();
                             setState(() => redirectingToDashboard = true);
                             showDialog(
                                 context: context,
@@ -4419,7 +4423,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
                                   Future.delayed(const Duration(seconds: 4))
                                       .then((value) {
                                     if (!mounted) return;
-                                    Navigator.of(context).pushAndRemoveUntil(
+                                    nav.pushAndRemoveUntil(
                                         MaterialPageRoute(
                                             builder: (context) =>
                                                 const TestHome(
@@ -4466,7 +4470,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
   }
 
   Future<Map<String, dynamic>> createBookingItem(
-      linkedParkingNameAndInsideInfo,
+      dynamic linkedParkingNameAndInsideInfo,
       String receivedID,
       User? currentlySignedInUser,
       Map<String, dynamic> selectedVehiculeInfoMappedFromSelectVehicule,

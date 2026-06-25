@@ -140,15 +140,14 @@ class _TestHomeState extends State<TestHome> {
               Material(
                 child: InkWell(
                   onTap: () async {
+                    final nav = Navigator.of(context);
+
                     parkingUserAuthService.signOutUser();
                     SharedPreferences prefs =
                         await SharedPreferences.getInstance();
                     prefs.setBool("isLoggedIn", true);
-                    if (!mounted) return;
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const TestLogin()));
+                    nav.push(MaterialPageRoute(
+                        builder: (context) => const TestLogin()));
                   },
                   child: const Padding(
                     padding: EdgeInsets.all(15.0),

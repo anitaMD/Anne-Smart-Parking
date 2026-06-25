@@ -22,6 +22,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint("Handling a background message...: ${message.notification!.body}");
 }
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final init = Firebase.initializeApp();
 
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
@@ -93,6 +94,7 @@ class _MyAppState extends State<MyApp> {
       ],
       builder: (context, child) {
         return GetMaterialApp(
+          navigatorKey: navigatorKey,
           locale: const Locale('fr', 'FR'),
           theme: ThemeData(
             brightness: Brightness.light,

@@ -576,7 +576,7 @@ class _TestMyVehiculesTabState extends State<TestMyVehiculesTab>
         });
   }
 
-  SizedBox showTotalRegCars(vehiculesInfoFetched) {
+  SizedBox showTotalRegCars(dynamic vehiculesInfoFetched) {
 /* USE THIS IN CASE NETWORK EXCEPTION AGAIN
 Future<String> getCountryName() async {
     Position position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
@@ -768,9 +768,7 @@ Future<String> getCountryName() async {
               return AlertDialog(
                 title: showEditingCarUI
                     ? const Row(
-                    ? const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
                         children: [
                           CircleAvatar(
                             backgroundColor: Colors.amber,
@@ -1367,7 +1365,7 @@ Future<String> getCountryName() async {
                                             realCountryValue.split("    ").last,
                                         'reg city': realStateCityValue,
                                       });
-
+                                      final nav = Navigator.of(context);
                                       debugPrint(
                                           "FORM VALIDATION SUCCESS ${formKey.currentState!.value}");
                                       showEditingCarUI
@@ -1378,8 +1376,7 @@ Future<String> getCountryName() async {
                                               Future.delayed(const Duration(
                                                       seconds: 2))
                                                   .then((value) {
-                                                Navigator.of(context)
-                                                    .pop('CAR INFO UPDATED');
+                                                nav.pop('CAR INFO UPDATED');
                                                 showSnackBarText(
                                                     "Car info updated successfully!");
                                               });
@@ -1390,8 +1387,7 @@ Future<String> getCountryName() async {
                                               Future.delayed(const Duration(
                                                       seconds: 2))
                                                   .then((value) {
-                                                Navigator.of(context)
-                                                    .pop('NEW CAR ADDED');
+                                                nav.pop('NEW CAR ADDED');
                                                 showSnackBarText(
                                                     "Car added successfully");
                                               });
@@ -1605,7 +1601,7 @@ Future<String> getCountryName() async {
     });
   }
 
-  void postCarDeletionUpdate(vehiculesInfoFetched) {
+  void postCarDeletionUpdate(dynamic vehiculesInfoFetched) {
     if (isVehiculeDeleted &&
         selectedVehiculeIndex == 0 &&
         vehiculesInfoFetched.length - 1 > 0) {

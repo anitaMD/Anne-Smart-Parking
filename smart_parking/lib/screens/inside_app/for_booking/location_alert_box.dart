@@ -80,6 +80,8 @@ class _ActivateLocationAlertBoxState extends State<ActivateLocationAlertBox> {
             child: InkWell(
               highlightColor: Colors.grey[200],
               onTap: () async {
+                final nav = Navigator.of(context);
+
                 try {
                   await geolocator.Geolocator.getCurrentPosition(
                       locationSettings: const geolocator.LocationSettings(
@@ -88,13 +90,14 @@ class _ActivateLocationAlertBoxState extends State<ActivateLocationAlertBox> {
                         dummyPosition = value,
                         currentLocationProvider
                             .updateLocationFromAlertBox(dummyPosition),
-                        Navigator.pop(context),
-                        Navigator.pop(context),
-                        Navigator.pop(context, true),
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(
-                          content: Text("Location successfully activated!"),
-                        )),
+                        nav.pop(),
+                        nav.pop(),
+                        nav.pop(true),
+                        if (context.mounted)
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(const SnackBar(
+                            content: Text("Location successfully activated!"),
+                          )),
                       });
                 } catch (e) {
                   bool testEnabled;

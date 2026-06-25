@@ -2171,6 +2171,7 @@ class TestRegisterState extends State<TestRegister>
             isSpecialAccessUser ? activeStep = 2 : activeStep = 1;
           },
         );
+        if (!mounted) return;
         Navigator.pop(context);
         verifyPhone(
             '${finalTest.dialCode.toString()} ${_numberController.text}');

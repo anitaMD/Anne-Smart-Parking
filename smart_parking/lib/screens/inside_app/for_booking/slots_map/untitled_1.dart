@@ -27,7 +27,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
     super.initState();
   }
 
-  void getAlleySlotsId(parkingSlotsTotal) {
+  void getAlleySlotsId(dynamic parkingSlotsTotal) {
     int alleyBindexStart = parkingSlotsTotal ~/ 2;
 
     var j = 0;
@@ -468,7 +468,7 @@ class _BookingThroughSlotsMapNoAlertDialogState
     return myColor;
   }
 
-  void refreshSlotColorState(selectedSlotColorFetched) {
+  void refreshSlotColorState(dynamic selectedSlotColorFetched) {
     setState(() {
       finalSelectedColorSlot = selectedSlotColorFetched;
     });

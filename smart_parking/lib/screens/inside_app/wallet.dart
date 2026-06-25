@@ -449,7 +449,6 @@ class WalletState extends State<Wallet> {
                     child: Screenshot(
                       controller: screenshotController,
                       child: QrImageView(
-                      child: QrImageView(
                         gapless: true,
                         padding: const EdgeInsets.all(20),
                         /*  embeddedImage: const AssetImage('assets/images/logo.png'),
@@ -458,9 +457,11 @@ class WalletState extends State<Wallet> {
                         errorCorrectionLevel: QrErrorCorrectLevel.H,
                         data: qrCodeEncrypted,
                         version: QrVersions.auto,
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.circle,
+                          color: Color.fromARGB(187, 255, 255, 255),
+                        ),
                         //size: 200.0,
-                        foregroundColor:
-                            const Color.fromARGB(187, 255, 255, 255),
                       ),
                     ),
                   ),
@@ -903,7 +904,7 @@ class WalletState extends State<Wallet> {
     return result['filePath']; */
   }
 
-  Future<void> openAnotherApp(data) async {
+  Future<void> openAnotherApp(dynamic data) async {
     String dt = data;
     bool isInstalled = await DeviceApps.isAppInstalled('com.example.testing');
     debugPrint("IS IT INSTALLED? : $isInstalled");
