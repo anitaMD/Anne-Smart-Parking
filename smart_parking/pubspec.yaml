@@ -79,14 +79,12 @@ dependencies:
   firebase_messaging: ^16.4.0
   rxdart: ^0.28.0
   flutter_local_notifications: ^22.0.1
-  flutter_native_timezone: ^2.0.0
+  flutter_timezone: ^3.0.0
   encrypt: ^5.0.1
   screenshot: ^3.0.0
-  device_apps: any
   share_plus: ^13.1.0
   path_provider: ^2.0.11
-  android_intent_plus: ^6.0.0
-  image_gallery_saver: ^2.0.3
+  gal: ^2.3.0
   permission_handler: ^12.0.3
   hexcolor: ^3.0.1
   font_awesome_flutter: ^11.0.0
@@ -96,7 +94,8 @@ dependencies:
   google_mlkit_text_recognition: ^0.15.1
   google_mlkit_barcode_scanning: ^0.14.2
   connectivity_plus: ^7.1.1
-  flutter_broadcast_receiver: ^1.0.0+2
+  sms_autofill: ^2.4.0
+
 
 
   

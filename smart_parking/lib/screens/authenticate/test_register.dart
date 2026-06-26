@@ -10,7 +10,6 @@ import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +30,7 @@ import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/services/firebase/firebase_storage.dart';
 import 'package:smart_parking/services/firebase/firestore_service.dart';
 import 'package:smart_parking/l10n/generated/app_localizations.dart';
+import 'package:gal/gal.dart';
 
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
@@ -2264,9 +2264,8 @@ class TestRegisterState extends State<TestRegister>
   }
 
   Future<dynamic> saveImage(Uint8List imageBytes) async {
-    final result =
-        await ImageGallerySaver.saveImage(imageBytes, name: 'cardScreenshot');
-    return result['filePath'];
+    final result = await Gal.putImageBytes(imageBytes, name: 'cardScreenshot');
+    return result;
   }
 
   Container displayEqualityCard(

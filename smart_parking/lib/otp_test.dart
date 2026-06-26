@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_broadcast_receiver/flutter_broadcast_receiver.dart';
+import 'package:sms_autofill/sms_autofill.dart';
 
 class TestingOTP extends StatefulWidget {
   const TestingOTP({Key? key}) : super(key: key);
@@ -19,7 +19,9 @@ class TestingOTPState extends State<TestingOTP> {
 
   String verID = '';
 
-  void showSnackBarText(String text, [TextStyle snackStyle = const TextStyle(color: Colors.white, fontSize: 15)]) {
+  void showSnackBarText(String text,
+      [TextStyle snackStyle =
+          const TextStyle(color: Colors.white, fontSize: 15)]) {
     if (mounted) {
       debugPrint("HERE YOU GO HAHAA $text");
       /*  ScaffoldMessenger.of(context).showSnackBar(
@@ -63,7 +65,8 @@ class TestingOTPState extends State<TestingOTP> {
       //codeAutoRetrievalTimeout: (String verificationId) {},
 
       codeAutoRetrievalTimeout: (String verificationId) {
-        showSnackBarText("Auth Timeout!"); // : showSnackBarText("Auth Completed!");
+        showSnackBarText(
+            "Auth Timeout!"); // : showSnackBarText("Auth Completed!");
       },
       verificationCompleted: (PhoneAuthCredential phoneAuthCredential) {
         showSnackBarText("AUTHENTICATION WORKED!");
@@ -74,13 +77,20 @@ class TestingOTPState extends State<TestingOTP> {
   @override
   void initState() {
     super.initState();
-    BroadcastReceiver().subscribe<String> // Data Type returned from publisher
-        ('SMS_RETRIEVED_ACTION', (message) {
-      debugPrint("THE MESSAGE $message");
-      final snackBar = SnackBar(content: Text('Yay! A Broadcast is received\n_counter value is $message'));
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    SmsAutoFill().code.listen((code) {
+      if (code.isNotEmpty) {
+        debugPrint("THE MESSAGE $code");
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('OTP reçu automatiquement : $code'),
+          ),
+        );
+        // Remplir le champ OTP automatiquement
+        // si tu as un controller OTP :
+        // _otpController.setText(code);
+      }
     });
-
     setState(
       () {},
     );
@@ -117,7 +127,9 @@ class TestingOTPState extends State<TestingOTP> {
                     ),
               ),
             ),
-            ElevatedButton(onPressed: () => verifyPhone("+221 77 500 50 43"), child: const Text("VERIF"))
+            ElevatedButton(
+                onPressed: () => verifyPhone("+221 77 500 50 43"),
+                child: const Text("VERIF"))
           ],
         ),
       ),
@@ -126,9 +138,7 @@ class TestingOTPState extends State<TestingOTP> {
 
   @override
   Future<void> dispose() async {
-    //  await controller.stopListen();
-    BroadcastReceiver().unsubscribe("SMS_RETRIEVED_ACTION");
-
+    SmsAutoFill().unregisterListener();
     super.dispose();
   }
 }

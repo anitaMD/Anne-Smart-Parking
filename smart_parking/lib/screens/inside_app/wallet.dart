@@ -2,12 +2,11 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 //import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:device_apps/device_apps.dart';
 import 'package:encrypt/encrypt.dart' as prefix;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -906,17 +905,22 @@ class WalletState extends State<Wallet> {
 
   Future<void> openAnotherApp(dynamic data) async {
     String dt = data;
-    bool isInstalled = await DeviceApps.isAppInstalled('com.example.testing');
-    debugPrint("IS IT INSTALLED? : $isInstalled");
-    if (isInstalled != false) {
-      final intent = AndroidIntent(
-          action: 'action_send',
-          data: dt,
-          package: 'com.example.testing',
-          type: 'plain/text');
+    final uri = Uri.parse(
+        'intent://send/$dt#Intent;package=com.example.testing;type=plain/text;end');
 
-      await intent.launch();
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+      debugPrint("App launched successfully");
+    } else {
+      debugPrint("App not installed or cannot be launched");
+      // Optionnel : rediriger vers le Play Store
+      final playStoreUri = Uri.parse(
+          'https://play.google.com/store/apps/details?id=com.example.testing');
+      if (await canLaunchUrl(playStoreUri)) {
+        await launchUrl(playStoreUri, mode: LaunchMode.externalApplication);
+      }
     }
+
 /* else
   {
   String url = dt;
