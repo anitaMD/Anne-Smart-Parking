@@ -21,14 +21,13 @@ class ReservationCountdown extends StatefulWidget {
   final int timeUntilResFetchedFromBookingOverview;
 
   const ReservationCountdown(
-      {Key? key,
+      {super.key,
       required this.currentlySignedInUser,
       required this.allReservationInfoNeeded,
       required this.canShowToggle,
       required this.getIndex,
       required this.userHasVehicules,
-      required this.timeUntilResFetchedFromBookingOverview})
-      : super(key: key);
+      required this.timeUntilResFetchedFromBookingOverview});
 
   @override
   State<ReservationCountdown> createState() => _ReservationCountdownState();

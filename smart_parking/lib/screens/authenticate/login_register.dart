@@ -17,7 +17,7 @@ import 'package:smart_parking/styling/styling.dart';
 import 'package:smart_parking/models/user.dart';
 
 class LoginRegister extends StatefulWidget {
-  const LoginRegister({Key? key}) : super(key: key);
+  const LoginRegister({super.key});
 
   @override
   LoginRegisterState createState() => LoginRegisterState();

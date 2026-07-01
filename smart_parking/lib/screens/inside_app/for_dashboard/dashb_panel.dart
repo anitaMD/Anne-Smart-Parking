@@ -11,10 +11,9 @@ class DashBoardPanel extends StatefulWidget {
   final ScrollController panelScrollController;
   final PanelController dragHandlePanelController;
   const DashBoardPanel(
-      {Key? key,
+      {super.key,
       required this.panelScrollController,
-      required this.dragHandlePanelController})
-      : super(key: key);
+      required this.dragHandlePanelController});
 
   @override
   State<DashBoardPanel> createState() => _DashBoardPanelState();

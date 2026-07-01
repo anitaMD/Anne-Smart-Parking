@@ -9,13 +9,12 @@ class RadialProgress extends StatefulWidget {
   final double width;
 
   const RadialProgress(
-      {Key? key,
+      {super.key,
       required this.child,
       this.goalCompleted = 0.7,
       this.progressColor = Colors.white,
       this.progressBackgroundColor = Colors.white,
-      this.width = 8})
-      : super(key: key);
+      this.width = 8});
 
   @override
   RadialProgressState createState() => RadialProgressState();

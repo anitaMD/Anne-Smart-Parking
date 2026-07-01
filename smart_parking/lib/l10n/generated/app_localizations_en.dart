@@ -154,6 +154,70 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please re-submit both recto and verso parts of your card!';
 
   @override
+  String get registerTitle => 'Create an account';
+
+  @override
+  String get registerCardStepTitle => 'PMR Card';
+
+  @override
+  String get registerStepInfo => 'Info';
+
+  @override
+  String get registerStepCard => 'PMR Card';
+
+  @override
+  String get registerProfilePictureOptional => 'Profile picture (optional)';
+
+  @override
+  String get registerNameRequired => 'Name required';
+
+  @override
+  String get registerNameFull => 'Enter your first and last name';
+
+  @override
+  String get registerPhoneRequired => 'Phone number required';
+
+  @override
+  String get registerPhoneTooShort => 'Number too short';
+
+  @override
+  String get phoneInvalidNumber => 'Invalid phone number.';
+
+  @override
+  String get phoneInvalidFormat => 'Invalid number format.';
+
+  @override
+  String get registerPasswordUppercase => 'At least one uppercase letter';
+
+  @override
+  String get registerPasswordDigit => 'At least one digit';
+
+  @override
+  String get registerUploadCardTitle => 'Upload your card';
+
+  @override
+  String get registerCardLooksLike => 'Your card should look like this:';
+
+  @override
+  String get registerCardRecto => 'Front';
+
+  @override
+  String get registerCardVerso => 'Back';
+
+  @override
+  String get registerSubmit => 'Sign up';
+
+  @override
+  String get registerEmailAlreadyUsed => 'This email is already in use.';
+
+  @override
+  String get registerPhoneAlreadyUsed =>
+      'This number is already linked to an account.';
+
+  @override
+  String get registerCardRequired => 'Please upload both sides of your card.';
+
+  @override
   String get noParkingSpotSelected =>
       'As you have not selected a specific parking spot, you will be assigned a random available one.';
 
@@ -162,4 +226,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectLanguage => 'Select the app language';
+
+  @override
+  String get loginWelcomeSubtitle => 'Sign in to continue';
+
+  @override
+  String get loginEmailRequired => 'Email required';
+
+  @override
+  String get loginEmailInvalid => 'Invalid email format';
+
+  @override
+  String get loginPasswordRequired => 'Password required';
+
+  @override
+  String get loginPasswordMinLength => 'Minimum 8 characters';
+
+  @override
+  String get loginWithGoogle => 'Continue with Google';
+
+  @override
+  String get loginResetEmailSent => 'Reset email sent!';
+
+  @override
+  String get loginResetEmailRequired =>
+      'Enter your email to reset your password.';
+
+  @override
+  String get loginSignUp => 'Sign up';
+
+  @override
+  String get connectivityOffline => 'No Internet connection';
+
+  @override
+  String get or => 'or';
 }

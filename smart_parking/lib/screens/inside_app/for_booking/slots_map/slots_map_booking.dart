@@ -8,11 +8,10 @@ class BookingThroughSlotsMap extends StatefulWidget {
   final Map<String, dynamic> mappedParkingsGeneralInfo;
   final bool slotBooked;
   const BookingThroughSlotsMap(
-      {Key? key,
+      {super.key,
       required this.receivedID,
       required this.mappedParkingsGeneralInfo,
-      required this.slotBooked})
-      : super(key: key);
+      required this.slotBooked});
 
   @override
   State<BookingThroughSlotsMap> createState() => _BookingThroughSlotsMapState();

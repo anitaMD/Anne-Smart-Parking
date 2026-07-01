@@ -8,10 +8,10 @@ import 'package:smart_parking/notifiers/location_notifier.dart';
 
 class ActivateLocationAlertBox extends StatefulWidget {
   const ActivateLocationAlertBox({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
-  }) : super(key: key);
+  });
   final String title, description;
 
   @override

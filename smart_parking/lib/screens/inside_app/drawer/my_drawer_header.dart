@@ -5,9 +5,9 @@ import 'package:smart_parking/screens/inside_app/home.dart';
 class MyHeaderDrawer extends StatefulWidget {
   final String headerProfilePic;
   const MyHeaderDrawer({
-    Key? key,
+    super.key,
     required this.headerProfilePic,
-  }) : super(key: key);
+  });
 
   @override
   MyHeaderDrawerState createState() => MyHeaderDrawerState();

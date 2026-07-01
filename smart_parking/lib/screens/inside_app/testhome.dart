@@ -16,10 +16,9 @@ class TestHome extends StatefulWidget {
   final int timeUntilReservationStarts;
   final Map<String, dynamic> newMoreUrgentBooking;
   const TestHome(
-      {Key? key,
+      {super.key,
       this.timeUntilReservationStarts = 0,
-      required this.newMoreUrgentBooking})
-      : super(key: key);
+      required this.newMoreUrgentBooking});
 
   @override
   State<TestHome> createState() => _TestHomeState();

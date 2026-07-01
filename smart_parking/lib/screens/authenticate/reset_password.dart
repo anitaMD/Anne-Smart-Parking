@@ -8,7 +8,7 @@ import 'package:smart_parking/screens/authenticate/login_register.dart';
 import 'package:smart_parking/styling/styling.dart';
 
 class ResetPassword extends StatefulWidget {
-  const ResetPassword({Key? key}) : super(key: key);
+  const ResetPassword({super.key});
 
   @override
   State<ResetPassword> createState() => _ResetPasswordState();

@@ -10,13 +10,13 @@ class HeaderWidget extends StatefulWidget {
   bool fromScanner = false, fromLoginVerif = false;
 
   HeaderWidget({
-    Key? key,
+    super.key,
     required this.height,
     required this.showIcon,
     required this.icon,
     this.fromScanner = false,
     this.fromLoginVerif = false,
-  }) : super(key: key);
+  });
 
   @override
   State<HeaderWidget> createState() => _HeaderWidgetState();

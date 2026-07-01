@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ShowNotificationsList extends StatefulWidget {
-  const ShowNotificationsList({Key? key}) : super(key: key);
+  const ShowNotificationsList({super.key});
 
   @override
   State<ShowNotificationsList> createState() => _ShowNotificationsListState();

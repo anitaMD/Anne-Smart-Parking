@@ -21,8 +21,7 @@ import 'package:smart_parking/services/firebase/firestore_service.dart';
 class BookingPage extends StatefulWidget {
   //final String mapStyle;
   final Map<String, dynamic> parkingToNavigateTo;
-  const BookingPage({Key? key, required this.parkingToNavigateTo})
-      : super(key: key);
+  const BookingPage({super.key, required this.parkingToNavigateTo});
   @override
   BookingPageState createState() => BookingPageState();
 }
@@ -275,6 +274,7 @@ class BookingPageState extends State<BookingPage> {
             showDialog(
               barrierColor: Colors.black12,
               barrierDismissible: false,
+              // ignore: use_build_context_synchronously
               context: context,
               builder: (dialContext) =>
                   StatefulBuilder(builder: (dialContext, setState) {

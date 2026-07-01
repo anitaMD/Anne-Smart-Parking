@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 
 class TestingOTP extends StatefulWidget {
-  const TestingOTP({Key? key}) : super(key: key);
+  const TestingOTP({super.key});
 
   @override
   TestingOTPState createState() => TestingOTPState();

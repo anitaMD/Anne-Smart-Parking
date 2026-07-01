@@ -16,11 +16,10 @@ class ProfileInfo extends StatefulWidget {
   final Function customFunction;
   bool status;
   ProfileInfo(
-      {Key? key,
+      {super.key,
       required this.profilePic,
       required this.customFunction,
-      required this.status})
-      : super(key: key);
+      required this.status});
 
   @override
   State<ProfileInfo> createState() => _ProfileInfoState();
@@ -256,8 +255,7 @@ class OpaqueImage extends StatelessWidget {
   final Function customFunction;
 
   const OpaqueImage(
-      {Key? key, required this.imageUrl, required this.customFunction})
-      : super(key: key);
+      {super.key, required this.imageUrl, required this.customFunction});
   Image assetOrNetworkImageOpaque(String imageUrl) {
     if (imageUrl.contains('assets/images')) {
       return Image.asset(

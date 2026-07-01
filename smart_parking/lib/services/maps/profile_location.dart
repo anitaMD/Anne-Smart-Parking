@@ -6,7 +6,7 @@ import 'package:location/location.dart';
 import 'package:smart_parking/styling/styling.dart';
 
 class LocationService extends StatefulWidget {
-  const LocationService({Key? key}) : super(key: key);
+  const LocationService({super.key});
 
   @override
   LocationServiceState createState() => LocationServiceState();

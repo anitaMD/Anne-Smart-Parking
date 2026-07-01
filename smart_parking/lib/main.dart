@@ -1,130 +1,127 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart';
-import 'package:form_builder_validators/localization/l10n.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:smart_parking/notifiers/location_notifier.dart';
-import 'package:smart_parking/notifiers/booking_state_management.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
-import 'package:smart_parking/screens/authenticate/testlogin.dart';
-import 'package:smart_parking/screens/inside_app/testhome.dart';
-import 'l10n/l10n.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/l10n/generated/app_localizations.dart';
+import 'package:smart_parking/l10n/l10n.dart';
+import 'package:smart_parking/refacto/core/theme/app_theme.dart';
+import 'package:smart_parking/refacto/viewmodels/user_viewmodel.dart';
+import 'package:smart_parking/refacto/widgets/connectivity_wrapper.dart';
+import 'package:smart_parking/refacto/router/app_router.dart';
 
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await init;
-  debugPrint("Handling a background message...: ${message.notification!.body}");
-}
+// ── Screens (à décommenter au fur et à mesure) ─────────────
+// import 'package:smart_parking/refacto/screens/auth/login_screen.dart';
+// import 'package:smart_parking/refacto/screens/dashboard/home_screen.dart';
 
+// ─────────────────────────────────────────────────────────────
+// GLOBALS
+// ─────────────────────────────────────────────────────────────
+
+/// Clé de navigation globale — accès sans BuildContext
+/// Utilisé par NotificationService pour naviguer depuis un service
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-final init = Firebase.initializeApp();
 
-const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'high_importance_channel', // id
-    'High Importance Notifications', // title
-    description:
-        'This channel is used for important notifications.', // description
-    importance: Importance.high,
-    playSound: true);
+final _firebaseInit = Firebase.initializeApp();
+
+const AndroidNotificationChannel _notificationChannel =
+    AndroidNotificationChannel(
+  'high_importance_channel',
+  'High Importance Notifications',
+  description: 'Canal pour les notifications importantes YSP',
+  importance: Importance.high,
+  playSound: true,
+);
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
+// ─────────────────────────────────────────────────────────────
+// BACKGROUND MESSAGE HANDLER
+// ─────────────────────────────────────────────────────────────
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await _firebaseInit;
+  debugPrint('📬 Background message: ${message.notification?.body}');
+}
+
+// ─────────────────────────────────────────────────────────────
+// MAIN
+// ─────────────────────────────────────────────────────────────
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await init;
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  var status = prefs.getBool('isLoggedIn') ??
-      true; //true means user logged OUT and false means he's already logged in. could rename to 'userHasToLogIn
-  debugPrint("PREF STATUS $status");
+  await _firebaseInit;
+
+  final prefs = await SharedPreferences.getInstance();
+  final bool mustLogin = prefs.getBool('isLoggedIn') ?? true;
+
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-// Firebase local notification plugin
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
+      ?.createNotificationChannel(_notificationChannel);
 
-//Firebase messaging
   await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
     alert: true,
     badge: true,
     sound: true,
   );
 
-  runApp(MyApp(status: status));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(statusBarColor: Colors.transparent),
+  );
+
+  runApp(
+    // ProviderScope remplace MultiProvider
+    // BONNE PRATIQUE Riverpod : ProviderScope est le seul
+    // widget nécessaire — tous les providers sont déclarés
+    // dans leurs propres fichiers, pas ici
+    ProviderScope(
+      child: YSPApp(mustLogin: mustLogin),
+    ),
+  );
 }
 
-class MyApp extends StatefulWidget {
-  final bool status;
-  const MyApp({
-    Key? key,
-    required this.status,
-  }) : super(key: key);
+// ─────────────────────────────────────────────────────────────
+// ROOT WIDGET
+// ─────────────────────────────────────────────────────────────
+
+// BONNE PRATIQUE Riverpod : le widget root hérite de
+// ConsumerWidget (pas StatelessWidget) pour avoir accès à ref
+class YSPApp extends ConsumerWidget {
+  final bool mustLogin;
+  const YSPApp({super.key, required this.mustLogin});
 
   @override
-  State<MyApp> createState() => _MyAppState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(userProvider); //DO NOT EVER DELETE THIS
 
-class _MyAppState extends State<MyApp> {
-  @override
-  void initState() {
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-    ));
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (_) => CurrentLocationNotifier(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => BookingStateManagement(),
-        ),
+    return GetMaterialApp(
+      navigatorKey: navigatorKey,
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      locale: const Locale('fr', 'FR'),
+      supportedLocales: L10n.all,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        FormBuilderLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
       ],
-      builder: (context, child) {
-        return GetMaterialApp(
-          navigatorKey: navigatorKey,
-          locale: const Locale('fr', 'FR'),
-          theme: ThemeData(
-            brightness: Brightness.light,
-            primaryColor: Colors.indigo,
-          ),
-          supportedLocales: L10n.all,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            FormBuilderLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-          ],
-          debugShowCheckedModeBanner: false,
-          home: widget.status == true
-              ? const TestLogin()
-              : const TestHome(
-                  timeUntilReservationStarts: 0,
-                  newMoreUrgentBooking: {},
-                ),
-          /* widget.status == true
-              ? const LoginRegister()
-              : const Home(
-                  fromLoginView: true,
-                  parkingToNavigateTo: {},
-                  newIndex: 0,
-                  timeUntilResStarts: 0,
-                ), */
-        );
-      },
+      onGenerateRoute: AppRouter.generateRoute,
+      initialRoute: mustLogin ? AppRoutes.login : AppRoutes.home,
+      builder: (context, child) => ConnectivityWrapper(
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

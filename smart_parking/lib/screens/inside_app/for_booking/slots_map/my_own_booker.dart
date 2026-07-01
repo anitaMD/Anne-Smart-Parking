@@ -6,7 +6,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
 
 class MyOwnBooker extends StatefulWidget {
-  const MyOwnBooker({Key? key}) : super(key: key);
+  const MyOwnBooker({super.key});
 
   @override
   State<MyOwnBooker> createState() => _MyOwnBookerState();
@@ -23,20 +23,37 @@ class _MyOwnBookerState extends State<MyOwnBooker> {
   @override
   Widget build(BuildContext context) {
     TimeOfDay startTime = TimeOfDay(
-            hour: int.parse(context.watch<BookingStateManagement>().openingHour.split(":")[0]),
-            minute: int.parse(context.watch<BookingStateManagement>().openingHour.split(":")[1])),
+            hour: int.parse(context
+                .watch<BookingStateManagement>()
+                .openingHour
+                .split(":")[0]),
+            minute: int.parse(context
+                .watch<BookingStateManagement>()
+                .openingHour
+                .split(":")[1])),
         endTime = TimeOfDay(
-            hour: int.parse(context.watch<BookingStateManagement>().closingHour.split(":")[0]),
-            minute: int.parse(context.watch<BookingStateManagement>().closingHour.split(":")[1]));
+            hour: int.parse(context
+                .watch<BookingStateManagement>()
+                .closingHour
+                .split(":")[0]),
+            minute: int.parse(context
+                .watch<BookingStateManagement>()
+                .closingHour
+                .split(":")[1]));
 
-    context.watch<BookingStateManagement>().getTimeSlotsIntervals(startTime, endTime, interval).toList().then((value) {
+    context
+        .watch<BookingStateManagement>()
+        .getTimeSlotsIntervals(startTime, endTime, interval)
+        .toList()
+        .then((value) {
       for (var timeOfDay in value) {
         fetchedTimes.add(timeOfDay);
       }
       print("FETCHED LENGHT! ${fetchedTimes.length}");
     });
 
-    print("FROM NOTIFIER : ${context.watch<BookingStateManagement>().initialDate}");
+    print(
+        "FROM NOTIFIER : ${context.watch<BookingStateManagement>().initialDate}");
     return SizedBox(
       height: 600,
       child: Column(
@@ -61,12 +78,15 @@ class _MyOwnBookerState extends State<MyOwnBooker> {
                       return isSameDay(selectedDay, day);
                     },
                     onDaySelected: (newSelectedDay, newFocusedDay) {
-                      print("BEFORE  SELECTED $selectedDay FOCUSED $focusedDay");
+                      print(
+                          "BEFORE  SELECTED $selectedDay FOCUSED $focusedDay");
                       setState(() {
-                        (newSelectedDay.weekday == DateTime.sunday || newSelectedDay.weekday == DateTime.saturday)
+                        (newSelectedDay.weekday == DateTime.sunday ||
+                                newSelectedDay.weekday == DateTime.saturday)
                             ? null
                             : selectedDay = newSelectedDay;
-                        focusedDay = newFocusedDay; // update `_focusedDay` here as well
+                        focusedDay =
+                            newFocusedDay; // update `_focusedDay` here as well
                       });
                       print("AFTERR SELECTED $selectedDay FOCUSED $focusedDay");
                     },
@@ -77,7 +97,8 @@ class _MyOwnBookerState extends State<MyOwnBooker> {
                     }),
                     calendarStyle: const CalendarStyle(
                       //weekendDecoration: BoxDecoration(color: Colors.purple),
-                      selectedDecoration: BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                      selectedDecoration: BoxDecoration(
+                          color: Colors.green, shape: BoxShape.circle),
                     ),
                   ),
                 ),
@@ -98,7 +119,8 @@ class _MyOwnBookerState extends State<MyOwnBooker> {
                   Container(
                     width: 20,
                     height: 20,
-                    decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                        color: Colors.green, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 3),
                   const FittedBox(
@@ -115,7 +137,8 @@ class _MyOwnBookerState extends State<MyOwnBooker> {
                   Container(
                     width: 20,
                     height: 20,
-                    decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                        color: Colors.orange, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 3),
                   const FittedBox(
@@ -132,7 +155,8 @@ class _MyOwnBookerState extends State<MyOwnBooker> {
                   Container(
                     width: 20,
                     height: 20,
-                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                        color: Colors.red, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 3),
                   const FittedBox(
@@ -152,27 +176,34 @@ class _MyOwnBookerState extends State<MyOwnBooker> {
           ),
           Expanded(
             child: GridView.builder(
-                itemCount: fetchedTimes.toList().isEmpty ? 10 : fetchedTimes.toList().length - 1,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),
+                itemCount: fetchedTimes.toList().isEmpty
+                    ? 10
+                    : fetchedTimes.toList().length - 1,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3),
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: () {
-                      context.read<BookingStateManagement>().updateSelectedTime(fetchedTimes.elementAt(index));
+                      context
+                          .read<BookingStateManagement>()
+                          .updateSelectedTime(fetchedTimes.elementAt(index));
                     },
                     child: Card(
                         margin: const EdgeInsets.all(8),
                         elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15)),
                         color: getSelectedTimeSlotColor(index),
                         child: fetchedTimes.toList().isEmpty
                             ? null
                             : Center(
-                                child: (index + 1) == fetchedTimes.toList().length
-                                    ? null
-                                    : GridTile(
-                                        child: Text(
-                                            "${fetchedTimes.elementAt(index).format(context)} - ${fetchedTimes.elementAt(index + 1).format(context)}"),
-                                      ),
+                                child:
+                                    (index + 1) == fetchedTimes.toList().length
+                                        ? null
+                                        : GridTile(
+                                            child: Text(
+                                                "${fetchedTimes.elementAt(index).format(context)} - ${fetchedTimes.elementAt(index + 1).format(context)}"),
+                                          ),
                               )),
                   );
                 }),
@@ -183,12 +214,12 @@ class _MyOwnBookerState extends State<MyOwnBooker> {
   }
 
   Color getSelectedTimeSlotColor(int index) {
-    return context.watch<BookingStateManagement>().selectedTime == fetchedTimes.elementAt(index)
+    return context.watch<BookingStateManagement>().selectedTime ==
+            fetchedTimes.elementAt(index)
         ? selectedTimeSlotColor
         : Colors.white;
   }
 }
- 
 
 /* Center(
         child: Row(

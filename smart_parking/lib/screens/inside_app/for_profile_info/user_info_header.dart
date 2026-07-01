@@ -18,11 +18,10 @@ class UserInfoHeader extends StatefulWidget {
   final Function customFunction;
   final bool status;
   const UserInfoHeader(
-      {Key? key,
+      {super.key,
       required this.avatarImage,
       required this.customFunction,
-      required this.status})
-      : super(key: key);
+      required this.status});
 
   @override
   State<UserInfoHeader> createState() => _UserInfoHeaderState();
@@ -179,10 +178,10 @@ class RoundedImage extends StatelessWidget {
   final Size size;
 
   const RoundedImage({
-    Key? key,
+    super.key,
     required this.imagePath,
     this.size = const Size.fromWidth(120),
-  }) : super(key: key);
+  });
 
   ClipOval assetOrNetworkImage(String theImagePath) {
     if (theImagePath.contains('assets/images')) {

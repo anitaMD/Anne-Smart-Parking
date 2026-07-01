@@ -1,0 +1,343 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/user_model.dart';
+import '../models/vehicle_model.dart';
+import '../models/parking_model.dart';
+import '../models/booking_model.dart';
+import '../models/wallet_model.dart';
+import '../models/notification_model.dart';
+
+// ─────────────────────────────────────────────────────────────
+// INTERFACE ABSTRAITE
+// ─────────────────────────────────────────────────────────────
+
+abstract class FirestoreServiceBase {
+  // Users
+  Future<void> createUser(UserModel user);
+  Future<UserModel?> getUser(String uid);
+  Future<bool> userExistsByPhone(String phoneNumber);
+  Future<bool> userExistsByEmail(String email);
+  Future<void> updateUser(String uid, Map<String, dynamic> fields);
+
+  // Vehicles
+  Future<List<VehicleModel>> getVehicles(String uid);
+  Stream<List<VehicleModel>> watchVehicles(String uid);
+  Future<String> addVehicle(String uid, VehicleModel vehicle);
+  Future<void> updateVehicle(
+      String uid, String vehicleId, Map<String, dynamic> fields);
+  Future<void> deleteVehicle(String uid, String vehicleId);
+  Future<void> setDefaultVehicle(String uid, String vehicleId);
+
+  // Parkings
+  Future<List<ParkingModel>> getParkings();
+  Stream<List<ParkingModel>> watchParkings();
+  Future<ParkingSpotsInfo?> getParkingSpots(String parkingId);
+  Stream<ParkingSpotsInfo?> watchParkingSpots(String parkingId);
+  Future<void> updateParkingSpots(
+      String parkingId, String spotsDocId, Map<String, dynamic> fields);
+
+  // Bookings
+  Future<String> createBooking(BookingModel booking);
+  Future<List<BookingModel>> getUserBookings(String uid);
+  Stream<List<BookingModel>> watchUserBookings(String uid);
+  Future<void> updateBookingStatus(String bookingId, BookingStatus status);
+  Future<void> archiveBooking(String bookingId);
+  Future<void> updateVehicleStatus(String bookingId, VehicleStatus status);
+
+  // Wallet
+  Future<WalletModel?> getWallet(String uid);
+  Stream<WalletModel?> watchWallet(String uid);
+  Future<void> createWallet(String uid);
+  Future<void> updateWalletBalance(String uid, String walletId, int newBalance);
+  Future<void> addDebit(
+      {required String uid,
+      required String walletId,
+      required int amount,
+      required int newBalance,
+      required String parkingId,
+      required String parkingName});
+  Future<void> addTopUp(
+      {required String uid,
+      required String walletId,
+      required int amount,
+      required int newBalance,
+      required String source});
+
+  // Notifications
+  Future<void> saveNotification(
+      {required String uid, required String title, required String body});
+  Stream<List<NotificationModel>> watchNotifications(String uid);
+  Future<void> markNotificationRead(String uid, String notifId);
+}
+
+// ─────────────────────────────────────────────────────────────
+// IMPLÉMENTATION RÉELLE
+// ─────────────────────────────────────────────────────────────
+
+class FirestoreService implements FirestoreServiceBase {
+  final FirebaseFirestore _db;
+
+  FirestoreService({FirebaseFirestore? db})
+      : _db = db ?? FirebaseFirestore.instance;
+
+  CollectionReference<Map<String, dynamic>> get _users =>
+      _db.collection('users_v2');
+  CollectionReference<Map<String, dynamic>> get _locations =>
+      _db.collection('locations_v2');
+  CollectionReference<Map<String, dynamic>> get _bookings =>
+      _db.collection('slotsReservations_v2');
+
+  // ── Users ─────────────────────────────────────────────────
+  @override
+  Future<void> createUser(UserModel user) async =>
+      await _users.doc(user.id).set(user.toFirestore());
+
+  @override
+  Future<UserModel?> getUser(String uid) async {
+    final doc = await _users.doc(uid).get();
+    if (!doc.exists) return null;
+    return UserModel.fromFirestore(doc);
+  }
+
+  @override
+  Future<bool> userExistsByPhone(String phoneNumber) async {
+    final snapshot = await _users
+        .where('phoneNumber', isEqualTo: phoneNumber)
+        .limit(1)
+        .get();
+    return snapshot.docs.isNotEmpty;
+  }
+
+  @override
+  Future<bool> userExistsByEmail(String email) async {
+    final snapshot =
+        await _users.where('email', isEqualTo: email.trim()).limit(1).get();
+    return snapshot.docs.isNotEmpty;
+  }
+
+  @override
+  Future<void> updateUser(String uid, Map<String, dynamic> fields) async =>
+      await _users.doc(uid).update(fields);
+
+  // ── Vehicles ──────────────────────────────────────────────
+  @override
+  Future<List<VehicleModel>> getVehicles(String uid) async {
+    final snapshot = await _users.doc(uid).collection('vehicles').get();
+    return snapshot.docs.map(VehicleModel.fromFirestore).toList();
+  }
+
+  @override
+  Stream<List<VehicleModel>> watchVehicles(String uid) => _users
+      .doc(uid)
+      .collection('vehicles')
+      .snapshots()
+      .map((s) => s.docs.map(VehicleModel.fromFirestore).toList());
+
+  @override
+  Future<String> addVehicle(String uid, VehicleModel vehicle) async {
+    final ref =
+        await _users.doc(uid).collection('vehicles').add(vehicle.toFirestore());
+    return ref.id;
+  }
+
+  @override
+  Future<void> updateVehicle(
+          String uid, String vehicleId, Map<String, dynamic> fields) async =>
+      await _users
+          .doc(uid)
+          .collection('vehicles')
+          .doc(vehicleId)
+          .update(fields);
+
+  @override
+  Future<void> deleteVehicle(String uid, String vehicleId) async =>
+      await _users.doc(uid).collection('vehicles').doc(vehicleId).delete();
+
+  @override
+  Future<void> setDefaultVehicle(String uid, String vehicleId) async {
+    final batch = _db.batch();
+    final all = await _users.doc(uid).collection('vehicles').get();
+    for (final doc in all.docs) {
+      batch.update(doc.reference, {'isCurrentlySelected': false});
+    }
+    batch.update(
+      _users.doc(uid).collection('vehicles').doc(vehicleId),
+      {'isCurrentlySelected': true},
+    );
+    await batch.commit();
+  }
+
+  // ── Parkings ──────────────────────────────────────────────
+  @override
+  Future<List<ParkingModel>> getParkings() async {
+    final snapshot = await _locations.get();
+    return snapshot.docs.map(ParkingModel.fromFirestore).toList();
+  }
+
+  @override
+  Stream<List<ParkingModel>> watchParkings() => _locations
+      .snapshots()
+      .map((s) => s.docs.map(ParkingModel.fromFirestore).toList());
+
+  @override
+  Future<ParkingSpotsInfo?> getParkingSpots(String parkingId) async {
+    final snapshot =
+        await _locations.doc(parkingId).collection('spots').limit(1).get();
+    if (snapshot.docs.isEmpty) return null;
+    return ParkingSpotsInfo.fromFirestore(snapshot.docs.first);
+  }
+
+  @override
+  Stream<ParkingSpotsInfo?> watchParkingSpots(String parkingId) => _locations
+      .doc(parkingId)
+      .collection('spots')
+      .limit(1)
+      .snapshots()
+      .map((s) =>
+          s.docs.isEmpty ? null : ParkingSpotsInfo.fromFirestore(s.docs.first));
+
+  @override
+  Future<void> updateParkingSpots(String parkingId, String spotsDocId,
+          Map<String, dynamic> fields) async =>
+      await _locations
+          .doc(parkingId)
+          .collection('spots')
+          .doc(spotsDocId)
+          .update(fields);
+
+  // ── Bookings ──────────────────────────────────────────────
+  @override
+  Future<String> createBooking(BookingModel booking) async {
+    final ref = await _bookings.add(booking.toFirestore());
+    return ref.id;
+  }
+
+  @override
+  Future<List<BookingModel>> getUserBookings(String uid) async {
+    final snapshot = await _bookings
+        .where('clientId', isEqualTo: uid)
+        .where('isArchived', isEqualTo: false)
+        .orderBy('bookingStart')
+        .get();
+    return snapshot.docs.map(BookingModel.fromFirestore).toList();
+  }
+
+  @override
+  Stream<List<BookingModel>> watchUserBookings(String uid) => _bookings
+      .where('clientId', isEqualTo: uid)
+      .where('isArchived', isEqualTo: false)
+      .orderBy('bookingStart')
+      .snapshots()
+      .map((s) => s.docs.map(BookingModel.fromFirestore).toList());
+
+  @override
+  Future<void> updateBookingStatus(
+          String bookingId, BookingStatus status) async =>
+      await _bookings.doc(bookingId).update({'status': status.name});
+
+  @override
+  Future<void> archiveBooking(String bookingId) async =>
+      await _bookings.doc(bookingId).update({'isArchived': true});
+
+  @override
+  Future<void> updateVehicleStatus(
+          String bookingId, VehicleStatus status) async =>
+      await _bookings.doc(bookingId).update({'vehicleStatus': status.name});
+
+  // ── Wallet ────────────────────────────────────────────────
+  @override
+  Future<WalletModel?> getWallet(String uid) async {
+    final snapshot = await _users.doc(uid).collection('wallet').limit(1).get();
+    if (snapshot.docs.isEmpty) return null;
+    return WalletModel.fromFirestore(snapshot.docs.first);
+  }
+
+  @override
+  Stream<WalletModel?> watchWallet(String uid) =>
+      _users.doc(uid).collection('wallet').limit(1).snapshots().map((s) =>
+          s.docs.isEmpty ? null : WalletModel.fromFirestore(s.docs.first));
+
+  @override
+  Future<void> createWallet(String uid) async =>
+      await _users.doc(uid).collection('wallet').add({'balance': 0});
+
+  @override
+  Future<void> updateWalletBalance(
+          String uid, String walletId, int newBalance) async =>
+      await _users
+          .doc(uid)
+          .collection('wallet')
+          .doc(walletId)
+          .update({'balance': newBalance});
+
+  @override
+  Future<void> addDebit({
+    required String uid,
+    required String walletId,
+    required int amount,
+    required int newBalance,
+    required String parkingId,
+    required String parkingName,
+  }) async =>
+      await _users
+          .doc(uid)
+          .collection('wallet')
+          .doc(walletId)
+          .collection('debits')
+          .add({
+        'amount': amount,
+        'newBalance': newBalance,
+        'parkingId': parkingId,
+        'parkingName': parkingName,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+  @override
+  Future<void> addTopUp({
+    required String uid,
+    required String walletId,
+    required int amount,
+    required int newBalance,
+    required String source,
+  }) async =>
+      await _users
+          .doc(uid)
+          .collection('wallet')
+          .doc(walletId)
+          .collection('topUps')
+          .add({
+        'amount': amount,
+        'newBalance': newBalance,
+        'source': source,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+  // ── Notifications ─────────────────────────────────────────
+  @override
+  Future<void> saveNotification({
+    required String uid,
+    required String title,
+    required String body,
+  }) async =>
+      await _users.doc(uid).collection('notifications').add({
+        'title': title,
+        'body': body,
+        'isRead': false,
+        'receivedAt': FieldValue.serverTimestamp(),
+      });
+
+  @override
+  Stream<List<NotificationModel>> watchNotifications(String uid) => _users
+      .doc(uid)
+      .collection('notifications')
+      .orderBy('receivedAt', descending: true)
+      .snapshots()
+      .map((s) => s.docs.map(NotificationModel.fromFirestore).toList());
+
+  @override
+  Future<void> markNotificationRead(String uid, String notifId) async =>
+      await _users
+          .doc(uid)
+          .collection('notifications')
+          .doc(notifId)
+          .update({'isRead': true});
+}

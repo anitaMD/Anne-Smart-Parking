@@ -15,11 +15,10 @@ class DashboardHomePage extends StatefulWidget {
   final void Function(int selectedIndex) getIndex;
   final int timeUntilResStartsFromBookingOverview;
   const DashboardHomePage(
-      {Key? key,
+      {super.key,
       required this.canShowToggle,
       required this.getIndex,
-      required this.timeUntilResStartsFromBookingOverview})
-      : super(key: key);
+      required this.timeUntilResStartsFromBookingOverview});
 
   @override
   DashboardHomePageState createState() => DashboardHomePageState();

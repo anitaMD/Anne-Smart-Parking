@@ -27,11 +27,10 @@ class BookingThroughSlotsMapNoAlertDialog extends StatefulWidget {
   final Map<String, dynamic> mappedParkingsGeneralInfo;
   final bool slotBooked;
   const BookingThroughSlotsMapNoAlertDialog(
-      {Key? key,
+      {super.key,
       required this.receivedID,
       required this.mappedParkingsGeneralInfo,
-      required this.slotBooked})
-      : super(key: key);
+      required this.slotBooked});
 
   @override
   State<BookingThroughSlotsMapNoAlertDialog> createState() =>

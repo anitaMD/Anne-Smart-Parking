@@ -14,11 +14,10 @@ class DashboardWrapperPage extends StatefulWidget {
   final Map<String, dynamic> parkingToNavigateTo;
   final int newIndex, timeUntilResStartsFromBookingOverview;
   const DashboardWrapperPage(
-      {Key? key,
+      {super.key,
       required this.parkingToNavigateTo,
       required this.newIndex,
-      required this.timeUntilResStartsFromBookingOverview})
-      : super(key: key);
+      required this.timeUntilResStartsFromBookingOverview});
 
   @override
   State<DashboardWrapperPage> createState() => _DashboardWrapperPageState();

@@ -4,7 +4,7 @@ import 'package:smart_parking/models/pages/widgets/header_widget.dart';
 import 'package:smart_parking/services/local_notifications/notification.dart';
 
 class TestProfileInfo extends StatefulWidget {
-  const TestProfileInfo({Key? key}) : super(key: key);
+  const TestProfileInfo({super.key});
 
   @override
   State<TestProfileInfo> createState() => _TestProfileInfoState();
@@ -84,7 +84,8 @@ class _TestProfileInfoState extends State<TestProfileInfo> {
                               ? CircleAvatar(
                                   // backgroundColor: Colors.grey,
                                   radius: 70,
-                                  backgroundImage: NetworkImage(currentUser!.photoURL!),
+                                  backgroundImage:
+                                      NetworkImage(currentUser!.photoURL!),
                                 )
                               : Icon(
                                   Icons.person,
@@ -117,7 +118,8 @@ class _TestProfileInfoState extends State<TestProfileInfo> {
                     child: Column(
                       children: <Widget>[
                         Container(
-                          padding: const EdgeInsets.only(left: 8.0, bottom: 4.0),
+                          padding:
+                              const EdgeInsets.only(left: 8.0, bottom: 4.0),
                           alignment: Alignment.topLeft,
                           child: const Text(
                             "User Information",
@@ -141,7 +143,8 @@ class _TestProfileInfoState extends State<TestProfileInfo> {
                                       color: Colors.grey,
                                       tiles: [
                                         const ListTile(
-                                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                          contentPadding: EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 4),
                                           leading: Icon(Icons.my_location),
                                           title: Text("Location"),
                                           subtitle: Text("USA"),
@@ -149,7 +152,8 @@ class _TestProfileInfoState extends State<TestProfileInfo> {
                                         const ListTile(
                                           leading: Icon(Icons.email),
                                           title: Text("Email"),
-                                          subtitle: Text("donaldtrump@gmail.com"),
+                                          subtitle:
+                                              Text("donaldtrump@gmail.com"),
                                         ),
                                         const ListTile(
                                           leading: Icon(Icons.phone),

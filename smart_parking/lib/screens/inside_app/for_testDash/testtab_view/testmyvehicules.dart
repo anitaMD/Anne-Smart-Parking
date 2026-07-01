@@ -16,8 +16,7 @@ import 'package:smart_parking/styling/styling.dart';
 class TestMyVehiculesTab extends StatefulWidget {
   final Function(String carModelFromPanel, String carBrandFromPanel)
       updateDashboardCar;
-  const TestMyVehiculesTab({Key? key, required this.updateDashboardCar})
-      : super(key: key);
+  const TestMyVehiculesTab({super.key, required this.updateDashboardCar});
 
   @override
   State<TestMyVehiculesTab> createState() => _TestMyVehiculesTabState();
