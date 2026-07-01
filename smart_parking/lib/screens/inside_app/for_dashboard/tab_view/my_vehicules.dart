@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class MyVehiculesTab extends StatefulWidget {
-  const MyVehiculesTab({Key? key}) : super(key: key);
+  const MyVehiculesTab({super.key});
 
   @override
   State<MyVehiculesTab> createState() => _MyVehiculesTabState();

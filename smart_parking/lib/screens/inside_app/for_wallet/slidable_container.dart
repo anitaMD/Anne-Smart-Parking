@@ -3,14 +3,18 @@ import 'package:flutter/cupertino.dart';
 class SlidableWalletCard extends StatefulWidget {
   final Widget childLeft, childRight;
   final Function onSlided;
-  const SlidableWalletCard({Key? key, required this.childLeft, required this.childRight, required this.onSlided})
-      : super(key: key);
+  const SlidableWalletCard(
+      {super.key,
+      required this.childLeft,
+      required this.childRight,
+      required this.onSlided});
 
   @override
   State<SlidableWalletCard> createState() => _SlidableWalletCardState();
 }
 
-class _SlidableWalletCardState extends State<SlidableWalletCard> with SingleTickerProviderStateMixin {
+class _SlidableWalletCardState extends State<SlidableWalletCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   String swipeDirection = '';
   int currentIndex = 0;
@@ -30,11 +34,13 @@ class _SlidableWalletCardState extends State<SlidableWalletCard> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("CONTROLLER DEBUG: ${_controller.value} ___ veloc ${_controller.velocity}");
+    debugPrint(
+        "CONTROLLER DEBUG: ${_controller.value} ___ veloc ${_controller.velocity}");
 
     return GestureDetector(
         onHorizontalDragStart: ((details) {
-          debugPrint("CONTROLLER: ${_controller.value} ___ veloc ${_controller.velocity}");
+          debugPrint(
+              "CONTROLLER: ${_controller.value} ___ veloc ${_controller.velocity}");
 
           setState(() {
             _controller.reset();
@@ -49,7 +55,8 @@ class _SlidableWalletCardState extends State<SlidableWalletCard> with SingleTick
           debugPrint("EXTENT: $dragExtent");
           setState(() {
             //swipeDirection = details.delta.dx < 0 ? 'next' : 'prev';
-            _controller.value = dragExtent / context.size!.width; //drageExtent.  abs()
+            _controller.value =
+                dragExtent / context.size!.width; //drageExtent.  abs()
           });
         },
         onHorizontalDragEnd: (details) {
@@ -62,7 +69,8 @@ class _SlidableWalletCardState extends State<SlidableWalletCard> with SingleTick
                     widget.onSlided(currentIndex);
                   })
                 : null;
-            debugPrint("SWIPE DIRECTION: $swipeDirection _ currentIndex $currentIndex");
+            debugPrint(
+                "SWIPE DIRECTION: $swipeDirection _ currentIndex $currentIndex");
           } else {
             currentIndex > 0
                 ? setState(() {
@@ -72,7 +80,8 @@ class _SlidableWalletCardState extends State<SlidableWalletCard> with SingleTick
                   })
                 : null;
 
-            debugPrint("SWIPE DIRECTION: $swipeDirection _ _ currentIndex $currentIndex");
+            debugPrint(
+                "SWIPE DIRECTION: $swipeDirection _ _ currentIndex $currentIndex");
           }
 
           _controller.fling(velocity: -1);

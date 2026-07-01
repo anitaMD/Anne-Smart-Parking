@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 
 class TestDrawerImageUsername extends StatefulWidget {
   final User currentUser;
-  const TestDrawerImageUsername({Key? key, required this.currentUser}) : super(key: key);
+  const TestDrawerImageUsername({super.key, required this.currentUser});
 
   @override
-  State<TestDrawerImageUsername> createState() => _TestDrawerImageUsernameState();
+  State<TestDrawerImageUsername> createState() =>
+      _TestDrawerImageUsernameState();
 }
 
 class _TestDrawerImageUsernameState extends State<TestDrawerImageUsername> {

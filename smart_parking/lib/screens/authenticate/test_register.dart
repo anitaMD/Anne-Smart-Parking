@@ -35,7 +35,7 @@ import 'package:gal/gal.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class TestRegister extends StatefulWidget {
-  const TestRegister({Key? key}) : super(key: key);
+  const TestRegister({super.key});
 
   @override
   TestRegisterState createState() => TestRegisterState();

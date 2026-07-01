@@ -15,12 +15,11 @@ class TestDashboardWrapper extends StatefulWidget {
   final int timeUntilResStartsFromBookingOverview;
   final Map<String, dynamic> newMoreUrgentBooking;
   const TestDashboardWrapper(
-      {Key? key,
+      {super.key,
       required this.parkingToNavigateTo,
       this.newIndex = 0,
       this.timeUntilResStartsFromBookingOverview = 0,
-      required this.newMoreUrgentBooking})
-      : super(key: key);
+      required this.newMoreUrgentBooking});
 
   @override
   State<TestDashboardWrapper> createState() => _TestDashboardWrapperState();

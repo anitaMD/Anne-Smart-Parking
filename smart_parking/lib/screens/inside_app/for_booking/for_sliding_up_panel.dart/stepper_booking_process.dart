@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class MapsBookingProcess extends StatefulWidget {
-  const MapsBookingProcess({Key? key}) : super(key: key);
+  const MapsBookingProcess({super.key});
 
   @override
   MapsBookingProcessState createState() => MapsBookingProcessState();
@@ -250,7 +250,7 @@ class MapsBookingProcessState extends State<MapsBookingProcess> {
 }
 
 class _SmartParkingSelection extends StatelessWidget {
-  const _SmartParkingSelection({Key? key}) : super(key: key);
+  const _SmartParkingSelection();
 
   @override
   Widget build(BuildContext context) {
@@ -289,7 +289,7 @@ class _SmartParkingSelection extends StatelessWidget {
 }
 
 class _CarSelection extends StatelessWidget {
-  const _CarSelection({Key? key}) : super(key: key);
+  const _CarSelection();
 
   @override
   Widget build(BuildContext context) {
@@ -316,7 +316,7 @@ class _CarSelection extends StatelessWidget {
 }
 
 class _TimeSlotSelection extends StatelessWidget {
-  const _TimeSlotSelection({Key? key}) : super(key: key);
+  const _TimeSlotSelection();
 
   @override
   Widget build(BuildContext context) {
@@ -331,7 +331,7 @@ class _TimeSlotSelection extends StatelessWidget {
 }
 
 class BookingOverview extends StatelessWidget {
-  const BookingOverview({Key? key}) : super(key: key);
+  const BookingOverview({super.key});
 
   @override
   Widget build(BuildContext context) {

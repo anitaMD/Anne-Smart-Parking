@@ -3,7 +3,7 @@ import 'package:smart_parking/services/firebase/firebase_service.dart';
 import 'package:smart_parking/screens/authenticate/login_register.dart';
 
 class GoogleSignInLandingPage extends StatefulWidget {
-  const GoogleSignInLandingPage({Key? key}) : super(key: key);
+  const GoogleSignInLandingPage({super.key});
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -15,7 +15,8 @@ class GoogleSignInLandingPage extends StatefulWidget {
   // always marked "final".
 
   @override
-  State<GoogleSignInLandingPage> createState() => _GoogleSignInLandingPageState();
+  State<GoogleSignInLandingPage> createState() =>
+      _GoogleSignInLandingPageState();
 }
 
 class _GoogleSignInLandingPageState extends State<GoogleSignInLandingPage> {

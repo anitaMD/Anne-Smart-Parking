@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -25,11 +27,10 @@ class TestDashboardHomePage extends StatefulWidget {
   final Map<String, dynamic> newMoreUrgentBooking;
   final Function(bool canShow) canShowToggle;
   const TestDashboardHomePage(
-      {Key? key,
+      {super.key,
       this.timeUntilResStartsFromBookingOverview = 0,
       required this.newMoreUrgentBooking,
-      required this.canShowToggle})
-      : super(key: key);
+      required this.canShowToggle});
 
   @override
   State<TestDashboardHomePage> createState() => _TestDashboardHomePageState();
@@ -125,7 +126,6 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
 
   void updateWalletFields(QuerySnapshot<Map<String, dynamic>> walletCollection,
       String walletFirstAndOnlyDocID) {
-    // ignore: unused_local_variable
     CollectionReference debitsCollection = myDB.collection(
         "users/${currentlySignedInUser?.uid}/wallet/$walletFirstAndOnlyDocID/debits");
     CollectionReference topUpsCollection = myDB.collection(
@@ -482,7 +482,6 @@ class _TestDashboardHomePageState extends State<TestDashboardHomePage> {
         fontSize: 13,
         fontWeight: FontWeight.w900,
         fontFamily: 'OpenSans');
-    // ignore: unused_local_variable
     var ringFillGradientResStartsIn = LinearGradient(
         colors: [
           Theme.of(context).primaryColor.withValues(alpha: 0.4),

@@ -3,15 +3,15 @@
     "@language": {
         "description": "The currrent Language"
     },
-
+    
     "noInternetError": "Please check your network connectivity!",
     "@noInternetError": {
         "description": ""
     },
-
-
-
-
+    
+    
+    
+    
     "welcomeToApp": "Welcome to Your Smart Parking!",
     "@welcomeToApp": {
         "description": "Login Welcome Text"
@@ -21,43 +21,43 @@
     "@login": {
         "description": "Login to account text"
     },
-
+    
     "loginEmailLabel": "Your Email",
     "@loginEmailLabel": {
         "description": "User email field label"
     },
-
+    
     "loginEmailPlaceholder": "Enter your email",
     "@loginEmailPlaceholder": {
         "description": "Email field placeholder"
     },
-
+    
     "loginPasswordLabel": "Your Password",
     "@loginPasswordLabel": {
         "description": "Password field placeholder"
     },
-
-
+    
+    
     "loginPasswordPlaceholder": "Enter your password",
     "@loginPasswordPlaceholder": {
         "description": "Password placeholder"
     },
-
+    
     "forgotPassword": "Forgot your password?",
     "@forgotPassword": {
         "description": "Password forgotten"
     },
-
+    
     "signin": "Sign in",
     "@signin": {
         "description": "Sign in button label"
     },
-
+    
     "noAccount": "Don't have an account? ",
     "@noAccount": {
         "description": "No account label text"
     },
-
+    
     "createAccount": "Create now!",
     "@createAccount": {
         "description": "Create account button label"
@@ -70,16 +70,16 @@
     "@logIncorrectEmailOrPass": {
         "description": ""
     },
-
-
-
-
-
+    
+    
+    
+    
+    
     "regFullNameLabel": "Full Name",
     "@regFullNameLabel": {
         "description": "Register form full name label"
     },
-     "regFullNamePlaceholder": "Enter your full name",
+    "regFullNamePlaceholder": "Enter your full name",
     "@regFullNamePlaceholder": {
         "description": "Register form full name placeholder"
     },
@@ -140,19 +140,19 @@
         "description": ""
     },
     "regRadioNo": "No",
-    "@regRadioYes": {
+    "@regRadioNo": {
         "description": ""
     },
     "regEgaliteChancesDescription": "This card concerns you if you have a significant loss of autonomy (disability) and allows you to benefit from rights and advantages in terms of transportation, access to health care, rehabilitation, technical and financial assistance, education, etc. It is issued by the Ministry of Social Action on the proposal of departmental technical commissions.",
     "@regEgaliteChancesDescription": {
         "description": ""
     },
-
+    
     "regNextButton": "Next",
     "@regNextButton": {
         "description": ""
     },
-   
+    
     "alreadyHaveAccount": "Already have an account? ",
     "@alreadyHaveAccount": {
         "description": ""
@@ -161,10 +161,10 @@
     "@regGoToLogInLink": {
         "description": ""
     },
-
-
-
-
+    
+    
+    
+    
     "otpAuthCompleted": "Auth Completed!",
     "@otpAuthCompleted": {
         "description": ""
@@ -182,7 +182,7 @@
         "description": ""
     },
     
-
+    
     
     "numVerifHeader": "Verification",
     "@numVerifHeader": {
@@ -204,9 +204,9 @@
     "@numVerifButtonLabel": {
         "description": ""
     },
-
-
-
+    
+    
+    
     "scanCECrectoError": "Please re-submit the recto part of your card!",
     "@scanCECrectoError": {
         "description": ""
@@ -219,39 +219,113 @@
     "@scanCECbothRectoVersoError": {
         "description": ""
     },
+    "registerTitle": "Create an account",
+  "@registerTitle": { "description": "Register screen title - step 1" },
 
+  "registerCardStepTitle": "PMR Card",
+  "@registerCardStepTitle": { "description": "Register screen title - step 2" },
 
+  "registerStepInfo": "Info",
+  "@registerStepInfo": { "description": "Step indicator label - info step" },
 
+  "registerStepCard": "PMR Card",
+  "@registerStepCard": { "description": "Step indicator label - card step" },
 
+  "registerProfilePictureOptional": "Profile picture (optional)",
+  "@registerProfilePictureOptional": { "description": "Profile picture upload hint" },
 
+  "registerNameRequired": "Name required",
+  "@registerNameRequired": { "description": "Full name validation error" },
 
+  "registerNameFull": "Enter your first and last name",
+  "@registerNameFull": { "description": "Full name format validation error" },
 
+  "registerPhoneRequired": "Phone number required",
+  "@registerPhoneRequired": { "description": "Phone number validation error" },
 
+  "registerPhoneTooShort": "Number too short",
+  "@registerPhoneTooShort": { "description": "Phone number length validation error" },
+  "phoneInvalidNumber": "Invalid phone number.",
+  "@phoneInvalidNumber": { "description": "Phone number validation failed (parsed but invalid)" },
+  "phoneInvalidFormat": "Invalid number format.",
+  "@phoneInvalidFormat": { "description": "Phone number could not be parsed (wrong format)" },
 
+  "registerPasswordUppercase": "At least one uppercase letter",
+  "@registerPasswordUppercase": { "description": "Password uppercase requirement" },
 
+  "registerPasswordDigit": "At least one digit",
+  "@registerPasswordDigit": { "description": "Password digit requirement" },
 
+  "registerUploadCardTitle": "Upload your card",
+  "@registerUploadCardTitle": { "description": "Card upload section title" },
 
+  "registerCardLooksLike": "Your card should look like this:",
+  "@registerCardLooksLike": { "description": "Card preview hint text" },
 
+  "registerCardRecto": "Front",
+  "@registerCardRecto": { "description": "Card front side label" },
 
+  "registerCardVerso": "Back",
+  "@registerCardVerso": { "description": "Card back side label" },
 
+  "registerSubmit": "Sign up",
+  "@registerSubmit": { "description": "Final register submit button" },
 
+  "registerEmailAlreadyUsed": "This email is already in use.",
+  "@registerEmailAlreadyUsed": { "description": "Email already taken error" },
 
+  "registerPhoneAlreadyUsed": "This number is already linked to an account.",
+  "@registerPhoneAlreadyUsed": { "description": "Phone already taken error" },
 
+  "registerCardRequired": "Please upload both sides of your card.",
+  "@registerCardRequired": { "description": "Card upload required error" },
+  
     "noParkingSpotSelected": "As you have not selected a specific parking spot, you will be assigned a random available one.",
     "@noParkingSpotSelected": {
         "description": "The user is asked if he wants to continue the booking without selecting a parking spot."
     },
-
+    
     "creatingBooking": "Registering Your Booking ...",
     "@creatingBooking": {
         "description": "The user's booking is being processed."
     },
-
+    
     "selectLanguage": "Select the app language",
     "@selectLanguage": {
         "description": "Select App Language"
-    }
-
+    },
     
-
+    "loginWelcomeSubtitle": "Sign in to continue",
+    "@loginWelcomeSubtitle": { "description": "Login screen subtitle" },
+    
+    "loginEmailRequired": "Email required",
+    "@loginEmailRequired": { "description": "Email validation error" },
+    
+    "loginEmailInvalid": "Invalid email format",
+    "@loginEmailInvalid": { "description": "Email format error" },
+    
+    "loginPasswordRequired": "Password required",
+    "@loginPasswordRequired": { "description": "Password validation error" },
+    
+    "loginPasswordMinLength": "Minimum 8 characters",
+    "@loginPasswordMinLength": { "description": "Password length error" },
+    
+    "loginWithGoogle": "Continue with Google",
+    "@loginWithGoogle": { "description": "Google sign in button" },
+    
+    "loginResetEmailSent": "Reset email sent!",
+    "@loginResetEmailSent": { "description": "Password reset success" },
+    
+    "loginResetEmailRequired": "Enter your email to reset your password.",
+    "@loginResetEmailRequired": { "description": "Reset email required" },
+    
+    "loginSignUp": "Sign up",
+    "@loginSignUp": { "description": "Sign up link" },
+    
+    "connectivityOffline": "No Internet connection",
+    "@connectivityOffline": { "description": "Offline banner" },
+    
+    "or": "or",
+    "@or": { "description": "Separator between login methods" }
+    
 }

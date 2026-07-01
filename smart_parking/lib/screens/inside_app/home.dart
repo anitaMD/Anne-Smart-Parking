@@ -22,13 +22,13 @@ class Home extends StatefulWidget {
   final Map<String, dynamic> parkingToNavigateTo;
   final int newIndex, timeUntilResStarts;
   const Home({
-    Key? key,
+    super.key,
     required this.fromLoginView,
     this.theUserProfile,
     required this.parkingToNavigateTo,
     required this.newIndex,
     required this.timeUntilResStarts,
-  }) : super(key: key);
+  });
 
   @override
   HomeState createState() => HomeState();

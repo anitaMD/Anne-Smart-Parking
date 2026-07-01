@@ -46,7 +46,7 @@
     "regEgaliteDesChances": "Possédez-vous la Carte d'Egalité des Chances?",
     "regRadioYes": "Oui",
     "regRadioNo": "Non",
-    "regEgaliteChancesDescription": "Cette carte vous concerne si vous avez une perte d'autonomie importante (handicap) et vous permet de bénéficier de droits et avantages en matière de transport, d’accès aux soins de santé, de réadaptation, d’aide technique et financière, d’éducation, etc.Elle est délivrée par le Ministère chargé de l’Action sociale sur proposition des commissions techniques départementales.",
+    "regEgaliteChancesDescription": "Cette carte vous concerne si vous avez une perte d'autonomie importante (handicap) et vous permet de bénéficier de droits et avantages en matière de transport, d’accès aux soins de santé, de réadaptation, d’aide technique et financière, d’éducation, etc. Elle est délivrée par le Ministère chargé de l’Action sociale sur proposition des commissions techniques départementales.",
 
     "regNextButton": "Suivant",
    
@@ -78,17 +78,82 @@
     "scanCECbothRectoVersoError": "Veuillez soumettre de nouveau les parties recto et verso de votre carte!",
  
 
-
-
-
-
-
-
     "noParkingSpotSelected": "Il semble que vous n'avez pas sélectionné une place de parking. Il vous sera donc attribué une parmi celles présentement disponibles.",
 
     "creatingBooking": "Validation de votre réservation...",
 
-    "selectLanguage": "Selectionner la langue par défaut."
+    "selectLanguage": "Selectionner la langue par défaut.",
 
+    "loginWelcomeSubtitle": "Connectez-vous pour continuer",
+  "loginEmailRequired": "Email requis",
+  "loginEmailInvalid": "Format email invalide",
+  "loginPasswordRequired": "Mot de passe requis",
+  "loginPasswordMinLength": "Minimum 8 caractères",
+  "loginWithGoogle": "Continuer avec Google",
+  "loginResetEmailSent": "Email de réinitialisation envoyé !",
+  "loginResetEmailRequired": "Entrez votre email pour réinitialiser votre mot de passe.",
+  "loginSignUp": "S'inscrire",
+  "connectivityOffline": "Pas de connexion Internet",
+  "or": "ou",
+
+ "registerTitle": "Créer un compte",
+  "@registerTitle": { "description": "Register screen title - step 1" },
+
+  "registerStepInfo": "Infos",
+  "@registerStepInfo": { "description": "Step indicator label - info step" },
+
+  "registerStepCard": "Carte PMR",
+  "@registerStepCard": { "description": "Step indicator label - card step" },
+
+  "registerProfilePictureOptional": "Photo de profil (optionnelle)",
+  "@registerProfilePictureOptional": { "description": "Profile picture upload hint" },
+
+  "registerNameRequired": "Nom requis",
+  "@registerNameRequired": { "description": "Full name validation error" },
+
+  "registerNameFull": "Entrez votre prénom et nom",
+  "@registerNameFull": { "description": "Full name format validation error" },
+
+  "registerPhoneRequired": "Numéro requis",
+  "@registerPhoneRequired": { "description": "Phone number validation error" },
+  "phoneInvalidNumber": "Numéro de téléphone invalide.",
+  "@phoneInvalidNumber": { "description": "Phone number validation failed (parsed but invalid)" },
+  "phoneInvalidFormat": "Format de numéro invalide.",
+  "@phoneInvalidFormat": { "description": "Phone number could not be parsed (wrong format)" },
+
+  "registerPhoneTooShort": "Numéro trop court",
+  "@registerPhoneTooShort": { "description": "Phone number length validation error" },
+
+  "registerPasswordUppercase": "Au moins une majuscule",
+  "@registerPasswordUppercase": { "description": "Password uppercase requirement" },
+
+  "registerPasswordDigit": "Au moins un chiffre",
+  "@registerPasswordDigit": { "description": "Password digit requirement" },
+
+  "registerUploadCardTitle": "Téléchargez votre carte",
+  "@registerUploadCardTitle": { "description": "Card upload section title" },
+
+  "registerCardLooksLike": "Votre carte ressemble à ceci :",
+  "@registerCardLooksLike": { "description": "Card preview hint text" },
+
+  "registerCardRecto": "Recto",
+  "@registerCardRecto": { "description": "Card front side label" },
+
+  "registerCardVerso": "Verso",
+  "@registerCardVerso": { "description": "Card back side label" },
+
+  "registerSubmit": "S'inscrire",
+  "@registerSubmit": { "description": "Final register submit button" },
+
+  "registerEmailAlreadyUsed": "Cet email est déjà utilisé.",
+  "@registerEmailAlreadyUsed": { "description": "Email already taken error" },
+
+  "registerPhoneAlreadyUsed": "Ce numéro est déjà associé à un compte.",
+  "@registerPhoneAlreadyUsed": { "description": "Phone already taken error" },
+
+    "registerCardStepTitle": "Carte PMR",
+  "@registerCardStepTitle": { "description": "Register screen title - step 2" },
+  "registerCardRequired": "Veuillez uploader le recto et le verso de votre carte.",
+  "@registerCardRequired": { "description": "Card upload required error" }
 
 }

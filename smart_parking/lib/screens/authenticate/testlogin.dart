@@ -26,7 +26,7 @@ import 'package:smart_parking/models/user.dart';
 import 'package:smart_parking/l10n/generated/app_localizations.dart';
 
 class TestLogin extends StatefulWidget {
-  const TestLogin({Key? key}) : super(key: key);
+  const TestLogin({super.key});
 
   @override
   TestLoginState createState() => TestLoginState();

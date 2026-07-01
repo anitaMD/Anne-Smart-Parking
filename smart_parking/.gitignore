@@ -44,3 +44,29 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+android/app/src/main/res/values/strings.xml
+
+# YSP Smart Parking — Setup Notes
+#The following lines can be kept in setup.md file at the root of the project, but are also included here for convenience.
+
+## Google Sign In — SHA-1 Debug
+SHA-1: 2D:F9:F3:33:0D:72:7C:5F:E3:01:F6:8A:B2:C9:92:1E:87:FE:AE:7D
+
+Ajouté dans Firebase Console → Paramètres du projet → App Android.
+À mettre à jour si tu changes de machine de développement.
+
+## Cloudinary
+Cloud name : dykj02hue
+Upload preset : ysp_bucket (unsigned)
+
+## Firebase Project
+Project ID : smartparking-anne
+Collections actives : users_v2, locations_v2, slotsReservations_v2
+Collections legacy : users, locations, slotsReservations (à supprimer après migration)
+
+## Raspberry Pi
+IP locale : 192.168.1.7
+WiFi : KEUR MOMAR
+Broker MQTT : Mosquitto
+User MQTT : anne

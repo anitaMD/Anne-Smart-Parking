@@ -11,10 +11,9 @@ class BookingOverviewFinal extends StatefulWidget {
   final Map<String, dynamic> bookerFirstPageInfoFetched,
       bookerSecondPageInfoFetched;
   const BookingOverviewFinal(
-      {Key? key,
+      {super.key,
       required this.bookerFirstPageInfoFetched,
-      required this.bookerSecondPageInfoFetched})
-      : super(key: key);
+      required this.bookerSecondPageInfoFetched});
 
   @override
   State<BookingOverviewFinal> createState() => _BookingOverviewFinalState();

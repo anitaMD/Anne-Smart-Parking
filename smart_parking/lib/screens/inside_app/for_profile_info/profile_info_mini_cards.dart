@@ -9,12 +9,11 @@ class ProfileInfoMiniCards extends StatelessWidget {
   final dynamic hasImage;
 
   const ProfileInfoMiniCards(
-      {Key? key,
+      {super.key,
       this.firstText,
       this.secondText,
       this.hasImage = false,
-      this.imagePath})
-      : super(key: key);
+      this.imagePath});
 
   @override
   Widget build(BuildContext context) {
@@ -44,8 +43,7 @@ class TwoLineItem extends StatelessWidget {
   final String firstText, secondText;
 
   const TwoLineItem(
-      {Key? key, required this.firstText, required this.secondText})
-      : super(key: key);
+      {super.key, required this.firstText, required this.secondText});
 
   @override
   Widget build(BuildContext context) {

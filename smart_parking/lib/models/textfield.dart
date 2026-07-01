@@ -16,7 +16,7 @@ class MyTextField extends StatefulWidget {
   final Color viewBgColor;
 
   const MyTextField({
-    Key? key,
+    super.key,
     required this.isNumber,
     required this.focusNode,
     required this.icon,
@@ -26,7 +26,7 @@ class MyTextField extends StatefulWidget {
     required this.isPassword,
     required this.viewBgColor,
     required this.isFullName,
-  }) : super(key: key);
+  });
 
   @override
   State<MyTextField> createState() => _MyTextFieldState();

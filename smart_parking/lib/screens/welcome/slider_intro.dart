@@ -4,7 +4,7 @@ import 'package:smart_parking/screens/authenticate/login_register.dart';
 import 'package:smart_parking/styling/styling.dart';
 
 class SliderScreen extends StatefulWidget {
-  const SliderScreen({Key? key}) : super(key: key);
+  const SliderScreen({super.key});
 
   @override
   SliderScreenState createState() => SliderScreenState();
@@ -29,7 +29,8 @@ class SliderScreenState extends State<SliderScreen> {
     slides.add(
       ContentConfig(
         title: "Gain de temps et d'argent!",
-        description: "Réservez à distance votre place de parking et gagnez du temps au quotidien.",
+        description:
+            "Réservez à distance votre place de parking et gagnez du temps au quotidien.",
         pathImage: "assets/images/book_now.jpg",
         backgroundColor: bgcSlide2,
       ),
@@ -38,7 +39,8 @@ class SliderScreenState extends State<SliderScreen> {
     slides.add(
       ContentConfig(
         title: "Avec vous jusqu'au bout!",
-        description: "Notre système de guidage assisté à la place sera votre nouvel allié au quotidien.",
+        description:
+            "Notre système de guidage assisté à la place sera votre nouvel allié au quotidien.",
         pathImage: "assets/images/assisted_parking.jpg",
         backgroundColor: bgcSlide3,
       ),
@@ -67,7 +69,8 @@ class SliderScreenState extends State<SliderScreen> {
         color: Colors.black,
 
         child: Container(
-          color: currentSlide.backgroundColor, //I'll get color box and the rest will be black
+          color: currentSlide
+              .backgroundColor, //I'll get color box and the rest will be black
           margin: const EdgeInsets.only(bottom: 130, top: 100),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -75,7 +78,8 @@ class SliderScreenState extends State<SliderScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(30),
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                decoration: const BoxDecoration(
+                    shape: BoxShape.circle, color: Colors.white),
                 child: Image.asset(
                   currentSlide.pathImage.toString(),
                   fit: BoxFit.fitHeight,
@@ -145,8 +149,8 @@ class SliderScreenState extends State<SliderScreen> {
       ),
       listCustomTabs: customizedTabs(),
       scrollPhysics: const BouncingScrollPhysics(),
-      onDonePress: () =>
-          Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoginRegister())),
+      onDonePress: () => Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LoginRegister())),
     );
   }
 }

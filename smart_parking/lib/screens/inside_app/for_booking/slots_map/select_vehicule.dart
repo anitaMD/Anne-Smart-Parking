@@ -19,12 +19,11 @@ class SelectVehicule extends StatefulWidget {
   final bool reShowSelectedCarCard;
   final Map<String, dynamic> selectedCarDetails;
   const SelectVehicule(
-      {Key? key,
+      {super.key,
       required this.currentlySIUser,
       required this.updateParkingDetailsAndSelectedDayMapped,
       required this.reShowSelectedCarCard,
-      required this.selectedCarDetails})
-      : super(key: key);
+      required this.selectedCarDetails});
 
   @override
   State<SelectVehicule> createState() => _SelectVehiculeState();

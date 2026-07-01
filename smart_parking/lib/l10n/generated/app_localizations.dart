@@ -278,7 +278,7 @@ abstract class AppLocalizations {
   /// **'Yes'**
   String get regRadioYes;
 
-  /// No description provided for @regRadioNo.
+  ///
   ///
   /// In en, this message translates to:
   /// **'No'**
@@ -380,6 +380,132 @@ abstract class AppLocalizations {
   /// **'Please re-submit both recto and verso parts of your card!'**
   String get scanCECbothRectoVersoError;
 
+  /// Register screen title - step 1
+  ///
+  /// In en, this message translates to:
+  /// **'Create an account'**
+  String get registerTitle;
+
+  /// Register screen title - step 2
+  ///
+  /// In en, this message translates to:
+  /// **'PMR Card'**
+  String get registerCardStepTitle;
+
+  /// Step indicator label - info step
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get registerStepInfo;
+
+  /// Step indicator label - card step
+  ///
+  /// In en, this message translates to:
+  /// **'PMR Card'**
+  String get registerStepCard;
+
+  /// Profile picture upload hint
+  ///
+  /// In en, this message translates to:
+  /// **'Profile picture (optional)'**
+  String get registerProfilePictureOptional;
+
+  /// Full name validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Name required'**
+  String get registerNameRequired;
+
+  /// Full name format validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your first and last name'**
+  String get registerNameFull;
+
+  /// Phone number validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number required'**
+  String get registerPhoneRequired;
+
+  /// Phone number length validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Number too short'**
+  String get registerPhoneTooShort;
+
+  /// Phone number validation failed (parsed but invalid)
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid phone number.'**
+  String get phoneInvalidNumber;
+
+  /// Phone number could not be parsed (wrong format)
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid number format.'**
+  String get phoneInvalidFormat;
+
+  /// Password uppercase requirement
+  ///
+  /// In en, this message translates to:
+  /// **'At least one uppercase letter'**
+  String get registerPasswordUppercase;
+
+  /// Password digit requirement
+  ///
+  /// In en, this message translates to:
+  /// **'At least one digit'**
+  String get registerPasswordDigit;
+
+  /// Card upload section title
+  ///
+  /// In en, this message translates to:
+  /// **'Upload your card'**
+  String get registerUploadCardTitle;
+
+  /// Card preview hint text
+  ///
+  /// In en, this message translates to:
+  /// **'Your card should look like this:'**
+  String get registerCardLooksLike;
+
+  /// Card front side label
+  ///
+  /// In en, this message translates to:
+  /// **'Front'**
+  String get registerCardRecto;
+
+  /// Card back side label
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get registerCardVerso;
+
+  /// Final register submit button
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up'**
+  String get registerSubmit;
+
+  /// Email already taken error
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already in use.'**
+  String get registerEmailAlreadyUsed;
+
+  /// Phone already taken error
+  ///
+  /// In en, this message translates to:
+  /// **'This number is already linked to an account.'**
+  String get registerPhoneAlreadyUsed;
+
+  /// Card upload required error
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload both sides of your card.'**
+  String get registerCardRequired;
+
   /// The user is asked if he wants to continue the booking without selecting a parking spot.
   ///
   /// In en, this message translates to:
@@ -397,6 +523,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select the app language'**
   String get selectLanguage;
+
+  /// Login screen subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to continue'**
+  String get loginWelcomeSubtitle;
+
+  /// Email validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Email required'**
+  String get loginEmailRequired;
+
+  /// Email format error
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email format'**
+  String get loginEmailInvalid;
+
+  /// Password validation error
+  ///
+  /// In en, this message translates to:
+  /// **'Password required'**
+  String get loginPasswordRequired;
+
+  /// Password length error
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum 8 characters'**
+  String get loginPasswordMinLength;
+
+  /// Google sign in button
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get loginWithGoogle;
+
+  /// Password reset success
+  ///
+  /// In en, this message translates to:
+  /// **'Reset email sent!'**
+  String get loginResetEmailSent;
+
+  /// Reset email required
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email to reset your password.'**
+  String get loginResetEmailRequired;
+
+  /// Sign up link
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up'**
+  String get loginSignUp;
+
+  /// Offline banner
+  ///
+  /// In en, this message translates to:
+  /// **'No Internet connection'**
+  String get connectivityOffline;
+
+  /// Separator between login methods
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get or;
 }
 
 class _AppLocalizationsDelegate

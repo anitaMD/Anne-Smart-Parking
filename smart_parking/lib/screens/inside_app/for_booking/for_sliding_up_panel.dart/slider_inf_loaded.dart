@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class Testons extends StatelessWidget {
   final ScrollController controller;
-  const Testons({Key? key, required this.controller}) : super(key: key);
+  const Testons({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {

@@ -6,11 +6,10 @@ class ProfileInfoBodyCard extends StatelessWidget {
   final Widget icon;
 
   const ProfileInfoBodyCard(
-      {Key? key,
+      {super.key,
       required this.firstText,
       required this.secondText,
-      required this.icon})
-      : super(key: key);
+      required this.icon});
 
   @override
   Widget build(BuildContext context) {

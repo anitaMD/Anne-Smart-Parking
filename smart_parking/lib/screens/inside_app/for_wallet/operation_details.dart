@@ -8,8 +8,9 @@ class ShowOperationDetails extends StatelessWidget {
   final String transactionType;
 
   const ShowOperationDetails(
-      {Key? key, required this.transactionData, required this.transactionType})
-      : super(key: key);
+      {super.key,
+      required this.transactionData,
+      required this.transactionType});
 
   @override
   Widget build(BuildContext context) {

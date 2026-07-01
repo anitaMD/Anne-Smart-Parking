@@ -13,11 +13,11 @@ class TestDashBoardPanel extends StatefulWidget {
   final Function(String carModelFromPanel, String carBrandFromPanel)
       updateDashboardCar;
   const TestDashBoardPanel({
-    Key? key,
+    super.key,
     required this.panelScrollController,
     required this.dragHandlePanelController,
     required this.updateDashboardCar,
-  }) : super(key: key);
+  });
 
   @override
   State<TestDashBoardPanel> createState() => _TestDashBoardPanelState();

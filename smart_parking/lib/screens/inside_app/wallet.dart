@@ -23,7 +23,7 @@ import 'package:screenshot/screenshot.dart';
 
 class Wallet extends StatefulWidget {
   final bool takescreenshot;
-  const Wallet({Key? key, required this.takescreenshot}) : super(key: key);
+  const Wallet({super.key, required this.takescreenshot});
 
   @override
   WalletState createState() => WalletState();

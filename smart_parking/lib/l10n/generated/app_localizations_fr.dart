@@ -106,7 +106,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get regEgaliteChancesDescription =>
-      'Cette carte vous concerne si vous avez une perte d\'autonomie importante (handicap) et vous permet de bénéficier de droits et avantages en matière de transport, d’accès aux soins de santé, de réadaptation, d’aide technique et financière, d’éducation, etc.Elle est délivrée par le Ministère chargé de l’Action sociale sur proposition des commissions techniques départementales.';
+      'Cette carte vous concerne si vous avez une perte d\'autonomie importante (handicap) et vous permet de bénéficier de droits et avantages en matière de transport, d’accès aux soins de santé, de réadaptation, d’aide technique et financière, d’éducation, etc. Elle est délivrée par le Ministère chargé de l’Action sociale sur proposition des commissions techniques départementales.';
 
   @override
   String get regNextButton => 'Suivant';
@@ -157,6 +157,71 @@ class AppLocalizationsFr extends AppLocalizations {
       'Veuillez soumettre de nouveau les parties recto et verso de votre carte!';
 
   @override
+  String get registerTitle => 'Créer un compte';
+
+  @override
+  String get registerCardStepTitle => 'Carte PMR';
+
+  @override
+  String get registerStepInfo => 'Infos';
+
+  @override
+  String get registerStepCard => 'Carte PMR';
+
+  @override
+  String get registerProfilePictureOptional => 'Photo de profil (optionnelle)';
+
+  @override
+  String get registerNameRequired => 'Nom requis';
+
+  @override
+  String get registerNameFull => 'Entrez votre prénom et nom';
+
+  @override
+  String get registerPhoneRequired => 'Numéro requis';
+
+  @override
+  String get registerPhoneTooShort => 'Numéro trop court';
+
+  @override
+  String get phoneInvalidNumber => 'Numéro de téléphone invalide.';
+
+  @override
+  String get phoneInvalidFormat => 'Format de numéro invalide.';
+
+  @override
+  String get registerPasswordUppercase => 'Au moins une majuscule';
+
+  @override
+  String get registerPasswordDigit => 'Au moins un chiffre';
+
+  @override
+  String get registerUploadCardTitle => 'Téléchargez votre carte';
+
+  @override
+  String get registerCardLooksLike => 'Votre carte ressemble à ceci :';
+
+  @override
+  String get registerCardRecto => 'Recto';
+
+  @override
+  String get registerCardVerso => 'Verso';
+
+  @override
+  String get registerSubmit => 'S\'inscrire';
+
+  @override
+  String get registerEmailAlreadyUsed => 'Cet email est déjà utilisé.';
+
+  @override
+  String get registerPhoneAlreadyUsed =>
+      'Ce numéro est déjà associé à un compte.';
+
+  @override
+  String get registerCardRequired =>
+      'Veuillez uploader le recto et le verso de votre carte.';
+
+  @override
   String get noParkingSpotSelected =>
       'Il semble que vous n\'avez pas sélectionné une place de parking. Il vous sera donc attribué une parmi celles présentement disponibles.';
 
@@ -165,4 +230,38 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get selectLanguage => 'Selectionner la langue par défaut.';
+
+  @override
+  String get loginWelcomeSubtitle => 'Connectez-vous pour continuer';
+
+  @override
+  String get loginEmailRequired => 'Email requis';
+
+  @override
+  String get loginEmailInvalid => 'Format email invalide';
+
+  @override
+  String get loginPasswordRequired => 'Mot de passe requis';
+
+  @override
+  String get loginPasswordMinLength => 'Minimum 8 caractères';
+
+  @override
+  String get loginWithGoogle => 'Continuer avec Google';
+
+  @override
+  String get loginResetEmailSent => 'Email de réinitialisation envoyé !';
+
+  @override
+  String get loginResetEmailRequired =>
+      'Entrez votre email pour réinitialiser votre mot de passe.';
+
+  @override
+  String get loginSignUp => 'S\'inscrire';
+
+  @override
+  String get connectivityOffline => 'Pas de connexion Internet';
+
+  @override
+  String get or => 'ou';
 }
