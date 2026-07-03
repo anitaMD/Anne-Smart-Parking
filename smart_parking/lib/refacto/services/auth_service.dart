@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 // ─────────────────────────────────────────────────────────────
 // INTERFACE
@@ -66,7 +65,6 @@ class AuthService implements AuthServiceBase {
         email: email.trim(),
         password: password,
       );
-      await _saveLoginState(true);
       return null;
     } on FirebaseAuthException catch (e) {
       return _handleAuthError(e);
@@ -85,7 +83,7 @@ class AuthService implements AuthServiceBase {
         email: email.trim(),
         password: password,
       );
-      await _saveLoginState(true);
+
       return (uid: credential.user?.uid, error: null);
     } on FirebaseAuthException catch (e) {
       return (uid: null, error: _handleAuthError(e));
@@ -124,7 +122,6 @@ class AuthService implements AuthServiceBase {
         debugPrint('[Auth] Vérification automatique Android');
         try {
           await _auth.signInWithCredential(credential);
-          await _saveLoginState(true);
           if (!completer.isCompleted) {
             completer.complete('AUTO_VERIFIED');
           }
@@ -180,13 +177,11 @@ class AuthService implements AuthServiceBase {
         // Cas 1 — INSCRIPTION : lier le téléphone au compte email
         debugPrint('[Auth] Liaison téléphone au compte existant');
         await _auth.currentUser!.linkWithCredential(credential);
-        await _saveLoginState(true);
         return (uid: _auth.currentUser!.uid, error: null);
       } else {
         // Cas 2 — CONNEXION : connexion par téléphone
         debugPrint('[Auth] Connexion par téléphone');
         final userCredential = await _auth.signInWithCredential(credential);
-        await _saveLoginState(true);
         return (uid: userCredential.user?.uid, error: null);
       }
     } on FirebaseAuthException catch (e) {
@@ -265,7 +260,6 @@ class AuthService implements AuthServiceBase {
   Future<void> signOut() async {
     try {
       await _auth.signOut();
-      await _saveLoginState(false);
     } catch (_) {}
   }
 
@@ -275,12 +269,6 @@ class AuthService implements AuthServiceBase {
   }
 
   // ── Helpers ───────────────────────────────────────────────
-
-  Future<void> _saveLoginState(bool isLoggedIn) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', !isLoggedIn);
-  }
-
   String _handleAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':

@@ -67,6 +67,10 @@ class AuthNotifier extends Notifier<AuthState> {
   AuthState build() {
     _authService = ref.read(authServiceProvider);
     _firestoreService = ref.read(firestoreServiceProvider);
+    // Si user déjà connecté au démarrage, charger le profil
+    if (_authService.currentUser != null) {
+      Future.microtask(() => _loadCurrentUser());
+    }
     return const AuthInitial();
   }
 

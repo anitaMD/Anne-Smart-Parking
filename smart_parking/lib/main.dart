@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -7,10 +8,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/l10n/generated/app_localizations.dart';
 import 'package:smart_parking/l10n/l10n.dart';
 import 'package:smart_parking/refacto/core/theme/app_theme.dart';
+import 'package:smart_parking/refacto/viewmodels/booking_viewmodel.dart';
+import 'package:smart_parking/refacto/viewmodels/parking_viewmodel.dart';
 import 'package:smart_parking/refacto/viewmodels/user_viewmodel.dart';
 import 'package:smart_parking/refacto/widgets/connectivity_wrapper.dart';
 import 'package:smart_parking/refacto/router/app_router.dart';
@@ -59,8 +61,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _firebaseInit;
 
-  final prefs = await SharedPreferences.getInstance();
-  final bool mustLogin = prefs.getBool('isLoggedIn') ?? true;
+  final user = await FirebaseAuth.instance.authStateChanges().first;
+  final bool mustLogin = user == null;
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -103,6 +105,8 @@ class YSPApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(userProvider); //DO NOT EVER DELETE THIS
+    ref.watch(parkingProvider); // ← ajouter
+    ref.watch(bookingProvider); // ← ajouter
 
     return GetMaterialApp(
       navigatorKey: navigatorKey,
