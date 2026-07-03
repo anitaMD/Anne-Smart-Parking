@@ -126,11 +126,10 @@ class FirestoreService implements FirestoreServiceBase {
   }
 
   @override
-  Stream<List<VehicleModel>> watchVehicles(String uid) => _users
-      .doc(uid)
-      .collection('vehicles')
-      .snapshots()
-      .map((s) => s.docs.map(VehicleModel.fromFirestore).toList());
+  Stream<List<VehicleModel>> watchVehicles(String uid) {
+    return _users.doc(uid).collection('vehicles').snapshots().map(
+        (snap) => snap.docs.map((d) => VehicleModel.fromFirestore(d)).toList());
+  }
 
   @override
   Future<String> addVehicle(String uid, VehicleModel vehicle) async {

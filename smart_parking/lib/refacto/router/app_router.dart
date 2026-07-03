@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_parking/refacto/screens/dashboard/add_vehicle_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/otp_screen.dart';
@@ -42,6 +43,9 @@ class AppRouter {
 
       case AppRoutes.homeBottomNav:
         return _fade(const HomeScreenDrawer());
+
+      case AppRoutes.addVehicle:
+        return _slide(const AddVehicleScreen());
 
       default:
         return _slide(const LoginScreen());
@@ -115,6 +119,7 @@ abstract class AppRoutes {
   static const String otp = '/otp';
   static const String home = '/home';
   static const String homeBottomNav = '/home-drawer';
+  static const String addVehicle = '/add-vehicle';
 }
 
 /// Arguments pour l'écran OTP

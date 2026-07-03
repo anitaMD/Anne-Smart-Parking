@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/constants/app_sizes.dart';
 
 /// Champ texte réutilisable YSP Smart Parking
@@ -12,11 +13,13 @@ class YspTextField extends StatelessWidget {
   final String hint;
   final IconData icon;
   final TextInputType keyboardType;
+  final TextCapitalization textCapitalization;
   final bool obscureText;
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
   final bool enabled;
+  final List<TextInputFormatter>? inputFormatters; // Ajouté
 
   const YspTextField({
     super.key,
@@ -25,11 +28,13 @@ class YspTextField extends StatelessWidget {
     required this.hint,
     required this.icon,
     this.keyboardType = TextInputType.text,
+    this.textCapitalization = TextCapitalization.none,
     this.obscureText = false,
     this.suffixIcon,
     this.validator,
     this.onChanged,
     this.enabled = true,
+    this.inputFormatters, // Ajouté
   });
 
   @override
@@ -51,6 +56,8 @@ class YspTextField extends StatelessWidget {
         enabled: enabled,
         onChanged: onChanged,
         validator: validator,
+        textCapitalization: textCapitalization,
+        inputFormatters: inputFormatters ?? [],
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,

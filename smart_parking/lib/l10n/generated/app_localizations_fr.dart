@@ -264,4 +264,76 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get or => 'ou';
+
+  @override
+  String get dashboardTitle => 'Dashboard';
+
+  @override
+  String get dashboardProfile => 'Profil';
+
+  @override
+  String get dashboardWallet => 'Wallet YSP';
+
+  @override
+  String get dashboardNotifications => 'Notifications';
+
+  @override
+  String get dashboardSettings => 'Paramètres';
+
+  @override
+  String get dashboardLogout => 'Déconnexion';
+
+  @override
+  String get dashboardHello => 'Bonjour';
+
+  @override
+  String get dashboardSubtitle => 'Trouvez et réservez votre place de parking';
+
+  @override
+  String get dashboardOngoingBooking => 'Réservation en cours';
+
+  @override
+  String get dashboardNearbyParkings => 'Parkings disponibles';
+
+  @override
+  String get dashboardNoParkings => 'Aucun parking disponible';
+
+  @override
+  String get dashboardNavigate => 'Naviguer';
+
+  @override
+  String get dashboardMyBookings => 'Mes réservations';
+
+  @override
+  String get dashboardSpot => 'Place';
+
+  @override
+  String get dashboardTimeLeft => 'Temps restant';
+
+  @override
+  String get walletYspCoin => 'YSP Coin';
+
+  @override
+  String get walletPortfolio => 'Portefeuille YSP';
+
+  @override
+  String get panelFavParkings => 'Mes Favoris';
+
+  @override
+  String get panelNoFavParkings => 'Aucun parking favori';
+
+  @override
+  String get dashboardDefaultVehicle => 'Véhicule par défaut';
+
+  @override
+  String get dashboardUpcomingBooking => 'Réservation à venir';
+
+  @override
+  String get dashboardNoBooking => 'Aucune réservation';
+
+  @override
+  String get dashboardNoBookingSubtitle => 'Appuyez pour voir les parkings';
+
+  @override
+  String get dashboardSwipeForParkings => '↑ Glissez pour voir les parkings';
 }

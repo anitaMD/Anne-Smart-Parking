@@ -18,7 +18,6 @@ import 'package:url_launcher/url_launcher.dart';
 /// remplacer par google_maps_flutter avec affichage natif
 /// de l'itinéraire dans l'app, sans quitter YSP.
 class MapsService {
-
   // ── Navigation vers un parking ────────────────────────────
 
   /// Ouvre l'app de navigation par défaut (Google Maps, Waze...)
@@ -30,11 +29,9 @@ class MapsService {
     String? parkingName,
   }) async {
     try {
-      if (parkingName != null) {
-        await MapsLauncher.launchQuery(parkingName);
-      } else {
-        await MapsLauncher.launchCoordinates(latitude, longitude);
-      }
+      // Toujours utiliser les coordonnées — le nom peut ne pas
+      // exister sur Google Maps (parkings privés/fictifs)
+      await MapsLauncher.launchCoordinates(latitude, longitude, parkingName);
       return true;
     } catch (_) {
       return false;
@@ -73,9 +70,8 @@ class MapsService {
     required double longitude,
     String? label,
   }) async {
-    final query = label != null
-        ? Uri.encodeComponent(label)
-        : '$latitude,$longitude';
+    final query =
+        label != null ? Uri.encodeComponent(label) : '$latitude,$longitude';
     final uri = Uri.parse(
       'https://www.google.com/maps/search/?api=1&query=$query',
     );

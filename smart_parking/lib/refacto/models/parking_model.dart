@@ -75,7 +75,7 @@ class ParkingModel {
 
 /// Informations sur les places à l'intérieur d'un parking
 ///
-/// Collection Firestore : locations/{parkingId}/spots/{docId}
+/// Collection Firestore : locations_v2/{parkingId}/spots/{docId}
 /// Champs :
 /// {
 ///   regularIds: string[]

@@ -589,6 +589,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'or'**
   String get or;
+
+  /// Dashboard section title
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get dashboardTitle;
+
+  /// Profile section
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get dashboardProfile;
+
+  /// Wallet section
+  ///
+  /// In en, this message translates to:
+  /// **'YSP Wallet'**
+  String get dashboardWallet;
+
+  /// Notifications section
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get dashboardNotifications;
+
+  /// Settings section
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get dashboardSettings;
+
+  /// Logout button
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get dashboardLogout;
+
+  /// Greeting on dashboard
+  ///
+  /// In en, this message translates to:
+  /// **'Hello'**
+  String get dashboardHello;
+
+  /// Dashboard subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Find and book your parking spot'**
+  String get dashboardSubtitle;
+
+  /// Ongoing booking section
+  ///
+  /// In en, this message translates to:
+  /// **'Ongoing booking'**
+  String get dashboardOngoingBooking;
+
+  /// Nearby parkings section
+  ///
+  /// In en, this message translates to:
+  /// **'Available parkings'**
+  String get dashboardNearbyParkings;
+
+  /// No parkings available
+  ///
+  /// In en, this message translates to:
+  /// **'No parking available'**
+  String get dashboardNoParkings;
+
+  /// Navigate button
+  ///
+  /// In en, this message translates to:
+  /// **'Navigate'**
+  String get dashboardNavigate;
+
+  /// My bookings section
+  ///
+  /// In en, this message translates to:
+  /// **'My bookings'**
+  String get dashboardMyBookings;
+
+  /// Parking spot label
+  ///
+  /// In en, this message translates to:
+  /// **'Spot'**
+  String get dashboardSpot;
+
+  /// Time left label
+  ///
+  /// In en, this message translates to:
+  /// **'Time left'**
+  String get dashboardTimeLeft;
+
+  /// Wallet coin name
+  ///
+  /// In en, this message translates to:
+  /// **'YSP Coin'**
+  String get walletYspCoin;
+
+  /// Wallet portfolio label
+  ///
+  /// In en, this message translates to:
+  /// **'YSP Wallet'**
+  String get walletPortfolio;
+
+  /// Favorite parkings tab
+  ///
+  /// In en, this message translates to:
+  /// **'My Favourites'**
+  String get panelFavParkings;
+
+  /// No favorite parkings
+  ///
+  /// In en, this message translates to:
+  /// **'No favourite parking yet'**
+  String get panelNoFavParkings;
+
+  /// Default vehicle section
+  ///
+  /// In en, this message translates to:
+  /// **'Default vehicle'**
+  String get dashboardDefaultVehicle;
+
+  /// Upcoming booking
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming booking'**
+  String get dashboardUpcomingBooking;
+
+  /// No booking title
+  ///
+  /// In en, this message translates to:
+  /// **'No booking yet'**
+  String get dashboardNoBooking;
+
+  /// No booking subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see available parkings'**
+  String get dashboardNoBookingSubtitle;
+
+  /// Swipe hint on map
+  ///
+  /// In en, this message translates to:
+  /// **'↑ Swipe up to see parkings'**
+  String get dashboardSwipeForParkings;
 }
 
 class _AppLocalizationsDelegate

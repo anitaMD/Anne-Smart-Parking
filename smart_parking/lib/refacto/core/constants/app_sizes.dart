@@ -59,4 +59,23 @@ abstract class AppSizes {
 
   // ── Bannière connectivité ─────────────────────────────────
   static const double connectivityBannerHeight = 32.0;
+
+  // ── License Plate ─────────────────────────────────
+  // Standard
+  static const double plateHeight = 110.0;
+  static const double plateBandWidth = 58.0;
+  static const double plateFontSize = 34.0;
+  static const double plateSmallFontSize = 14.0;
+  static const double plateLogoSize = 30.0;
+  static const double plateFlagHeight = 18.0;
+  static const double plateBorderRadius = 10.0;
+  static const double plateSelectionBarWidth = 5.0;
+
+// Compact
+  static const double plateCompactHeight = 80.0;
+  static const double plateCompactBandWidth = 44.0;
+  static const double plateCompactFontSize = 22.0;
+  static const double plateCompactSmallFontSize = 10.0;
+  static const double plateCompactLogoSize = 18.0;
+  static const double plateCompactFlagHeight = 16.0;
 }

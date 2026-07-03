@@ -260,4 +260,76 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get or => 'or';
+
+  @override
+  String get dashboardTitle => 'Dashboard';
+
+  @override
+  String get dashboardProfile => 'Profile';
+
+  @override
+  String get dashboardWallet => 'YSP Wallet';
+
+  @override
+  String get dashboardNotifications => 'Notifications';
+
+  @override
+  String get dashboardSettings => 'Settings';
+
+  @override
+  String get dashboardLogout => 'Logout';
+
+  @override
+  String get dashboardHello => 'Hello';
+
+  @override
+  String get dashboardSubtitle => 'Find and book your parking spot';
+
+  @override
+  String get dashboardOngoingBooking => 'Ongoing booking';
+
+  @override
+  String get dashboardNearbyParkings => 'Available parkings';
+
+  @override
+  String get dashboardNoParkings => 'No parking available';
+
+  @override
+  String get dashboardNavigate => 'Navigate';
+
+  @override
+  String get dashboardMyBookings => 'My bookings';
+
+  @override
+  String get dashboardSpot => 'Spot';
+
+  @override
+  String get dashboardTimeLeft => 'Time left';
+
+  @override
+  String get walletYspCoin => 'YSP Coin';
+
+  @override
+  String get walletPortfolio => 'YSP Wallet';
+
+  @override
+  String get panelFavParkings => 'My Favourites';
+
+  @override
+  String get panelNoFavParkings => 'No favourite parking yet';
+
+  @override
+  String get dashboardDefaultVehicle => 'Default vehicle';
+
+  @override
+  String get dashboardUpcomingBooking => 'Upcoming booking';
+
+  @override
+  String get dashboardNoBooking => 'No booking yet';
+
+  @override
+  String get dashboardNoBookingSubtitle => 'Tap to see available parkings';
+
+  @override
+  String get dashboardSwipeForParkings => '↑ Swipe up to see parkings';
 }
