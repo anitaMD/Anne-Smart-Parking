@@ -29,9 +29,6 @@ class LicensePlateWidget extends StatelessWidget {
 
     final plateFont =
         compact ? AppSizes.plateCompactFontSize : AppSizes.plateFontSize;
-    final smallFont = compact
-        ? AppSizes.plateCompactSmallFontSize
-        : AppSizes.plateSmallFontSize;
 
     final logoSize =
         compact ? AppSizes.plateCompactLogoSize : AppSizes.plateLogoSize;

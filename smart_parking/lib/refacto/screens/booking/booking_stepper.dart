@@ -7,9 +7,7 @@ import 'package:time_range_picker/time_range_picker.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../models/parking_model.dart';
-import '../../models/parking_spot_model.dart';
 import '../../models/vehicle_model.dart';
-import '../../services/firestore_service.dart';
 import '../../viewmodels/parking_viewmodel.dart';
 import '../../viewmodels/user_viewmodel.dart';
 import '../../widgets/license_plate_widget.dart';
@@ -56,7 +54,14 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
   @override
   void initState() {
     super.initState();
-    _displayMonth = DateTime.now();
+    _displayMonth = widget.selectedDate ?? DateTime.now();
+    debugPrint('[Step1] initState — slot: ${widget.selectedSlot}');
+
+    // Si créneau déjà sélectionné (mode édition) → charger la dispo
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('[Step1] postFrameCallback fired');
+      _refreshOccupied();
+    });
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _showSlideHintIfNeeded());
   }
@@ -102,15 +107,15 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
   }
 
   // ── Refresh occupied spots ────────────────────────────────
-
-  Future<void> _refreshOccupied() async {
-    if (widget.selectedDate == null || widget.selectedSlot == null) return;
+  Future<void> _refreshOccupied({DateTime? overrideDate}) async {
+    final date = overrideDate ?? widget.selectedDate;
+    if (date == null || widget.selectedSlot == null) return;
 
     final parts = widget.selectedSlot!.split(':');
     final bookingStart = DateTime(
-      widget.selectedDate!.year,
-      widget.selectedDate!.month,
-      widget.selectedDate!.day,
+      date.year,
+      date.month,
+      date.day,
       int.parse(parts[0]),
       int.parse(parts[1]),
     );
@@ -119,12 +124,15 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
 
     setState(() => _isLoadingOccupied = true);
     try {
+      debugPrint(
+          '[Step1] calling getOccupiedSpotIds parkingId=${widget.parking.id}');
       final fs = ref.read(firestoreServiceProvider);
       final occupied = await fs.getOccupiedSpotIds(
         parkingId: widget.parking.id,
         bookingStart: bookingStart,
         bookingEnd: bookingEnd,
       );
+      debugPrint('[Step1] occupied: $occupied');
       if (mounted) {
         setState(() {
           _occupiedByBooking = occupied;
@@ -132,6 +140,9 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
         });
       }
     } catch (e) {
+      if (mounted) setState(() => _isLoadingOccupied = false);
+      debugPrint('[BookingStep1] refresh error: $e');
+    } finally {
       if (mounted) setState(() => _isLoadingOccupied = false);
     }
   }
@@ -316,7 +327,8 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
             displayMonth: _displayMonth,
             onDateSelected: (date) {
               widget.onDateChanged(date);
-              Future.microtask(_refreshOccupied);
+              widget.onDateChanged(date);
+              _refreshOccupied(overrideDate: date);
             },
             onMonthChanged: (m) => setState(() => _displayMonth = m),
           ),
@@ -367,18 +379,35 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
               ]),
             )
           else
-            _SpotGrid(
-              spots: spots,
-              selectedSpotId: widget.selectedSpotId,
-              occupiedByBooking: _occupiedByBooking,
-              isPMR: isPMR,
-              onSpotTapped: (id) {
-                if (widget.selectedSpotId == id) {
-                  widget.onSpotChanged(null);
-                } else {
-                  widget.onSpotChanged(id);
-                }
-              },
+            Stack(
+              children: [
+                _SpotGrid(
+                  spots: spots,
+                  selectedSpotId: widget.selectedSpotId,
+                  occupiedByBooking: _occupiedByBooking,
+                  isPMR: isPMR,
+                  onSpotTapped: (id) {
+                    if (widget.selectedSpotId == id) {
+                      widget.onSpotChanged(null);
+                      debugPrint(
+                          '[Step1] finally — setting isLoadingOccupied=false');
+                    } else {
+                      widget.onSpotChanged(id);
+                      debugPrint(
+                          '[Step1] maguy — setting isLoadingOccupied=false');
+                    }
+                  },
+                ),
+                if (_isLoadingOccupied)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  ),
+              ],
             ),
 
           if (widget.selectedSpotId != null) ...[
@@ -914,7 +943,7 @@ class _SpotTile extends StatelessWidget {
     // ── COLORS (for subtle accents only) ─────────────
     final Color accentColor;
     if (isSelected) {
-      accentColor = AppColors.primary;
+      accentColor = AppColors.textPrimary;
     } else if (isPhysOccupied) {
       accentColor = AppColors.error;
     } else if (isBookedForSlot) {
@@ -994,7 +1023,7 @@ class _SpotTile extends StatelessWidget {
                 Text(
                   'Occupée',
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 11,
                     color: AppColors.error.withValues(alpha: 0.8),
                   ),
                 )
@@ -1002,7 +1031,7 @@ class _SpotTile extends StatelessWidget {
                 Text(
                   'Réservée',
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 11,
                     color: AppColors.warning.withValues(alpha: 0.8),
                   ),
                 )
@@ -1010,7 +1039,7 @@ class _SpotTile extends StatelessWidget {
                 Text(
                   'PMR',
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 11,
                     color: AppColors.info.withValues(alpha: 0.8),
                   ),
                 ),

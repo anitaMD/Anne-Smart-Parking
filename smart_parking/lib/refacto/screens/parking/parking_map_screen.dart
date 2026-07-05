@@ -7,8 +7,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:smart_parking/refacto/screens/booking/booking_screen_merge.dart';
-import 'package:smart_parking/refacto/screens/booking/inside_parking_with_options.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../models/booking_model.dart';
@@ -301,7 +299,6 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final parkingState = ref.watch(parkingProvider);
     final filtered = _filteredParkings;
 
     return Scaffold(

@@ -344,7 +344,7 @@
   "@dashboardHello": { "description": "Greeting on dashboard" },
   "dashboardSubtitle": "Find and book your parking spot",
   "@dashboardSubtitle": { "description": "Dashboard subtitle" },
-  "dashboardOngoingBooking": "Ongoing booking",
+  "dashboardOngoingBooking": "Bookings",
   "@dashboardOngoingBooking": { "description": "Ongoing booking section" },
   "dashboardNearbyParkings": "Available parkings",
   "@dashboardNearbyParkings": { "description": "Nearby parkings section" },

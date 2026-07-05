@@ -47,6 +47,8 @@ abstract class FirestoreServiceBase {
   Future<void> updateBookingStatus(String bookingId, BookingStatus status);
   Future<void> archiveBooking(String bookingId);
   Future<void> updateVehicleStatus(String bookingId, VehicleStatus status);
+  Future<void> updateBookingFields(
+      String bookingId, Map<String, dynamic> fields);
 
   // Wallet
   Future<WalletModel?> getWallet(String uid);
@@ -214,12 +216,14 @@ class FirestoreService implements FirestoreServiceBase {
     required DateTime bookingStart,
     required DateTime bookingEnd,
   }) async {
+    // Un seul range filter → pas besoin d'index composite
     final snap = await _bookings
         .where('parkingId', isEqualTo: parkingId)
-        .where('status', whereNotIn: ['canceled', 'archived'])
+        .where('status', whereNotIn: ['canceled'])
         .where('bookingStart', isLessThan: Timestamp.fromDate(bookingEnd))
         .get();
 
+    // Filtrer le second range côté Dart
     return snap.docs
         .where((doc) {
           final end = (doc['bookingEnd'] as Timestamp).toDate();
@@ -268,6 +272,12 @@ class FirestoreService implements FirestoreServiceBase {
   Future<void> updateVehicleStatus(
           String bookingId, VehicleStatus status) async =>
       await _bookings.doc(bookingId).update({'vehicleStatus': status.name});
+
+  @override
+  Future<void> updateBookingFields(
+      String bookingId, Map<String, dynamic> fields) async {
+    await _bookings.doc(bookingId).update(fields);
+  }
 
   // ── Wallet ────────────────────────────────────────────────
   @override

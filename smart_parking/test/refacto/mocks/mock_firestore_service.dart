@@ -103,4 +103,11 @@ class MockFirestoreService implements FirestoreServiceBase {
     // TODO: implement getOccupiedSpotIds
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> updateBookingFields(
+      String bookingId, Map<String, dynamic> fields) {
+    // TODO: implement updateBookingFields
+    throw UnimplementedError();
+  }
 }

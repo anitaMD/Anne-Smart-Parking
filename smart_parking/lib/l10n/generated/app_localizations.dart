@@ -641,7 +641,7 @@ abstract class AppLocalizations {
   /// Ongoing booking section
   ///
   /// In en, this message translates to:
-  /// **'Ongoing booking'**
+  /// **'Bookings'**
   String get dashboardOngoingBooking;
 
   /// Nearby parkings section

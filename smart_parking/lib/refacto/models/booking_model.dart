@@ -6,23 +6,38 @@ enum BookingStatus { upcoming, ongoing, completed, canceled }
 /// État physique du véhicule
 enum VehicleStatus { notYetParked, parked, gone }
 
+/// Entrée dans l'historique des modifications
+class BookingEdit {
+  final DateTime editedAt;
+  final String field;
+  final String oldValue;
+  final String newValue;
+
+  const BookingEdit({
+    required this.editedAt,
+    required this.field,
+    required this.oldValue,
+    required this.newValue,
+  });
+
+  factory BookingEdit.fromMap(Map<String, dynamic> map) => BookingEdit(
+        editedAt: (map['editedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        field: map['field'] as String? ?? '',
+        oldValue: map['oldValue'] as String? ?? '',
+        newValue: map['newValue'] as String? ?? '',
+      );
+
+  Map<String, dynamic> toMap() => {
+        'editedAt': Timestamp.fromDate(editedAt),
+        'field': field,
+        'oldValue': oldValue,
+        'newValue': newValue,
+      };
+}
+
 /// Modèle réservation YSP Smart Parking
 ///
-/// Collection Firestore : slotsReservations/{bookingId}
-/// Champs :
-/// {
-///   clientId: string
-///   parkingId: string
-///   spotId: string
-///   vehicleId: string
-///   bookingStart: timestamp
-///   bookingEnd: timestamp
-///   totalCost: int       (en SPM)
-///   status: string       ("upcoming|ongoing|completed|canceled")
-///   vehicleStatus: string ("notYetParked|parked|gone")
-///   isArchived: bool
-///   createdAt: timestamp
-/// }
+/// Collection Firestore : slotsReservations_v2/{bookingId}
 class BookingModel {
   final String id;
   final String clientId;
@@ -37,6 +52,13 @@ class BookingModel {
   final bool isArchived;
   final DateTime? createdAt;
 
+  // Nouveaux champs
+  final DateTime? canceledAt;
+  final DateTime? completedAt;
+  final DateTime? vehicleArrivedAt;
+  final DateTime? vehicleDepartedAt;
+  final List<BookingEdit> editHistory;
+
   const BookingModel({
     required this.id,
     required this.clientId,
@@ -50,6 +72,11 @@ class BookingModel {
     this.vehicleStatus = VehicleStatus.notYetParked,
     this.isArchived = false,
     this.createdAt,
+    this.canceledAt,
+    this.completedAt,
+    this.vehicleArrivedAt,
+    this.vehicleDepartedAt,
+    this.editHistory = const [],
   });
 
   factory BookingModel.fromFirestore(DocumentSnapshot doc) {
@@ -75,6 +102,13 @@ class BookingModel {
       ),
       isArchived: data['isArchived'] as bool? ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+      canceledAt: (data['canceledAt'] as Timestamp?)?.toDate(),
+      completedAt: (data['completedAt'] as Timestamp?)?.toDate(),
+      vehicleArrivedAt: (data['vehicleArrivedAt'] as Timestamp?)?.toDate(),
+      vehicleDepartedAt: (data['vehicleDepartedAt'] as Timestamp?)?.toDate(),
+      editHistory: (data['editHistory'] as List<dynamic>? ?? [])
+          .map((e) => BookingEdit.fromMap(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 
@@ -90,28 +124,43 @@ class BookingModel {
         'vehicleStatus': vehicleStatus.name,
         'isArchived': isArchived,
         'createdAt': FieldValue.serverTimestamp(),
+        'editHistory': editHistory.map((e) => e.toMap()).toList(),
       };
 
   BookingModel copyWith({
+    String? spotId,
+    DateTime? bookingStart,
+    DateTime? bookingEnd,
     BookingStatus? status,
     VehicleStatus? vehicleStatus,
     bool? isArchived,
+    DateTime? canceledAt,
+    DateTime? completedAt,
+    DateTime? vehicleArrivedAt,
+    DateTime? vehicleDepartedAt,
+    List<BookingEdit>? editHistory,
   }) =>
       BookingModel(
         id: id,
         clientId: clientId,
         parkingId: parkingId,
-        spotId: spotId,
+        spotId: spotId ?? this.spotId,
         vehicleId: vehicleId,
-        bookingStart: bookingStart,
-        bookingEnd: bookingEnd,
+        bookingStart: bookingStart ?? this.bookingStart,
+        bookingEnd: bookingEnd ?? this.bookingEnd,
         totalCost: totalCost,
         status: status ?? this.status,
         vehicleStatus: vehicleStatus ?? this.vehicleStatus,
         isArchived: isArchived ?? this.isArchived,
         createdAt: createdAt,
+        canceledAt: canceledAt ?? this.canceledAt,
+        completedAt: completedAt ?? this.completedAt,
+        vehicleArrivedAt: vehicleArrivedAt ?? this.vehicleArrivedAt,
+        vehicleDepartedAt: vehicleDepartedAt ?? this.vehicleDepartedAt,
+        editHistory: editHistory ?? this.editHistory,
       );
 
+  // Computed
   int get durationMinutes => bookingEnd.difference(bookingStart).inMinutes;
   int get secondsUntilStart =>
       bookingStart.difference(DateTime.now()).inSeconds;
@@ -120,8 +169,10 @@ class BookingModel {
     final now = DateTime.now();
     return now.isAfter(bookingStart) && now.isBefore(bookingEnd);
   }
+
   bool get isExpired => DateTime.now().isAfter(bookingEnd);
   bool get hasNotStarted => DateTime.now().isBefore(bookingStart);
+  bool get wasEdited => editHistory.isNotEmpty;
 
   @override
   String toString() =>

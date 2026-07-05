@@ -28,15 +28,15 @@ class ParkingSpotModel {
     required String spotId,
     required List<String> availableIds,
     required List<String> bookedIds,
-    required List<String> occupiedFromRealIds,
     required List<String> occupiedFromWalkInIds,
+    required List<String> occupiedFromBookingIds,
     required List<String> specialIds,
   }) {
     final isSpecial = specialIds.contains(spotId);
     SpotState state;
 
-    if (occupiedFromRealIds.contains(spotId) ||
-        occupiedFromWalkInIds.contains(spotId)) {
+    if (occupiedFromWalkInIds.contains(spotId) ||
+        occupiedFromBookingIds.contains(spotId)) {
       state = SpotState.occupied;
     } else if (bookedIds.contains(spotId)) {
       state = SpotState.reserved;
@@ -112,8 +112,8 @@ List<ParkingSpotModel> buildSpotList({
   required List<String> specialIds,
   required List<String> availableIds,
   required List<String> bookedIds,
-  required List<String> occupiedFromRealIds,
   required List<String> occupiedFromWalkInIds,
+  required List<String> occupiedFromBookingIds,
 }) {
   final allIds = [...regularIds, ...specialIds];
   return allIds
@@ -121,8 +121,8 @@ List<ParkingSpotModel> buildSpotList({
             spotId: spotId,
             availableIds: availableIds,
             bookedIds: bookedIds,
-            occupiedFromRealIds: occupiedFromRealIds,
             occupiedFromWalkInIds: occupiedFromWalkInIds,
+            occupiedFromBookingIds: occupiedFromBookingIds,
             specialIds: specialIds,
           ))
       .toList()
