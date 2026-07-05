@@ -1,8 +1,11 @@
 import 'package:circular_countdown_timer/circular_countdown_timer.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_parking/l10n/generated/app_localizations.dart';
 import 'package:smart_parking/refacto/models/vehicle_model.dart';
+import 'package:smart_parking/refacto/screens/booking/booking_history_screen.dart';
+import 'package:smart_parking/refacto/screens/booking/booking_screen.dart';
 import 'package:smart_parking/refacto/screens/dashboard/add_vehicle_screen.dart';
 import 'package:smart_parking/refacto/screens/parking/parking_map_screen.dart';
 import 'package:smart_parking/refacto/widgets/empty_state_card_widget.dart';
@@ -248,6 +251,10 @@ class _DashboardBody extends ConsumerWidget {
     final userState = ref.watch(userProvider);
     final parkingState = ref.watch(parkingProvider);
     final bookingState = ref.watch(bookingProvider);
+    final hasCurrentReservation =
+        bookingState.hasOngoing || bookingState.upcomingBookings.isNotEmpty;
+
+    final hasReservationHistory = bookingState.bookings.isNotEmpty;
 
     if (userState.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -292,11 +299,26 @@ class _DashboardBody extends ConsumerWidget {
             // ── Réservation en cours ──────────────────────
             _SectionHeader(
               title: l10n.dashboardOngoingBooking,
-              actionLabel: 'Voir la carte',
-              onAction: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ParkingMapScreen()),
-              ),
+              actionLabel: hasCurrentReservation
+                  ? 'Voir carte'
+                  : hasReservationHistory
+                      ? 'Voir tout'
+                      : null,
+              onAction: hasCurrentReservation
+                  ? () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ParkingMapScreen(),
+                        ),
+                      )
+                  : hasReservationHistory
+                      ? () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const BookingHistoryScreen(),
+                            ),
+                          )
+                      : null,
             ),
             const SizedBox(height: AppSizes.spaceS),
             if (bookingState.hasOngoing)
@@ -323,7 +345,7 @@ class _DashboardBody extends ConsumerWidget {
             // ── Véhicule actuel ───────────────────────────
             _SectionHeader(
               title: 'Véhicule actuel',
-              actionLabel: userState.hasVehicles ? 'Voir tous' : null,
+              actionLabel: userState.hasVehicles ? 'Voir tout' : null,
               onAction: userState.hasVehicles
                   ? () => _showVehicleSelector(context, ref, userState.vehicles)
                   : () => Navigator.push(
@@ -778,7 +800,7 @@ class _FavParkingCardState extends ConsumerState<_FavParkingCard> {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                 ),
-                child: Text('$count réservations',
+                child: Text('$count rés',
                     style: const TextStyle(
                         fontSize: 9,
                         color: AppColors.primary,
@@ -905,99 +927,257 @@ class _FavParkingCardState extends ConsumerState<_FavParkingCard> {
 // COUNTDOWN CARD
 // ─────────────────────────────────────────────────────────────
 
-class _CountdownCard extends StatefulWidget {
+class _CountdownCard extends ConsumerStatefulWidget {
   final BookingModel booking;
   final bool isOngoing;
   const _CountdownCard({required this.booking, required this.isOngoing});
 
   @override
-  State<_CountdownCard> createState() => _CountdownCardState();
+  ConsumerState<_CountdownCard> createState() => _CountdownCardState();
 }
 
-class _CountdownCardState extends State<_CountdownCard> {
+class _CountdownCardState extends ConsumerState<_CountdownCard> {
   final CountDownController _controller = CountDownController();
+
+  String get _statusLabel {
+    if (widget.booking.isOngoing) return 'EN COURS';
+    if (widget.booking.secondsUntilStart < 0) return 'EN RETARD';
+    return 'À VENIR';
+  }
+
+  Color get _statusColor {
+    if (widget.booking.isOngoing) return AppColors.success;
+    if (widget.booking.secondsUntilStart < 0) return AppColors.error;
+    if (widget.booking.secondsUntilStart > 0) return AppColors.info;
+    return AppColors.warning;
+  }
+
+  String _fmt(DateTime dt) => DateFormat('HH:mm').format(dt);
+  String _fmtDate(DateTime dt) => DateFormat('EEE d MMM', 'fr').format(dt);
+
+  String get _duration {
+    final mins = widget.booking.bookingEnd
+        .difference(widget.booking.bookingStart)
+        .inMinutes;
+    final h = mins ~/ 60;
+    final m = mins % 60;
+    return m == 0 ? '${h}h' : '${h}h${m}min';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     final seconds = widget.isOngoing
         ? widget.booking.secondsUntilEnd
-        : widget.booking.secondsUntilStart;
-    final color = widget.isOngoing ? AppColors.success : AppColors.warning;
-    final label =
-        widget.isOngoing ? l10n.dashboardOngoingBooking : 'Réservation à venir';
+        : widget.booking.secondsUntilStart.abs();
+    final color = _statusColor;
+
+    // Get parking name from provider
+    final parkings = ref.watch(parkingProvider).parkings;
+    final parking = parkings.firstWhere(
+      (p) => p.id == widget.booking.parkingId,
+      orElse: () => parkings.first,
+    );
+    final parkingName = parking.name;
 
     return Container(
       padding: const EdgeInsets.all(AppSizes.spaceL),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withValues(alpha: 0.8), color],
+          colors: [color, color.withValues(alpha: 0.75)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: color.withValues(alpha: 0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircularCountDownTimer(
-            duration: seconds > 0 ? seconds : 1,
-            initialDuration: 0,
-            controller: _controller,
-            width: 80,
-            height: 80,
-            ringColor: Colors.white.withValues(alpha: 0.3),
-            fillColor: Colors.white,
-            backgroundColor: Colors.transparent,
-            strokeWidth: 6,
-            strokeCap: StrokeCap.round,
-            textStyle: const TextStyle(
-                fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
-            textFormat: CountdownTextFormat.HH_MM_SS,
-            isReverse: true,
-            isReverseAnimation: true,
-            autoStart: true,
-          ),
-          const SizedBox(width: AppSizes.spaceL),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
+          // Status badge + parking name
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.spaceS, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+                ),
+                child: Text(_statusLabel,
                     style: const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16)),
-                const SizedBox(height: AppSizes.spaceXS),
-                Row(children: [
-                  const Icon(Icons.local_parking,
-                      color: Colors.white70, size: 14),
-                  const SizedBox(width: 4),
-                  Text('${l10n.dashboardSpot}: ${widget.booking.spotId}',
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 13)),
-                ]),
-                const SizedBox(height: 4),
-                Row(children: [
-                  const Icon(Icons.monetization_on,
-                      color: Colors.white70, size: 14),
-                  const SizedBox(width: 4),
-                  Text('${widget.booking.totalCost} SPM',
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 13)),
-                ]),
-              ],
-            ),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1)),
+              ),
+              const SizedBox(width: AppSizes.spaceS),
+              Expanded(
+                child: Text(
+                  parkingName,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // Icône Modifier
+              GestureDetector(
+                onTap: () => _onEditBooking(context, widget.booking),
+                child: const Icon(
+                  Icons.edit_outlined,
+                  color: Colors.white70,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Icône Annuler
+              GestureDetector(
+                onTap: () => _onCancelBooking(context, widget.booking),
+                child: const Icon(
+                  Icons.close_outlined,
+                  color: Colors.white70,
+                  size: 18,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.spaceM),
+
+          // Countdown + infos
+          Row(
+            children: [
+              CircularCountDownTimer(
+                duration: seconds > 0 ? seconds : 1,
+                initialDuration: 0,
+                controller: _controller,
+                width: 88,
+                height: 88,
+                ringColor: Colors.white.withValues(alpha: 0.25),
+                fillColor: Colors.white,
+                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                strokeWidth: 5,
+                strokeCap: StrokeCap.round,
+                textStyle: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900),
+                textFormat: CountdownTextFormat.HH_MM_SS,
+                isReverse: true,
+                isReverseAnimation: true,
+                autoStart: true,
+              ),
+              const SizedBox(width: AppSizes.spaceL),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Date
+                    _InfoRow(
+                      icon: Icons.calendar_today_outlined,
+                      text: _fmtDate(widget.booking.bookingStart),
+                      bold: true,
+                    ),
+                    const SizedBox(height: AppSizes.spaceXS),
+                    // Horaires
+                    _InfoRow(
+                      icon: Icons.schedule_outlined,
+                      text:
+                          '${_fmt(widget.booking.bookingStart)} ~ ${_fmt(widget.booking.bookingEnd)} [$_duration]',
+                    ),
+                    const SizedBox(height: AppSizes.spaceXS),
+                    // Place
+                    _InfoRow(
+                      icon: Icons.local_parking,
+                      text: 'Place ${widget.booking.spotId}',
+                    ),
+                    const SizedBox(height: AppSizes.spaceXS),
+                    // Coût
+                    _InfoRow(
+                      icon: Icons.monetization_on_outlined,
+                      text: '${widget.booking.totalCost} SPM',
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  void _onEditBooking(BuildContext context, BookingModel booking) {
+    final parkings = ref.read(parkingProvider).parkings;
+    final parking = parkings.firstWhere(
+      (p) => p.id == booking.parkingId,
+      orElse: () => parkings.first,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookingScreen(
+          parking: parking,
+          existingBooking: booking,
+        ),
+      ),
+    );
+  }
+
+  void _onCancelBooking(BuildContext context, BookingModel booking) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Annuler la réservation ?'),
+        content: Text(
+            'Voulez-vous vraiment annuler la réservation pour la place ${booking.spotId} ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Non'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Appeler la méthode d'annulation
+              ref.read(bookingProvider.notifier).cancelBooking(booking.id);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Oui, annuler'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final bool bold;
+  const _InfoRow({required this.icon, required this.text, this.bold = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      Icon(icon, color: Colors.white, size: 13),
+      const SizedBox(width: 5),
+      Expanded(
+        child: Text(text,
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: bold ? FontWeight.bold : FontWeight.w500),
+            overflow: TextOverflow.ellipsis),
+      ),
+    ]);
   }
 }
 

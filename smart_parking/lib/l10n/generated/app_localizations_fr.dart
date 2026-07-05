@@ -290,7 +290,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get dashboardSubtitle => 'Trouvez et réservez votre place de parking';
 
   @override
-  String get dashboardOngoingBooking => 'Réservation en cours';
+  String get dashboardOngoingBooking => 'Réservations';
 
   @override
   String get dashboardNearbyParkings => 'Parkings disponibles';

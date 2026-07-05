@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/booking_model.dart';
@@ -113,11 +114,11 @@ class BookingNotifier extends Notifier<BookingState> {
       createdAt: DateTime.now(),
     );
 
-    // Créer dans Firestore
+    // 1. Créer la réservation
     final bookingId = await _firestoreService.createBooking(booking);
     debugPrint('[Booking] Créée : $bookingId');
 
-    // Débiter le wallet
+    // 2. Débiter le wallet
     final userState = ref.read(userProvider);
     final wallet = userState.wallet;
     if (wallet != null) {
@@ -134,22 +135,76 @@ class BookingNotifier extends Notifier<BookingState> {
       );
     }
 
-    // Recharger les réservations
+    // 3. Recharger les réservations
     await loadBookings(clientId);
+    await ref.read(userProvider.notifier).loadUserData(clientId);
   }
-
   // ── Annuler ───────────────────────────────────────────────
+
+  // ── Annuler — sans remboursement ──────────────────────────
 
   Future<void> cancelBooking(String bookingId) async {
     try {
-      await _firestoreService.updateBookingStatus(
-          bookingId, BookingStatus.canceled);
-      await _firestoreService.archiveBooking(bookingId);
+      await _firestoreService.updateBookingFields(bookingId, {
+        'status': BookingStatus.canceled.name,
+        'isArchived': true,
+        'canceledAt': FieldValue.serverTimestamp(),
+      });
       final updated = state.bookings.where((b) => b.id != bookingId).toList();
       state = state.copyWith(bookings: updated);
+      debugPrint('[Booking] Annulée : $bookingId');
     } catch (e) {
       debugPrint('[Booking] cancelBooking error: $e');
     }
+  }
+
+// ── Éditer — heure ou place ───────────────────────────────
+
+  Future<void> editBooking({
+    required BookingModel booking,
+    required DateTime newStart,
+    required DateTime newEnd,
+    required String newSpotId,
+  }) async {
+    final edits = <BookingEdit>[];
+
+    if (newStart != booking.bookingStart) {
+      edits.add(BookingEdit(
+        editedAt: DateTime.now(),
+        field: 'bookingStart',
+        oldValue: booking.bookingStart.toIso8601String(),
+        newValue: newStart.toIso8601String(),
+      ));
+    }
+    if (newEnd != booking.bookingEnd) {
+      edits.add(BookingEdit(
+        editedAt: DateTime.now(),
+        field: 'bookingEnd',
+        oldValue: booking.bookingEnd.toIso8601String(),
+        newValue: newEnd.toIso8601String(),
+      ));
+    }
+    if (newSpotId != booking.spotId) {
+      edits.add(BookingEdit(
+        editedAt: DateTime.now(),
+        field: 'spotId',
+        oldValue: booking.spotId,
+        newValue: newSpotId,
+      ));
+    }
+
+    if (edits.isEmpty) return;
+
+    await _firestoreService.updateBookingFields(booking.id, {
+      'bookingStart': Timestamp.fromDate(newStart),
+      'bookingEnd': Timestamp.fromDate(newEnd),
+      'spotId': newSpotId,
+      'editHistory':
+          FieldValue.arrayUnion(edits.map((e) => e.toMap()).toList()),
+    });
+
+    await loadBookings(booking.clientId);
+    debugPrint('[Booking] Éditée : ${booking.id}');
   }
 }
 

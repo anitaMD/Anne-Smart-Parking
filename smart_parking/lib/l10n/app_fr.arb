@@ -173,7 +173,7 @@
   "@dashboardHello": { "description": "Greeting on dashboard" },
   "dashboardSubtitle": "Trouvez et réservez votre place de parking",
   "@dashboardSubtitle": { "description": "Dashboard subtitle" },
-  "dashboardOngoingBooking": "Réservation en cours",
+  "dashboardOngoingBooking": "Réservations",
   "@dashboardOngoingBooking": { "description": "Ongoing booking section" },
   "dashboardNearbyParkings": "Parkings disponibles",
   "@dashboardNearbyParkings": { "description": "Nearby parkings section" },

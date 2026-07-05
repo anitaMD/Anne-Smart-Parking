@@ -119,11 +119,12 @@ class LicensePlateUtils {
 
     // Séparer le numéro et le suffixe
     String number = '';
-    String suffix = '';
     bool numberDone = false;
 
     for (int i = 0; i < rest.length; i++) {
       final char = rest[i];
+      String suffix = '';
+
       if (!numberDone && RegExp(r'[0-9]').hasMatch(char)) {
         number += char;
       } else if (number.isNotEmpty && RegExp(r'[A-Z]').hasMatch(char)) {

@@ -286,7 +286,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardSubtitle => 'Find and book your parking spot';
 
   @override
-  String get dashboardOngoingBooking => 'Ongoing booking';
+  String get dashboardOngoingBooking => 'Bookings';
 
   @override
   String get dashboardNearbyParkings => 'Available parkings';

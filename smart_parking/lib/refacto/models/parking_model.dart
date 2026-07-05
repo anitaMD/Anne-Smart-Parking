@@ -81,7 +81,6 @@ class ParkingModel {
 ///   regularIds: string[]
 ///   specialIds: string[]
 ///   availableIds: string[]
-///   bookedIds: string[]
 ///   occupiedFromBookingIds: string[]
 ///   occupiedFromWalkInIds: string[]
 /// }
@@ -90,7 +89,6 @@ class ParkingSpotsInfo {
   final List<String> regularIds;
   final List<String> specialIds;
   final List<String> availableIds;
-  final List<String> bookedIds;
   final List<String> occupiedFromBookingIds;
   final List<String> occupiedFromWalkInIds;
 
@@ -99,7 +97,6 @@ class ParkingSpotsInfo {
     required this.regularIds,
     required this.specialIds,
     required this.availableIds,
-    required this.bookedIds,
     required this.occupiedFromBookingIds,
     required this.occupiedFromWalkInIds,
   });
@@ -111,7 +108,6 @@ class ParkingSpotsInfo {
       regularIds: List<String>.from(data['regularIds'] as List? ?? []),
       specialIds: List<String>.from(data['specialIds'] as List? ?? []),
       availableIds: List<String>.from(data['availableIds'] as List? ?? []),
-      bookedIds: List<String>.from(data['bookedIds'] as List? ?? []),
       occupiedFromBookingIds:
           List<String>.from(data['occupiedFromBookingIds'] as List? ?? []),
       occupiedFromWalkInIds:
@@ -123,7 +119,6 @@ class ParkingSpotsInfo {
         'regularIds': regularIds,
         'specialIds': specialIds,
         'availableIds': availableIds,
-        'bookedIds': bookedIds,
         'occupiedFromBookingIds': occupiedFromBookingIds,
         'occupiedFromWalkInIds': occupiedFromWalkInIds,
       };
