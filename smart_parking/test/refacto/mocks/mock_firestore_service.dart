@@ -94,4 +94,13 @@ class MockFirestoreService implements FirestoreServiceBase {
       const Stream.empty();
   @override
   Future<void> markNotificationRead(String uid, String notifId) async {}
+
+  @override
+  Future<Set<String>> getOccupiedSpotIds(
+      {required String parkingId,
+      required DateTime bookingStart,
+      required DateTime bookingEnd}) {
+    // TODO: implement getOccupiedSpotIds
+    throw UnimplementedError();
+  }
 }

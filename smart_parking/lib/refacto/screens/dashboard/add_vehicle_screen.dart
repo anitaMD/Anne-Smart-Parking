@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:get/get.dart';
 import 'package:smart_parking/refacto/core/utils/license_plate_formatter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
@@ -15,7 +16,9 @@ import '../../widgets/ysp_button.dart';
 import '../../widgets/ysp_text_field.dart';
 
 class AddVehicleScreen extends ConsumerStatefulWidget {
-  const AddVehicleScreen({super.key});
+  final VehicleModel? vehicle; // null = ajout, non-null = édition
+
+  const AddVehicleScreen({super.key, this.vehicle});
 
   @override
   ConsumerState<AddVehicleScreen> createState() => _AddVehicleScreenState();
@@ -66,6 +69,23 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     _plateController.dispose();
     _yearController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.vehicle != null) {
+      final v = widget.vehicle!;
+      _selectedBrand = kCarBrands.firstWhereOrNull(
+          (b) => b.name.toLowerCase() == v.brand.toLowerCase());
+      _modelController.text = v.modelDetail;
+      _selectedColor = v.color;
+      _plateController.text = v.licensePlate;
+      _yearController.text = v.registrationYear;
+      _selectedCountry = findCountryByIso(v.countryIso);
+      _selectedCity = v.registrationCity;
+      _vehicleType = v.type;
+    }
   }
 
   String get extractedCityIso {
@@ -132,14 +152,38 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     );
 
     try {
-      await ref
-          .read(userProvider.notifier)
-          .addVehicle(authState.user.id, vehicle);
+      if (widget.vehicle != null) {
+        await ref.read(firestoreServiceProvider).updateVehicle(
+          authState.user.id,
+          widget.vehicle!.id,
+          {
+            'brand': _selectedBrand!.name,
+            'modelDetail': _modelController.text.trim(),
+            'color': _selectedColor,
+            'licensePlate': _plateController.text.trim().toUpperCase(),
+            'registrationYear': _yearController.text.trim(),
+            'registrationCountry': _selectedCountry!.nameFr,
+            'registrationCity': _selectedCity ?? '',
+            'countryIso': _selectedCountry!.iso,
+            'type': _vehicleType,
+          },
+        );
+        await ref.read(userProvider.notifier).loadUserData(authState.user.id);
+// Recharger
+        await ref.read(userProvider.notifier).loadUserData(authState.user.id);
+      } else {
+        // Ajout d'un nouveau véhicule
+        await ref
+            .read(userProvider.notifier)
+            .addVehicle(authState.user.id, vehicle);
+      }
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Véhicule ajouté avec succès !'),
+          SnackBar(
+            content: Text(widget.vehicle != null
+                ? 'Véhicule modifié avec succès !'
+                : 'Véhicule ajouté avec succès !'),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -166,8 +210,10 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Ajouter un véhicule',
+        title: Text(
+          widget.vehicle != null
+              ? 'Modifier le véhicule'
+              : 'Ajouter un véhicule',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,

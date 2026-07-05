@@ -7,14 +7,16 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:smart_parking/refacto/screens/booking/booking_screen_merge.dart';
+import 'package:smart_parking/refacto/screens/booking/inside_parking_with_options.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../models/booking_model.dart';
 import '../../models/parking_model.dart';
-import '../../models/parking_spot_model.dart';
 import '../../services/location_service.dart';
 import '../../services/maps_service.dart';
 import '../../viewmodels/booking_viewmodel.dart';
+import '../booking/booking_screen.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/parking_viewmodel.dart';
 
@@ -47,7 +49,9 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
   void initState() {
     super.initState();
     _getUserLocation();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _preloadAllSpots());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _preloadAllSpots();
+    });
   }
 
   @override
@@ -282,17 +286,15 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
         },
         onBook: () {
           Navigator.pop(context);
-          // TODO: BookingScreen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BookingScreen(parking: parking),
+            ),
+          );
         },
       ),
-    ).then((_) {
-      if (mounted) {
-        setState(() {
-          _selectedParking = null;
-          _selectedSpots = null;
-        });
-      }
-    });
+    );
   }
 
   // ── Build ─────────────────────────────────────────────────
@@ -562,9 +564,6 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
   // ── List View ─────────────────────────────────────────────
 
   Widget _buildListView(List<ParkingModel> parkings) {
-    final bookings = ref.watch(bookingProvider).bookings;
-    final parkingState = ref.watch(parkingProvider);
-
     if (parkings.isEmpty) {
       return const Center(
         child: Column(

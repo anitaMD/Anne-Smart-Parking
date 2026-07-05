@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/booking_model.dart';
 import '../services/firestore_service.dart';
-import 'auth_viewmodel.dart';
+import '../viewmodels/auth_viewmodel.dart';
+import '../viewmodels/user_viewmodel.dart';
 
 // ─────────────────────────────────────────────────────────────
 // BOOKING STATE
@@ -19,7 +20,6 @@ class BookingState {
     this.error,
   });
 
-  /// Réservation en cours (heure de début passée, pas encore terminée)
   BookingModel? get ongoingBooking {
     try {
       return bookings.firstWhere((b) => b.isOngoing);
@@ -28,12 +28,10 @@ class BookingState {
     }
   }
 
-  /// Réservations à venir
   List<BookingModel> get upcomingBookings => bookings
       .where((b) => b.hasNotStarted && b.status == BookingStatus.upcoming)
       .toList();
 
-  /// Toutes les réservations sauf celle en cours
   List<BookingModel> get otherBookings =>
       bookings.where((b) => !b.isOngoing).toList();
 
@@ -88,7 +86,59 @@ class BookingNotifier extends Notifier<BookingState> {
     }
   }
 
-  // ── Actions ───────────────────────────────────────────────
+  // ── Créer une réservation ─────────────────────────────────
+
+  Future<void> createBooking({
+    required String clientId,
+    required String parkingId,
+    required String spotId,
+    required String vehicleId,
+    required DateTime bookingStart,
+    required DateTime bookingEnd,
+    required int totalCost,
+    required String parkingName,
+  }) async {
+    final booking = BookingModel(
+      id: '',
+      clientId: clientId,
+      parkingId: parkingId,
+      spotId: spotId,
+      vehicleId: vehicleId,
+      bookingStart: bookingStart,
+      bookingEnd: bookingEnd,
+      totalCost: totalCost,
+      status: BookingStatus.upcoming,
+      vehicleStatus: VehicleStatus.notYetParked,
+      isArchived: false,
+      createdAt: DateTime.now(),
+    );
+
+    // Créer dans Firestore
+    final bookingId = await _firestoreService.createBooking(booking);
+    debugPrint('[Booking] Créée : $bookingId');
+
+    // Débiter le wallet
+    final userState = ref.read(userProvider);
+    final wallet = userState.wallet;
+    if (wallet != null) {
+      final newBalance = wallet.balance - totalCost;
+      await _firestoreService.updateWalletBalance(
+          clientId, wallet.id, newBalance);
+      await _firestoreService.addDebit(
+        uid: clientId,
+        walletId: wallet.id,
+        amount: totalCost,
+        newBalance: newBalance,
+        parkingId: parkingId,
+        parkingName: parkingName,
+      );
+    }
+
+    // Recharger les réservations
+    await loadBookings(clientId);
+  }
+
+  // ── Annuler ───────────────────────────────────────────────
 
   Future<void> cancelBooking(String bookingId) async {
     try {
@@ -107,7 +157,6 @@ final bookingProvider = NotifierProvider<BookingNotifier, BookingState>(
   BookingNotifier.new,
 );
 
-/// Provider pratique — réservation en cours uniquement
 final ongoingBookingProvider = Provider<BookingModel?>((ref) {
   return ref.watch(bookingProvider).ongoingBooking;
 });

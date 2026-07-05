@@ -34,6 +34,11 @@ abstract class FirestoreServiceBase {
   Stream<ParkingSpotsInfo?> watchParkingSpots(String parkingId);
   Future<void> updateParkingSpots(
       String parkingId, String spotsDocId, Map<String, dynamic> fields);
+  Future<Set<String>> getOccupiedSpotIds({
+    required String parkingId,
+    required DateTime bookingStart,
+    required DateTime bookingEnd,
+  });
 
   // Bookings
   Future<String> createBooking(BookingModel booking);
@@ -203,7 +208,29 @@ class FirestoreService implements FirestoreServiceBase {
           .doc(spotsDocId)
           .update(fields);
 
+  @override
+  Future<Set<String>> getOccupiedSpotIds({
+    required String parkingId,
+    required DateTime bookingStart,
+    required DateTime bookingEnd,
+  }) async {
+    final snap = await _bookings
+        .where('parkingId', isEqualTo: parkingId)
+        .where('status', whereNotIn: ['canceled', 'archived'])
+        .where('bookingStart', isLessThan: Timestamp.fromDate(bookingEnd))
+        .get();
+
+    return snap.docs
+        .where((doc) {
+          final end = (doc['bookingEnd'] as Timestamp).toDate();
+          return end.isAfter(bookingStart);
+        })
+        .map((doc) => doc['spotId'] as String)
+        .toSet();
+  }
+
   // ── Bookings ──────────────────────────────────────────────
+
   @override
   Future<String> createBooking(BookingModel booking) async {
     final ref = await _bookings.add(booking.toFirestore());

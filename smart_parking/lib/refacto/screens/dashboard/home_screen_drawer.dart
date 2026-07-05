@@ -2,6 +2,7 @@ import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_parking/l10n/generated/app_localizations.dart';
+import 'package:smart_parking/refacto/models/vehicle_model.dart';
 import 'package:smart_parking/refacto/screens/dashboard/add_vehicle_screen.dart';
 import 'package:smart_parking/refacto/screens/parking/parking_map_screen.dart';
 import 'package:smart_parking/refacto/widgets/empty_state_card_widget.dart';
@@ -64,21 +65,21 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
                       setState(() => _current = _Section.notifications),
                 ),
                 if (unread > 0)
+                  // Remplacer le hint actuel par :
                   Positioned(
-                    right: 8,
-                    top: 8,
+                    bottom: 4,
+                    right: 4,
                     child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                          color: AppColors.error, shape: BoxShape.circle),
-                      constraints:
-                          const BoxConstraints(minWidth: 16, minHeight: 16),
-                      child: Text('$unread',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center),
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.swap_horiz,
+                        color: Colors.white70,
+                        size: 12,
+                      ),
                     ),
                   ),
               ],
@@ -324,12 +325,12 @@ class _DashboardBody extends ConsumerWidget {
               title: 'Véhicule actuel',
               actionLabel: userState.hasVehicles ? 'Voir tous' : null,
               onAction: userState.hasVehicles
-                  ? () => Navigator.push(
+                  ? () => _showVehicleSelector(context, ref, userState.vehicles)
+                  : () => Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (_) => const AddVehicleScreen()),
-                      )
-                  : null,
+                      ),
             ),
             const SizedBox(height: AppSizes.spaceS),
             if (!userState.hasVehicles)
@@ -345,12 +346,21 @@ class _DashboardBody extends ConsumerWidget {
                 },
               )
             else
-              SizedBox(
-                width: double.infinity,
-                child: LicensePlateWidget(
-                  vehicle: userState.defaultVehicle!,
-                  isSelected: true,
-                  compact: true,
+              GestureDetector(
+                onDoubleTap: () =>
+                    _showVehicleSelector(context, ref, userState.vehicles),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Stack(
+                    children: [
+                      LicensePlateWidget(
+                        vehicle: userState.defaultVehicle!,
+                        isDefault: true,
+                        compact: true,
+                      ),
+                      // Hint visuel
+                    ],
+                  ),
                 ),
               ),
             const SizedBox(height: AppSizes.spaceL),
@@ -413,6 +423,238 @@ class _DashboardBody extends ConsumerWidget {
       ..sort((a, b) => (counts[b.id] ?? 0).compareTo(counts[a.id] ?? 0));
 
     return sorted.take(3).toList();
+  }
+
+  void _showVehicleSelector(
+      BuildContext context, WidgetRef ref, List<VehicleModel> vehicles) {
+    // Trier les véhicules : le véhicule par défaut en premier
+    final sortedVehicles = List<VehicleModel>.from(vehicles)
+      ..sort((a, b) {
+        if (a.isCurrentlySelected && !b.isCurrentlySelected) return -1;
+        if (!a.isCurrentlySelected && b.isCurrentlySelected) return 1;
+        return 0;
+      });
+
+    // État local - déclaré en dehors du builder
+    VehicleModel? selectedVehicle;
+
+    showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (_) {
+          return StatefulBuilder(builder: (context, setState) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSizes.spaceL,
+                  AppSizes.spaceM,
+                  AppSizes.spaceL,
+                  AppSizes.spaceL,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    /// HANDLE
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    /// TITLE
+                    const Text(
+                      'Mes véhicules',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    /// SINGLE HINT (clean instead of 3 blocks)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Tap = sélectionner • Double tap = définir par défaut • Swipe = Naviguer',
+                        style: TextStyle(
+                            fontSize: 11, color: AppColors.textSecondary),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    /// VEHICLE LIST
+                    SizedBox(
+                      height: 95,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        itemCount: sortedVehicles.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 10),
+                        itemBuilder: (_, i) {
+                          final v = sortedVehicles[i];
+                          final isSelected = v.isCurrentlySelected;
+                          final isActive = selectedVehicle?.id == v.id;
+
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedVehicle = isActive ? null : v;
+                              });
+                            },
+                            onDoubleTap: () async {
+                              Navigator.pop(context);
+                              final authState = ref.read(authProvider);
+                              if (authState is AuthAuthenticated) {
+                                await ref
+                                    .read(userProvider.notifier)
+                                    .setDefaultVehicle(authState.user.id, v.id);
+                              }
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 260,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.transparent,
+                                ),
+                              ),
+                              child: LicensePlateWidget(
+                                vehicle: v,
+                                isDefault: isSelected,
+                                isSelected: isActive,
+                                compact: true,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    const Divider(height: 1),
+
+                    /// ACTION PANEL (only when selected)
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: selectedVehicle == null
+                          ? const SizedBox(height: 12)
+                          : Container(
+                              margin: const EdgeInsets.only(top: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceVariant,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          selectedVehicle!.fullName,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        Text(
+                                          selectedVehicle!.licensePlate,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => AddVehicleScreen(
+                                            vehicle: selectedVehicle!,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      color: AppColors.error,
+                                    ),
+                                    onPressed: () async {
+                                      Navigator.pop(context);
+                                      final authState = ref.read(authProvider);
+                                      if (authState is AuthAuthenticated) {
+                                        await ref
+                                            .read(userProvider.notifier)
+                                            .deleteVehicle(
+                                              authState.user.id,
+                                              selectedVehicle!.id,
+                                            );
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    /// ADD BUTTON
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AddVehicleScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Ajouter un véhicule'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 40),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          });
+        });
   }
 }
 
@@ -536,7 +778,7 @@ class _FavParkingCardState extends ConsumerState<_FavParkingCard> {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                 ),
-                child: Text('$count résa',
+                child: Text('$count réservations',
                     style: const TextStyle(
                         fontSize: 9,
                         color: AppColors.primary,

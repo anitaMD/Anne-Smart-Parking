@@ -1,6 +1,5 @@
 import 'package:flag/flag.dart';
 import 'package:flutter/material.dart';
-import 'package:smart_parking/refacto/screens/dashboard/add_vehicle_screen.dart';
 import '../core/constants/app_colors.dart';
 import '../core/constants/app_sizes.dart';
 import '../models/vehicle_model.dart';
@@ -10,14 +9,16 @@ import '../models/vehicle_model.dart';
 /// Réutilisable dans : Dashboard, Tab Véhicules, BookingScreen
 class LicensePlateWidget extends StatelessWidget {
   final VehicleModel vehicle;
+  final bool isDefault;
   final bool isSelected;
   final bool compact;
 
   const LicensePlateWidget({
     super.key,
     required this.vehicle,
-    this.isSelected = false,
+    this.isDefault = false,
     this.compact = false,
+    this.isSelected = false,
   });
 
   @override
@@ -44,12 +45,18 @@ class LicensePlateWidget extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isSelected ? AppColors.success : const Color(0xFF222222),
-          width: isSelected ? 2.5 : 1.5,
+          color: isSelected
+              ? AppColors.walletBackground.withValues(
+                  alpha: 0.6) // Jaune/Or quand sélectionné (même si défaut)
+              : isDefault
+                  ? Colors.transparent.withValues(
+                      alpha: 0.1) // Vert pour le défaut (non sélectionné)
+                  : const Color(0xFF222222), // Noir pour les autres autres
+          width: isDefault || isSelected ? 2.5 : 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: isSelected
+            color: isDefault
                 ? AppColors.success.withValues(alpha: 0.15)
                 : Colors.black.withValues(alpha: 0.1),
             blurRadius: 6,
@@ -235,7 +242,7 @@ class LicensePlateWidget extends StatelessWidget {
           ),
 
           // ── Barre verte si sélectionné ────────────────
-          if (isSelected)
+          if (isDefault)
             Container(
               width: 5,
               decoration: const BoxDecoration(
