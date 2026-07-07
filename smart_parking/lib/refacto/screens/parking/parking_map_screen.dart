@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -33,8 +31,6 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
   Position? _userPosition;
   ParkingModel? _selectedParking;
   ParkingSpotsInfo? _selectedSpots;
-  List<LatLng> _routePoints = [];
-  bool _isLoadingRoute = false;
   bool _isLoadingLocation = false;
   bool _isLoadingSpots = false;
   bool _showMap = true;
@@ -62,7 +58,7 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
 
   Future<void> _preloadAllSpots() async {
     final parkings = ref.read(parkingProvider).parkings;
-    final bookings = ref.read(bookingProvider).bookings;
+    final bookings = ref.read(bookingProvider).unArchivedBookings;
     final fs = ref.read(firestoreServiceProvider);
 
     final results = await Future.wait(
@@ -89,8 +85,14 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
         _userPosition = position;
         _isLoadingLocation = false;
       });
-      if (position != null) {
-        _mapController.move(LatLng(position.latitude, position.longitude), 14);
+      // Only move map if we're in map view and map is ready
+      if (position != null && _showMap) {
+        try {
+          _mapController.move(
+              LatLng(position.latitude, position.longitude), 14);
+        } catch (_) {
+          // MapController not ready yet — ignore
+        }
       }
     }
   }
@@ -175,7 +177,6 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
   Future<void> _selectParking(ParkingModel parking) async {
     setState(() {
       _selectedParking = parking;
-      _routePoints = [];
       _selectedSpots = null;
       _isLoadingSpots = true;
     });
@@ -195,71 +196,21 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
     if (mounted) _showParkingSheet(parking);
   }
 
-  // ── Route OSRM ────────────────────────────────────────────
+  // ── Book ─────────────────────────────────────────────────
 
-  Future<void> _getRoute(ParkingModel parking) async {
-    if (_userPosition == null) {
-      _showSnack('Activez votre GPS pour obtenir un itinéraire');
-      return;
-    }
-    setState(() {
-      _isLoadingRoute = true;
-      _showMap = true;
-    });
-    try {
-      final url = 'https://router.project-osrm.org/route/v1/driving/'
-          '${_userPosition!.longitude},${_userPosition!.latitude};'
-          '${parking.longitude},${parking.latitude}'
-          '?overview=full&geometries=geojson';
-      final points = await _fetchRoute(url);
-      if (points != null && mounted) {
-        setState(() {
-          _routePoints = points;
-          _isLoadingRoute = false;
-        });
-        _fitRouteBounds();
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingRoute = false);
-    }
-  }
-
-  Future<List<LatLng>?> _fetchRoute(String url) async {
-    try {
-      final request = await HttpClient().getUrl(Uri.parse(url));
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
-      final data = jsonDecode(body) as Map<String, dynamic>;
-      final routes = data['routes'] as List?;
-      if (routes == null || routes.isEmpty) return null;
-      return (routes[0]['geometry']['coordinates'] as List)
-          .map((c) => LatLng(
-                (c as List)[1].toDouble(),
-                c[0].toDouble(),
-              ))
-          .toList();
-    } catch (_) {
-      return null;
-    }
-  }
-
-  void _fitRouteBounds() {
-    if (_routePoints.isEmpty) return;
-    _mapController.fitCamera(CameraFit.bounds(
-      bounds: LatLngBounds.fromPoints(_routePoints),
-      padding: const EdgeInsets.all(50),
-    ));
-  }
-
-  void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating));
+  void _onBook(ParkingModel parking) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookingScreen(parking: parking),
+      ),
+    );
   }
 
   // ── Bottom Sheet ──────────────────────────────────────────
 
   void _showParkingSheet(ParkingModel parking) {
-    final bookings = ref.read(bookingProvider).bookings;
+    final bookings = ref.read(bookingProvider).unArchivedBookings;
     final avail = _computeAvailability(_selectedSpots, bookings);
 
     showModalBottomSheet(
@@ -270,11 +221,7 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
         parking: parking,
         availability: avail,
         isLoading: _isLoadingSpots,
-        onNavigate: () {
-          Navigator.pop(context);
-          _getRoute(parking);
-        },
-        onOpenMaps: () async {
+        onNavigate: () async {
           Navigator.pop(context);
           await MapsService().navigateToParking(
             latitude: parking.latitude,
@@ -282,17 +229,16 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
             parkingName: parking.name,
           );
         },
-        onBook: () {
-          Navigator.pop(context);
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => BookingScreen(parking: parking),
-            ),
-          );
-        },
+        onBook: () => _onBook(parking),
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {
+          _selectedParking = null;
+          _selectedSpots = null;
+        });
+      }
+    });
   }
 
   // ── Build ─────────────────────────────────────────────────
@@ -447,13 +393,6 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
               retinaMode: true,
               userAgentPackageName: 'com.example.smart_parking',
             ),
-            if (_routePoints.isNotEmpty)
-              PolylineLayer(polylines: [
-                Polyline(
-                    points: _routePoints,
-                    color: AppColors.primary,
-                    strokeWidth: 5),
-              ]),
             MarkerLayer(markers: [
               // Position utilisateur
               if (_userPosition != null)
@@ -514,46 +453,12 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
           ],
         ),
 
-        // Chargement route
-        if (_isLoadingRoute)
-          Container(
-            color: Colors.black26,
-            child: const Center(
-              child: Card(
-                child: Padding(
-                  padding: EdgeInsets.all(AppSizes.spaceL),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(width: AppSizes.spaceM),
-                      Text('Calcul de l\'itinéraire...'),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-
         // Légende
         const Positioned(
           bottom: AppSizes.spaceL,
           left: AppSizes.spaceM,
           child: _Legend(),
         ),
-
-        // Effacer route
-        if (_routePoints.isNotEmpty)
-          Positioned(
-            top: AppSizes.spaceM,
-            right: AppSizes.spaceM,
-            child: FloatingActionButton.small(
-              heroTag: 'clear',
-              backgroundColor: AppColors.error,
-              onPressed: () => setState(() => _routePoints = []),
-              child: const Icon(Icons.close, color: Colors.white),
-            ),
-          ),
       ],
     );
   }
@@ -591,6 +496,7 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
             _selectParking(p);
             setState(() => _showMap = true);
           },
+          onBook: () => _onBook(p),
           onNavigate: () async {
             await MapsService().navigateToParking(
               latitude: p.latitude,
@@ -734,6 +640,7 @@ class _ParkingListCard extends StatelessWidget {
   final _SpotAvailability? availability;
   final VoidCallback onTap;
   final VoidCallback onNavigate;
+  final VoidCallback onBook;
 
   const _ParkingListCard({
     required this.parking,
@@ -742,6 +649,7 @@ class _ParkingListCard extends StatelessWidget {
     required this.availability,
     required this.onTap,
     required this.onNavigate,
+    required this.onBook,
   });
 
   @override
@@ -882,9 +790,8 @@ class _ParkingListCard extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: onNavigate,
-                  icon: const Icon(Icons.route_outlined, size: 13),
-                  label:
-                      const Text('Itinéraire', style: TextStyle(fontSize: 11)),
+                  icon: const Icon(Icons.navigation_outlined, size: 13),
+                  label: const Text('Naviguer', style: TextStyle(fontSize: 11)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     minimumSize: const Size(0, 32),
@@ -894,7 +801,7 @@ class _ParkingListCard extends StatelessWidget {
               const SizedBox(width: AppSizes.spaceS),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: onTap,
+                  onPressed: onBook,
                   icon: const Icon(Icons.bookmark_add_outlined, size: 13),
                   label: const Text('Réserver', style: TextStyle(fontSize: 11)),
                   style: ElevatedButton.styleFrom(
@@ -920,7 +827,6 @@ class _ParkingBottomSheet extends StatelessWidget {
   final _SpotAvailability availability;
   final bool isLoading;
   final VoidCallback onNavigate;
-  final VoidCallback onOpenMaps;
   final VoidCallback onBook;
 
   const _ParkingBottomSheet({
@@ -928,7 +834,6 @@ class _ParkingBottomSheet extends StatelessWidget {
     required this.availability,
     required this.isLoading,
     required this.onNavigate,
-    required this.onOpenMaps,
     required this.onBook,
   });
 
@@ -1041,24 +946,12 @@ class _ParkingBottomSheet extends StatelessWidget {
                 ),
           const SizedBox(height: AppSizes.spaceL),
 
-          // 3 boutons
+          // 2 boutons
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: onNavigate,
-                  icon: const Icon(Icons.route_outlined, size: 16),
-                  label:
-                      const Text('Itinéraire', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: AppSizes.spaceM)),
-                ),
-              ),
-              const SizedBox(width: AppSizes.spaceS),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onOpenMaps,
                   icon: const Icon(Icons.navigation_outlined, size: 16),
                   label: const Text('Naviguer', style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(

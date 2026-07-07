@@ -11,41 +11,50 @@ import '../viewmodels/user_viewmodel.dart';
 // ─────────────────────────────────────────────────────────────
 
 class BookingState {
-  final List<BookingModel> bookings;
+  final List<BookingModel> unArchivedBookings;
+  final List<BookingModel> allArchivedBookings;
   final bool isLoading;
   final String? error;
 
   const BookingState({
-    this.bookings = const [],
+    this.unArchivedBookings = const [],
+    this.allArchivedBookings = const [],
     this.isLoading = false,
     this.error,
   });
 
   BookingModel? get ongoingBooking {
     try {
-      return bookings.firstWhere((b) => b.isOngoing);
+      return unArchivedBookings.firstWhere((b) => b.isOngoing);
     } catch (_) {
       return null;
     }
   }
 
-  List<BookingModel> get upcomingBookings => bookings
-      .where((b) => b.hasNotStarted && b.status == BookingStatus.upcoming)
+  List<BookingModel> get upcomingBookings => unArchivedBookings
+      .where((b) => b.status == BookingStatus.upcoming)
       .toList();
 
-  List<BookingModel> get otherBookings =>
-      bookings.where((b) => !b.isOngoing).toList();
+  List<BookingModel> get historyBookings =>
+      unArchivedBookings.where((b) => b.isArchived == true).toList();
 
-  bool get hasBookings => bookings.isNotEmpty;
+  List<BookingModel> get otherUnarchivedBookings =>
+      unArchivedBookings.where((b) => !b.isOngoing).toList();
+
+  bool get hasUnarchivedBookings => unArchivedBookings.isNotEmpty;
   bool get hasOngoing => ongoingBooking != null;
+  bool get hasArchivedBookings => allArchivedBookings.isNotEmpty;
 
   BookingState copyWith({
-    List<BookingModel>? bookings,
+    List<BookingModel>? unArchivedBookings,
+    List<BookingModel>? archivedBookings,
     bool? isLoading,
     String? error,
   }) =>
       BookingState(
-        bookings: bookings ?? this.bookings,
+        unArchivedBookings: unArchivedBookings ?? this.unArchivedBookings,
+        allArchivedBookings:
+            archivedBookings ?? allArchivedBookings, // ✅ CORRECTION
         isLoading: isLoading ?? this.isLoading,
         error: error,
       );
@@ -63,7 +72,10 @@ class BookingNotifier extends Notifier<BookingState> {
     _firestoreService = ref.read(firestoreServiceProvider);
 
     ref.listen(authProvider, (_, next) {
-      if (next is AuthAuthenticated) loadBookings(next.user.id);
+      if (next is AuthAuthenticated) {
+        loadBookings(next.user.id);
+        loadArchivedBookings(next.user.id); // ✅ orthographe corrigée
+      }
       if (next is AuthUnauthenticated) state = const BookingState();
     });
 
@@ -78,11 +90,29 @@ class BookingNotifier extends Notifier<BookingState> {
   Future<void> loadBookings(String uid) async {
     state = state.copyWith(isLoading: true);
     try {
-      final bookings = await _firestoreService.getUserBookings(uid);
+      final bookings = await _firestoreService.getUserUnarchivedBookings(uid);
       debugPrint('[Booking] ${bookings.length} réservations chargées');
-      state = state.copyWith(bookings: bookings, isLoading: false);
+      state = state.copyWith(
+        unArchivedBookings: bookings,
+        isLoading: false,
+      );
     } catch (e) {
       debugPrint('[Booking] loadBookings error: $e');
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> loadArchivedBookings(String uid) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final bookings = await _firestoreService.getUserArchivedBookings(uid);
+      state = state.copyWith(
+        archivedBookings: bookings,
+        isLoading: false,
+      );
+      debugPrint('[Booking] archivedBookings: ${bookings.length}');
+    } catch (e) {
+      debugPrint('[Booking] loadArchivedBookings error: $e');
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -114,11 +144,10 @@ class BookingNotifier extends Notifier<BookingState> {
       createdAt: DateTime.now(),
     );
 
-    // 1. Créer la réservation
     final bookingId = await _firestoreService.createBooking(booking);
     debugPrint('[Booking] Créée : $bookingId');
 
-    // 2. Débiter le wallet
+    // Débiter le wallet
     final userState = ref.read(userProvider);
     final wallet = userState.wallet;
     if (wallet != null) {
@@ -135,13 +164,11 @@ class BookingNotifier extends Notifier<BookingState> {
       );
     }
 
-    // 3. Recharger les réservations
     await loadBookings(clientId);
     await ref.read(userProvider.notifier).loadUserData(clientId);
   }
-  // ── Annuler ───────────────────────────────────────────────
 
-  // ── Annuler — sans remboursement ──────────────────────────
+  // ── Annuler ───────────────────────────────────────────────
 
   Future<void> cancelBooking(String bookingId) async {
     try {
@@ -150,15 +177,16 @@ class BookingNotifier extends Notifier<BookingState> {
         'isArchived': true,
         'canceledAt': FieldValue.serverTimestamp(),
       });
-      final updated = state.bookings.where((b) => b.id != bookingId).toList();
-      state = state.copyWith(bookings: updated);
+      final updated =
+          state.unArchivedBookings.where((b) => b.id != bookingId).toList();
+      state = state.copyWith(unArchivedBookings: updated);
       debugPrint('[Booking] Annulée : $bookingId');
     } catch (e) {
       debugPrint('[Booking] cancelBooking error: $e');
     }
   }
 
-// ── Éditer — heure ou place ───────────────────────────────
+  // ── Éditer ───────────────────────────────────────────────
 
   Future<void> editBooking({
     required BookingModel booking,
@@ -207,6 +235,10 @@ class BookingNotifier extends Notifier<BookingState> {
     debugPrint('[Booking] Éditée : ${booking.id}');
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// PROVIDERS
+// ─────────────────────────────────────────────────────────────
 
 final bookingProvider = NotifierProvider<BookingNotifier, BookingState>(
   BookingNotifier.new,

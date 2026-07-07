@@ -48,7 +48,7 @@ class MockFirestoreService implements FirestoreServiceBase {
   @override
   Future<String> createBooking(BookingModel booking) async => '';
   @override
-  Future<List<BookingModel>> getUserBookings(String uid) async => [];
+  Future<List<BookingModel>> getUserUnarchivedBookings(String uid) async => [];
   @override
   Stream<List<BookingModel>> watchUserBookings(String uid) =>
       const Stream.empty();
@@ -108,6 +108,18 @@ class MockFirestoreService implements FirestoreServiceBase {
   Future<void> updateBookingFields(
       String bookingId, Map<String, dynamic> fields) {
     // TODO: implement updateBookingFields
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<BookingModel>> getAllUserBookings(String uid) {
+    // TODO: implement getAllUserBookings
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<BookingModel>> getUserArchivedBookings(String uid) {
+    // TODO: implement getUserArchivedBookings
     throw UnimplementedError();
   }
 }

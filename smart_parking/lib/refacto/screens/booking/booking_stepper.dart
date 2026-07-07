@@ -286,7 +286,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
             TextButton(
               onPressed: () async {
                 await prefs.setBool('booking_slide_hint_shown', true);
-                if (context.mounted) Navigator.pop(context);
+                if (mounted) Navigator.pop(context);
               },
               child: const Text('NE PLUS AFFICHER',
                   style: TextStyle(color: AppColors.error, fontSize: 12)),
@@ -723,7 +723,10 @@ class _SpotGridState extends State<_SpotGrid> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+      if (!mounted) return;
+      if (_scrollController.hasClients &&
+          _scrollController.position.hasContentDimensions &&
+          _scrollController.position.maxScrollExtent > 0) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
@@ -754,12 +757,15 @@ class _SpotGridState extends State<_SpotGrid> {
     final maxLen =
         aisleA.length > aisleB.length ? aisleA.length : aisleB.length;
 
-    const double rowHeight = 60;
+    const double rowHeight = 122;
     const int visibleRows = 6;
     const double fixedHeight = rowHeight * visibleRows + 60;
 
+    // Toujours une hauteur fixe pour éviter le crash Expanded sans contrainte
+    final containerHeight =
+        maxLen > visibleRows ? fixedHeight : maxLen * rowHeight + 60;
     return Container(
-      height: maxLen > visibleRows ? fixedHeight : null,
+      height: containerHeight,
       padding: const EdgeInsets.symmetric(
         vertical: AppSizes.spaceM,
         horizontal: AppSizes.spaceS,

@@ -254,7 +254,9 @@ class _DashboardBody extends ConsumerWidget {
     final hasCurrentReservation =
         bookingState.hasOngoing || bookingState.upcomingBookings.isNotEmpty;
 
-    final hasReservationHistory = bookingState.bookings.isNotEmpty;
+    final hasReservationHistory = bookingState.hasArchivedBookings;
+    debugPrint(
+        '[dash] $hasReservationHistory , ${bookingState.hasArchivedBookings} , ${bookingState.unArchivedBookings}');
 
     if (userState.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -262,7 +264,7 @@ class _DashboardBody extends ConsumerWidget {
 
     // Top 3 parkings les plus réservés
     final favParkings =
-        _getTopParkings(parkingState.parkings, bookingState.bookings);
+        _getTopParkings(parkingState.parkings, bookingState.unArchivedBookings);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -299,10 +301,10 @@ class _DashboardBody extends ConsumerWidget {
             // ── Réservation en cours ──────────────────────
             _SectionHeader(
               title: l10n.dashboardOngoingBooking,
-              actionLabel: hasCurrentReservation
-                  ? 'Voir carte'
-                  : hasReservationHistory
-                      ? 'Voir tout'
+              actionLabel: hasReservationHistory
+                  ? 'Voir tout'
+                  : hasCurrentReservation
+                      ? 'Voir carte'
                       : null,
               onAction: hasCurrentReservation
                   ? () => Navigator.push(
@@ -395,7 +397,7 @@ class _DashboardBody extends ConsumerWidget {
             ),
             const SizedBox(height: AppSizes.spaceS),
             if (favParkings.isEmpty ||
-                bookingState.bookings.isEmpty) // Changement ici
+                bookingState.unArchivedBookings.isEmpty) // Changement ici
               EmptyStateCard(
                 icon: Icons.favorite_border,
                 title: 'Aucun favori encore',
@@ -416,7 +418,7 @@ class _DashboardBody extends ConsumerWidget {
                     width: MediaQuery.of(context).size.width * 0.75,
                     child: _FavParkingCard(
                       parking: favParkings[i],
-                      bookings: bookingState.bookings,
+                      bookings: bookingState.unArchivedBookings,
                     ),
                   ),
                 ),
@@ -1146,11 +1148,10 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Appeler la méthode d'annulation
               ref.read(bookingProvider.notifier).cancelBooking(booking.id);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Oui, annuler'),
+            child: const Text('Oui'),
           ),
         ],
       ),

@@ -42,7 +42,9 @@ abstract class FirestoreServiceBase {
 
   // Bookings
   Future<String> createBooking(BookingModel booking);
-  Future<List<BookingModel>> getUserBookings(String uid);
+  Future<List<BookingModel>> getUserUnarchivedBookings(String uid);
+  Future<List<BookingModel>> getUserArchivedBookings(String uid);
+  Future<List<BookingModel>> getAllUserBookings(String uid);
   Stream<List<BookingModel>> watchUserBookings(String uid);
   Future<void> updateBookingStatus(String bookingId, BookingStatus status);
   Future<void> archiveBooking(String bookingId);
@@ -242,11 +244,30 @@ class FirestoreService implements FirestoreServiceBase {
   }
 
   @override
-  Future<List<BookingModel>> getUserBookings(String uid) async {
+  Future<List<BookingModel>> getUserUnarchivedBookings(String uid) async {
     final snapshot = await _bookings
         .where('clientId', isEqualTo: uid)
         .where('isArchived', isEqualTo: false)
         .orderBy('bookingStart')
+        .get();
+    return snapshot.docs.map(BookingModel.fromFirestore).toList();
+  }
+
+  @override
+  Future<List<BookingModel>> getUserArchivedBookings(String uid) async {
+    final snapshot = await _bookings
+        .where('clientId', isEqualTo: uid)
+        .where('isArchived', isEqualTo: true)
+        .orderBy('createdAt')
+        .get();
+    return snapshot.docs.map(BookingModel.fromFirestore).toList();
+  }
+
+  @override
+  Future<List<BookingModel>> getAllUserBookings(String uid) async {
+    final snapshot = await _bookings
+        .where('clientId', isEqualTo: uid)
+        .orderBy('createdAt')
         .get();
     return snapshot.docs.map(BookingModel.fromFirestore).toList();
   }
