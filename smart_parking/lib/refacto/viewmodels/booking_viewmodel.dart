@@ -144,7 +144,7 @@ class BookingNotifier extends Notifier<BookingState> {
       createdAt: DateTime.now(),
     );
 
-    final bookingId = await _firestoreService.createBooking(booking);
+    final bookingId = await _firestoreService.createBookingAtomic(booking);
     debugPrint('[Booking] Créée : $bookingId');
 
     // Débiter le wallet

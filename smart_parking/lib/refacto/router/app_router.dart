@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_parking/refacto/screens/dashboard/add_vehicle_screen.dart';
+import 'package:smart_parking/refacto/screens/wallet/agent_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/otp_screen.dart';
@@ -25,6 +26,9 @@ class AppRouter {
     switch (settings.name) {
       case AppRoutes.login:
         return _slide(const LoginScreen());
+
+      case AppRoutes.agent:
+        return MaterialPageRoute(builder: (_) => const AgentScreen());
 
       case AppRoutes.register:
         return _slide(const RegisterScreen());
@@ -120,6 +124,7 @@ abstract class AppRoutes {
   static const String home = '/home';
   static const String homeBottomNav = '/home-drawer';
   static const String addVehicle = '/add-vehicle';
+  static const String agent = '/agent';
 }
 
 /// Arguments pour l'écran OTP

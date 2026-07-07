@@ -232,6 +232,7 @@ class AuthNotifier extends Notifier<AuthState> {
         email: email,
         phoneNumber: phoneNumber,
         profileImageUrl: profileImageUrl,
+        role: 'user',
         isSpecialAccessUser: hasEqualityCard,
         equalityCardPaths: equalityCardPaths,
       );
@@ -319,7 +320,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final wallet = results[1] as WalletModel?;
       debugPrint('[Auth] user: $user, wallet: $wallet');
 
-      if (user != null) {
+      if (user != null && user.role == 'user') {
         // Créer wallet si absent (en arrière-plan, pas bloquant)
         if (wallet == null) {
           _firestoreService
@@ -330,13 +331,13 @@ class AuthNotifier extends Notifier<AuthState> {
       } else {
         // Nouvel utilisateur — profil minimal
         final newUser = UserModel(
-          id: currentUser.uid,
-          fullName: currentUser.displayName ?? '',
-          email: currentUser.email ?? '',
-          phoneNumber: currentUser.phoneNumber ?? '',
-          profileImageUrl: currentUser.photoURL ?? '',
-          isSpecialAccessUser: false,
-        );
+            id: currentUser.uid,
+            fullName: currentUser.displayName ?? '',
+            email: currentUser.email ?? '',
+            phoneNumber: currentUser.phoneNumber ?? '',
+            profileImageUrl: currentUser.photoURL ?? '',
+            isSpecialAccessUser: false,
+            role: 'user');
         // Créer profil + wallet en parallèle
         await Future.wait([
           _firestoreService.createUser(newUser),

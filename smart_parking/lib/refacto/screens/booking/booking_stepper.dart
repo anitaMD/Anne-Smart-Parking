@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -50,6 +52,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
   Set<String> _occupiedByBooking = {};
   bool _isLoadingOccupied = false;
   bool _hasShownHint = false;
+  StreamSubscription<Set<String>>? _occupiedSub;
 
   @override
   void initState() {
@@ -60,10 +63,16 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
     // Si créneau déjà sélectionné (mode édition) → charger la dispo
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('[Step1] postFrameCallback fired');
-      _refreshOccupied();
+      _watchOccupied();
     });
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _showSlideHintIfNeeded());
+  }
+
+  @override
+  void dispose() {
+    _occupiedSub?.cancel();
+    super.dispose();
   }
 
   // ── Min start time ────────────────────────────────────────
@@ -107,7 +116,9 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
   }
 
   // ── Refresh occupied spots ────────────────────────────────
-  Future<void> _refreshOccupied({DateTime? overrideDate}) async {
+  Future<void> _watchOccupied({DateTime? overrideDate}) async {
+    _occupiedSub?.cancel();
+
     final date = overrideDate ?? widget.selectedDate;
     if (date == null || widget.selectedSlot == null) return;
 
@@ -123,28 +134,24 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
         bookingStart.add(Duration(minutes: widget.durationMinutes));
 
     setState(() => _isLoadingOccupied = true);
-    try {
-      debugPrint(
-          '[Step1] calling getOccupiedSpotIds parkingId=${widget.parking.id}');
-      final fs = ref.read(firestoreServiceProvider);
-      final occupied = await fs.getOccupiedSpotIds(
-        parkingId: widget.parking.id,
-        bookingStart: bookingStart,
-        bookingEnd: bookingEnd,
-      );
-      debugPrint('[Step1] occupied: $occupied');
+
+    final fs = ref.read(firestoreServiceProvider);
+    _occupiedSub = fs
+        .watchOccupiedSpotIds(
+      parkingId: widget.parking.id,
+      bookingStart: bookingStart,
+      bookingEnd: bookingEnd,
+    )
+        .listen((occupied) {
       if (mounted) {
         setState(() {
           _occupiedByBooking = occupied;
           _isLoadingOccupied = false;
         });
       }
-    } catch (e) {
+    }, onError: (_) {
       if (mounted) setState(() => _isLoadingOccupied = false);
-      debugPrint('[BookingStep1] refresh error: $e');
-    } finally {
-      if (mounted) setState(() => _isLoadingOccupied = false);
-    }
+    });
   }
 
   // ── Open time range picker ────────────────────────────────
@@ -254,7 +261,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
       if (duration >= 30) {
         widget.onSlotChanged(startStr);
         widget.onDurationChanged(duration);
-        Future.microtask(_refreshOccupied);
+        Future.microtask(_watchOccupied);
       }
     }
   }
@@ -328,7 +335,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
             onDateSelected: (date) {
               widget.onDateChanged(date);
               widget.onDateChanged(date);
-              _refreshOccupied(overrideDate: date);
+              _watchOccupied(overrideDate: date);
             },
             onMonthChanged: (m) => setState(() => _displayMonth = m),
           ),

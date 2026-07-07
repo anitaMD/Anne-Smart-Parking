@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:rxdart/rxdart.dart';
 import '../models/user_model.dart';
 import '../models/vehicle_model.dart';
 import '../models/parking_model.dart';
@@ -39,9 +40,14 @@ abstract class FirestoreServiceBase {
     required DateTime bookingStart,
     required DateTime bookingEnd,
   });
+  Stream<Set<String>> watchOccupiedSpotIds({
+    required String parkingId,
+    required DateTime bookingStart,
+    required DateTime bookingEnd,
+  });
 
   // Bookings
-  Future<String> createBooking(BookingModel booking);
+  Future<String> createBookingAtomic(BookingModel booking);
   Future<List<BookingModel>> getUserUnarchivedBookings(String uid);
   Future<List<BookingModel>> getUserArchivedBookings(String uid);
   Future<List<BookingModel>> getAllUserBookings(String uid);
@@ -55,6 +61,7 @@ abstract class FirestoreServiceBase {
   // Wallet
   Future<WalletModel?> getWallet(String uid);
   Stream<WalletModel?> watchWallet(String uid);
+  Stream<List<TransactionModel>> watchTransactions(String uid, String walletId);
   Future<void> createWallet(String uid);
   Future<void> updateWalletBalance(String uid, String walletId, int newBalance);
   Future<void> addDebit(
@@ -235,12 +242,58 @@ class FirestoreService implements FirestoreServiceBase {
         .toSet();
   }
 
+  @override
+  Stream<Set<String>> watchOccupiedSpotIds({
+    required String parkingId,
+    required DateTime bookingStart,
+    required DateTime bookingEnd,
+  }) {
+    return _bookings
+        .where('parkingId', isEqualTo: parkingId)
+        .where('status', whereNotIn: ['canceled'])
+        .where('bookingStart', isLessThan: Timestamp.fromDate(bookingEnd))
+        .snapshots()
+        .map((snap) => snap.docs
+            .where((doc) {
+              final end = (doc['bookingEnd'] as Timestamp).toDate();
+              return end.isAfter(bookingStart);
+            })
+            .map((doc) => doc['spotId'] as String)
+            .toSet());
+  }
   // ── Bookings ──────────────────────────────────────────────
 
   @override
-  Future<String> createBooking(BookingModel booking) async {
-    final ref = await _bookings.add(booking.toFirestore());
-    return ref.id;
+  Future<String> createBookingAtomic(BookingModel booking) async {
+    String bookingId = '';
+
+    await _db.runTransaction((transaction) async {
+      // Vérifier absence de conflit
+      final snap = await _bookings
+          .where('parkingId', isEqualTo: booking.parkingId)
+          .where('spotId', isEqualTo: booking.spotId)
+          .where('status', whereNotIn: ['canceled'])
+          .where('bookingStart',
+              isLessThan: Timestamp.fromDate(booking.bookingEnd))
+          .get();
+
+      final conflict = snap.docs.any((doc) {
+        final end = (doc['bookingEnd'] as Timestamp).toDate();
+        return end.isAfter(booking.bookingStart);
+      });
+
+      if (conflict) {
+        throw Exception(
+            'Cette place vient d\'être réservée. Veuillez en choisir une autre.');
+      }
+
+      // Créer atomiquement
+      final ref = _bookings.doc();
+      bookingId = ref.id;
+      transaction.set(ref, booking.toFirestore());
+    });
+
+    return bookingId;
   }
 
   @override
@@ -312,6 +365,34 @@ class FirestoreService implements FirestoreServiceBase {
   Stream<WalletModel?> watchWallet(String uid) =>
       _users.doc(uid).collection('wallet').limit(1).snapshots().map((s) =>
           s.docs.isEmpty ? null : WalletModel.fromFirestore(s.docs.first));
+
+  @override
+  Stream<List<TransactionModel>> watchTransactions(
+      String uid, String walletId) {
+    final walletRef = _users.doc(uid).collection('wallet').doc(walletId);
+
+    // Écouter debits + topUps en parallèle
+    final debitsStream = walletRef
+        .collection('debits')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((s) =>
+            s.docs.map((d) => TransactionModel.debitFromFirestore(d)).toList());
+
+    final topUpsStream = walletRef
+        .collection('topUps')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((s) =>
+            s.docs.map((d) => TransactionModel.topUpFromFirestore(d)).toList());
+
+    // Combiner et trier
+    return Rx.combineLatest2(debitsStream, topUpsStream, (debits, topUps) {
+      final all = [...debits, ...topUps];
+      all.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      return all;
+    });
+  }
 
   @override
   Future<void> createWallet(String uid) async =>

@@ -23,6 +23,7 @@ class UserModel {
   final bool isSpecialAccessUser;
   final List<String> equalityCardPaths;
   final DateTime? createdAt;
+  final String role; // "user" | "agent"
 
   const UserModel({
     required this.id,
@@ -31,6 +32,7 @@ class UserModel {
     required this.phoneNumber,
     required this.profileImageUrl,
     required this.isSpecialAccessUser,
+    required this.role,
     this.equalityCardPaths = const [],
     this.createdAt,
   });
@@ -43,6 +45,7 @@ class UserModel {
       email: data['email'] as String? ?? '',
       phoneNumber: data['phoneNumber'] as String? ?? '',
       profileImageUrl: data['profileImageUrl'] as String? ?? '',
+      role: data['role'] as String? ?? 'user',
       isSpecialAccessUser: data['isSpecialAccessUser'] as bool? ?? false,
       equalityCardPaths: List<String>.from(
         data['equalityCardPaths'] as List? ?? [],
@@ -58,6 +61,7 @@ class UserModel {
         'profileImageUrl': profileImageUrl,
         'isSpecialAccessUser': isSpecialAccessUser,
         'equalityCardPaths': equalityCardPaths,
+        'role': role,
         'createdAt': FieldValue.serverTimestamp(),
       };
 
@@ -67,12 +71,14 @@ class UserModel {
     String? profileImageUrl,
     bool? isSpecialAccessUser,
     List<String>? equalityCardPaths,
+    String? role,
   }) =>
       UserModel(
         id: id,
         fullName: fullName ?? this.fullName,
         email: email,
         phoneNumber: phoneNumber ?? this.phoneNumber,
+        role: role ?? this.role,
         profileImageUrl: profileImageUrl ?? this.profileImageUrl,
         isSpecialAccessUser: isSpecialAccessUser ?? this.isSpecialAccessUser,
         equalityCardPaths: equalityCardPaths ?? this.equalityCardPaths,

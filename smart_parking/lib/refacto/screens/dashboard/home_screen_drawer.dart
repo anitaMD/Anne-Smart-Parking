@@ -8,6 +8,7 @@ import 'package:smart_parking/refacto/screens/booking/booking_history_screen.dar
 import 'package:smart_parking/refacto/screens/booking/booking_screen.dart';
 import 'package:smart_parking/refacto/screens/dashboard/add_vehicle_screen.dart';
 import 'package:smart_parking/refacto/screens/parking/parking_map_screen.dart';
+import 'package:smart_parking/refacto/screens/wallet/wallet_screen.dart';
 import 'package:smart_parking/refacto/widgets/empty_state_card_widget.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
@@ -49,6 +50,15 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
     final unread = ref.watch(unreadNotificationsProvider);
 
     ref.listen(authProvider, (_, next) {
+      if (next is AuthAuthenticated) {
+        final role = next.user.role;
+        debugPrint('[Home] role: $role');
+        if (role == 'agent') {
+          // Rediriger vers AgentScreen
+          AppRouter.pushAndClearStack(context, AppRoutes.agent);
+          return;
+        }
+      }
       if (next is AuthUnauthenticated && mounted) {
         AppRouter.pushAndClearStack(context, AppRoutes.login);
       }
@@ -191,7 +201,9 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
         ),
         body: _current == _Section.dashboard
             ? const _DashboardBody()
-            : _PlaceholderBody(label: _sectionTitle(l10n)),
+            : _current == _Section.wallet
+                ? WalletScreen()
+                : _PlaceholderBody(label: _sectionTitle(l10n)),
       ),
     );
   }
