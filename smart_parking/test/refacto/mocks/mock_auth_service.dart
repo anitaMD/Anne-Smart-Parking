@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:smart_parking/refacto/services/auth_service.dart';
+import 'package:smart_parking/app/services/auth_service.dart';
 
 /// Mock AuthService — zéro Firebase, zéro réseau
 class MockAuthService implements AuthServiceBase {

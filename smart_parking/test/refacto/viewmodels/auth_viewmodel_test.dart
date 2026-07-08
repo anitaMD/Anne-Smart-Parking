@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smart_parking/refacto/viewmodels/auth_viewmodel.dart';
+import 'package:smart_parking/app/viewmodels/auth_viewmodel.dart';
 import '../mocks/mock_auth_service.dart';
 import '../mocks/mock_firestore_service.dart';
 
@@ -46,12 +46,12 @@ void main() {
     test('switch sur AuthError — retourne le message', () {
       const AuthState state = AuthError('test error');
       final result = switch (state) {
-        AuthInitial()             => 'initial',
-        AuthLoading()             => 'loading',
-        AuthAuthenticated()       => 'authenticated',
+        AuthInitial() => 'initial',
+        AuthLoading() => 'loading',
+        AuthAuthenticated() => 'authenticated',
         AuthError(:final message) => message,
-        AuthUnauthenticated()     => 'unauthenticated',
-        AuthOTPSent()             => 'otp_sent', // ← nouveau cas
+        AuthUnauthenticated() => 'unauthenticated',
+        AuthOTPSent() => 'otp_sent', // ← nouveau cas
       };
       expect(result, equals('test error'));
     });
@@ -62,12 +62,12 @@ void main() {
         phoneNumber: '+221770000001',
       );
       final result = switch (state) {
-        AuthInitial()         => 'initial',
-        AuthLoading()         => 'loading',
-        AuthAuthenticated()   => 'authenticated',
-        AuthError()           => 'error',
+        AuthInitial() => 'initial',
+        AuthLoading() => 'loading',
+        AuthAuthenticated() => 'authenticated',
+        AuthError() => 'error',
         AuthUnauthenticated() => 'unauthenticated',
-        AuthOTPSent()         => 'otp_sent',
+        AuthOTPSent() => 'otp_sent',
       };
       expect(result, equals('otp_sent'));
     });

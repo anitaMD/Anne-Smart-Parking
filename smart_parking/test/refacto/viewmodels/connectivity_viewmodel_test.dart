@@ -1,6 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smart_parking/refacto/viewmodels/connectivity_viewmodel.dart';
+import 'package:smart_parking/app/viewmodels/connectivity_viewmodel.dart';
 
 void main() {
   group('ConnectivityState', () {

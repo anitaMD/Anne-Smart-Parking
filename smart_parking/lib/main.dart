@@ -10,13 +10,13 @@ import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
 import 'package:smart_parking/l10n/generated/app_localizations.dart';
 import 'package:smart_parking/l10n/l10n.dart';
-import 'package:smart_parking/refacto/core/theme/app_theme.dart';
-import 'package:smart_parking/refacto/screens/settings/settings_screen.dart';
-import 'package:smart_parking/refacto/viewmodels/booking_viewmodel.dart';
-import 'package:smart_parking/refacto/viewmodels/parking_viewmodel.dart';
-import 'package:smart_parking/refacto/viewmodels/user_viewmodel.dart';
-import 'package:smart_parking/refacto/widgets/connectivity_wrapper.dart';
-import 'package:smart_parking/refacto/router/app_router.dart';
+import 'package:smart_parking/app/core/theme/app_theme.dart';
+import 'package:smart_parking/app/screens/settings/settings_screen.dart';
+import 'package:smart_parking/app/viewmodels/booking_viewmodel.dart';
+import 'package:smart_parking/app/viewmodels/parking_viewmodel.dart';
+import 'package:smart_parking/app/viewmodels/user_viewmodel.dart';
+import 'package:smart_parking/app/widgets/connectivity_wrapper.dart';
+import 'package:smart_parking/app/router/app_router.dart';
 import 'package:timezone/data/latest.dart' as tz;
 
 // ── Screens (à décommenter au fur et à mesure) ─────────────

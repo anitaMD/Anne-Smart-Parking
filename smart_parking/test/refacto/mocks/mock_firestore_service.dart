@@ -1,10 +1,10 @@
-import 'package:smart_parking/refacto/models/booking_model.dart';
-import 'package:smart_parking/refacto/models/notification_model.dart';
-import 'package:smart_parking/refacto/models/parking_model.dart';
-import 'package:smart_parking/refacto/models/user_model.dart';
-import 'package:smart_parking/refacto/models/vehicle_model.dart';
-import 'package:smart_parking/refacto/models/wallet_model.dart';
-import 'package:smart_parking/refacto/services/firestore_service.dart';
+import 'package:smart_parking/app/models/booking_model.dart';
+import 'package:smart_parking/app/models/notification_model.dart';
+import 'package:smart_parking/app/models/parking_model.dart';
+import 'package:smart_parking/app/models/user_model.dart';
+import 'package:smart_parking/app/models/vehicle_model.dart';
+import 'package:smart_parking/app/models/wallet_model.dart';
+import 'package:smart_parking/app/services/firestore_service.dart';
 
 /// Mock FirestoreService — zéro Firebase, zéro réseau
 /// Réutilisable dans tous les tests qui ont besoin de Firestore
