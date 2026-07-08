@@ -11,11 +11,13 @@ import 'package:get/get.dart';
 import 'package:smart_parking/l10n/generated/app_localizations.dart';
 import 'package:smart_parking/l10n/l10n.dart';
 import 'package:smart_parking/refacto/core/theme/app_theme.dart';
+import 'package:smart_parking/refacto/screens/settings/settings_screen.dart';
 import 'package:smart_parking/refacto/viewmodels/booking_viewmodel.dart';
 import 'package:smart_parking/refacto/viewmodels/parking_viewmodel.dart';
 import 'package:smart_parking/refacto/viewmodels/user_viewmodel.dart';
 import 'package:smart_parking/refacto/widgets/connectivity_wrapper.dart';
 import 'package:smart_parking/refacto/router/app_router.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 // ── Screens (à décommenter au fur et à mesure) ─────────────
 // import 'package:smart_parking/refacto/screens/auth/login_screen.dart';
@@ -59,6 +61,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  tz.initializeTimeZones();
   await _firebaseInit;
 
   final user = await FirebaseAuth.instance.authStateChanges().first;
@@ -104,15 +107,16 @@ class YSPApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(userProvider); //DO NOT EVER DELETE THIS
-    ref.watch(parkingProvider); // ← ajouter
-    ref.watch(bookingProvider); // ← ajouter
+    ref.watch(userProvider); //DO NOT EVER DELETE THESE
+    ref.watch(parkingProvider);
+    ref.watch(bookingProvider);
+    final locale = ref.watch(localeProvider);
 
     return GetMaterialApp(
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      locale: const Locale('fr', 'FR'),
+      locale: locale,
       supportedLocales: L10n.all,
       localizationsDelegates: const [
         AppLocalizations.delegate,

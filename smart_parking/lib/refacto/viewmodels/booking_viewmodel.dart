@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_parking/refacto/screens/settings/settings_screen.dart';
+import 'package:smart_parking/refacto/services/notification_service.dart';
 import '../models/booking_model.dart';
 import '../services/firestore_service.dart';
 import '../viewmodels/auth_viewmodel.dart';
@@ -155,8 +157,26 @@ class BookingNotifier extends Notifier<BookingState> {
     );
 
     final bookingId = await _firestoreService.createBookingAtomic(booking);
-    debugPrint('[Booking] Créée : $bookingId');
 
+// Planifier les rappels
+    final bookingWithId = BookingModel(
+      id: bookingId,
+      clientId: booking.clientId,
+      parkingId: booking.parkingId,
+      spotId: booking.spotId,
+      vehicleId: booking.vehicleId,
+      bookingStart: booking.bookingStart,
+      bookingEnd: booking.bookingEnd,
+      totalCost: booking.totalCost,
+      status: booking.status,
+      vehicleStatus: booking.vehicleStatus,
+      isArchived: booking.isArchived,
+      createdAt: booking.createdAt,
+    );
+    final notifSettings = ref.read(notifSettingsProvider);
+    if (notifSettings.allEnabled) {
+      NotificationService().scheduleBookingReminders(bookingWithId);
+    }
     // Débiter le wallet
     final userState = ref.read(userProvider);
     final wallet = userState.wallet;

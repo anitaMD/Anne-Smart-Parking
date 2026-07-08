@@ -7,8 +7,10 @@ import 'package:smart_parking/refacto/models/vehicle_model.dart';
 import 'package:smart_parking/refacto/screens/booking/booking_history_screen.dart';
 import 'package:smart_parking/refacto/screens/booking/booking_screen.dart';
 import 'package:smart_parking/refacto/screens/dashboard/add_vehicle_screen.dart';
+import 'package:smart_parking/refacto/screens/notification/notifications_screen.dart';
 import 'package:smart_parking/refacto/screens/parking/parking_map_screen.dart';
 import 'package:smart_parking/refacto/screens/profile/profile_screen.dart';
+import 'package:smart_parking/refacto/screens/settings/settings_screen.dart';
 import 'package:smart_parking/refacto/screens/wallet/wallet_screen.dart';
 import 'package:smart_parking/refacto/widgets/empty_state_card_widget.dart';
 import '../../core/constants/app_colors.dart';
@@ -71,6 +73,18 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
         appBar: AppBar(
           title: Text(_sectionTitle(l10n)),
           flexibleSpace: Container(decoration: AppDecorations.gradientAppBar),
+          leading: _current == _Section.dashboard
+              ? Builder(
+                  builder: (ctx) => IconButton(
+                    icon: const Icon(Icons.menu),
+                    onPressed: () => Scaffold.of(ctx).openDrawer(),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () =>
+                      setState(() => _current = _Section.dashboard),
+                ),
           actions: [
             Stack(
               children: [
@@ -211,14 +225,20 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
           ),
         ),
         body: _current == _Section.dashboard
-            ? const _DashboardBody()
+            ? _DashboardBody(
+                onViewAllBookings: () =>
+                    setState(() => _current = _Section.bookings))
             : _current == _Section.wallet
                 ? WalletScreen()
                 : _current == _Section.profile
                     ? ProfileScreen()
-                    : _current == _Section.bookings
-                        ? BookingHistoryScreen()
-                        : _PlaceholderBody(label: _sectionTitle(l10n)),
+                    : _current == _Section.notifications
+                        ? NotificationsScreen()
+                        : _current == _Section.bookings
+                            ? BookingHistoryScreen()
+                            : _current == _Section.settings
+                                ? SettingsScreen()
+                                : _PlaceholderBody(label: _sectionTitle(l10n)),
       ),
     );
   }
@@ -270,7 +290,8 @@ class _DrawerItem extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 
 class _DashboardBody extends ConsumerWidget {
-  const _DashboardBody();
+  final VoidCallback onViewAllBookings;
+  const _DashboardBody({required this.onViewAllBookings});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -341,12 +362,7 @@ class _DashboardBody extends ConsumerWidget {
                         ),
                       )
                   : hasReservationHistory
-                      ? () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const BookingHistoryScreen(),
-                            ),
-                          )
+                      ? onViewAllBookings
                       : null,
             ),
             const SizedBox(height: AppSizes.spaceS),
