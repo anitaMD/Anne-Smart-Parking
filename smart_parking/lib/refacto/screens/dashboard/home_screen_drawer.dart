@@ -8,6 +8,7 @@ import 'package:smart_parking/refacto/screens/booking/booking_history_screen.dar
 import 'package:smart_parking/refacto/screens/booking/booking_screen.dart';
 import 'package:smart_parking/refacto/screens/dashboard/add_vehicle_screen.dart';
 import 'package:smart_parking/refacto/screens/parking/parking_map_screen.dart';
+import 'package:smart_parking/refacto/screens/profile/profile_screen.dart';
 import 'package:smart_parking/refacto/screens/wallet/wallet_screen.dart';
 import 'package:smart_parking/refacto/widgets/empty_state_card_widget.dart';
 import '../../core/constants/app_colors.dart';
@@ -30,7 +31,7 @@ class HomeScreenDrawer extends ConsumerStatefulWidget {
   ConsumerState<HomeScreenDrawer> createState() => _HomeScreenDrawerState();
 }
 
-enum _Section { dashboard, profile, wallet, notifications, settings }
+enum _Section { dashboard, profile, bookings, wallet, notifications, settings }
 
 class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
   _Section _current = _Section.dashboard;
@@ -38,6 +39,7 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
   String _sectionTitle(AppLocalizations l10n) => switch (_current) {
         _Section.dashboard => l10n.dashboardTitle,
         _Section.profile => l10n.dashboardProfile,
+        _Section.bookings => "Réservations",
         _Section.wallet => l10n.dashboardWallet,
         _Section.notifications => l10n.dashboardNotifications,
         _Section.settings => l10n.dashboardSettings,
@@ -158,6 +160,15 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
                 },
               ),
               _DrawerItem(
+                icon: Icons.history,
+                label: 'Mes Réservations',
+                selected: _current == _Section.bookings,
+                onTap: () {
+                  setState(() => _current = _Section.bookings);
+                  Navigator.pop(context);
+                },
+              ),
+              _DrawerItem(
                 icon: Icons.account_balance_wallet_outlined,
                 label: l10n.dashboardWallet,
                 selected: _current == _Section.wallet,
@@ -203,7 +214,11 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
             ? const _DashboardBody()
             : _current == _Section.wallet
                 ? WalletScreen()
-                : _PlaceholderBody(label: _sectionTitle(l10n)),
+                : _current == _Section.profile
+                    ? ProfileScreen()
+                    : _current == _Section.bookings
+                        ? BookingHistoryScreen()
+                        : _PlaceholderBody(label: _sectionTitle(l10n)),
       ),
     );
   }

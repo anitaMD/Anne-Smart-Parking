@@ -38,6 +38,17 @@ class ParkingModel {
     required this.feePerSlot,
   });
 
+  factory ParkingModel.empty() => const ParkingModel(
+        id: '',
+        name: 'Parking inconnu',
+        streetAddress: '',
+        city: '',
+        countryCode: '',
+        position: GeoPoint(0, 0),
+        openingHour: '00:00',
+        closingHour: '23:59',
+        feePerSlot: 0,
+      );
   factory ParkingModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return ParkingModel(

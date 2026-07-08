@@ -321,6 +321,13 @@ class AuthNotifier extends Notifier<AuthState> {
       debugPrint('[Auth] user: $user, wallet: $wallet');
 
       if (user != null && user.role == 'user') {
+        // Sync email si Firebase Auth a un email différent
+        final authEmail = currentUser.email ?? '';
+        if (authEmail.isNotEmpty && authEmail != user.email) {
+          debugPrint('[Auth] Sync email: ${user.email} → $authEmail');
+          await _firestoreService
+              .updateUser(currentUser.uid, {'email': authEmail});
+        }
         // Créer wallet si absent (en arrière-plan, pas bloquant)
         if (wallet == null) {
           _firestoreService
