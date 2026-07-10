@@ -83,7 +83,8 @@ class MockFirestoreService implements FirestoreServiceBase {
       required String walletId,
       required int amount,
       required int newBalance,
-      required String source}) async {}
+      required String source,
+      String? agentUid}) async {}
   @override
   Future<void> saveNotification(
       {required String uid,
@@ -136,6 +137,12 @@ class MockFirestoreService implements FirestoreServiceBase {
       required DateTime bookingStart,
       required DateTime bookingEnd}) {
     // TODO: implement watchOccupiedSpotIds
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<List<Map<String, dynamic>>> watchAgentTopUps(String agentUid) {
+    // TODO: implement watchAgentTopUps
     throw UnimplementedError();
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:smart_parking/app/core/utils/license_plate_formatter.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../core/constants/countries_data.dart';
@@ -17,8 +18,9 @@ import '../../widgets/ysp_text_field.dart';
 
 class AddVehicleScreen extends ConsumerStatefulWidget {
   final VehicleModel? vehicle; // null = ajout, non-null = édition
+  final BuildContext? context;
 
-  const AddVehicleScreen({super.key, this.vehicle});
+  const AddVehicleScreen({super.key, this.vehicle, this.context});
 
   @override
   ConsumerState<AddVehicleScreen> createState() => _AddVehicleScreenState();
@@ -26,7 +28,6 @@ class AddVehicleScreen extends ConsumerStatefulWidget {
 
 class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   final _formKey = GlobalKey<FormState>();
-
   CarBrandModel? _selectedBrand;
   final _modelController = TextEditingController();
   final _plateController = TextEditingController();
@@ -100,34 +101,41 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   }
   // ── Prévisualisation de la plaque ─────────────────────────
 
-  VehicleModel get _previewVehicle => VehicleModel(
-        id: '',
-        brand: _selectedBrand?.name ?? 'Marque',
-        modelDetail:
-            _modelController.text.isEmpty ? 'Modèle' : _modelController.text,
-        color: _selectedColor,
-        licensePlate: _plateController.text.isEmpty
-            ? 'XX-0000-XX'
-            : _plateController.text.toUpperCase(),
-        registrationYear: _yearController.text,
-        registrationCountry: _selectedCountry?.nameFr ?? '',
-        registrationCity: _selectedCity ?? '',
-        countryIso: _selectedCountry?.iso ?? 'SN',
-        cityIso: extractedCityIso,
-        isCurrentlySelected: false,
-        type: _vehicleType,
-      );
+  VehicleModel _previewVehicle(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return VehicleModel(
+      id: '',
+      brand: _selectedBrand?.name ?? l10n.vehicleBrand,
+      modelDetail: _modelController.text.isEmpty
+          ? l10n.vehicleModel
+          : _modelController.text,
+      color: _selectedColor,
+      licensePlate: _plateController.text.isEmpty
+          ? 'XX-0000-XX'
+          : _plateController.text.toUpperCase(),
+      registrationYear: _yearController.text,
+      registrationCountry: _selectedCountry?.nameFr ?? '',
+      registrationCity: _selectedCity ?? '',
+      countryIso: _selectedCountry?.iso ?? 'SN',
+      cityIso: extractedCityIso,
+      isCurrentlySelected: false,
+      type: _vehicleType,
+    );
+  }
 
   // ── Sauvegarde ────────────────────────────────────────────
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context)!;
+
     if (_selectedBrand == null) {
-      _showError('Veuillez sélectionner une marque.');
+      _showError(l10n.vehicleBrandRequired);
+
       return;
     }
     if (_selectedCountry == null) {
-      _showError('Veuillez sélectionner un pays.');
+      _showError(l10n.vehicleCountrySelectRequired);
       return;
     }
 
@@ -182,8 +190,8 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(widget.vehicle != null
-                ? 'Véhicule modifié avec succès !'
-                : 'Véhicule ajouté avec succès !'),
+                ? l10n.vehicleEditSuccess
+                : l10n.vehicleAddSuccess),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -208,12 +216,12 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.vehicle != null
-              ? 'Modifier le véhicule'
-              : 'Ajouter un véhicule',
+          widget.vehicle != null ? l10n.vehicleEditTitle : l10n.vehicleAddTitle,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
@@ -232,7 +240,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Aperçu plaque en temps réel ──────────────
-              const _SectionHeader(title: 'Aperçu de la plaque'),
+              _SectionHeader(title: l10n.vehiclePlatePreview),
               const SizedBox(height: AppSizes.spaceS),
               AnimatedBuilder(
                 animation: Listenable.merge([
@@ -240,14 +248,14 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                   _plateController,
                 ]),
                 builder: (_, __) => LicensePlateWidget(
-                  vehicle: _previewVehicle,
+                  vehicle: _previewVehicle(context),
                   compact: false,
                 ),
               ),
               const SizedBox(height: AppSizes.spaceL),
 
               // ── Type ──────────────────────────────────────
-              const _SectionHeader(title: 'Type de véhicule'),
+              _SectionHeader(title: l10n.vehicleType),
               const SizedBox(height: AppSizes.spaceS),
               Row(
                 children: _types
@@ -268,7 +276,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               const SizedBox(height: AppSizes.spaceL),
 
               // ── Marque ────────────────────────────────────
-              const _SectionHeader(title: 'Marque'),
+              _SectionHeader(title: l10n.vehicleBrand),
               const SizedBox(height: AppSizes.spaceS),
               _BrandPicker(
                 selected: _selectedBrand,
@@ -277,21 +285,21 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               const SizedBox(height: AppSizes.spaceL),
 
               // ── Modèle ────────────────────────────────────
-              const _SectionHeader(title: 'Informations'),
+              _SectionHeader(title: l10n.vehicleInfo),
               const SizedBox(height: AppSizes.spaceS),
               YspTextField(
                 controller: _modelController,
-                label: 'Modèle',
-                hint: 'Ex: Classe C, Corolla, Clio...',
+                label: l10n.vehicleModel,
+                hint: l10n.vehicleModelHint,
                 icon: Icons.directions_car_outlined,
                 validator: (v) =>
-                    v == null || v.isEmpty ? 'Modèle requis' : null,
+                    v == null || v.isEmpty ? l10n.vehicleModelRequired : null,
               ),
               const SizedBox(height: AppSizes.spaceM),
 
               // ── Couleur — chips ───────────────────────────
-              const _SectionHeader(title: 'Couleur'),
-              const SizedBox(height: AppSizes.spaceS),
+              _SectionHeader(title: l10n.vehicleColor),
+              SizedBox(height: AppSizes.spaceS),
               _ColorPicker(
                 selected: _selectedColor,
                 colors: _colors,
@@ -302,8 +310,8 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               // ── Plaque ────────────────────────────────────
               YspTextField(
                 controller: _plateController,
-                label: "Plaque d'immatriculation",
-                hint: 'Ex: DAK-1234-2024',
+                label: l10n.vehiclePlate,
+                hint: l10n.vehiclePlateHint,
                 icon: Icons.credit_card_outlined,
                 textCapitalization: TextCapitalization.characters,
                 inputFormatters: [
@@ -311,9 +319,9 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                   LengthLimitingTextInputFormatter(11), // Max: XXX-XXXX-XXXX
                 ],
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Plaque requise';
+                  if (v == null || v.isEmpty) return l10n.vehiclePlateRequired;
                   if (!LicensePlateUtils.validatePlate(v)) {
-                    return 'Format invalide. Ex: DAK-1234-2024';
+                    return l10n.vehiclePlateInvalid;
                   }
                   return null;
                 },
@@ -328,15 +336,15 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               // ── Année ─────────────────────────────────────
               YspTextField(
                 controller: _yearController,
-                label: 'Année',
-                hint: 'Ex: 2020',
+                label: l10n.vehicleYear,
+                hint: l10n.vehicleYearHint,
                 icon: Icons.calendar_today_outlined,
                 keyboardType: TextInputType.number,
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Année requise';
+                  if (v == null || v.isEmpty) return l10n.vehicleYearRequired;
                   final y = int.tryParse(v);
                   if (y == null || y < 1900 || y > 2030) {
-                    return 'Année invalide';
+                    return l10n.vehicleYearInvalid;
                   }
                   return null;
                 },
@@ -344,7 +352,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               const SizedBox(height: AppSizes.spaceL),
 
               // ── Pays — dropdown ───────────────────────────
-              const _SectionHeader(title: "Pays d'immatriculation"),
+              _SectionHeader(title: l10n.vehicleCountry),
               const SizedBox(height: AppSizes.spaceS),
               _CountryDropdown(
                 selected: _selectedCountry,
@@ -357,7 +365,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
 
               // ── Ville — dropdown (filtrée par pays) ───────
               if (_selectedCountry != null) ...[
-                const _SectionHeader(title: 'Ville'),
+                _SectionHeader(title: l10n.vehicleCity),
                 const SizedBox(height: AppSizes.spaceS),
                 _CityDropdown(
                   country: _selectedCountry!,
@@ -378,7 +386,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                       ),
                     )
                   : YspButton(
-                      label: 'Enregistrer le véhicule',
+                      label: l10n.vehicleSave,
                       onPressed: _save,
                     ),
               const SizedBox(height: AppSizes.spaceL),
@@ -400,6 +408,7 @@ class _CountryDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -420,7 +429,7 @@ class _CountryDropdown extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(
               horizontal: AppSizes.spaceM, vertical: AppSizes.spaceM),
         ),
-        hint: const Text('Sélectionner un pays'),
+        hint: Text(l10n.vehicleCountryHint),
         items: kCountries
             .map((c) => DropdownMenuItem(
                   value: c,
@@ -436,7 +445,7 @@ class _CountryDropdown extends StatelessWidget {
         onChanged: (c) {
           if (c != null) onSelected(c);
         },
-        validator: (v) => v == null ? 'Pays requis' : null,
+        validator: (v) => v == null ? l10n.vehicleCountryRequired : null,
       ),
     );
   }
@@ -457,6 +466,7 @@ class _CityDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -478,7 +488,7 @@ class _CityDropdown extends StatelessWidget {
           contentPadding: EdgeInsets.symmetric(
               horizontal: AppSizes.spaceM, vertical: AppSizes.spaceM),
         ),
-        hint: const Text('Sélectionner une ville'),
+        hint: Text(l10n.vehicleCityHint),
         items: country.cities
             .map((city) => DropdownMenuItem(value: city, child: Text(city)))
             .toList(),

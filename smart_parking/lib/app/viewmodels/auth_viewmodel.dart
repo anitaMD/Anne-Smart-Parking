@@ -302,7 +302,6 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> _loadCurrentUser() async {
     final currentUser = _authService.currentUser;
-    debugPrint('[Auth] currentUser uid: ${currentUser?.uid}');
 
     if (currentUser == null) {
       state = const AuthUnauthenticated();
@@ -320,7 +319,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final wallet = results[1] as WalletModel?;
       debugPrint('[Auth] user: $user, wallet: $wallet');
 
-      if (user != null && user.role == 'user') {
+      if (user != null) {
         // Sync email si Firebase Auth a un email différent
         final authEmail = currentUser.email ?? '';
         if (authEmail.isNotEmpty && authEmail != user.email) {

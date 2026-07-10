@@ -1,4 +1,5 @@
-{
+{"@@locale": "en",
+
     "language": "English",
     "@language": {
         "description": "The currrent Language"
@@ -376,6 +377,667 @@
 "dashboardNoBookingSubtitle": "Tap to see available parkings",
 "@dashboardNoBookingSubtitle": { "description": "No booking subtitle" },
 "dashboardSwipeForParkings": "↑ Swipe up to see parkings",
-"@dashboardSwipeForParkings": { "description": "Swipe hint on map" }
+"@dashboardSwipeForParkings": { "description": "Swipe hint on map" },
+"dashboardBookings": "My Bookings",
+"@dashboardBookings": {
+  "description": "Bookings section title in drawer"
+},
+"dashboardVoirTout": "See all",
+"@dashboardVoirTout": {
+  "description": "Button to see all bookings/vehicles"
+},
+"dashboardVoirCarte": "See map",
+"@dashboardVoirCarte": {
+  "description": "Button to see parkings map"
+},
+"dashboardCurrentVehicle": "Current vehicle",
+"@dashboardCurrentVehicle": {
+  "description": "Default vehicle section title on dashboard"
+},
+"dashboardNoVehicle": "No vehicle added",
+"@dashboardNoVehicle": {
+  "description": "Message when no vehicle"
+},
+"dashboardNoVehicleSubtitle": "Add your vehicle to book.",
+"@dashboardNoVehicleSubtitle": {
+  "description": "Subtitle when no vehicle"
+},
+"dashboardFavorites": "My favorite parkings",
+"@dashboardFavorites": {
+  "description": "Favorite parkings section title"
+},
+"dashboardNoFavorite": "No favorites yet",
+"@dashboardNoFavorite": {
+  "description": "Message when no favorites"
+},
+"dashboardNoFavoriteSubtitle": "Make bookings to see your favorite parkings.",
+"@dashboardNoFavoriteSubtitle": {
+  "description": "Subtitle when no favorites"
+},
+"dashboardMyVehicles": "My vehicles",
+"@dashboardMyVehicles": {
+  "description": "Vehicle selection modal title"
+},
+"dashboardVehicleHint": "Tap = select • Double tap = set as default",
+"@dashboardVehicleHint": {
+  "description": "Tap/swipe hint in vehicle list"
+},
+"dashboardAddVehicle": "Add a vehicle",
+"@dashboardAddVehicle": {
+  "description": "Add vehicle button"
+},
+"dashboardFull": "Full",
+"@dashboardFull": {
+  "description": "Parking full status"
+},
+"dashboardCheckAvailability": "Availability",
+"@dashboardCheckAvailability": {
+  "description": "Check availability button for favorite parking"
+},
+"dashboardChecking": "Checking...",
+"@dashboardChecking": {
+  "description": "Loader during availability check"
+},
+"dashboardBook": "Book",
+"@dashboardBook": {
+  "description": "Book button in favorites"
+},
+"dashboardCancelBooking": "Cancel booking?",
+"@dashboardCancelBooking": {
+  "description": "Cancel booking dialog title"
+},
+"dashboardCancelConfirm": "Do you really want to cancel the booking for spot {spotId}?",
+"@dashboardCancelConfirm": {
+  "description": "Cancel booking confirmation message",
+  "placeholders": {
+    "spotId": {
+      "type": "String",
+      "description": "Parking spot identifier"
+    }
+  }
+},
+"commonYes": "Yes",
+"@commonYes": {
+  "description": "Generic confirmation button"
+},
+"commonNo": "No",
+"@commonNo": {
+  "description": "Generic cancel button"
+},
+"commonNext": "Next",
+"@commonNext": {
+  "description": "Next step"
+},
+
+
+
+
+"vehicleAddTitle": "Add a vehicle",
+"@vehicleAddTitle": { "description": "Add vehicle screen title" },
+
+"vehicleEditTitle": "Edit vehicle",
+"@vehicleEditTitle": { "description": "Edit vehicle screen title" },
+
+"vehicleAddSuccess": "Vehicle added successfully!",
+"@vehicleAddSuccess": { "description": "Vehicle add success message" },
+
+"vehicleEditSuccess": "Vehicle updated successfully!",
+"@vehicleEditSuccess": { "description": "Vehicle edit success message" },
+
+"vehiclePlatePreview": "Plate preview",
+"@vehiclePlatePreview": { "description": "Plate preview section" },
+
+"vehicleType": "Vehicle type",
+"@vehicleType": { "description": "Vehicle type section" },
+
+"vehicleBrand": "Brand",
+"@vehicleBrand": { "description": "Brand section" },
+
+"vehicleInfo": "Information",
+"@vehicleInfo": { "description": "Vehicle information section" },
+
+"vehicleModel": "Model",
+"@vehicleModel": { "description": "Model field" },
+
+"vehicleModelHint": "Ex: C-Class, Corolla, Clio...",
+"@vehicleModelHint": { "description": "Model field placeholder" },
+
+"vehicleModelRequired": "Model required",
+"@vehicleModelRequired": { "description": "Model field empty error" },
+
+"vehicleColor": "Color",
+"@vehicleColor": { "description": "Vehicle color section" },
+
+"vehiclePlate": "License plate",
+"@vehiclePlate": { "description": "License plate field" },
+
+"vehiclePlateHint": "Ex: DAK-1234-2024",
+"@vehiclePlateHint": { "description": "Plate placeholder" },
+
+"vehiclePlateRequired": "Plate required",
+"@vehiclePlateRequired": { "description": "Plate empty error" },
+
+"vehiclePlateInvalid": "Invalid format. Ex: DAK-1234-2024",
+"@vehiclePlateInvalid": { "description": "Invalid plate format error" },
+
+"vehicleYear": "Year",
+"@vehicleYear": { "description": "Vehicle year field" },
+
+"vehicleYearHint": "Ex: 2020",
+"@vehicleYearHint": { "description": "Year placeholder" },
+
+"vehicleYearRequired": "Year required",
+"@vehicleYearRequired": { "description": "Year empty error" },
+
+"vehicleYearInvalid": "Invalid year",
+"@vehicleYearInvalid": { "description": "Invalid year error" },
+
+"vehicleCountry": "Registration country",
+"@vehicleCountry": { "description": "Registration country section" },
+
+"vehicleCountryHint": "Select a country",
+"@vehicleCountryHint": { "description": "Country selection placeholder" },
+
+"vehicleCountryRequired": "Country required",
+"@vehicleCountryRequired": { "description": "Country not selected error" },
+
+"vehicleCity": "City",
+"@vehicleCity": { "description": "Registration city section" },
+
+"vehicleCityHint": "Select a city",
+"@vehicleCityHint": { "description": "City selection placeholder" },
+
+"vehicleSave": "Save vehicle",
+"@vehicleSave": { "description": "Save vehicle button" },
+
+"vehicleBrandRequired": "Please select a brand.",
+"@vehicleBrandRequired": { "description": "Brand not selected error" },
+
+"vehicleCountrySelectRequired": "Please select a country.",
+"@vehicleCountrySelectRequired": { "description": "Country not selected validation error" },
+
+
+"bookingSelectSpotError": "Please select a spot",
+"@bookingSelectSpotError": { "description": "No spot selected error" },
+
+"bookingSelectDateError": "Please select a date",
+"@bookingSelectDateError": { "description": "No date chosen error" },
+
+"bookingSelectVehicleError": "Please select a vehicle",
+"@bookingSelectVehicleError": { "description": "No vehicle selected error" },
+
+"bookingNoVehicleStep": "Select a vehicle in the previous step",
+"@bookingNoVehicleStep": { "description": "Step2 message without vehicle" },
+
+"bookingInsufficientBalance": "Unsufficient balance. Recharge your YSP wallet.",
+"@bookingInsufficientBalance": { "description": "Solde insuffisant. Rechargez votre wallet YSP." },
+
+"bookingConfirmEdit": "Confirm changes",
+"@bookingConfirmEdit": { "description": "Confirm edit booking button" },
+
+"bookingConfirmNew": "Confirm booking",
+"@bookingConfirmNew": { "description": "Confirm new booking button" },
+
+"bookingStepParking": "Parking",
+"@bookingStepParking": { "description": "Step 1 label" },
+
+"bookingStepSummary": "Summary",
+"@bookingStepSummary": { "description": "Step 2 label" },
+
+"bookingVehicle": "Vehicle",
+"@bookingVehicle": { "description": "Vehicle label in summary" },
+
+"bookingParking": "Parking",
+"@bookingParking": { "description": "Parking label in summary" },
+
+"bookingSpot": "Spot",
+"@bookingSpot": { "description": "Spot label in summary" },
+
+"bookingAddress": "Address",
+"@bookingAddress": { "description": "Address label in summary" },
+
+"bookingDate": "Date",
+"@bookingDate": { "description": "Date label in summary" },
+
+"bookingStart": "Start",
+"@bookingStart": { "description": "Booking start time label" },
+
+"bookingEnd": "End",
+"@bookingEnd": { "description": "Booking end time label" },
+
+"bookingDuration": "Duration",
+"@bookingDuration": { "description": "Booking duration label" },
+
+"bookingOriginalCost": "Original cost",
+"@bookingOriginalCost": { "description": "Original cost label in edit mode" },
+
+"bookingSupplement": "Supplement",
+"@bookingSupplement": { "description": "Supplement label in edit mode" },
+
+"bookingCurrentBalance": "Current balance",
+"@bookingCurrentBalance": { "description": "Current wallet balance label" },
+
+"bookingBalanceAfter": "Balance after",
+"@bookingBalanceAfter": { "description": "Balance after debit label" },
+
+"bookingCost": "Cost",
+"@bookingCost": { "description": "Total booking cost label" },
+
+"bookingReducedDuration": "Reduced duration — initial cost kept, no refund.",
+"@bookingReducedDuration": { "description": "Reduced duration no refund message" },
+
+"bookingPriceUnchanged": "Unchanged ",
+"@bookingPriceUnchanged": { "description": "Unchanged booking price" },
+
+"bookingSlideHint": "Scroll through the grid to see all available spots.",
+"@bookingSlideHint": { "description": "Spots grid scroll hint" },
+
+"bookingSlideHintDismiss": "DON'T SHOW AGAIN",
+"@bookingSlideHintDismiss": { "description": "Dismiss hint button" },
+
+"bookingVehicleSwapSlideHint": "Swipe to scroll through vehicles",
+"@bookingVehicleSwapSlideHint": { "description": "Glissez pour changer de véhicule" },
+
+"bookingSelectTimeSlot": "Choose a time slot to see spot availability.",
+"@bookingSelectTimeSlot": { "description": "Message before slot selection" },
+
+"bookingSelectTimeSlotTitle": "Select time slot",
+"@bookingSelectTimeSlotTitle": { "description": "Titre time slot" },
+
+"bookingSelectSpotTitle": "Select spot",
+"@bookingSelectSpotTitle": { "description": "Titre spot" },
+
+"bookingSelectDateTitle": "Select date",
+"@bookingSelectDateTitle": { "description": "Titre date" },
+
+"bookingSelectVehicleTitle": "Select vehicle",
+"@bookingSelectVehicleTitle": { "description": "Titre vehicle" },
+
+"bookingSpotEntry": "Entry",
+"@bookingSpotEntry": { "description": "Titre vehicle" },
+
+"bookingSpotExit": "Exit",
+"@bookingSpotExit": { "description": "Titre vehicle" },
+
+"bookingFrom": "Start",
+"@bookingFrom": { "description": "Range picker start label" },
+
+"bookingTo": "End",
+"@bookingTo": { "description": "Range picker end label" },
+
+"bookingSpotOccupied": "Occupied",
+"@bookingSpotOccupied": { "description": "Occupied spot" },
+"bookingSpotFree": "Free",
+"@bookingSpotFree": { "description": "Occupied spot" },
+"bookingSpotReserved": "Booked",
+"@bookingSpotReserved": { "description": "Range picker start label" },
+
+"bookingSpotForDisabled": "Accessible",
+"@bookingSpotForDisabled": { "description": "Accessible parking for disabled ACC " },
+
+"bookingUserHasNoVehicle": "No registered vehicle — add one from your profil",
+"@bookingUserHasNoVehicle": { "description": "When user has no registered vehicle" },
+"bookingItemSelected": "Selected",
+"@bookingItemSelected": { "description": "L'item sélectionné " },
+
+"bookingStatusOngoing": "ONGOING",
+"@bookingStatusOngoing": { "description": "Ongoing status badge" },
+
+"bookingStatusCanceled": "CANCELED",
+"@bookingStatusCanceled": { "description": "Canceled status badge" },
+
+"bookingStatusDone": "DONE",
+"@bookingStatusDone": { "description": "Done status badge" },
+
+"bookingStatusUpcomingEdited": "UPCOMING · EDITED",
+"@bookingStatusUpcomingEdited": { "description": "Upcoming edited status badge" },
+
+"bookingStatusUpcoming": "UPCOMING",
+"@bookingStatusUpcoming": { "description": "Upcoming status badge" },
+
+"bookingEdited": "Edited",
+"@bookingEdited": { "description": "Edited badge on card" },
+
+"bookingSpotLabel": "Spot {spotId}",
+"@bookingSpotLabel": {
+  "description": "Spot label with ID",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "Spot ID" }
+  }
+},
+
+"bookingCancelTitle": "Cancel booking?",
+"@bookingCancelTitle": { "description": "Cancel dialog title" },
+
+"bookingCancelContent": "Spot {spotId} — {date}\n\nNo refund will be issued.",
+"@bookingCancelContent": {
+  "description": "Cancel dialog message",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "Spot ID" },
+    "date": { "type": "String", "description": "Booking date" }
+  }
+},
+
+"bookingFilterAll": "All",
+"@bookingFilterAll": { "description": "All bookings filter" },
+
+"bookingFilterOngoing": "Ongoing",
+"@bookingFilterOngoing": { "description": "Ongoing bookings filter" },
+
+"bookingFilterUpcoming": "Upcoming",
+"@bookingFilterUpcoming": { "description": "Upcoming bookings filter" },
+
+"bookingFilterPast": "Past",
+"@bookingFilterPast": { "description": "Past bookings filter" },
+
+"bookingFilterCanceled": "Canceled",
+"@bookingFilterCanceled": { "description": "Canceled bookings filter" },
+
+"bookingEditAction": "Edit",
+"@bookingEditAction": { "description": "Edit booking button" },
+
+"bookingCancelAction": "Cancel",
+"@bookingCancelAction": { "description": "Cancel booking button" },
+
+"bookingConfirmCancelYes": "Yes, cancel",
+"@bookingConfirmCancelYes": { "description": "Confirm cancel button" },
+
+"bookingSuccessNew": "Booking confirmed successfully!",
+"@bookingSuccessNew": { "description": "New booking success message" },
+
+"bookingSuccessEdit": "Booking updated successfully!",
+"@bookingSuccessEdit": { "description": "Edit booking success message" },
+
+"bookingErrorGeneric": "Error: {message}",
+"@bookingErrorGeneric": {
+  "description": "Generic error message",
+  "placeholders": {
+    "message": { "type": "String", "description": "Error message" }
+  }
+},
+
+
+"parkingTitle": "Parkings",
+"@parkingTitle": { "description": "Parkings screen title" },
+
+"parkingSearchHint": "Name or address...",
+"@parkingSearchHint": { "description": "Parking search placeholder" },
+
+"parkingFound": "{count} parking found",
+"@parkingFound": {
+  "description": "Number of parkings found (singular)",
+  "placeholders": {
+    "count": { "type": "int", "description": "Number of parkings" }
+  }
+},
+
+"parkingsFound": "{count} parkings found",
+"@parkingsFound": {
+  "description": "Number of parkings found (plural)",
+  "placeholders": {
+    "count": { "type": "int", "description": "Number of parkings" }
+  }
+},
+
+"parkingNoneFound": "No parking found",
+"@parkingNoneFound": { "description": "No parking found message" },
+
+"parkingNormal": "Regular",
+"@parkingNormal": { "description": "Regular spots label" },
+
+"parkingPMR": "PMR",
+"@parkingPMR": { "description": "PMR spots label" },
+
+"parkingTotal": "Total",
+"@parkingTotal": { "description": "Total spots label" },
+
+"parkingAvailable": "Available",
+"@parkingAvailable": { "description": "Available spots label" },
+
+"parkingLegendParking": "Parking",
+"@parkingLegendParking": { "description": "Parking marker legend on map" },
+
+"parkingLegendSelected": "Selected",
+"@parkingLegendSelected": { "description": "Selected parking marker legend" },
+
+"parkingLegendMyPosition": "My position",
+"@parkingLegendMyPosition": { "description": "Légende marqueur parking sélectionné" },
+
+"settingsTitle": "Settings",
+"@settingsTitle": { "description": "Settings screen title" },
+
+"settingsLanguage": "Language",
+"@settingsLanguage": { "description": "Language section" },
+
+"settingsLangFr": "🇫🇷  Français",
+"@settingsLangFr": { "description": "French language option" },
+
+"settingsLangEn": "🇬🇧  English",
+"@settingsLangEn": { "description": "English language option" },
+
+"settingsNotifications": "Notifications",
+"@settingsNotifications": { "description": "Notifications section" },
+
+"settingsNotifAll": "All notifications",
+"@settingsNotifAll": { "description": "All notifications toggle" },
+
+"settingsNotifAllSubtitle": "Enable or disable all reminders",
+"@settingsNotifAllSubtitle": { "description": "All notifications toggle subtitle" },
+
+"settingsNotif30min": "30min before booking",
+"@settingsNotif30min": { "description": "30min before reminder toggle" },
+
+"settingsNotif30minSubtitle": "Early reminder",
+"@settingsNotif30minSubtitle": { "description": "30min reminder subtitle" },
+
+"settingsNotif10min": "10min before booking start",
+"@settingsNotif10min": { "description": "10min before reminder toggle" },
+
+"settingsNotif10minSubtitle": "Urgent reminder",
+"@settingsNotif10minSubtitle": { "description": "10min reminder subtitle" },
+
+"settingsNotifStart": "!  Booking start",
+"@settingsNotifStart": { "description": "Booking start notif toggle" },
+
+"settingsNotifStartSubtitle": "When your slot begins",
+"@settingsNotifStartSubtitle": { "description": "Booking start notif subtitle" },
+
+"settingsNotifEnd": "15min before end",
+"@settingsNotifEnd": { "description": "15min before end reminder toggle" },
+
+"settingsNotifEndSubtitle": "Imminent end reminder",
+"@settingsNotifEndSubtitle": { "description": "End reminder subtitle" },
+
+"profileTitle": "My Profile",
+"@profileTitle": { "description": "Profile screen title" },
+
+"profileSave": "Save",
+"@profileSave": { "description": "Save profile button" },
+
+"profilePhotoUpdated": "Photo updated !",
+"@profilePhotoUpdated": { "description": "Photo success message" },
+
+"profileCardUploaded": "{side} card uploaded !",
+"@profileCardUploaded": {
+  "description": "PMR card upload success message with side",
+  "placeholders": {
+    "side": { "type": "String", "description": "Card side (front/back)" }
+  }
+},
+
+"profileErrorPrefix": "Error: {message}",
+"@profileErrorPrefix": {
+  "description": "Error message prefix",
+  "placeholders": {
+    "message": { "type": "String", "description": "Error message" }
+  }
+},
+
+"profileChangeEmail": "Edit email",
+"@profileChangeEmail": { "description": "Change email dialog title" },
+
+"profileNewEmail": "New email",
+"@profileNewEmail": { "description": "New email field label" },
+
+"profileVerifyEmail": "Verify your email",
+"@profileVerifyEmail": { "description": "Email verification dialog title" },
+
+"profileVerifyEmailContent": "A verification link has been sent to {email}.\n\nClick the link BEFORE logging in again to confirm your new email.",
+"@profileVerifyEmailContent": {
+  "description": "Email verification dialog content",
+  "placeholders": {
+    "email": { "type": "String", "description": "New email" }
+  }
+},
+
+"profileLogoutToVerify": "OK, sign out",
+"@profileLogoutToVerify": { "description": "Sign out to verify email button" },
+
+"profileChangePhone": "Edit phone",
+"@profileChangePhone": { "description": "Change phone dialog title" },
+
+"profileNewPhone": "New number",
+"@profileNewPhone": { "description": "New phone number field label" },
+
+"profileSendSms": "Send SMS",
+"@profileSendSms": { "description": "Send OTP SMS button" },
+
+"profileSendingSms": "Sending SMS...",
+"@profileSendingSms": { "description": "SMS sending in progress message" },
+
+"profileSmsCode": "SMS Code",
+"@profileSmsCode": { "description": "SMS code dialog title" },
+
+"profileSmsCodeContent": "Code sent to {phone}",
+"@profileSmsCodeContent": {
+  "description": "SMS code sent message",
+  "placeholders": {
+    "phone": { "type": "String", "description": "Phone number" }
+  }
+},
+
+"profileVerifySms": "Verify",
+"@profileVerifySms": { "description": "Verify SMS code button" },
+
+"profilePersonalInfo": "Personal information",
+"@profilePersonalInfo": { "description": "Personal information section" },
+
+"profileFullName": "Full name",
+"@profileFullName": { "description": "Full name label" },
+
+"profileEmail": "Email",
+"@profileEmail": { "description": "Email label" },
+
+"profilePhone": "Phone",
+"@profilePhone": { "description": "Phone label" },
+
+"profilePmrCard": "Disability Card (PMR)",
+"@profilePmrCard": { "description": "PMR card section" },
+
+"profilePmrDescription": "Upload your disability card to access PMR spots.",
+"@profilePmrDescription": { "description": "PMR section description" },
+
+"profilePmrEnabled": "PMR access enabled !",
+"@profilePmrEnabled": { "description": "PMR enabled status" },
+
+"profilePmrDisabled": "PMR access not enabled — upload your card",
+"@profilePmrDisabled": { "description": "PMR disabled status" },
+
+"profilePmrRecto": "Front",
+"@profilePmrRecto": { "description": "PMR card front label" },
+
+"profilePmrVerso": "Back",
+"@profilePmrVerso": { "description": "PMR card back label" },
+
+"profilePmrTapChange": "Tap to change",
+"@profilePmrTapChange": { "description": "Tap to change PMR card photo hint" },
+
+"profilePmrTapUpload": "Tap to upload",
+"@profilePmrTapUpload": { "description": "Tap to upload PMR card hint" },
+
+"profileUpdated": "Profile updated !",
+"@profileUpdated": { "description": "Profile update success message" },
+
+"profilePhoneUpdated": "Phone updated !",
+"@profilePhoneUpdated": { "description": "Phone update success message" },
+"commonConfirm": "Confirm",
+"@commonConfirm": {
+  "description": "Generic confirm button"
+},
+"commonCancel": "Cancel",
+"@commonCancel": {
+  "description": "Generic cancel button"
+},"profileSmsNotSent": "SMS not sent",
+"@profileSmsNotSent": {
+  "description": "SMS not sent error message"
+},
+"profilePhoneAutoVerified": "Phone automatically verified !",
+"@profilePhoneAutoVerified": {
+  "description": "Phone automatically verified by Firebase message"
+},"profileSmsCodeLabel": "6-digit code",
+"@profileSmsCodeLabel": {
+  "description": "OTP SMS code field label"
+},"profileInvalidCode": "Invalid code: {message}",
+"@profileInvalidCode": {
+  "description": "Invalid OTP code error",
+  "placeholders": {
+    "message": { "type": "String", "description": "Firebase error message" }
+  }
+},
+"walletTitle": "My YSP Wallet",
+"@walletTitle": { "description": "Wallet screen title" },
+
+"walletQrButton": "My QR Code",
+"@walletQrButton": { "description": "QR code button in AppBar" },
+
+"walletBalance": "YSP Coin Balance",
+"@walletBalance": { "description": "Wallet balance label" },
+
+"walletPortfolioLabel": "YSP Portfolio",
+"@walletPortfolioLabel": { "description": "YSP portfolio label" },
+
+"walletHistory": "Transaction history",
+"@walletHistory": { "description": "Transaction history section title" },
+
+"walletQrTitle": "My recharge QR Code",
+"@walletQrTitle": { "description": "QR code bottom sheet title" },
+
+"walletQrSubtitle": "Show this code to a YSP agent to top up your wallet",
+"@walletQrSubtitle": { "description": "QR code bottom sheet subtitle" },
+
+"walletQrScanToRecharge": "Scan to\nrecharge",
+"@walletQrScanToRecharge": { "description": "Label under QR code in wallet card" },
+
+"walletIdCopied": "ID copied!",
+"@walletIdCopied": { "description": "ID copied to clipboard message" },
+
+"walletTransactionBooking": "Booking",
+"@walletTransactionBooking": { "description": "Booking transaction label" },
+
+"walletTransactionTopUp": "Top up",
+"@walletTransactionTopUp": { "description": "Top up transaction label" },
+
+"walletTopUpAgent": " (Agent)",
+"@walletTopUpAgent": { "description": "Top up source agent" },
+
+"walletTopUpQr": " (QR Code)",
+"@walletTopUpQr": { "description": "Top up source QR code" },
+
+"walletTopUpOnline": " (Online)",
+"@walletTopUpOnline": { "description": "Top up source online" },
+
+"walletBalanceLabel": "Balance: {balance} SPM",
+"@walletBalanceLabel": {
+  "description": "Balance after transaction label",
+  "placeholders": {
+    "balance": { "type": "int", "description": "Balance after transaction" }
+  }
+},
+
+"walletNoTransactions": "No transactions",
+"@walletNoTransactions": { "description": "No transactions message" },
+
+"walletNoTransactionsSubtitle": "Your debits and top ups will appear here",
+"@walletNoTransactionsSubtitle": { "description": "No transactions subtitle" }
     
 }

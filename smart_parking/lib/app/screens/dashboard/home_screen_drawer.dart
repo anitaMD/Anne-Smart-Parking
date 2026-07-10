@@ -2,7 +2,7 @@ import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smart_parking/l10n/generated/app_localizations.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import 'package:smart_parking/app/models/vehicle_model.dart';
 import 'package:smart_parking/app/screens/booking/booking_history_screen.dart';
 import 'package:smart_parking/app/screens/booking/booking_screen.dart';
@@ -41,7 +41,7 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
   String _sectionTitle(AppLocalizations l10n) => switch (_current) {
         _Section.dashboard => l10n.dashboardTitle,
         _Section.profile => l10n.dashboardProfile,
-        _Section.bookings => "Réservations",
+        _Section.bookings => l10n.dashboardBookings,
         _Section.wallet => l10n.dashboardWallet,
         _Section.notifications => l10n.dashboardNotifications,
         _Section.settings => l10n.dashboardSettings,
@@ -67,6 +67,13 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
         AppRouter.pushAndClearStack(context, AppRoutes.login);
       }
     });
+
+    final currentAuth = ref.read(authProvider);
+    if (currentAuth is AuthAuthenticated && currentAuth.user.role == 'agent') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AppRouter.pushAndClearStack(context, AppRoutes.agent);
+      });
+    }
 
     return ConnectivityWrapper(
       child: Scaffold(
@@ -175,7 +182,7 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
               ),
               _DrawerItem(
                 icon: Icons.history,
-                label: 'Mes Réservations',
+                label: l10n.dashboardBookings,
                 selected: _current == _Section.bookings,
                 onTap: () {
                   setState(() => _current = _Section.bookings);
@@ -231,7 +238,9 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
             : _current == _Section.wallet
                 ? WalletScreen()
                 : _current == _Section.profile
-                    ? ProfileScreen()
+                    ? ProfileScreen(
+                        l10n: l10n,
+                      )
                     : _current == _Section.notifications
                         ? NotificationsScreen()
                         : _current == _Section.bookings
@@ -350,9 +359,9 @@ class _DashboardBody extends ConsumerWidget {
             _SectionHeader(
               title: l10n.dashboardOngoingBooking,
               actionLabel: hasReservationHistory
-                  ? 'Voir tout'
+                  ? l10n.dashboardVoirTout
                   : hasCurrentReservation
-                      ? 'Voir carte'
+                      ? l10n.dashboardVoirCarte
                       : null,
               onAction: hasCurrentReservation
                   ? () => Navigator.push(
@@ -376,8 +385,8 @@ class _DashboardBody extends ConsumerWidget {
             else
               EmptyStateCard(
                 icon: Icons.add_circle_outline,
-                title: 'Aucune réservation',
-                subtitle: 'Appuyez pour naviguer vers un parking.',
+                title: l10n.dashboardNoBooking,
+                subtitle: l10n.dashboardNoBookingSubtitle,
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ParkingMapScreen()),
@@ -389,26 +398,28 @@ class _DashboardBody extends ConsumerWidget {
 
             // ── Véhicule actuel ───────────────────────────
             _SectionHeader(
-              title: 'Véhicule actuel',
-              actionLabel: userState.hasVehicles ? 'Voir tout' : null,
+              title: l10n.dashboardCurrentVehicle,
+              actionLabel:
+                  userState.hasVehicles ? l10n.dashboardVoirTout : null,
               onAction: userState.hasVehicles
                   ? () => _showVehicleSelector(context, ref, userState.vehicles)
                   : () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const AddVehicleScreen()),
+                            builder: (_) => AddVehicleScreen(context: context)),
                       ),
             ),
             const SizedBox(height: AppSizes.spaceS),
             if (!userState.hasVehicles)
               EmptyStateCard(
                 icon: Icons.directions_car_outlined,
-                title: 'Aucun véhicule ajouté',
-                subtitle: 'Ajoutez votre véhicule pour réserver.',
+                title: l10n.dashboardNoVehicle,
+                subtitle: l10n.dashboardNoVehicleSubtitle,
                 onTap: () async {
                   await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AddVehicleScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => AddVehicleScreen(context: context)),
                   );
                 },
               )
@@ -434,7 +445,7 @@ class _DashboardBody extends ConsumerWidget {
 
             // ── Parkings favoris ──────────────────────────
             _SectionHeader(
-              title: 'Mes parkings favoris',
+              title: l10n.dashboardFavorites,
               actionLabel: null,
               onAction: null,
             ),
@@ -443,9 +454,8 @@ class _DashboardBody extends ConsumerWidget {
                 bookingState.unArchivedBookings.isEmpty) // Changement ici
               EmptyStateCard(
                 icon: Icons.favorite_border,
-                title: 'Aucun favori encore',
-                subtitle:
-                    'Faites des réservations pour voir vos parkings préférés.',
+                title: l10n.dashboardNoFavorite,
+                subtitle: l10n.dashboardNoFavoriteSubtitle,
                 showChevron: false, // Pas de flèche
                 // Pas de onTap
               )
@@ -666,6 +676,7 @@ class _DashboardBody extends ConsumerWidget {
                                         MaterialPageRoute(
                                           builder: (_) => AddVehicleScreen(
                                             vehicle: selectedVehicle!,
+                                            context: context,
                                           ),
                                         ),
                                       );
@@ -703,7 +714,7 @@ class _DashboardBody extends ConsumerWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const AddVehicleScreen(),
+                            builder: (_) => AddVehicleScreen(context: context),
                           ),
                         );
                       },
@@ -811,7 +822,7 @@ class _FavParkingCardState extends ConsumerState<_FavParkingCard> {
   Widget build(BuildContext context) {
     final count =
         widget.bookings.where((b) => b.parkingId == widget.parking.id).length;
-
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(AppSizes.spaceL),
       decoration: BoxDecoration(
@@ -886,7 +897,7 @@ class _FavParkingCardState extends ConsumerState<_FavParkingCard> {
                     Text(
                       _available! > 0
                           ? '$_available/$_total libres'
-                          : 'Complet',
+                          : l10n.dashboardFull,
                       style: TextStyle(
                         color: _available! > 0
                             ? AppColors.success
@@ -915,7 +926,9 @@ class _FavParkingCardState extends ConsumerState<_FavParkingCard> {
                           child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.radar_outlined, size: 13),
                   label: Text(
-                    _isChecking ? 'Vérification...' : 'Disponibilité',
+                    _isChecking
+                        ? l10n.dashboardChecking
+                        : l10n.dashboardCheckAvailability,
                     style: const TextStyle(
                         fontSize: 10, fontWeight: FontWeight.w500),
                   ),
@@ -945,8 +958,8 @@ class _FavParkingCardState extends ConsumerState<_FavParkingCard> {
                     );
                   },
                   icon: const Icon(Icons.bookmark_add_outlined, size: 13),
-                  label: const Text(
-                    'Réserver',
+                  label: Text(
+                    l10n.dashboardBook,
                     style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -1177,16 +1190,17 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
   }
 
   void _onCancelBooking(BuildContext context, BookingModel booking) {
+    final l10n = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Annuler la réservation ?'),
-        content: Text(
-            'Voulez-vous vraiment annuler la réservation pour la place ${booking.spotId} ?'),
+        title: Text(l10n.dashboardCancelBooking),
+        content: Text(l10n.dashboardCancelConfirm(booking.spotId)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Non'),
+            child: Text(l10n.commonNo),
           ),
           TextButton(
             onPressed: () {
@@ -1194,7 +1208,7 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
               ref.read(bookingProvider.notifier).cancelBooking(booking.id);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Oui'),
+            child: Text(l10n.commonYes),
           ),
         ],
       ),

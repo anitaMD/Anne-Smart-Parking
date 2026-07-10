@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../services/storage_service.dart';
@@ -10,7 +11,8 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/user_viewmodel.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
-  const ProfileScreen({super.key});
+  final AppLocalizations l10n;
+  const ProfileScreen({super.key, required this.l10n});
 
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
@@ -82,10 +84,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           {'profileImageUrl': url},
         );
         await ref.read(userProvider.notifier).loadUserData(authState.user.id);
-        _showSnack('Photo mise à jour ✅');
+        _showSnack(widget.l10n.profilePhotoUpdated);
       }
     } catch (e) {
-      _showSnack('Erreur: $e');
+      _showSnack(widget.l10n.profileErrorPrefix(e.toString()));
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
     }
@@ -122,10 +124,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           },
         );
         await ref.read(userProvider.notifier).loadUserData(authState.user.id);
-        _showSnack('Carte $side uploadée ✅');
+        final sideLabel = side == 'recto'
+            ? widget.l10n.profilePmrRecto
+            : widget.l10n.profilePmrVerso;
+        _showSnack(widget.l10n.profileCardUploaded(sideLabel));
       }
     } catch (e) {
-      _showSnack('Erreur: $e');
+      _showSnack(widget.l10n.profileErrorPrefix(e.toString()));
     } finally {
       if (mounted) setState(() => _isUploadingCard = false);
     }
@@ -138,24 +143,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Modifier l\'email'),
+        title: Text(widget.l10n.profileChangeEmail),
         content: TextField(
           controller: newEmailController,
           keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(
-            labelText: 'Nouvel email',
+          decoration: InputDecoration(
+            labelText: widget.l10n.profileNewEmail,
             prefixIcon: Icon(Icons.email_outlined),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
+            child: Text(widget.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, newEmailController.text.trim()),
-            child: const Text('Confirmer'),
+            child: Text(widget.l10n.commonConfirm),
           ),
         ],
       ),
@@ -173,16 +178,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           context: context,
           barrierDismissible: false,
           builder: (_) => AlertDialog(
-            title: const Text('Vérifiez votre email'),
+            title: Text(widget.l10n.profileVerifyEmail),
             content: Text(
-              'Un lien de vérification a été envoyé à $result.\n\n'
-              'Cliquez sur le lien pour confirmer votre nouvel email, '
-              'puis reconnectez-vous.',
+              widget.l10n.profileVerifyEmailContent(result),
             ),
             actions: [
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('OK, me déconnecter'),
+                child: Text(widget.l10n.profileLogoutToVerify),
               ),
             ],
           ),
@@ -191,7 +194,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         await ref.read(authProvider.notifier).signOut();
       }
     } on FirebaseAuthException catch (e) {
-      _showSnack('Erreur: ${e.message}');
+      _showSnack(widget.l10n.profileErrorPrefix(e.toString()));
     }
   }
 
@@ -204,12 +207,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final newPhone = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Modifier le téléphone'),
+        title: Text(widget.l10n.profileChangePhone),
         content: TextField(
           controller: phoneController,
           keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            labelText: 'Nouveau numéro',
+          decoration: InputDecoration(
+            labelText: widget.l10n.profileNewPhone,
             hintText: '+221XXXXXXXXX',
             prefixIcon: Icon(Icons.phone_outlined),
           ),
@@ -217,12 +220,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
+            child: Text(widget.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, phoneController.text.trim()),
-            child: const Text('Envoyer SMS'),
+            child: Text(widget.l10n.profileSendSms),
           ),
         ],
       ),
@@ -231,17 +234,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (newPhone == null || newPhone.isEmpty) return;
 
     // Étape 2 — envoyer OTP
-    _showSnack('Envoi du SMS...');
+    _showSnack(widget.l10n.profileSendingSms);
     final authService = ref.read(authServiceProvider);
     final verificationId = await authService.sendOTP(phoneNumber: newPhone);
 
     if (verificationId == null || verificationId.startsWith('ERROR:')) {
-      _showSnack(
-          'Erreur: ${verificationId?.replaceFirst('ERROR:', '') ?? 'SMS non envoyé'}');
+      _showSnack(widget.l10n.profileErrorPrefix(
+          verificationId?.replaceFirst('ERROR:', '') ??
+              widget.l10n.profileSmsNotSent));
       return;
     }
     if (verificationId == 'AUTO_VERIFIED') {
-      _showSnack('Téléphone vérifié automatiquement.');
+      _showSnack(widget.l10n.profilePhoneAutoVerified);
       return;
     }
 
@@ -251,18 +255,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final otp = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Code SMS'),
+        title: Text(widget.l10n.profileSmsCode),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Code envoyé au $newPhone'),
+            Text(widget.l10n.profileSmsCodeContent(newPhone)),
             const SizedBox(height: 12),
             TextField(
               controller: otpController,
               keyboardType: TextInputType.number,
               maxLength: 6,
-              decoration: const InputDecoration(
-                labelText: 'Code à 6 chiffres',
+              decoration: InputDecoration(
+                labelText: widget.l10n.profileSmsCodeLabel,
               ),
             ),
           ],
@@ -270,11 +274,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
+            child: Text(widget.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, otpController.text.trim()),
-            child: const Text('Vérifier'),
+            child: Text(widget.l10n.profileVerifySms),
           ),
         ],
       ),
@@ -299,9 +303,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         await ref.read(userProvider.notifier).loadUserData(authState.user.id);
       }
       _phoneController.text = newPhone;
-      _showSnack('Téléphone mis à jour.');
+      _showSnack(widget.l10n.profilePhoneUpdated);
     } on FirebaseAuthException catch (e) {
-      _showSnack('Code invalide: ${e.message}');
+      _showSnack(widget.l10n.profileInvalidCode(e.message ?? ''));
     }
   }
 
@@ -321,9 +325,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         },
       );
       await ref.read(userProvider.notifier).loadUserData(authState.user.id);
-      if (mounted) _showSnack('Profil mis à jour ✅');
+      if (mounted) _showSnack(widget.l10n.profileUpdated);
     } catch (e) {
-      _showSnack('Erreur: $e');
+      _showSnack(widget.l10n.profileErrorPrefix(e.toString()));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -337,6 +341,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final userState = ref.watch(userProvider);
     final user = userState.user;
+    final l10n = AppLocalizations.of(context)!;
 
     return Column(
       children: [
@@ -439,21 +444,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: AppSizes.spaceXL),
 
                   // ── Infos ────────────────────────────────
-                  const Text('Informations personnelles',
+                  Text(l10n.profilePersonalInfo,
                       style:
                           TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                   const SizedBox(height: AppSizes.spaceM),
 
                   _ProfileField(
                     controller: _nameController,
-                    label: 'Nom complet',
+                    label: l10n.profileFullName,
                     icon: Icons.person_outline,
                     validator: (v) => v?.isEmpty == true ? 'Requis' : null,
                   ),
                   const SizedBox(height: AppSizes.spaceM),
                   _ProfileField(
                     controller: _emailController,
-                    label: 'Email',
+                    label: l10n.profileEmail,
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     readOnly: true, // ← lecture seule, édition via dialog
@@ -462,7 +467,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: AppSizes.spaceM),
                   _ProfileField(
                     controller: _phoneController,
-                    label: 'Téléphone',
+                    label: l10n.profilePhone,
                     icon: Icons.phone_outlined,
                     readOnly: true,
                     onEditTap: _changePhone,
@@ -470,12 +475,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: AppSizes.spaceXL),
 
                   // ── Carte PMR ────────────────────────────
-                  const Text('Carte PMR (Mobilité Réduite)',
+                  Text(l10n.profilePmrCard,
                       style:
                           TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                   const SizedBox(height: AppSizes.spaceXS),
-                  const Text(
-                    'Uploadez votre carte d\'invalidité pour accéder aux places PMR.',
+                  Text(
+                    l10n.profilePmrDescription,
                     style:
                         TextStyle(color: AppColors.textSecondary, fontSize: 12),
                   ),
@@ -512,8 +517,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Expanded(
                         child: Text(
                           user?.isSpecialAccessUser == true
-                              ? 'Accès PMR activé ✅'
-                              : 'Accès PMR non activé — uploadez votre carte',
+                              ? l10n.profilePmrEnabled
+                              : l10n.profilePmrDisabled,
                           style: TextStyle(
                               color: user?.isSpecialAccessUser == true
                                   ? AppColors.success
@@ -530,7 +535,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Row(children: [
                     Expanded(
                       child: _CardUploadTile(
-                        label: 'Recto',
+                        label: l10n.profilePmrRecto,
                         imageUrl: user?.equalityCardPaths.isNotEmpty == true
                             ? user!.equalityCardPaths[0]
                             : null,
@@ -541,7 +546,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(width: AppSizes.spaceM),
                     Expanded(
                       child: _CardUploadTile(
-                        label: 'Verso',
+                        label: l10n.profilePmrVerso,
                         imageUrl: user?.equalityCardPaths.length == 2
                             ? user!.equalityCardPaths[1]
                             : null,
@@ -572,7 +577,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         height: 24,
                         child: CircularProgressIndicator(
                             color: Colors.white, strokeWidth: 2))
-                    : const Text('Sauvegarder',
+                    : Text(l10n.profileSave,
                         style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
               ),
@@ -660,6 +665,8 @@ class _CardUploadTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return GestureDetector(
       onTap: isLoading ? null : onTap,
       child: Container(
@@ -697,7 +704,7 @@ class _CardUploadTile extends StatelessWidget {
                           style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold)),
-                      const Text('Tap pour changer',
+                      Text(l10n.profilePmrTapChange,
                           style:
                               TextStyle(color: Colors.white70, fontSize: 10)),
                     ],
@@ -715,7 +722,7 @@ class _CardUploadTile extends StatelessWidget {
                   Text(label,
                       style: const TextStyle(
                           fontWeight: FontWeight.w600, fontSize: 13)),
-                  const Text('Tap pour uploader',
+                  Text(l10n.profilePmrTapUpload,
                       style: TextStyle(
                           color: AppColors.textSecondary, fontSize: 10)),
                 ],

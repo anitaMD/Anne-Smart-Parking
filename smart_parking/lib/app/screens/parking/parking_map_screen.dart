@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../models/booking_model.dart';
@@ -246,10 +247,11 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredParkings;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Parkings'),
+        title: Text(l10n.parkingTitle),
         flexibleSpace: Container(
             decoration:
                 const BoxDecoration(gradient: AppColors.primaryGradient)),
@@ -298,7 +300,7 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
                         }
                       },
                       decoration: InputDecoration(
-                        hintText: 'Nom ou adresse...',
+                        hintText: l10n.parkingSearchHint,
                         hintStyle: const TextStyle(
                             fontSize: 13, color: AppColors.textSecondary),
                         prefixIcon: const Icon(Icons.search,
@@ -354,7 +356,9 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
               padding: const EdgeInsets.fromLTRB(
                   AppSizes.spaceM, 0, AppSizes.spaceM, AppSizes.spaceS),
               child: Text(
-                '${filtered.length} parking${filtered.length > 1 ? 's' : ''} trouvé${filtered.length > 1 ? 's' : ''}',
+                filtered.length > 1
+                    ? l10n.parkingsFound(filtered.length)
+                    : l10n.parkingFound(filtered.length),
                 style: const TextStyle(
                     fontSize: 12, color: AppColors.textSecondary),
               ),
@@ -467,17 +471,21 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
 
   Widget _buildListView(List<ParkingModel> parkings) {
     if (parkings.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 48, color: AppColors.textSecondary),
-            SizedBox(height: AppSizes.spaceM),
-            Text('Aucun parking trouvé',
-                style: TextStyle(color: AppColors.textSecondary)),
-          ],
-        ),
-      );
+      return Builder(builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
+
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off, size: 48, color: AppColors.textSecondary),
+              SizedBox(height: AppSizes.spaceM),
+              Text(l10n.parkingNoneFound,
+                  style: TextStyle(color: AppColors.textSecondary)),
+            ],
+          ),
+        );
+      });
     }
 
     return ListView.builder(
@@ -654,6 +662,8 @@ class _ParkingListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.only(bottom: AppSizes.spaceM),
@@ -757,7 +767,7 @@ class _ParkingListCard extends StatelessWidget {
                     icon: Icons.directions_car,
                     avail: availability!.normalAvail,
                     total: availability!.normalTotal,
-                    label: 'Normales',
+                    label: l10n.parkingNormal,
                   ),
                 ),
                 const SizedBox(width: AppSizes.spaceXS),
@@ -766,7 +776,7 @@ class _ParkingListCard extends StatelessWidget {
                     icon: Icons.accessible,
                     avail: availability!.pmrAvail,
                     total: availability!.pmrTotal,
-                    label: 'PMR',
+                    label: l10n.parkingPMR,
                   ),
                 ),
                 const SizedBox(width: AppSizes.spaceXS),
@@ -775,7 +785,7 @@ class _ParkingListCard extends StatelessWidget {
                     icon: Icons.local_parking,
                     avail: availability!.normalAvail + availability!.pmrAvail,
                     total: availability!.normalTotal + availability!.pmrTotal,
-                    label: 'Total',
+                    label: l10n.parkingTotal,
                   ),
                 ),
               ],
@@ -839,6 +849,8 @@ class _ParkingBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -921,7 +933,7 @@ class _ParkingBottomSheet extends StatelessWidget {
                       _SpotCounter(
                         icon: Icons.directions_car,
                         color: AppColors.success,
-                        label: 'Normales',
+                        label: l10n.parkingNormal,
                         count:
                             '${availability.normalAvail}/${availability.normalTotal}',
                       ),
@@ -929,7 +941,7 @@ class _ParkingBottomSheet extends StatelessWidget {
                       _SpotCounter(
                         icon: Icons.accessible,
                         color: AppColors.info,
-                        label: 'PMR',
+                        label: l10n.bookingSpotForDisabled,
                         count:
                             '${availability.pmrAvail}/${availability.pmrTotal}',
                       ),
@@ -937,7 +949,7 @@ class _ParkingBottomSheet extends StatelessWidget {
                       _SpotCounter(
                         icon: Icons.local_parking,
                         color: AppColors.primary,
-                        label: 'Disponibles',
+                        label: l10n.parkingAvailable,
                         count:
                             '${availability.normalAvail + availability.pmrAvail}/${availability.normalTotal + availability.pmrTotal}',
                       ),
@@ -953,7 +965,8 @@ class _ParkingBottomSheet extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: onNavigate,
                   icon: const Icon(Icons.navigation_outlined, size: 16),
-                  label: const Text('Naviguer', style: TextStyle(fontSize: 12)),
+                  label: Text(l10n.dashboardNavigate,
+                      style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           vertical: AppSizes.spaceM)),
@@ -964,7 +977,8 @@ class _ParkingBottomSheet extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: onBook,
                   icon: const Icon(Icons.bookmark_add_outlined, size: 16),
-                  label: const Text('Réserver', style: TextStyle(fontSize: 12)),
+                  label:
+                      Text(l10n.dashboardBook, style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           vertical: AppSizes.spaceM)),
@@ -1125,6 +1139,8 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       padding: const EdgeInsets.all(AppSizes.spaceS),
       decoration: BoxDecoration(
@@ -1132,15 +1148,17 @@ class _Legend extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSizes.radiusM),
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
       ),
-      child: const Column(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _LegendItem(color: Color(0xFFE53935), label: 'Parking'),
+          _LegendItem(
+              color: Color(0xFFE53935), label: l10n.parkingLegendParking),
           SizedBox(height: 4),
-          _LegendItem(color: Color(0xFFFF6B00), label: 'Sélectionné'),
+          _LegendItem(
+              color: Color(0xFFFF6B00), label: l10n.parkingLegendSelected),
           SizedBox(height: 4),
-          _LegendItem(color: Colors.blue, label: 'Ma position'),
+          _LegendItem(color: Colors.blue, label: l10n.parkingLegendMyPosition),
         ],
       ),
     );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:phone_numbers_parser/phone_numbers_parser.dart';
-import 'package:smart_parking/l10n/generated/app_localizations.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../viewmodels/auth_viewmodel.dart';

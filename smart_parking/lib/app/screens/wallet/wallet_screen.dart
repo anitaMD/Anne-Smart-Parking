@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../models/wallet_model.dart';
@@ -35,12 +36,14 @@ class WalletScreen extends ConsumerWidget {
     final transactionsAsync = ref.watch(transactionsProvider);
     final authState = ref.watch(authProvider);
     final uid = authState is AuthAuthenticated ? authState.user.id : '';
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       body: walletAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Erreur: $e')),
+        error: (e, _) =>
+            Center(child: Text(l10n.profileErrorPrefix(e.toString()))),
         data: (wallet) => RefreshIndicator(
           onRefresh: () async => ref.refresh(walletStreamProvider),
           child: CustomScrollView(
@@ -56,7 +59,7 @@ class WalletScreen extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(AppSizes.spaceM,
                       AppSizes.spaceL, AppSizes.spaceM, AppSizes.spaceS),
-                  child: const Text('Historique des transactions',
+                  child: Text(l10n.walletHistory,
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
@@ -89,14 +92,16 @@ class WalletScreen extends ConsumerWidget {
   }
 }
 
-class _WalletHeader extends StatelessWidget {
+class _WalletHeader extends ConsumerWidget {
   final int balance;
   final String uid;
 
   const _WalletHeader({required this.balance, required this.uid});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       margin: const EdgeInsets.all(AppSizes.spaceM),
       padding: const EdgeInsets.all(AppSizes.spaceXL),
@@ -118,7 +123,7 @@ class _WalletHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Solde YSP Coin',
+                Text(l10n.walletBalance,
                     style: TextStyle(color: Colors.white70, fontSize: 14)),
                 const SizedBox(height: AppSizes.spaceXS),
                 Text('$balance SPM',
@@ -127,7 +132,7 @@ class _WalletHeader extends StatelessWidget {
                         fontSize: 32,
                         fontWeight: FontWeight.w900)),
                 const SizedBox(height: AppSizes.spaceS),
-                const Text('Portefeuille YSP',
+                Text(l10n.walletPortfolioLabel,
                     style: TextStyle(color: Colors.white60, fontSize: 12)),
               ],
             ),
@@ -164,7 +169,7 @@ class _WalletHeader extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text('Scanner pour\nrecharger',
+                    Text(l10n.walletQrScanToRecharge,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             fontSize: 9, color: Colors.white70, height: 1.2)),
@@ -183,29 +188,31 @@ class _TransactionTile extends StatelessWidget {
   final TransactionModel transaction;
   const _TransactionTile({required this.transaction});
 
-  String _fmt(DateTime dt) =>
-      DateFormat('dd MMM yyyy · HH:mm', 'fr').format(dt);
-
-  String _sourceLabel(TopUpSource? source) {
-    switch (source) {
-      case TopUpSource.agent:
-        return ' (Agent)';
-      case TopUpSource.qrCode:
-        return ' (QR Code)';
-      case TopUpSource.online:
-        return ' (En ligne)';
-      default:
-        return '';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    String fmt(DateTime dt) => DateFormat(
+            'dd MMM yyyy · HH:mm', Localizations.localeOf(context).languageCode)
+        .format(dt);
+    String sourceLabel(TopUpSource? source) {
+      switch (source) {
+        case TopUpSource.agent:
+          return l10n.walletTopUpAgent;
+        case TopUpSource.qrCode:
+          return l10n.walletTopUpQr;
+        case TopUpSource.online:
+          return l10n.walletTopUpOnline;
+        default:
+          return '';
+      }
+    }
+
     final isDebit = transaction.isDebit;
     final color = isDebit ? AppColors.error : AppColors.success;
     final label = isDebit
-        ? transaction.parkingName ?? 'Réservation'
-        : 'Rechargement${_sourceLabel(transaction.topUpSource)}';
+        ? transaction.parkingName ?? l10n.walletTransactionBooking
+        : l10n.walletTransactionTopUp + sourceLabel(transaction.topUpSource);
 
     return Container(
       margin:
@@ -246,11 +253,11 @@ class _TransactionTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
-                Text(_fmt(transaction.timestamp),
+                Text(fmt(transaction.timestamp),
                     style: const TextStyle(
                         color: AppColors.textSecondary, fontSize: 11)),
                 const SizedBox(height: 2),
-                Text('Solde : ${transaction.newBalance} SPM',
+                Text(l10n.walletBalanceLabel(transaction.newBalance),
                     style: const TextStyle(
                         color: AppColors.textSecondary, fontSize: 11)),
               ],
@@ -274,6 +281,8 @@ class _EmptyTransactions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Padding(
       padding: const EdgeInsets.all(AppSizes.spaceXXL),
       child: Column(
@@ -281,11 +290,11 @@ class _EmptyTransactions extends StatelessWidget {
           Icon(Icons.receipt_long_outlined,
               size: 60, color: AppColors.textSecondary.withValues(alpha: 0.4)),
           const SizedBox(height: AppSizes.spaceM),
-          const Text('Aucune transaction',
+          Text(l10n.walletNoTransactions,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: AppSizes.spaceXS),
-          const Text(
-            'Vos débits et rechargements apparaîtront ici',
+          Text(
+            l10n.walletNoTransactionsSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
           ),

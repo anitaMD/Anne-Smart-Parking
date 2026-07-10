@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import '../core/constants/app_colors.dart';
 import '../core/constants/app_sizes.dart';
 import '../viewmodels/connectivity_viewmodel.dart';
@@ -40,6 +41,8 @@ class _ConnectivityBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       width: double.infinity,
       color: AppColors.offline,
@@ -47,14 +50,14 @@ class _ConnectivityBanner extends StatelessWidget {
         horizontal: AppSizes.spaceM,
         vertical: AppSizes.spaceXS,
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.wifi_off_rounded,
               color: Colors.white, size: AppSizes.iconS),
           SizedBox(width: AppSizes.spaceS),
           Text(
-            'Pas de connexion Internet',
+            l10n.connectivityOffline,
             style: TextStyle(
               color: Colors.white,
               fontSize: 12,

@@ -132,7 +132,7 @@ class NotificationService {
       final m = booking.bookingEnd.minute.toString().padLeft(2, '0');
       await _scheduleReminder(
         id: '${booking.id}_start'.hashCode.abs() % 100000,
-        title: '✅ Réservation active — Place ${booking.spotId}',
+        title: '! Réservation active — Place ${booking.spotId}',
         body: 'Fin prévue à $h:$m.',
         scheduledDate: booking.bookingStart,
       );

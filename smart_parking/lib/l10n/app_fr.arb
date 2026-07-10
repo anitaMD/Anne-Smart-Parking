@@ -1,100 +1,309 @@
 {
-    "language": "Français",
+  "@@locale": "fr",
+"language": "Français",
+"@language": {
+  "description": "Nom de la langue courante"
+},
 
-    "noInternetError": "Vérifiez votre connexion internet!",
+"noInternetError": "Vérifiez votre connexion internet!",
+"@noInternetError": {
+  "description": "Message erreur pas de connexion internet"
+},
 
+"welcomeToApp": "Bienvenu dans votre application Your Smart Parking!",
+"@welcomeToApp": {
+  "description": "Message de bienvenue sur l'écran d'accueil"
+},
 
+"login": "Connectez-vous à votre compte.",
+"@login": {
+  "description": "Sous-titre écran de connexion"
+},
 
-    
-    "welcomeToApp": "Bienvenu dans votre application Your Smart Parking!",
-    "login": "Connectez-vous à votre compte.",
-    "loginEmailLabel": "E-mail",
-    "loginEmailPlaceholder": "Saisissez votre email",
+"loginEmailLabel": "E-mail",
+"@loginEmailLabel": {
+  "description": "Label champ email connexion"
+},
 
-    "loginPasswordLabel": "Mot de passe",
-    "loginPasswordPlaceholder": "Saisissez votre mot de passe",
+"loginEmailPlaceholder": "Saisissez votre email",
+"@loginEmailPlaceholder": {
+  "description": "Placeholder champ email connexion"
+},
 
-    "forgotPassword": "Mot de passe oublié?",
+"loginPasswordLabel": "Mot de passe",
+"@loginPasswordLabel": {
+  "description": "Label champ mot de passe connexion"
+},
 
-    "signin": "Se connecter",
+"loginPasswordPlaceholder": "Saisissez votre mot de passe",
+"@loginPasswordPlaceholder": {
+  "description": "Placeholder champ mot de passe connexion"
+},
 
-    "noAccount": "Pas encore de compte? ",
-    "createAccount": "Créez-en un!",
-    "logIncorrectEmailOrPass": "Email ou mot de passe incorrect!",
+"forgotPassword": "Mot de passe oublié?",
+"@forgotPassword": {
+  "description": "Lien mot de passe oublié"
+},
 
+"signin": "Se connecter",
+"@signin": {
+  "description": "Bouton connexion"
+},
 
+"noAccount": "Pas encore de compte? ",
+"@noAccount": {
+  "description": "Texte invitation inscription"
+},
 
+"createAccount": "Créez-en un!",
+"@createAccount": {
+  "description": "Lien création de compte"
+},
 
-    "regFullNameLabel": "Prénom & Nom",
-    "regFullNamePlaceholder": "Votre nom complet",
-   
-    "regEmailLabel": "E-mail",
-    "regEmailPlaceholder": "Votre email",
-    
-    "regNumberLabel": "Téléphone",
-    "regNumberPlaceholder": "Votre numéro de téléphone",
-    "regNumberError": "Format incorrect.",
-    
-    "regPasswordLabel": "Mot de passe",
-    "regPasswordHelper": "*Au moins 8 char. [majuscule, chiffre, symbol]",
-    "regPasswordPlaceholder": "Votre mot de passe",
-    
-    "regConfirmPassLabel": "Confirmation",
-    "regConfirmPassPlaceholder": "Confirmez mot de password",
-    "regConfirmPassError": "Le mot de passe est mal formaté.",
-    "regPasswordsNoMatch": "Les mots de passe ne correspondent pas.",
-    "regEgaliteDesChances": "Possédez-vous la Carte d'Egalité des Chances?",
-    "regRadioYes": "Oui",
-    "regRadioNo": "Non",
-    "regEgaliteChancesDescription": "Cette carte vous concerne si vous avez une perte d'autonomie importante (handicap) et vous permet de bénéficier de droits et avantages en matière de transport, d’accès aux soins de santé, de réadaptation, d’aide technique et financière, d’éducation, etc. Elle est délivrée par le Ministère chargé de l’Action sociale sur proposition des commissions techniques départementales.",
+"logIncorrectEmailOrPass": "Email ou mot de passe incorrect!",
+"@logIncorrectEmailOrPass": {
+  "description": "Erreur identifiants incorrects"
+},
 
-    "regNextButton": "Suivant",
-   
-    "alreadyHaveAccount": "Déjà inscrit? ",
-    "regGoToLogInLink": "Connectez-vous!",
+"regFullNameLabel": "Prénom & Nom",
+"@regFullNameLabel": {
+  "description": "Label champ nom complet inscription"
+},
 
-    "logErrorBadEmailFormat": "L'email est mal formaté.",
+"regFullNamePlaceholder": "Votre nom complet",
+"@regFullNamePlaceholder": {
+  "description": "Placeholder champ nom complet"
+},
 
-    
+"regEmailLabel": "E-mail",
+"@regEmailLabel": {
+  "description": "Label champ email inscription"
+},
 
-    "otpAuthCompleted": "Authentification réussie!",
-    "otpAuthFailed": "L'authentification a échoué",
-    "otpCodeSent": "Code OTP envoyé!",
-    "otpCodeRetrievalTimeout": "Timeout!",
+"regEmailPlaceholder": "Votre email",
+"@regEmailPlaceholder": {
+  "description": "Placeholder champ email inscription"
+},
 
+"regNumberLabel": "Téléphone",
+"@regNumberLabel": {
+  "description": "Label champ téléphone inscription"
+},
 
+"regNumberPlaceholder": "Votre numéro de téléphone",
+"@regNumberPlaceholder": {
+  "description": "Placeholder champ téléphone"
+},
 
-    "numVerifHeader": "Vérification",
-    "numVerifBody": "Saisissez le code de vérification envoyé au",
-    "numVerifDidntReceiveCode": "Pas reçu de code? ",
-    "numVerifResendCode": "Renvoyer code",
-    "numVerifButtonLabel": "Vérifier",
+"regNumberError": "Format incorrect.",
+"@regNumberError": {
+  "description": "Erreur format numéro de téléphone"
+},
 
+"regPasswordLabel": "Mot de passe",
+"@regPasswordLabel": {
+  "description": "Label champ mot de passe inscription"
+},
 
+"regPasswordHelper": "*Au moins 8 char. [majuscule, chiffre, symbol]",
+"@regPasswordHelper": {
+  "description": "Aide format mot de passe"
+},
 
+"regPasswordPlaceholder": "Votre mot de passe",
+"@regPasswordPlaceholder": {
+  "description": "Placeholder champ mot de passe inscription"
+},
 
-    "scanCECrectoError": "Veuillez soumettre de nouveau la partie 'recto' de votre carte!",
-    "scanCECversoError": "Veuillez soumettre de nouveau la partie 'verso' de votre carte!",
-    "scanCECbothRectoVersoError": "Veuillez soumettre de nouveau les parties recto et verso de votre carte!",
- 
+"regConfirmPassLabel": "Confirmation",
+"@regConfirmPassLabel": {
+  "description": "Label champ confirmation mot de passe"
+},
 
-    "noParkingSpotSelected": "Il semble que vous n'avez pas sélectionné une place de parking. Il vous sera donc attribué une parmi celles présentement disponibles.",
+"regConfirmPassPlaceholder": "Confirmez mot de password",
+"@regConfirmPassPlaceholder": {
+  "description": "Placeholder confirmation mot de passe"
+},
 
-    "creatingBooking": "Validation de votre réservation...",
+"regConfirmPassError": "Le mot de passe est mal formaté.",
+"@regConfirmPassError": {
+  "description": "Erreur format mot de passe confirmation"
+},
 
-    "selectLanguage": "Selectionner la langue par défaut.",
+"regPasswordsNoMatch": "Les mots de passe ne correspondent pas.",
+"@regPasswordsNoMatch": {
+  "description": "Erreur mots de passe différents"
+},
 
-    "loginWelcomeSubtitle": "Connectez-vous pour continuer",
-  "loginEmailRequired": "Email requis",
-  "loginEmailInvalid": "Format email invalide",
-  "loginPasswordRequired": "Mot de passe requis",
-  "loginPasswordMinLength": "Minimum 8 caractères",
-  "loginWithGoogle": "Continuer avec Google",
-  "loginResetEmailSent": "Email de réinitialisation envoyé !",
-  "loginResetEmailRequired": "Entrez votre email pour réinitialiser votre mot de passe.",
-  "loginSignUp": "S'inscrire",
-  "connectivityOffline": "Pas de connexion Internet",
-  "or": "ou",
+"regEgaliteDesChances": "Possédez-vous la Carte d'Egalité des Chances?",
+"@regEgaliteDesChances": {
+  "description": "Question carte égalité des chances"
+},
+
+"regRadioYes": "Oui",
+"@regRadioYes": {
+  "description": "Option Oui radio button"
+},
+
+"regRadioNo": "Non",
+"@regRadioNo": {
+  "description": "Option Non radio button"
+},
+
+"regEgaliteChancesDescription": "Cette carte vous concerne si vous avez une perte d'autonomie importante (handicap) et vous permet de bénéficier de droits et avantages en matière de transport, d'accès aux soins de santé, de réadaptation, d'aide technique et financière, d'éducation, etc. Elle est délivrée par le Ministère chargé de l'Action sociale sur proposition des commissions techniques départementales.",
+"@regEgaliteChancesDescription": {
+  "description": "Description détaillée carte égalité des chances"
+},
+
+"regNextButton": "Suivant",
+"@regNextButton": {
+  "description": "Bouton suivant inscription"
+},
+
+"alreadyHaveAccount": "Déjà inscrit? ",
+"@alreadyHaveAccount": {
+  "description": "Texte déjà inscrit"
+},
+
+"regGoToLogInLink": "Connectez-vous!",
+"@regGoToLogInLink": {
+  "description": "Lien vers connexion depuis inscription"
+},
+
+"logErrorBadEmailFormat": "L'email est mal formaté.",
+"@logErrorBadEmailFormat": {
+  "description": "Erreur format email invalide"
+},
+
+"otpAuthCompleted": "Authentification réussie!",
+"@otpAuthCompleted": {
+  "description": "Message succès authentification OTP"
+},
+
+"otpAuthFailed": "L'authentification a échoué",
+"@otpAuthFailed": {
+  "description": "Message échec authentification OTP"
+},
+
+"otpCodeSent": "Code OTP envoyé!",
+"@otpCodeSent": {
+  "description": "Message code OTP envoyé"
+},
+
+"otpCodeRetrievalTimeout": "Timeout!",
+"@otpCodeRetrievalTimeout": {
+  "description": "Message timeout récupération code OTP"
+},
+
+"numVerifHeader": "Vérification",
+"@numVerifHeader": {
+  "description": "Titre écran vérification numéro"
+},
+
+"numVerifBody": "Saisissez le code de vérification envoyé au",
+"@numVerifBody": {
+  "description": "Message saisie code vérification"
+},
+
+"numVerifDidntReceiveCode": "Pas reçu de code? ",
+"@numVerifDidntReceiveCode": {
+  "description": "Texte pas reçu de code"
+},
+
+"numVerifResendCode": "Renvoyer code",
+"@numVerifResendCode": {
+  "description": "Bouton renvoyer code OTP"
+},
+
+"numVerifButtonLabel": "Vérifier",
+"@numVerifButtonLabel": {
+  "description": "Bouton vérifier code OTP"
+},
+
+"scanCECrectoError": "Veuillez soumettre de nouveau la partie 'recto' de votre carte!",
+"@scanCECrectoError": {
+  "description": "Erreur scan recto carte égalité"
+},
+
+"scanCECversoError": "Veuillez soumettre de nouveau la partie 'verso' de votre carte!",
+"@scanCECversoError": {
+  "description": "Erreur scan verso carte égalité"
+},
+
+"scanCECbothRectoVersoError": "Veuillez soumettre de nouveau les parties recto et verso de votre carte!",
+"@scanCECbothRectoVersoError": {
+  "description": "Erreur scan recto et verso carte égalité"
+},
+
+"noParkingSpotSelected": "Il semble que vous n'avez pas sélectionné une place de parking. Il vous sera donc attribué une parmi celles présentement disponibles.",
+"@noParkingSpotSelected": {
+  "description": "Message aucune place sélectionnée"
+},
+
+"creatingBooking": "Validation de votre réservation...",
+"@creatingBooking": {
+  "description": "Message en cours de création réservation"
+},
+
+"selectLanguage": "Selectionner la langue par défaut.",
+"@selectLanguage": {
+  "description": "Label sélection langue par défaut"
+},
+
+"loginWelcomeSubtitle": "Connectez-vous pour continuer",
+"@loginWelcomeSubtitle": {
+  "description": "Sous-titre bienvenue connexion"
+},
+
+"loginEmailRequired": "Email requis",
+"@loginEmailRequired": {
+  "description": "Erreur email requis connexion"
+},
+
+"loginEmailInvalid": "Format email invalide",
+"@loginEmailInvalid": {
+  "description": "Erreur format email invalide connexion"
+},
+
+"loginPasswordRequired": "Mot de passe requis",
+"@loginPasswordRequired": {
+  "description": "Erreur mot de passe requis connexion"
+},
+
+"loginPasswordMinLength": "Minimum 8 caractères",
+"@loginPasswordMinLength": {
+  "description": "Erreur longueur minimum mot de passe"
+},
+
+"loginWithGoogle": "Continuer avec Google",
+"@loginWithGoogle": {
+  "description": "Bouton connexion avec Google"
+},
+
+"loginResetEmailSent": "Email de réinitialisation envoyé !",
+"@loginResetEmailSent": {
+  "description": "Message email réinitialisation envoyé"
+},
+
+"loginResetEmailRequired": "Entrez votre email pour réinitialiser votre mot de passe.",
+"@loginResetEmailRequired": {
+  "description": "Message email requis pour réinitialisation"
+},
+
+"loginSignUp": "S'inscrire",
+"@loginSignUp": {
+  "description": "Bouton inscription"
+},
+
+"connectivityOffline": "Pas de connexion Internet",
+"@connectivityOffline": {
+  "description": "Message pas de connexion internet"
+},
+
+"or": "ou",
+"@or": {
+  "description": "Séparateur ou"
+},
 
  "registerTitle": "Créer un compte",
   "@registerTitle": { "description": "Register screen title - step 1" },
@@ -200,10 +409,684 @@
 "@dashboardDefaultVehicle": { "description": "Default vehicle section" },
 "dashboardUpcomingBooking": "Réservation à venir",
 "@dashboardUpcomingBooking": { "description": "Upcoming booking" },
-"dashboardNoBooking": "Aucune réservation",
-"@dashboardNoBooking": { "description": "No booking title" },
-"dashboardNoBookingSubtitle": "Appuyez pour voir les parkings",
-"@dashboardNoBookingSubtitle": { "description": "No booking subtitle" },
 "dashboardSwipeForParkings": "↑ Glissez pour voir les parkings",
-"@dashboardSwipeForParkings": { "description": "Swipe hint on map" }
+"@dashboardSwipeForParkings": { "description": "Swipe hint on map" },
+"dashboardBookings": "Mes Réservations",
+"@dashboardBookings": {
+  "description": "Titre de la section réservations dans le drawer"
+},
+"dashboardVoirTout": "Voir tout",
+"@dashboardVoirTout": {
+  "description": "Bouton voir toutes les réservations/véhicules"
+},
+"dashboardVoirCarte": "Voir la carte",
+"@dashboardVoirCarte": {
+  "description": "Bouton voir la carte des parkings"
+},
+"dashboardNoBooking": "Aucune réservation",
+"@dashboardNoBooking": {
+  "description": "Message quand aucune réservation active"
+},
+"dashboardNoBookingSubtitle": "Appuyez pour naviguer vers un parking.",
+"@dashboardNoBookingSubtitle": {
+  "description": "Sous-titre quand aucune réservation"
+},
+"dashboardCurrentVehicle": "Véhicule actuel",
+"@dashboardCurrentVehicle": {
+  "description": "Titre section véhicule par défaut sur le dashboard"
+},
+"dashboardNoVehicle": "Aucun véhicule ajouté",
+"@dashboardNoVehicle": {
+  "description": "Message quand aucun véhicule"
+},
+"dashboardNoVehicleSubtitle": "Ajoutez votre véhicule pour réserver.",
+"@dashboardNoVehicleSubtitle": {
+  "description": "Sous-titre quand aucun véhicule"
+},
+"dashboardFavorites": "Mes parkings favoris",
+"@dashboardFavorites": {
+  "description": "Titre section parkings favoris"
+},
+"dashboardNoFavorite": "Aucun favori encore",
+"@dashboardNoFavorite": {
+  "description": "Message quand aucun favori"
+},
+"dashboardNoFavoriteSubtitle": "Faites des réservations pour voir vos parkings préférés.",
+"@dashboardNoFavoriteSubtitle": {
+  "description": "Sous-titre quand aucun favori"
+},
+"dashboardMyVehicles": "Mes véhicules",
+"@dashboardMyVehicles": {
+  "description": "Titre modal sélection véhicule"
+},
+"dashboardVehicleHint": "Tap = sélectionner • Double tap = définir par défaut",
+"@dashboardVehicleHint": {
+  "description": "Hint swipe/tap dans la liste véhicules"
+},
+"dashboardAddVehicle": "Ajouter un véhicule",
+"@dashboardAddVehicle": {
+  "description": "Bouton ajouter un véhicule"
+},
+"dashboardFull": "Complet",
+"@dashboardFull": {
+  "description": "Statut parking complet"
+},
+"dashboardCheckAvailability": "Disponibilité",
+"@dashboardCheckAvailability": {
+  "description": "Bouton vérifier disponibilité parking favori"
+},
+"dashboardChecking": "Vérification...",
+"@dashboardChecking": {
+  "description": "Loader pendant vérification disponibilité"
+},
+"dashboardBook": "Réserver",
+"@dashboardBook": {
+  "description": "Bouton réserver dans les favoris"
+},
+"dashboardCancelBooking": "Annuler la réservation ?",
+"@dashboardCancelBooking": {
+  "description": "Titre dialog annulation réservation"
+},
+"dashboardCancelConfirm": "Voulez-vous vraiment annuler la réservation pour la place {spotId} ?",
+"@dashboardCancelConfirm": {
+  "description": "Message confirmation annulation réservation",
+  "placeholders": {
+    "spotId": {
+      "type": "String",
+      "description": "Identifiant de la place de parking"
+    }
+  }
+},
+"commonYes": "Oui",
+"@commonYes": {
+  "description": "Bouton confirmation générique"
+},
+"commonNo": "Non",
+"@commonNo": {
+  "description": "Bouton annulation générique"
+},
+
+"commonNext": "Suivant",
+"@commonNext": {
+  "description": "Bouton confirmation générique"
+},
+
+
+"vehicleAddTitle": "Ajouter un véhicule",
+"@vehicleAddTitle": { "description": "Titre écran ajout véhicule" },
+
+"vehicleEditTitle": "Modifier le véhicule",
+"@vehicleEditTitle": { "description": "Titre écran édition véhicule" },
+
+"vehicleAddSuccess": "Véhicule ajouté avec succès !",
+"@vehicleAddSuccess": { "description": "Message succès ajout véhicule" },
+
+"vehicleEditSuccess": "Véhicule modifié avec succès !",
+"@vehicleEditSuccess": { "description": "Message succès modification véhicule" },
+
+"vehiclePlatePreview": "Aperçu de la plaque",
+"@vehiclePlatePreview": { "description": "Section aperçu plaque" },
+
+"vehicleType": "Type de véhicule",
+"@vehicleType": { "description": "Section type de véhicule" },
+
+"vehicleBrand": "Marque",
+"@vehicleBrand": { "description": "Section marque" },
+
+"vehicleInfo": "Informations",
+"@vehicleInfo": { "description": "Section informations véhicule" },
+
+"vehicleModel": "Modèle",
+"@vehicleModel": { "description": "Champ modèle" },
+
+"vehicleModelHint": "Ex: Classe C, Corolla, Clio...",
+"@vehicleModelHint": { "description": "Placeholder champ modèle" },
+
+"vehicleModelRequired": "Modèle requis",
+"@vehicleModelRequired": { "description": "Erreur champ modèle vide" },
+
+"vehicleColor": "Couleur",
+"@vehicleColor": { "description": "Section couleur véhicule" },
+
+"vehiclePlate": "Plaque d'immatriculation",
+"@vehiclePlate": { "description": "Champ plaque immatriculation" },
+
+"vehiclePlateHint": "Ex: DAK-1234-2024",
+"@vehiclePlateHint": { "description": "Placeholder plaque" },
+
+"vehiclePlateRequired": "Plaque requise",
+"@vehiclePlateRequired": { "description": "Erreur plaque vide" },
+
+"vehiclePlateInvalid": "Format invalide. Ex: DAK-1234-2024",
+"@vehiclePlateInvalid": { "description": "Erreur format plaque invalide" },
+
+"vehicleYear": "Année",
+"@vehicleYear": { "description": "Champ année véhicule" },
+
+"vehicleYearHint": "Ex: 2020",
+"@vehicleYearHint": { "description": "Placeholder année" },
+
+"vehicleYearRequired": "Année requise",
+"@vehicleYearRequired": { "description": "Erreur année vide" },
+
+"vehicleYearInvalid": "Année invalide",
+"@vehicleYearInvalid": { "description": "Erreur année invalide" },
+
+"vehicleCountry": "Pays d'immatriculation",
+"@vehicleCountry": { "description": "Section pays immatriculation" },
+
+"vehicleCountryHint": "Sélectionner un pays",
+"@vehicleCountryHint": { "description": "Placeholder sélection pays" },
+
+"vehicleCountryRequired": "Pays requis",
+"@vehicleCountryRequired": { "description": "Erreur pays non sélectionné" },
+
+"vehicleCity": "Ville",
+"@vehicleCity": { "description": "Section ville immatriculation" },
+
+"vehicleCityHint": "Sélectionner une ville",
+"@vehicleCityHint": { "description": "Placeholder sélection ville" },
+
+"vehicleSave": "Enregistrer le véhicule",
+"@vehicleSave": { "description": "Bouton enregistrer véhicule" },
+
+"vehicleBrandRequired": "Veuillez sélectionner une marque.",
+"@vehicleBrandRequired": { "description": "Erreur marque non sélectionnée" },
+
+"vehicleCountrySelectRequired": "Veuillez sélectionner un pays.",
+"@vehicleCountrySelectRequired": { "description": "Erreur pays non sélectionné validation" },
+
+
+"bookingSelectTimeSlotTitle": "Choisir un créneau",
+"@bookingSelectTimeSlotTitle": { "description": "Titre créneau" },
+
+"bookingSelectSpotTitle": "Choisir une place",
+"@bookingSelectSpotTitle": { "description": "Titre spot" },
+
+"bookingSelectDateTitle": "Choisir une date",
+"@bookingSelectDateTitle": { "description": "Titre date" },
+
+"bookingSelectVehicleTitle": "Choisir un véhicule",
+"@bookingSelectVehicleTitle": { "description": "Titre vehicle" },
+
+"bookingSpotEntry": "Entrée",
+"@bookingSpotEntry": { "description": "Titre vehicle" },
+
+"bookingSpotExit": "Sortie",
+"@bookingSpotExit": { "description": "Titre vehicle" },
+
+"bookingSpotFree": "Libre",
+"@bookingSpotFree": { "description": "Occupied spot" },
+
+"bookingSpotOccupied": "Occupée",
+"@bookingSpotOccupied": { "description": "Occupied spot" },
+
+"bookingSpotReserved": "Réservée",
+"@bookingSpotReserved": { "description": "Range picker start label" },
+
+"bookingSpotForDisabled": "PMR",
+"@bookingSpotForDisabled": { "description": "Accessible parking for disabled ACC " },
+
+"bookingItemSelected": "Sélectionnée",
+"@bookingItemSelected": { "description": "L'item sélectionné " },
+
+"bookingSelectSpotError": "Veuillez sélectionner une place",
+"@bookingSelectSpotError": { "description": "Erreur aucune place sélectionnée" },
+
+"bookingSelectDateError": "Veuillez choisir une date",
+"@bookingSelectDateError": { "description": "Erreur aucune date choisie" },
+
+"bookingSelectVehicleError": "Veuillez sélectionner un véhicule",
+"@bookingSelectVehicleError": { "description": "Erreur aucun véhicule sélectionné" },
+
+"bookingUserHasNoVehicle": "Aucun véhicule — ajoutez-en depuis votre profil",
+"@bookingUserHasNoVehicle": { "description": "When user has no registered vehicle" },
+
+"bookingNoVehicleStep": "Sélectionnez un véhicule à l'étape précédente",
+"@bookingNoVehicleStep": { "description": "Message step2 sans véhicule" },
+
+"bookingConfirmEdit": "Confirmer la modification",
+"@bookingConfirmEdit": { "description": "Bouton confirmer modification réservation" },
+
+"bookingInsufficientBalance": "Solde insuffisant. Rechargez votre wallet YSP.",
+"@bookingInsufficientBalance": { "description": "Solde insuffisant. Rechargez votre wallet YSP." },
+
+"bookingConfirmNew": "Confirmer la réservation",
+"@bookingConfirmNew": { "description": "Bouton confirmer nouvelle réservation" },
+
+"bookingStepParking": "Parking",
+"@bookingStepParking": { "description": "Label étape 1 stepper" },
+
+"bookingStepSummary": "Récapitulatif",
+"@bookingStepSummary": { "description": "Label étape 2 stepper" },
+
+"bookingVehicle": "Véhicule",
+"@bookingVehicle": { "description": "Label véhicule dans le récapitulatif" },
+
+"bookingParking": "Parking",
+"@bookingParking": { "description": "Label parking dans le récapitulatif" },
+
+"bookingSpot": "Place",
+"@bookingSpot": { "description": "Label place dans le récapitulatif" },
+
+"bookingAddress": "Adresse",
+"@bookingAddress": { "description": "Label adresse dans le récapitulatif" },
+
+"bookingDate": "Date",
+"@bookingDate": { "description": "Label date dans le récapitulatif" },
+
+"bookingStart": "Début",
+"@bookingStart": { "description": "Label heure début réservation" },
+
+"bookingEnd": "Fin",
+"@bookingEnd": { "description": "Label heure fin réservation" },
+
+"bookingDuration": "Durée",
+"@bookingDuration": { "description": "Label durée réservation" },
+
+"bookingOriginalCost": "Coût original",
+"@bookingOriginalCost": { "description": "Label coût original en mode édition" },
+
+"bookingSupplement": "Supplément",
+"@bookingSupplement": { "description": "Label supplément en mode édition" },
+
+"bookingCurrentBalance": "Solde actuel",
+"@bookingCurrentBalance": { "description": "Label solde actuel wallet" },
+
+"bookingBalanceAfter": "Solde après",
+"@bookingBalanceAfter": { "description": "Label solde après débit" },
+
+"bookingCost": "Coût",
+"@bookingCost": { "description": "Label coût total réservation" },
+
+"bookingReducedDuration": "Durée réduite — coût initial conservé, pas de remboursement.",
+"@bookingReducedDuration": { "description": "Message durée réduite sans remboursement" },
+
+"bookingSlideHint": "Faites défiler la grille pour voir toutes les places disponibles.",
+"@bookingSlideHint": { "description": "Hint scroll grille places" },
+
+
+"bookingVehicleSwapSlideHint": "Glissez pour changer de véhicule",
+"@bookingVehicleSwapSlideHint": { "description": "Glissez pour changer de véhicule" },
+
+
+"bookingPriceUnchanged": "Inchangé ",
+"@bookingPriceUnchanged": { "description": "Unchanged booking price" },
+
+"bookingSlideHintDismiss": "NE PLUS AFFICHER",
+"@bookingSlideHintDismiss": { "description": "Bouton ne plus afficher hint" },
+
+"bookingSelectTimeSlot": "Choisissez un créneau pour voir la disponibilité des places.",
+"@bookingSelectTimeSlot": { "description": "Message avant sélection créneau" },
+
+"bookingTimeSlotTitle": "Choisir un créneau",
+"@bookingTimeSlotTitle": { "description": "Titre" },
+
+"bookingFrom": "Début",
+"@bookingFrom": { "description": "Label début range picker" },
+
+"bookingTo": "Fin",
+"@bookingTo": { "description": "Label fin range picker" },
+
+"bookingStatusOngoing": "EN COURS",
+"@bookingStatusOngoing": { "description": "Badge statut en cours" },
+
+"bookingStatusCanceled": "ANNULÉE",
+"@bookingStatusCanceled": { "description": "Badge statut annulée" },
+
+"bookingStatusDone": "TERMINÉE",
+"@bookingStatusDone": { "description": "Badge statut terminée" },
+
+"bookingStatusUpcomingEdited": "À VENIR · MODIFIÉE",
+"@bookingStatusUpcomingEdited": { "description": "Badge statut à venir modifiée" },
+
+"bookingStatusUpcoming": "À VENIR",
+"@bookingStatusUpcoming": { "description": "Badge statut à venir" },
+
+"bookingEdited": "Modifiée",
+"@bookingEdited": { "description": "Badge modifiée sur la card" },
+
+"bookingSpotLabel": "Place {spotId}",
+"@bookingSpotLabel": {
+  "description": "Label place avec ID",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "ID de la place" }
+  }
+},
+
+"bookingCancelTitle": "Annuler la réservation ?",
+"@bookingCancelTitle": { "description": "Titre dialog annulation" },
+
+"bookingCancelContent": "Place {spotId} — {date}\n\nAucun remboursement ne sera effectué.",
+"@bookingCancelContent": {
+  "description": "Message dialog annulation",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "ID de la place" },
+    "date": { "type": "String", "description": "Date de la réservation" }
+  }
+},
+
+"bookingFilterAll": "Toutes",
+"@bookingFilterAll": { "description": "Filtre toutes les réservations" },
+
+"bookingFilterOngoing": "En cours",
+"@bookingFilterOngoing": { "description": "Filtre réservations en cours" },
+
+"bookingFilterUpcoming": "À venir",
+"@bookingFilterUpcoming": { "description": "Filtre réservations à venir" },
+
+"bookingFilterPast": "Passées",
+"@bookingFilterPast": { "description": "Filtre réservations passées" },
+
+"bookingFilterCanceled": "Annulées",
+"@bookingFilterCanceled": { "description": "Filtre réservations annulées" },
+
+"bookingEditAction": "Modifier",
+"@bookingEditAction": { "description": "Bouton modifier réservation" },
+
+"bookingCancelAction": "Annuler",
+"@bookingCancelAction": { "description": "Bouton annuler réservation" },
+
+"bookingConfirmCancelYes": "Oui, annuler",
+"@bookingConfirmCancelYes": { "description": "Bouton confirmer annulation" },
+
+"bookingSuccessNew": "Réservation confirmée avec succès !",
+"@bookingSuccessNew": { "description": "Message succès nouvelle réservation" },
+
+"bookingSuccessEdit": "Réservation modifiée avec succès !",
+"@bookingSuccessEdit": { "description": "Message succès modification réservation" },
+
+"bookingErrorGeneric": "Erreur : {message}",
+"@bookingErrorGeneric": {
+  "description": "Message erreur générique",
+  "placeholders": {
+    "message": { "type": "String", "description": "Message d'erreur" }
+  }
+},
+
+
+"parkingTitle": "Parkings",
+"@parkingTitle": { "description": "Titre écran parkings" },
+
+"parkingSearchHint": "Nom ou adresse...",
+"@parkingSearchHint": { "description": "Placeholder recherche parking" },
+
+"parkingFound": "{count} parking trouvé",
+"@parkingFound": {
+  "description": "Nombre de parkings trouvés (singulier)",
+  "placeholders": {
+    "count": { "type": "int", "description": "Nombre de parkings" }
+  }
+},
+
+"parkingsFound": "{count} parkings trouvés",
+"@parkingsFound": {
+  "description": "Nombre de parkings trouvés (pluriel)",
+  "placeholders": {
+    "count": { "type": "int", "description": "Nombre de parkings" }
+  }
+},
+
+"parkingNoneFound": "Aucun parking trouvé",
+"@parkingNoneFound": { "description": "Message aucun parking trouvé" },
+
+"parkingNormal": "Normales",
+"@parkingNormal": { "description": "Label places normales" },
+
+"parkingPMR": "PMR",
+"@parkingPMR": { "description": "Label places PMR" },
+
+"parkingTotal": "Total",
+"@parkingTotal": { "description": "Label total places" },
+
+"parkingAvailable": "Disponibles",
+"@parkingAvailable": { "description": "Label places disponibles" },
+
+"parkingLegendParking": "Parking",
+"@parkingLegendParking": { "description": "Légende marqueur parking sur carte" },
+
+"parkingLegendSelected": "Sélectionné",
+"@parkingLegendSelected": { "description": "Légende marqueur parking sélectionné" },
+
+"parkingLegendMyPosition": "Ma position",
+"@parkingLegendMyPosition": { "description": "Légende marqueur parking sélectionné" },
+
+
+
+"settingsTitle": "Paramètres",
+"@settingsTitle": { "description": "Titre écran paramètres" },
+
+"settingsLanguage": "Langue",
+"@settingsLanguage": { "description": "Section langue" },
+
+"settingsLangFr": "🇫🇷  Français",
+"@settingsLangFr": { "description": "Option langue française" },
+
+"settingsLangEn": "🇬🇧  English",
+"@settingsLangEn": { "description": "Option langue anglaise" },
+
+"settingsNotifications": "Notifications",
+"@settingsNotifications": { "description": "Section notifications" },
+
+"settingsNotifAll": "Toutes les notifications",
+"@settingsNotifAll": { "description": "Toggle toutes notifications" },
+
+"settingsNotifAllSubtitle": "Activer ou désactiver tous les rappels",
+"@settingsNotifAllSubtitle": { "description": "Sous-titre toggle toutes notifications" },
+
+"settingsNotif30min": "30min avant la réservation",
+"@settingsNotif30min": { "description": "Toggle rappel 30min avant" },
+
+"settingsNotif30minSubtitle": "Rappel anticipé",
+"@settingsNotif30minSubtitle": { "description": "Sous-titre rappel 30min" },
+
+"settingsNotif10min": "10min avant le début de la réservation",
+"@settingsNotif10min": { "description": "Toggle rappel 10min avant" },
+
+"settingsNotif10minSubtitle": "Rappel urgent",
+"@settingsNotif10minSubtitle": { "description": "Sous-titre rappel 10min" },
+
+"settingsNotifStart": "!  Début de réservation",
+"@settingsNotifStart": { "description": "Toggle notif début réservation" },
+
+"settingsNotifStartSubtitle": "Quand votre créneau commence",
+"@settingsNotifStartSubtitle": { "description": "Sous-titre notif début" },
+
+"settingsNotifEnd": "15min avant la fin",
+"@settingsNotifEnd": { "description": "Toggle rappel 15min avant fin" },
+
+"settingsNotifEndSubtitle": "Rappel de fin imminente",
+"@settingsNotifEndSubtitle": { "description": "Sous-titre rappel fin" },
+
+"profileTitle": "Mon Profil",
+"@profileTitle": { "description": "Titre écran profil" },
+
+"profileSave": "Sauvegarder",
+"@profileSave": { "description": "Bouton sauvegarder profil" },
+
+"profilePhotoUpdated": "Photo mise à jour !",
+"@profilePhotoUpdated": { "description": "Message succès photo" },
+
+"profileCardUploaded": "Carte {side} uploadée !",
+"@profileCardUploaded": {
+  "description": "Message succès upload carte PMR avec côté",
+  "placeholders": {
+    "side": { "type": "String", "description": "Côté de la carte (recto/verso)" }
+  }
+},
+
+"profileErrorPrefix": "Erreur: {message}",
+"@profileErrorPrefix": {
+  "description": "Préfixe message erreur",
+  "placeholders": {
+    "message": { "type": "String", "description": "Message d'erreur" }
+  }
+},
+
+"profileChangeEmail": "Modifier l'email",
+"@profileChangeEmail": { "description": "Titre dialog modifier email" },
+
+"profileNewEmail": "Nouvel email",
+"@profileNewEmail": { "description": "Label champ nouvel email" },
+
+"profileVerifyEmail": "Vérifiez votre email",
+"@profileVerifyEmail": { "description": "Titre dialog vérification email" },
+
+"profileVerifyEmailContent": "Un lien de vérification a été envoyé à {email}.\n\nCliquez sur le lien AVANT de vous reconnecter pour confirmer votre nouvel email.",
+"@profileVerifyEmailContent": {
+  "description": "Contenu dialog vérification email",
+  "placeholders": {
+    "email": { "type": "String", "description": "Nouvel email" }
+  }
+},
+
+"profileLogoutToVerify": "OK, me déconnecter",
+"@profileLogoutToVerify": { "description": "Bouton déconnexion pour vérifier email" },
+
+"profileChangePhone": "Modifier le téléphone",
+"@profileChangePhone": { "description": "Titre dialog modifier téléphone" },
+
+"profileNewPhone": "Nouveau numéro",
+"@profileNewPhone": { "description": "Label champ nouveau numéro" },
+
+"profileSendSms": "Envoyer SMS",
+"@profileSendSms": { "description": "Bouton envoyer SMS OTP" },
+
+"profileSendingSms": "Envoi du SMS...",
+"@profileSendingSms": { "description": "Message envoi SMS en cours" },
+
+"profileSmsCode": "Code SMS",
+"@profileSmsCode": { "description": "Titre dialog code SMS" },
+
+"profileSmsCodeContent": "Code envoyé au {phone}",
+"@profileSmsCodeContent": {
+  "description": "Message code SMS envoyé",
+  "placeholders": {
+    "phone": { "type": "String", "description": "Numéro de téléphone" }
+  }
+},
+
+"profileVerifySms": "Vérifier",
+"@profileVerifySms": { "description": "Bouton vérifier code SMS" },
+
+"profilePersonalInfo": "Informations personnelles",
+"@profilePersonalInfo": { "description": "Section informations personnelles" },
+
+"profileFullName": "Nom complet",
+"@profileFullName": { "description": "Label nom complet" },
+
+"profileEmail": "Email",
+"@profileEmail": { "description": "Label email" },
+
+"profilePhone": "Téléphone",
+"@profilePhone": { "description": "Label téléphone" },
+
+"profilePmrCard": "Carte PMR (Mobilité Réduite)",
+"@profilePmrCard": { "description": "Section carte PMR" },
+
+"profilePmrDescription": "Uploadez votre carte d'invalidité pour accéder aux places PMR.",
+"@profilePmrDescription": { "description": "Description section PMR" },
+
+"profilePmrEnabled": "Accès PMR activé !",
+"@profilePmrEnabled": { "description": "Statut PMR activé" },
+
+"profilePmrDisabled": "Accès PMR non activé — uploadez votre carte",
+"@profilePmrDisabled": { "description": "Statut PMR non activé" },
+
+"profilePmrRecto": "Recto",
+"@profilePmrRecto": { "description": "Label recto carte PMR" },
+
+"profilePmrVerso": "Verso",
+"@profilePmrVerso": { "description": "Label verso carte PMR" },
+
+"profilePmrTapChange": "Tap pour changer",
+"@profilePmrTapChange": { "description": "Hint tap pour changer photo carte PMR" },
+
+"profilePmrTapUpload": "Tap pour uploader",
+"@profilePmrTapUpload": { "description": "Hint tap pour uploader carte PMR" },
+
+"profileUpdated": "Profil mis à jour !",
+"@profileUpdated": { "description": "Message succès mise à jour profil" },
+
+"profilePhoneUpdated": "Téléphone mis à jour !",
+"@profilePhoneUpdated": { "description": "Message succès mise à jour téléphone" },
+"commonConfirm": "Confirmer",
+"@commonConfirm": {
+  "description": "Bouton confirmation générique"
+},
+"commonCancel": "Annuler",
+"@commonCancel": {
+  "description": "Bouton annulation générique"
+},"profileSmsNotSent": "SMS non envoyé",
+"@profileSmsNotSent": {
+  "description": "Message erreur SMS non envoyé"
+},"profilePhoneAutoVerified": "Téléphone vérifié automatiquement !",
+"@profilePhoneAutoVerified": {
+  "description": "Message téléphone vérifié automatiquement par Firebase"
+},"profileSmsCodeLabel": "Code à 6 chiffres",
+"@profileSmsCodeLabel": {
+  "description": "Label champ code OTP SMS"
+},
+"profileInvalidCode": "Code invalide: {message}",
+"@profileInvalidCode": {
+  "description": "Erreur code OTP invalide",
+  "placeholders": {
+    "message": { "type": "String", "description": "Message d'erreur Firebase" }
+  }
+},
+"walletTitle": "Mon Wallet YSP",
+"@walletTitle": { "description": "Titre écran wallet" },
+
+"walletQrButton": "Mon QR Code",
+"@walletQrButton": { "description": "Bouton QR code dans AppBar" },
+
+"walletBalance": "Solde YSP Coin",
+"@walletBalance": { "description": "Label solde wallet" },
+
+"walletPortfolioLabel": "Portefeuille YSP",
+"@walletPortfolioLabel": { "description": "Label portefeuille YSP" },
+
+"walletHistory": "Historique des transactions",
+"@walletHistory": { "description": "Titre section historique transactions" },
+
+"walletQrTitle": "Mon QR Code de rechargement",
+"@walletQrTitle": { "description": "Titre bottom sheet QR code" },
+
+"walletQrSubtitle": "Montrez ce code à l'agent YSP pour recharger votre wallet",
+"@walletQrSubtitle": { "description": "Sous-titre bottom sheet QR code" },
+
+"walletQrScanToRecharge": "Scanner pour\nrecharger",
+"@walletQrScanToRecharge": { "description": "Label sous QR code dans la carte wallet" },
+
+"walletIdCopied": "ID copié !",
+"@walletIdCopied": { "description": "Message ID copié dans le presse-papiers" },
+
+"walletTransactionBooking": "Réservation",
+"@walletTransactionBooking": { "description": "Label transaction réservation" },
+
+"walletTransactionTopUp": "Rechargement",
+"@walletTransactionTopUp": { "description": "Label transaction rechargement" },
+
+"walletTopUpAgent": " (Agent)",
+"@walletTopUpAgent": { "description": "Source rechargement par agent" },
+
+"walletTopUpQr": " (QR Code)",
+"@walletTopUpQr": { "description": "Source rechargement QR code" },
+
+"walletTopUpOnline": " (En ligne)",
+"@walletTopUpOnline": { "description": "Source rechargement en ligne" },
+
+"walletBalanceLabel": "Solde : {balance} SPM",
+"@walletBalanceLabel": {
+  "description": "Label solde après transaction",
+  "placeholders": {
+    "balance": { "type": "int", "description": "Solde après transaction" }
+  }
+},
+
+"walletNoTransactions": "Aucune transaction",
+"@walletNoTransactions": { "description": "Message aucune transaction" },
+
+"walletNoTransactionsSubtitle": "Vos débits et rechargements apparaîtront ici",
+"@walletNoTransactionsSubtitle": { "description": "Sous-titre aucune transaction" }
 }

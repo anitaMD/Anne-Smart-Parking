@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 
-import 'package:smart_parking/l10n/generated/app_localizations.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import 'package:smart_parking/l10n/l10n.dart';
 import 'package:smart_parking/old/notifiers/booking_state_management.dart';
 import 'package:smart_parking/old/notifiers/location_notifier.dart';

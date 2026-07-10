@@ -29,7 +29,7 @@ import 'package:smart_parking/old/screens/inside_app/testhome.dart';
 import 'package:smart_parking/old/services/firebase/firebase_service.dart';
 import 'package:smart_parking/old/services/firebase/firebase_storage.dart';
 import 'package:smart_parking/old/services/firebase/firestore_service.dart';
-import 'package:smart_parking/l10n/generated/app_localizations.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import 'package:gal/gal.dart';
 
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';

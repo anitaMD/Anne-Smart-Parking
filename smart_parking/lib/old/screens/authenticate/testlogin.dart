@@ -23,7 +23,7 @@ import 'package:smart_parking/old/services/firebase/firebase_service.dart';
 import 'package:smart_parking/old/screens/authenticate/reset_password.dart';
 import 'package:smart_parking/old/services/firebase/firestore_service.dart';
 import 'package:smart_parking/old/models/user.dart';
-import 'package:smart_parking/l10n/generated/app_localizations.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 
 class TestLogin extends StatefulWidget {
   const TestLogin({super.key});

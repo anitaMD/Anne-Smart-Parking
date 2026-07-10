@@ -5,7 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:smart_parking/app/models/booking_model.dart';
 import 'package:smart_parking/app/models/vehicle_model.dart';
 import 'package:smart_parking/app/screens/booking/booking_stepper.dart';
+import 'package:smart_parking/app/screens/settings/settings_screen.dart';
 import 'package:smart_parking/app/viewmodels/parking_viewmodel.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../models/parking_model.dart';
@@ -86,18 +88,18 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   // ── Navigation ────────────────────────────────────────────
 
-  void _nextPage() {
+  void _nextPage(AppLocalizations l10n) {
     if (_currentPage == 0) {
       if (_selectedSpotId == null) {
-        _showSnack('Veuillez sélectionner une place');
+        _showSnack(l10n.bookingSelectSpotError);
         return;
       }
       if (_selectedSlot == null) {
-        _showSnack('Veuillez choisir un créneau');
+        _showSnack(l10n.bookingSelectDateError);
         return;
       }
       if (_selectedVehicle == null) {
-        _showSnack('Veuillez sélectionner un véhicule');
+        _showSnack(l10n.bookingSelectVehicleError);
         return;
       }
     }
@@ -139,7 +141,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   // ── Confirmation ──────────────────────────────────────────
 
-  Future<void> _confirm() async {
+  Future<void> _confirm(AppLocalizations l10n) async {
     final authState = ref.read(authProvider);
     if (authState is! AuthAuthenticated) return;
 
@@ -148,13 +150,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
     // Vérifier solde suffisant
     if ((wallet?.balance ?? 0) < _totalCost) {
-      _showSnack('Solde insuffisant. Rechargez votre wallet YSP.');
+      _showSnack(l10n.bookingInsufficientBalance);
       return;
     }
 
     // Vérifier véhicule par défaut
     if (userState.defaultVehicle == null) {
-      _showSnack('Aucun véhicule sélectionné.');
+      _showSnack(l10n.bookingSelectVehicleError);
       return;
     }
 
@@ -176,8 +178,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         // Succès → retour au dashboard
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-                'Réservation${widget.existingBooking != null ? ' modifiée' : ' confirmée'} avec succès !'),
+            content: Text(widget.existingBooking != null
+                ? l10n.bookingSuccessEdit
+                : l10n.bookingSuccessNew),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -185,7 +188,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _showSnack('Erreur : ${e.toString()}');
+        _showSnack(l10n.bookingErrorGeneric(e.toString()));
         setState(() => _isConfirming = false);
       }
     }
@@ -201,6 +204,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.parking.name),
@@ -227,26 +231,28 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               children: [
                 // Page 1 — Grille places
                 BookingStep1(
-                  parking: widget.parking,
-                  selectedDate: _selectedDate, // variable du state
-                  selectedSlot: _selectedSlot, // variable du state
-                  durationMinutes: _durationMinutes, // variable du state
-                  selectedSpotId: _selectedSpotId, // variable du state
-                  selectedVehicle: _selectedVehicle, // variable du state
-                  onDateChanged: (date) => setState(() => _selectedDate = date),
-                  onSlotChanged: (slot) => setState(() => _selectedSlot = slot),
-                  onDurationChanged: (d) =>
-                      setState(() => _durationMinutes = d),
-                  onSpotChanged: (id) => setState(() => _selectedSpotId = id),
-                  onVehicleChanged: (v) => setState(() => _selectedVehicle = v),
-                ),
+                    parking: widget.parking,
+                    selectedDate: _selectedDate, // variable du state
+                    selectedSlot: _selectedSlot, // variable du state
+                    durationMinutes: _durationMinutes, // variable du state
+                    selectedSpotId: _selectedSpotId, // variable du state
+                    selectedVehicle: _selectedVehicle, // variable du state
+                    onDateChanged: (date) =>
+                        setState(() => _selectedDate = date),
+                    onSlotChanged: (slot) =>
+                        setState(() => _selectedSlot = slot),
+                    onDurationChanged: (d) =>
+                        setState(() => _durationMinutes = d),
+                    onSpotChanged: (id) => setState(() => _selectedSpotId = id),
+                    onVehicleChanged: (v) =>
+                        setState(() => _selectedVehicle = v),
+                    l10n: l10n),
 
                 _selectedVehicle == null
-                    ? const Center(
+                    ? Center(
                         child: Padding(
                           padding: EdgeInsets.all(AppSizes.spaceXL),
-                          child: Text(
-                              'Sélectionnez un véhicule à l\'étape précédente',
+                          child: Text(l10n.bookingNoVehicleStep,
                               textAlign: TextAlign.center,
                               style: TextStyle(color: AppColors.textSecondary)),
                         ),
@@ -283,13 +289,19 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                       width: double.infinity,
                       height: AppSizes.buttonHeight,
                       child: ElevatedButton(
-                        onPressed: _currentPage == 1 ? _confirm : _nextPage,
+                        onPressed: () {
+                          if (_currentPage == 1) {
+                            _confirm(l10n);
+                          } else {
+                            _nextPage(l10n);
+                          }
+                        },
                         child: Text(
                           _currentPage == 1
                               ? widget.existingBooking != null
-                                  ? 'Confirmer la modification'
-                                  : 'Confirmer la réservation'
-                              : 'Suivant',
+                                  ? l10n.bookingConfirmEdit
+                                  : l10n.bookingConfirmNew
+                              : l10n.commonNext,
                           style: const TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         ),
@@ -313,7 +325,8 @@ class _StepIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final steps = ['Parking', 'Récapitulatif'];
+    final l10n = AppLocalizations.of(context)!;
+    final steps = [l10n.bookingStepParking, l10n.bookingStepSummary];
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(
@@ -418,6 +431,8 @@ class _SummaryPage extends ConsumerWidget {
     final balance = userState.wallet?.balance ?? 0;
     final balanceAfter = balance - totalCost;
     final isPMR = spotId.startsWith('B') && (spotId == 'B4' || spotId == 'B5');
+    final l10n = AppLocalizations.of(context)!;
+    final localeName = ref.watch(localeProvider).languageCode;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSizes.spaceL),
@@ -426,7 +441,7 @@ class _SummaryPage extends ConsumerWidget {
         children: [
           // Véhicule
 
-          const Text('Véhicule',
+          Text(l10n.bookingVehicle,
               style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: AppColors.textSecondary,
@@ -440,18 +455,18 @@ class _SummaryPage extends ConsumerWidget {
             children: [
               _SummaryRow(
                 icon: Icons.local_parking,
-                label: 'Parking',
+                label: l10n.bookingParking,
                 value: parking.name,
               ),
               _SummaryRow(
                 icon: isPMR ? Icons.accessible : Icons.directions_car,
-                label: 'Place',
+                label: l10n.bookingSpot,
                 value: spotId + (isPMR ? ' ♿' : ''),
                 valueColor: isPMR ? AppColors.info : null,
               ),
               _SummaryRow(
                 icon: Icons.location_on_outlined,
-                label: 'Adresse',
+                label: l10n.bookingAddress,
                 value: parking.streetAddress,
               ),
             ],
@@ -463,25 +478,25 @@ class _SummaryPage extends ConsumerWidget {
             children: [
               _SummaryRow(
                 icon: Icons.calendar_today_outlined,
-                label: 'Date',
+                label: l10n.bookingDate,
                 value: DateFormat(
                   'EEEE d MMMM yyyy',
-                  'fr',
+                  localeName,
                 ).format(selectedDate),
               ),
               _SummaryRow(
                 icon: Icons.play_arrow_outlined,
-                label: 'Début',
+                label: l10n.bookingStart,
                 value: formatTime(bookingStart),
               ),
               _SummaryRow(
                 icon: Icons.stop_outlined,
-                label: 'Fin',
+                label: l10n.bookingEnd,
                 value: formatTime(bookingEnd),
               ),
               _SummaryRow(
                 icon: Icons.timer_outlined,
-                label: 'Durée',
+                label: l10n.bookingDuration,
                 value: formatDuration(durationMinutes),
               ),
             ],
@@ -501,24 +516,24 @@ class _SummaryPage extends ConsumerWidget {
                     return Column(children: [
                       _SummaryRow(
                         icon: Icons.monetization_on_outlined,
-                        label: 'Coût original',
+                        label: l10n.bookingOriginalCost,
                         value: '$oldCost SPM',
                       ),
                       _SummaryRow(
                         icon: Icons.add_circle_outlined,
-                        label: 'Supplément',
+                        label: l10n.bookingSupplement,
                         value: '+$diff SPM',
                         valueColor: AppColors.error,
                         valueBold: true,
                       ),
                       _SummaryRow(
                         icon: Icons.account_balance_wallet_outlined,
-                        label: 'Solde actuel',
+                        label: l10n.bookingCurrentBalance,
                         value: '$balance SPM',
                       ),
                       _SummaryRow(
                         icon: Icons.arrow_forward_outlined,
-                        label: 'Solde après',
+                        label: l10n.bookingBalanceAfter,
                         value: '${balance - diff} SPM',
                         valueColor: (balance - diff) < 0
                             ? AppColors.error
@@ -531,7 +546,7 @@ class _SummaryPage extends ConsumerWidget {
                     return Column(children: [
                       _SummaryRow(
                         icon: Icons.monetization_on_outlined,
-                        label: 'Coût',
+                        label: l10n.bookingCost,
                         value: '$oldCost SPM',
                         valueColor: AppColors.primary,
                         valueBold: true,
@@ -543,13 +558,13 @@ class _SummaryPage extends ConsumerWidget {
                           color: AppColors.info.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(AppSizes.radiusM),
                         ),
-                        child: const Row(children: [
+                        child: Row(children: [
                           Icon(Icons.info_outline,
                               color: AppColors.info, size: 14),
                           SizedBox(width: 6),
                           Expanded(
                               child: Text(
-                            'Durée réduite — coût initial conservé, pas de remboursement.',
+                            l10n.bookingReducedDuration,
                             style:
                                 TextStyle(color: AppColors.info, fontSize: 11),
                           )),
@@ -560,8 +575,8 @@ class _SummaryPage extends ConsumerWidget {
                     // Inchangé
                     return _SummaryRow(
                       icon: Icons.monetization_on_outlined,
-                      label: 'Coût',
-                      value: 'Inchangé ($totalCost SPM)',
+                      label: l10n.bookingCost,
+                      value: '${l10n.bookingPriceUnchanged}($totalCost SPM)',
                       valueColor: AppColors.textSecondary,
                     );
                   }
@@ -570,19 +585,19 @@ class _SummaryPage extends ConsumerWidget {
                 // Mode création — comportement normal
                 _SummaryRow(
                   icon: Icons.monetization_on_outlined,
-                  label: 'Coût',
+                  label: l10n.bookingCost,
                   value: '$totalCost SPM',
                   valueColor: AppColors.primary,
                   valueBold: true,
                 ),
                 _SummaryRow(
                   icon: Icons.account_balance_wallet_outlined,
-                  label: 'Solde actuel',
+                  label: l10n.bookingCurrentBalance,
                   value: '$balance SPM',
                 ),
                 _SummaryRow(
                   icon: Icons.arrow_forward_outlined,
-                  label: 'Solde après',
+                  label: l10n.bookingBalanceAfter,
                   value: '$balanceAfter SPM',
                   valueColor:
                       balanceAfter < 0 ? AppColors.error : AppColors.success,
@@ -608,9 +623,9 @@ class _SummaryPage extends ConsumerWidget {
                   const Icon(Icons.warning_amber_outlined,
                       color: AppColors.error, size: 20),
                   const SizedBox(width: AppSizes.spaceS),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Solde insuffisant. Rechargez votre wallet YSP.',
+                      l10n.bookingInsufficientBalance,
                       style: TextStyle(color: AppColors.error, fontSize: 13),
                     ),
                   ),

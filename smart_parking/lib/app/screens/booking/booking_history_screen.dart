@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_parking/app/screens/settings/settings_screen.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../models/booking_model.dart';
@@ -57,6 +59,7 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen> {
         all.where((b) => b.bookingEnd.isBefore(DateTime.now())).toList();
     final canceled =
         all.where((b) => b.status == BookingStatus.canceled).toList();
+    final l10n = AppLocalizations.of(context)!;
 
     List<BookingModel> filtered;
     switch (_filter) {
@@ -88,7 +91,7 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen> {
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.spaceM),
             children: [
               _FilterChip(
-                label: 'Toutes',
+                label: l10n.bookingFilterAll,
                 count: all.length,
                 selected: _filter == _Filter.all,
                 onTap: () => setState(() {
@@ -98,7 +101,7 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen> {
               ),
               const SizedBox(width: AppSizes.spaceS),
               _FilterChip(
-                label: 'En cours',
+                label: l10n.bookingFilterOngoing,
                 count: ongoing.length,
                 selected: _filter == _Filter.ongoing,
                 onTap: () => setState(() {
@@ -109,7 +112,7 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen> {
               ),
               const SizedBox(width: AppSizes.spaceS),
               _FilterChip(
-                label: 'À venir',
+                label: l10n.bookingFilterUpcoming,
                 count: upcoming.length,
                 selected: _filter == _Filter.upcoming,
                 onTap: () => setState(() {
@@ -120,7 +123,7 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen> {
               ),
               const SizedBox(width: AppSizes.spaceS),
               _FilterChip(
-                label: 'Passées',
+                label: l10n.bookingFilterPast,
                 count: past.length,
                 selected: _filter == _Filter.past,
                 onTap: () => setState(() {
@@ -131,7 +134,7 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen> {
               ),
               const SizedBox(width: AppSizes.spaceS),
               _FilterChip(
-                label: 'Annulées',
+                label: l10n.bookingFilterCanceled,
                 count: canceled.length,
                 selected: _filter == _Filter.canceled,
                 onTap: () => setState(() {
@@ -273,12 +276,14 @@ class _BookingCard extends ConsumerWidget {
     return AppColors.warning;
   }
 
-  String get _statusLabel {
-    if (booking.isOngoing) return 'EN COURS';
-    if (booking.status == BookingStatus.canceled) return 'ANNULÉE';
-    if (booking.isExpired) return 'TERMINÉE';
-    if (booking.wasEdited) return 'À VENIR · MODIFIÉE';
-    return 'À VENIR';
+  String _statusLabel(AppLocalizations l10n) {
+    if (booking.isOngoing) return l10n.bookingStatusOngoing;
+    if (booking.status == BookingStatus.canceled) {
+      return l10n.bookingStatusCanceled;
+    }
+    if (booking.isExpired) return l10n.bookingStatusDone;
+    if (booking.wasEdited) return l10n.bookingStatusUpcomingEdited;
+    return l10n.bookingStatusUpcoming;
   }
 
   IconData get _statusIcon {
@@ -295,6 +300,8 @@ class _BookingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       margin: const EdgeInsets.only(bottom: AppSizes.spaceM),
       decoration: BoxDecoration(
@@ -328,7 +335,7 @@ class _BookingCard extends ConsumerWidget {
             child: Row(children: [
               Icon(_statusIcon, color: _statusColor, size: 15),
               const SizedBox(width: 5),
-              Text(_statusLabel,
+              Text(_statusLabel(l10n),
                   style: TextStyle(
                       color: _statusColor,
                       fontWeight: FontWeight.w800,
@@ -343,7 +350,7 @@ class _BookingCard extends ConsumerWidget {
                     color: AppColors.info.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                   ),
-                  child: const Text('Modifiée',
+                  child: Text(l10n.bookingEdited,
                       style: TextStyle(
                           fontSize: 9,
                           color: AppColors.info,
@@ -377,7 +384,7 @@ class _BookingCard extends ConsumerWidget {
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                     ),
-                    child: Text('Place ${booking.spotId}',
+                    child: Text(l10n.bookingSpotLabel(booking.spotId),
                         style: const TextStyle(
                             fontSize: 11,
                             color: AppColors.primary,
@@ -410,7 +417,7 @@ class _BookingCard extends ConsumerWidget {
                         child: OutlinedButton.icon(
                           onPressed: () => _onEdit(context, ref),
                           icon: const Icon(Icons.edit_outlined, size: 14),
-                          label: const Text('Modifier',
+                          label: Text(l10n.bookingEditAction,
                               style: TextStyle(fontSize: 12)),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 6),
@@ -425,7 +432,7 @@ class _BookingCard extends ConsumerWidget {
                         child: OutlinedButton.icon(
                           onPressed: () => _onCancel(context, ref),
                           icon: const Icon(Icons.close_outlined, size: 14),
-                          label: const Text('Annuler',
+                          label: Text(l10n.bookingCancelAction,
                               style: TextStyle(fontSize: 12)),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 6),
@@ -459,16 +466,27 @@ class _BookingCard extends ConsumerWidget {
   }
 
   void _onCancel(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Annuler la réservation ?'),
-        content: Text(
-            'Place ${booking.spotId} — ${DateFormat('d MMM', 'fr').format(booking.bookingStart)}\n\nAucun remboursement ne sera effectué.'),
+        title: Text(l10n.bookingCancelTitle),
+        content: Builder(
+          builder: (context) {
+            final locale = ref.watch(localeProvider).languageCode;
+            return Text(
+              l10n.bookingCancelContent(
+                booking.spotId,
+                DateFormat('d MMM', locale).format(booking.bookingStart),
+              ),
+            );
+          },
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Non'),
+            child: Text(l10n.commonNo),
           ),
           TextButton(
             onPressed: () {
@@ -476,7 +494,7 @@ class _BookingCard extends ConsumerWidget {
               ref.read(bookingProvider.notifier).cancelBooking(booking.id);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Oui, annuler'),
+            child: Text(l10n.bookingConfirmCancelYes),
           ),
         ],
       ),

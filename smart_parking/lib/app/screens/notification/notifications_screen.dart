@@ -126,7 +126,7 @@ class _NotificationTile extends ConsumerWidget {
   Color get _iconColor {
     final t = notification.title.toLowerCase();
     if (t.contains('annul')) return AppColors.error;
-    if (t.contains('wallet') || t.contains('rechargement') || t.contains('✅')) {
+    if (t.contains('wallet') || t.contains('rechargement') || t.contains('!')) {
       return AppColors.success;
     }
     if (t.contains('rappel') ||

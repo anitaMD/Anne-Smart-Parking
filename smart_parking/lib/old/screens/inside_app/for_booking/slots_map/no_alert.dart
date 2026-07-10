@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_parking/old/notifiers/booking_state_management.dart';
 import 'package:im_stepper/stepper.dart';
 import 'package:time_range_picker/time_range_picker.dart';
-import 'package:smart_parking/l10n/generated/app_localizations.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 
 class BookingThroughSlotsMapNoAlertDialog extends StatefulWidget {
   final String receivedID;

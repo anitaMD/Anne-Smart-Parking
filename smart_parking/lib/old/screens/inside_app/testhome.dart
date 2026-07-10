@@ -10,7 +10,7 @@ import 'package:smart_parking/old/screens/inside_app/test_dashwrapper.dart';
 import 'package:smart_parking/old/screens/inside_app/test_profile_inf.dart';
 import 'package:smart_parking/old/screens/inside_app/wallet.dart';
 import 'package:smart_parking/old/services/firebase/firebase_service.dart';
-import 'package:smart_parking/l10n/generated/app_localizations.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 
 class TestHome extends StatefulWidget {
   final int timeUntilReservationStarts;

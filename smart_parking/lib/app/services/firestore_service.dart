@@ -76,7 +76,11 @@ abstract class FirestoreServiceBase {
       required String walletId,
       required int amount,
       required int newBalance,
-      required String source});
+      required String source,
+      String? agentUid});
+
+  // Agent
+  Stream<List<Map<String, dynamic>>> watchAgentTopUps(String agentUid);
 
   // Notifications
   Future<void> saveNotification(
@@ -436,6 +440,7 @@ class FirestoreService implements FirestoreServiceBase {
     required int amount,
     required int newBalance,
     required String source,
+    String? agentUid,
   }) async =>
       await _users
           .doc(uid)
@@ -446,8 +451,27 @@ class FirestoreService implements FirestoreServiceBase {
         'amount': amount,
         'newBalance': newBalance,
         'source': source,
+        'clientId': uid,
+        'creditedBy': agentUid,
         'timestamp': FieldValue.serverTimestamp(),
       });
+
+  // ── Agent ─────────────────────────────────────────────────
+
+  @override
+  Stream<List<Map<String, dynamic>>> watchAgentTopUps(String agentUid) {
+    return _db
+        .collectionGroup('topUps')
+        .where('creditedBy', isEqualTo: agentUid)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((s) => s.docs
+            .map((d) => {
+                  ...d.data(),
+                  'clientId': d.reference.parent.parent?.id ?? '',
+                })
+            .toList());
+  }
 
   // ── Notifications ─────────────────────────────────────────
   @override

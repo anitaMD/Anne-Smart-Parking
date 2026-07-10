@@ -8,7 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
-import 'package:smart_parking/l10n/generated/app_localizations.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import 'package:smart_parking/l10n/l10n.dart';
 import 'package:smart_parking/app/core/theme/app_theme.dart';
 import 'package:smart_parking/app/screens/settings/settings_screen.dart';

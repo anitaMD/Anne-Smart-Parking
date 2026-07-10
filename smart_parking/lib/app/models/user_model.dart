@@ -24,6 +24,7 @@ class UserModel {
   final List<String> equalityCardPaths;
   final DateTime? createdAt;
   final String role; // "user" | "agent"
+  final String? location;
 
   const UserModel({
     required this.id,
@@ -35,6 +36,7 @@ class UserModel {
     required this.role,
     this.equalityCardPaths = const [],
     this.createdAt,
+    this.location,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -51,6 +53,7 @@ class UserModel {
         data['equalityCardPaths'] as List? ?? [],
       ),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+      location: data['location'] as String?,
     );
   }
 
@@ -63,6 +66,7 @@ class UserModel {
         'equalityCardPaths': equalityCardPaths,
         'role': role,
         'createdAt': FieldValue.serverTimestamp(),
+        if (location != null) 'location': location,
       };
 
   UserModel copyWith({

@@ -1,5 +1,6 @@
 import 'package:flag/flag.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import '../core/constants/app_colors.dart';
 import '../core/constants/app_sizes.dart';
 import '../models/vehicle_model.dart';
@@ -34,6 +35,7 @@ class LicensePlateWidget extends StatelessWidget {
         compact ? AppSizes.plateCompactLogoSize : AppSizes.plateLogoSize;
     final flagSize =
         compact ? AppSizes.plateCompactFlagHeight : AppSizes.plateFlagHeight;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       height: height,
@@ -81,7 +83,7 @@ class LicensePlateWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                   child: Flag.fromString(
                     vehicle.countryIso.isEmpty
-                        ? 'COUNTRY ISO'
+                        ? l10n.vehicleCountryHint
                         : vehicle.countryIso,
                     height: flagSize,
                     width: flagSize * 1.4,
@@ -92,9 +94,7 @@ class LicensePlateWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 3), // Réduit de 59 à 3
                 Text(
-                  vehicle.countryIso.isEmpty
-                      ? 'COUNTRY ISO'
-                      : vehicle.countryIso,
+                  vehicle.countryIso.isEmpty ? 'ISO' : vehicle.countryIso,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: compact ? 9 : 11,
@@ -179,7 +179,7 @@ class LicensePlateWidget extends StatelessWidget {
                   Text(
                     vehicle.licensePlate.isNotEmpty
                         ? vehicle.licensePlate.toUpperCase()
-                        : 'NUMÉRO',
+                        : 'N°',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: plateFont,
@@ -212,7 +212,7 @@ class LicensePlateWidget extends StatelessWidget {
                           Text(
                             vehicle.modelDetail.isNotEmpty
                                 ? vehicle.modelDetail.toUpperCase()
-                                : 'MODÈLE',
+                                : l10n.vehicleModel.toUpperCase(),
                             style: TextStyle(
                               fontSize: compact ? 9 : 11,
                               color: Colors.grey.shade500,
@@ -224,7 +224,7 @@ class LicensePlateWidget extends StatelessWidget {
                       Text(
                         vehicle.registrationYear.isNotEmpty
                             ? vehicle.registrationYear
-                            : 'Année'.toUpperCase(),
+                            : l10n.vehicleYear.toUpperCase(),
                         style: TextStyle(
                           fontSize: compact ? 9 : 11,
                           color: Colors.grey.shade500,

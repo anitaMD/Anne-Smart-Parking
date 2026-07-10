@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smart_parking/app/screens/settings/settings_screen.dart';
 import 'package:smart_parking/app/viewmodels/auth_viewmodel.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import 'package:time_range_picker/time_range_picker.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
@@ -27,6 +29,7 @@ class BookingStep1 extends ConsumerStatefulWidget {
   final void Function(int) onDurationChanged;
   final void Function(String?) onSpotChanged;
   final void Function(VehicleModel) onVehicleChanged;
+  final AppLocalizations? l10n;
 
   const BookingStep1({
     super.key,
@@ -41,6 +44,7 @@ class BookingStep1 extends ConsumerStatefulWidget {
     required this.onDurationChanged,
     required this.onSpotChanged,
     required this.onVehicleChanged,
+    this.l10n,
   });
 
   @override
@@ -66,7 +70,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
       _watchOccupied();
     });
     WidgetsBinding.instance
-        .addPostFrameCallback((_) => _showSlideHintIfNeeded());
+        .addPostFrameCallback((_) => _showSlideHintIfNeeded(widget.l10n!));
   }
 
   @override
@@ -91,13 +95,14 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
     if (isToday) {
       final openMinutes = openTime.hour * 60 + openTime.minute;
       final nowMinutes = now.hour * 60 + now.minute;
+      // Si parking fermé → retourner l'heure d'ouverture (picker bloqué de toute façon)
+      if (_isParkingClosed) return openTime;
       return nowMinutes > openMinutes
           ? TimeOfDay(hour: now.hour, minute: now.minute)
           : openTime;
     }
     return openTime;
   }
-
   // ── Max end time (closing - 30min) ────────────────────────
 
   TimeOfDay get _maxEndTime {
@@ -105,6 +110,21 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
     final closeMinutes = int.parse(parts[0]) * 60 + int.parse(parts[1]);
     final maxMinutes = closeMinutes - 30;
     return TimeOfDay(hour: maxMinutes ~/ 60, minute: maxMinutes % 60);
+  }
+
+  bool get _isParkingClosed {
+    final now = DateTime.now();
+    final selectedDate = widget.selectedDate ?? now;
+    final isToday = selectedDate.year == now.year &&
+        selectedDate.month == now.month &&
+        selectedDate.day == now.day;
+    if (!isToday) return false;
+
+    final closeParts = widget.parking.closingHour.split(':');
+    final closeMinutes =
+        int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
+    final nowMinutes = now.hour * 60 + now.minute;
+    return nowMinutes >= closeMinutes;
   }
 
   // ── Format TimeOfDay ──────────────────────────────────────
@@ -156,9 +176,22 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
 
   // ── Open time range picker ────────────────────────────────
 
-  Future<void> _openTimePicker() async {
+  Future<void> _openTimePicker(AppLocalizations l10n) async {
     TimeOfDay startInit = _minStartTime;
     TimeOfDay endInit = _maxEndTime;
+
+    if (_isParkingClosed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Ce parking est fermé. Choisissez une date future.',
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return; // ← ne pas ouvrir le picker
+    }
 
     if (widget.selectedSlot != null) {
       final parts = widget.selectedSlot!.split(':');
@@ -240,8 +273,8 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
       ),
 
       // ── Header ────────────────────────────────────
-      fromText: 'Début',
-      toText: 'Fin',
+      fromText: l10n.bookingFrom,
+      toText: l10n.bookingTo,
 
       backgroundWidget: Container(
         decoration: const BoxDecoration(
@@ -266,7 +299,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
     }
   }
 
-  Future<void> _showSlideHintIfNeeded() async {
+  Future<void> _showSlideHintIfNeeded(AppLocalizations l10n) async {
     if (_hasShownHint) return;
     final prefs = await SharedPreferences.getInstance();
     final shown = prefs.getBool('booking_slide_hint_shown') ?? false;
@@ -277,13 +310,13 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
         builder: (_) => AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          content: const Column(
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.swipe, size: 48, color: AppColors.primary),
               SizedBox(height: 12),
               Text(
-                'Faites défiler la grille pour voir toutes les places disponibles.',
+                l10n.bookingSlideHint,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14),
               ),
@@ -295,7 +328,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
                 await prefs.setBool('booking_slide_hint_shown', true);
                 if (mounted) Navigator.pop(context);
               },
-              child: const Text('NE PLUS AFFICHER',
+              child: Text(l10n.bookingSlideHintDismiss,
                   style: TextStyle(color: AppColors.error, fontSize: 12)),
             ),
             TextButton(
@@ -316,6 +349,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
     final spots = ref.watch(parkingProvider).selectedParkingSpots;
     final userState = ref.watch(userProvider);
     final isPMR = userState.user?.isSpecialAccessUser ?? false;
+    final l10n = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSizes.spaceM),
@@ -327,7 +361,8 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
           const SizedBox(height: AppSizes.spaceL),
 
           // 1. Date
-          _SectionHeader(icon: Icons.calendar_month, title: 'Select A Date'),
+          _SectionHeader(
+              icon: Icons.calendar_month, title: l10n.bookingSelectDateTitle),
           const SizedBox(height: AppSizes.spaceM),
           _Calendar(
             selectedDate: widget.selectedDate ?? DateTime.now(),
@@ -342,13 +377,15 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
           const SizedBox(height: AppSizes.spaceL),
 
           // 2. Créneau
-          _SectionHeader(icon: Icons.access_time, title: 'Choisir un créneau'),
+          _SectionHeader(
+              icon: Icons.access_time, title: l10n.bookingSelectTimeSlotTitle),
           const SizedBox(height: AppSizes.spaceM),
           _TimeRangeSelector(
             selectedSlot: widget.selectedSlot,
             durationMinutes: widget.durationMinutes,
-            onTap: _openTimePicker,
+            onTap: () => _openTimePicker(l10n),
             fmtTOD: fmtTOD,
+            isParkingClosed: _isParkingClosed,
           ),
           const SizedBox(height: AppSizes.spaceL),
 
@@ -356,7 +393,9 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _SectionHeader(icon: Icons.local_parking, title: 'Select A Spot'),
+              _SectionHeader(
+                  icon: Icons.local_parking,
+                  title: l10n.bookingSelectSpotTitle),
               if (_isLoadingOccupied)
                 const SizedBox(
                     width: 16,
@@ -376,11 +415,11 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
                 color: AppColors.surfaceVariant,
                 borderRadius: BorderRadius.circular(AppSizes.radiusM),
               ),
-              child: const Row(children: [
+              child: Row(children: [
                 Icon(Icons.info_outline,
                     color: AppColors.textSecondary, size: 18),
                 SizedBox(width: AppSizes.spaceS),
-                Text('Choisissez un créneau pour voir la disponibilité',
+                Text(l10n.bookingSelectTimeSlot,
                     style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 13)),
               ]),
@@ -396,12 +435,8 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
                   onSpotTapped: (id) {
                     if (widget.selectedSpotId == id) {
                       widget.onSpotChanged(null);
-                      debugPrint(
-                          '[Step1] finally — setting isLoadingOccupied=false');
                     } else {
                       widget.onSpotChanged(id);
-                      debugPrint(
-                          '[Step1] maguy — setting isLoadingOccupied=false');
                     }
                   },
                 ),
@@ -429,7 +464,8 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
 
           // 4. Véhicule
           _SectionHeader(
-              icon: Icons.directions_car_outlined, title: 'Select A Vehicle'),
+              icon: Icons.directions_car_outlined,
+              title: l10n.bookingSelectVehicleTitle),
           const SizedBox(height: AppSizes.spaceS),
           _VehicleSelector(
             vehicles: userState.vehicles,
@@ -448,7 +484,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
 // CALENDRIER COMPACT
 // ─────────────────────────────────────────────────────────────
 
-class _Calendar extends StatelessWidget {
+class _Calendar extends ConsumerWidget {
   final DateTime selectedDate;
   final DateTime displayMonth;
   final void Function(DateTime) onDateSelected;
@@ -462,12 +498,14 @@ class _Calendar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final today = DateTime.now();
     final firstDay = DateTime(displayMonth.year, displayMonth.month, 1);
     final startOffset = (firstDay.weekday - 1) % 7;
     final daysInMonth =
         DateTime(displayMonth.year, displayMonth.month + 1, 0).day;
+    final locale = ref.watch(localeProvider);
+    final localeName = locale.languageCode; // 'fr' ou 'en'
 
     return Container(
       padding: const EdgeInsets.all(AppSizes.spaceM),
@@ -492,7 +530,7 @@ class _Calendar extends StatelessWidget {
                 constraints: const BoxConstraints(),
               ),
               Text(
-                DateFormat('MMMM yyyy', 'fr').format(displayMonth),
+                DateFormat('MMMM yyyy', localeName).format(displayMonth),
                 style:
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
@@ -509,7 +547,9 @@ class _Calendar extends StatelessWidget {
 
           // Jours semaine
           Row(
-            children: ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+            children: (localeName == 'fr'
+                    ? ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+                    : ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
                 .map((d) => Expanded(
                       child: Center(
                         child: Text(d,
@@ -592,13 +632,14 @@ class _TimeRangeSelector extends StatelessWidget {
   final int durationMinutes;
   final VoidCallback onTap;
   final String Function(TimeOfDay) fmtTOD;
+  final bool isParkingClosed;
 
-  const _TimeRangeSelector({
-    required this.selectedSlot,
-    required this.durationMinutes,
-    required this.onTap,
-    required this.fmtTOD,
-  });
+  const _TimeRangeSelector(
+      {required this.selectedSlot,
+      required this.durationMinutes,
+      required this.onTap,
+      required this.fmtTOD,
+      required this.isParkingClosed});
 
   String get _endTime {
     if (selectedSlot == null) return '--:--';
@@ -620,6 +661,27 @@ class _TimeRangeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasSlot = selectedSlot != null;
+    final l10n = AppLocalizations.of(context)!;
+    if (isParkingClosed) {
+      return Container(
+        padding: const EdgeInsets.all(AppSizes.spaceM),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppSizes.radiusL),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+        ),
+        child: const Row(children: [
+          Icon(Icons.lock_clock, color: AppColors.error, size: 20),
+          SizedBox(width: AppSizes.spaceS),
+          Expanded(
+            child: Text(
+              'Parking fermé pour aujourd\'hui. Choisissez une autre date.',
+              style: TextStyle(color: AppColors.error, fontSize: 13),
+            ),
+          ),
+        ]),
+      );
+    }
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -643,7 +705,7 @@ class _TimeRangeSelector extends StatelessWidget {
             // De
             Expanded(
               child: Column(children: [
-                const Text('De',
+                Text(l10n.bookingFrom,
                     style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 12)),
                 const SizedBox(height: 4),
@@ -672,7 +734,7 @@ class _TimeRangeSelector extends StatelessWidget {
             // À
             Expanded(
               child: Column(children: [
-                const Text('À',
+                Text(l10n.bookingTo,
                     style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 12)),
                 const SizedBox(height: 4),
@@ -771,6 +833,9 @@ class _SpotGridState extends State<_SpotGrid> {
     // Toujours une hauteur fixe pour éviter le crash Expanded sans contrainte
     final containerHeight =
         maxLen > visibleRows ? fixedHeight : maxLen * rowHeight + 60;
+
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       height: containerHeight,
       padding: const EdgeInsets.symmetric(
@@ -802,13 +867,13 @@ class _SpotGridState extends State<_SpotGrid> {
                 ),
               ],
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.arrow_upward, color: AppColors.error, size: 18),
                 SizedBox(width: 6),
                 Text(
-                  'SORTIE',
+                  l10n.bookingSpotExit.toUpperCase(),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1,
@@ -901,13 +966,13 @@ class _SpotGridState extends State<_SpotGrid> {
                 ),
               ],
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.arrow_upward, color: AppColors.primary, size: 18),
                 SizedBox(width: 6),
                 Text(
-                  'ENTRÉE',
+                  l10n.bookingSpotEntry.toUpperCase(),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1,
@@ -968,6 +1033,8 @@ class _SpotTile extends StatelessWidget {
     }
 
     final bool isDisabled = isPhysOccupied || isPMRRestricted;
+
+    final l10n = AppLocalizations.of(context)!;
 
     return GestureDetector(
       onTap: (canBook || isSelected) ? onTap : null,
@@ -1034,7 +1101,7 @@ class _SpotTile extends StatelessWidget {
               // ── STATUS TEXT (UNCHANGED LOGIC) ───────────
               if (isPhysOccupied)
                 Text(
-                  'Occupée',
+                  l10n.bookingSpotOccupied,
                   style: TextStyle(
                     fontSize: 11,
                     color: AppColors.error.withValues(alpha: 0.8),
@@ -1042,7 +1109,7 @@ class _SpotTile extends StatelessWidget {
                 )
               else if (isBookedForSlot)
                 Text(
-                  'Réservée',
+                  l10n.bookingSpotReserved,
                   style: TextStyle(
                     fontSize: 11,
                     color: AppColors.warning.withValues(alpha: 0.8),
@@ -1050,7 +1117,7 @@ class _SpotTile extends StatelessWidget {
                 )
               else if (isPMRRestricted)
                 Text(
-                  'PMR',
+                  l10n.bookingSpotForDisabled,
                   style: TextStyle(
                     fontSize: 11,
                     color: AppColors.info.withValues(alpha: 0.8),
@@ -1075,15 +1142,17 @@ class _SpotTile extends StatelessWidget {
 class _SpotLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Wrap(
       spacing: AppSizes.spaceM,
       runSpacing: 4,
-      children: const [
-        _LegendDot(color: AppColors.success, label: 'Libre'),
-        _LegendDot(color: AppColors.info, label: 'PMR'),
-        _LegendDot(color: AppColors.warning, label: 'Réservée'),
-        _LegendDot(color: AppColors.error, label: 'Occupée'),
-        _LegendDot(color: AppColors.primary, label: 'Sélectionnée'),
+      children: [
+        _LegendDot(color: AppColors.success, label: l10n.bookingSpotFree),
+        _LegendDot(color: AppColors.info, label: l10n.bookingSpotForDisabled),
+        _LegendDot(color: AppColors.warning, label: l10n.bookingSpotReserved),
+        _LegendDot(color: AppColors.error, label: l10n.bookingSpotOccupied),
+        _LegendDot(color: AppColors.primary, label: l10n.bookingItemSelected),
       ],
     );
   }
@@ -1120,6 +1189,8 @@ class _SelectedSpotBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.spaceM, vertical: AppSizes.spaceS),
@@ -1131,7 +1202,8 @@ class _SelectedSpotBadge extends StatelessWidget {
       child: Row(children: [
         const Icon(Icons.check_circle, color: AppColors.success, size: 18),
         const SizedBox(width: AppSizes.spaceS),
-        Text('Place $spotId sélectionnée',
+        Text(
+            '${l10n.bookingSpotLabel(spotId)} ${l10n.bookingItemSelected.toLowerCase()}',
             style: const TextStyle(
                 color: AppColors.success, fontWeight: FontWeight.bold)),
         const Spacer(),
@@ -1162,6 +1234,8 @@ class _VehicleSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     if (vehicles.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(AppSizes.spaceL),
@@ -1170,11 +1244,11 @@ class _VehicleSelector extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSizes.radiusM),
           border: Border.all(color: AppColors.border),
         ),
-        child: const Row(children: [
+        child: Row(children: [
           Icon(Icons.directions_car_outlined, color: AppColors.textSecondary),
           SizedBox(width: AppSizes.spaceS),
           Expanded(
-            child: Text('Aucun véhicule — ajoutez-en depuis votre profil',
+            child: Text(l10n.bookingUserHasNoVehicle,
                 style: TextStyle(color: AppColors.textSecondary)),
           ),
         ]),
@@ -1212,12 +1286,12 @@ class _VehicleSelector extends StatelessWidget {
         // ← ICI, juste après le SizedBox de la liste
         if (vehicles.length > 1) ...[
           const SizedBox(height: AppSizes.spaceXS),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.swipe, size: 14, color: AppColors.textSecondary),
               SizedBox(width: 4),
-              Text('Glissez pour changer de véhicule',
+              Text(l10n.bookingVehicleSwapSlideHint,
                   style:
                       TextStyle(fontSize: 11, color: AppColors.textSecondary)),
             ],

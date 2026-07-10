@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 
@@ -50,12 +52,14 @@ class LocaleNotifier extends StateNotifier<Locale> {
     final prefs = await SharedPreferences.getInstance();
     final lang = prefs.getString('language') ?? 'fr';
     state = lang == 'en' ? const Locale('en', 'US') : const Locale('fr', 'FR');
+    Get.updateLocale(state); //
   }
 
   Future<void> setLocale(Locale locale) async {
     state = locale;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('language', locale.languageCode);
+    Get.updateLocale(locale);
   }
 }
 
@@ -166,6 +170,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(localeProvider);
     final notifs = ref.watch(notifSettingsProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSizes.spaceM),
@@ -174,18 +179,18 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           // ── Langue ────────────────────────────────────────
           _SettingsSection(
-            title: 'Langue',
+            title: l10n.settingsLanguage,
             icon: Icons.language_outlined,
             children: [
               _SettingsOption(
-                label: '🇫🇷  Français',
+                label: l10n.settingsLangFr,
                 selected: locale.languageCode == 'fr',
                 onTap: () => ref
                     .read(localeProvider.notifier)
                     .setLocale(const Locale('fr', 'FR')),
               ),
               _SettingsOption(
-                label: '🇬🇧  English',
+                label: l10n.settingsLangEn,
                 selected: locale.languageCode == 'en',
                 onTap: () => ref
                     .read(localeProvider.notifier)
@@ -197,13 +202,13 @@ class SettingsScreen extends ConsumerWidget {
 
           // ── Notifications ─────────────────────────────────
           _SettingsSection(
-            title: 'Notifications',
+            title: l10n.settingsNotifications,
             icon: Icons.notifications_outlined,
             children: [
               // Master toggle
               _SettingsToggle(
-                label: 'Toutes les notifications',
-                subtitle: 'Activer ou désactiver tous les rappels',
+                label: l10n.settingsNotifAll,
+                subtitle: l10n.settingsNotifAllSubtitle,
                 value: notifs.allEnabled,
                 onChanged: (v) =>
                     ref.read(notifSettingsProvider.notifier).setAll(v),
@@ -213,8 +218,8 @@ class SettingsScreen extends ConsumerWidget {
 
               // Rappels individuels
               _SettingsToggle(
-                label: '30min avant la réservation',
-                subtitle: 'Rappel anticipé',
+                label: l10n.settingsNotif30min,
+                subtitle: l10n.settingsNotif30minSubtitle,
                 value: notifs.remind30min && notifs.allEnabled,
                 enabled: notifs.allEnabled,
                 onChanged: (v) => ref
@@ -222,8 +227,8 @@ class SettingsScreen extends ConsumerWidget {
                     .toggle(remind30min: v),
               ),
               _SettingsToggle(
-                label: '10min avant le début de la réservation',
-                subtitle: 'Rappel urgent',
+                label: l10n.settingsNotif10min,
+                subtitle: l10n.settingsNotif10minSubtitle,
                 value: notifs.remind10min && notifs.allEnabled,
                 enabled: notifs.allEnabled,
                 onChanged: (v) => ref
@@ -231,8 +236,8 @@ class SettingsScreen extends ConsumerWidget {
                     .toggle(remind10min: v),
               ),
               _SettingsToggle(
-                label: '✅  Début de réservation',
-                subtitle: 'Quand votre créneau commence',
+                label: l10n.settingsNotifStart,
+                subtitle: l10n.settingsNotifStartSubtitle,
                 value: notifs.remindStart && notifs.allEnabled,
                 enabled: notifs.allEnabled,
                 onChanged: (v) => ref
@@ -240,8 +245,8 @@ class SettingsScreen extends ConsumerWidget {
                     .toggle(remindStart: v),
               ),
               _SettingsToggle(
-                label: '15min avant la fin',
-                subtitle: 'Rappel de fin imminente',
+                label: l10n.settingsNotifEnd,
+                subtitle: l10n.settingsNotifEndSubtitle,
                 value: notifs.remindEnd15min && notifs.allEnabled,
                 enabled: notifs.allEnabled,
                 onChanged: (v) => ref
