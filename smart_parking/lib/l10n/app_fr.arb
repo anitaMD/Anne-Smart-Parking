@@ -245,6 +245,12 @@
   "description": "Message en cours de création réservation"
 },
 
+  "parkingClosedToday": "Ce parking est fermé. Choisissez une autre date.",
+    "@parkingClosedToday": {"description": "Ce parking est fermé. Choisissez une autre date."},
+
+"agentInsufficientBalance": "Solde insuffisant pour effectuer ce rechargement.",
+    "@agentInsufficientBalance": {"description": "Solde insuffisant pour effectuer ce rechargement"},
+
 "selectLanguage": "Selectionner la langue par défaut.",
 "@selectLanguage": {
   "description": "Label sélection langue par défaut"
@@ -898,6 +904,88 @@
 "settingsNotifEndSubtitle": "Rappel de fin imminente",
 "@settingsNotifEndSubtitle": { "description": "Sous-titre rappel fin" },
 
+"notificationsTitle": "Notifications",
+"@notificationsTitle": {
+  "description": "Titre écran notifications"
+},
+
+"notificationsEmpty": "Aucune notification",
+"@notificationsEmpty": {
+  "description": "Message aucune notification"
+},
+
+"notificationsMarkAllRead": "Tout lire",
+"@notificationsMarkAllRead": {
+  "description": "Bouton marquer toutes notifications comme lues"
+},
+
+"notificationsSnooze": "Reporter le rappel",
+"@notificationsSnooze": {
+  "description": "Label snooze rappel"
+},
+"notifBookingConfirmedTitle": "Réservation confirmée !",
+"@notifBookingConfirmedTitle": {
+  "description": "Titre notification réservation confirmée"
+},
+
+"notifBookingConfirmedBody": "Place {spotId} — {parkingName}",
+"@notifBookingConfirmedBody": {
+  "description": "Corps notification réservation confirmée",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "ID de la place" },
+    "parkingName": { "type": "String", "description": "Nom du parking" }
+  }
+},
+
+"notifReminder30min": "⏰ Rappel parking",
+"@notifReminder30min": {
+  "description": "Titre rappel 30min avant"
+},
+
+"notifReminder10min": "🚗 Bientôt ! Place {spotId}",
+"@notifReminder10min": {
+  "description": "Titre rappel 10min avant",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "ID de la place" }
+  }
+},
+
+"notifReminderStart": "✅ Réservation active — Place {spotId}",
+"@notifReminderStart": {
+  "description": "Titre notification début réservation",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "ID de la place" }
+  }
+},
+
+"notifReminderEnd": "⚠️ Fin dans 15min — Place {spotId}",
+"@notifReminderEnd": {
+  "description": "Titre rappel 15min avant fin",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "ID de la place" }
+  }
+},
+
+"notifSnoozeMinutes": "Dans {minutes} minutes",
+"@notifSnoozeMinutes": {
+  "description": "Option snooze en minutes",
+  "placeholders": {
+    "minutes": { "type": "int", "description": "Nombre de minutes" }
+  }
+},
+
+"notifSnoozed": "Rappel reporté de {minutes} minutes",
+"@notifSnoozed": {
+  "description": "Message confirmation snooze",
+  "placeholders": {
+    "minutes": { "type": "int", "description": "Nombre de minutes" }
+  }
+},
+"notificationsEmptySubtitle": "Vos rappels et alertes apparaîtront ici",
+"@notificationsEmptySubtitle": {
+  "description": "Sous-titre aucune notification"
+},
+
 "profileTitle": "Mon Profil",
 "@profileTitle": { "description": "Titre écran profil" },
 
@@ -1088,5 +1176,118 @@
 "@walletNoTransactions": { "description": "Message aucune transaction" },
 
 "walletNoTransactionsSubtitle": "Vos débits et rechargements apparaîtront ici",
-"@walletNoTransactionsSubtitle": { "description": "Sous-titre aucune transaction" }
-}
+"@walletNoTransactionsSubtitle": { "description": "Sous-titre aucune transaction" },
+
+"agentDashboardTitle": "Agent YSP",
+"@agentDashboardTitle": { "description": "Titre dashboard agent" },
+
+"agentScanTitle": "Scanner client",
+"@agentScanTitle": { "description": "Titre AppBar scanner" },
+
+"agentTopUpTitle": "Rechargement",
+"@agentTopUpTitle": { "description": "Titre AppBar rechargement" },
+
+"agentBadge": "Agent YSP",
+"@agentBadge": { "description": "Badge agent YSP dans le header" },
+
+"agentNewScan": "Nouveau scan",
+"@agentNewScan": { "description": "Tooltip bouton nouveau scan" },
+
+"agentMyBalance": "Mon solde : {balance} SPM",
+"@agentMyBalance": {
+  "description": "Solde wallet de l'agent",
+  "placeholders": {
+    "balance": { "type": "int", "description": "Solde de l'agent" }
+  }
+},
+
+"agentToday": "Aujourd'hui",
+"@agentToday": { "description": "Label stat rechargements aujourd'hui" },
+
+"agentTotal": "Total",
+"@agentTotal": { "description": "Label stat rechargements total" },
+
+"agentScanClient": "Scanner un client",
+"@agentScanClient": { "description": "Bouton scanner un client" },
+
+"agentRecentTopUps": "Rechargements récents",
+"@agentRecentTopUps": { "description": "Titre section historique rechargements" },
+
+"agentNoTopUps": "Aucun rechargement effectué",
+"@agentNoTopUps": { "description": "Message aucun rechargement" },
+
+"agentClientIdentified": "Client identifié",
+"@agentClientIdentified": { "description": "Label client identifié après scan" },
+
+"agentClientBalance": "Solde actuel : {balance} SPM",
+"@agentClientBalance": {
+  "description": "Solde actuel du client",
+  "placeholders": {
+    "balance": { "type": "int", "description": "Solde du client" }
+  }
+},
+
+"agentAmountLabel": "Montant à créditer (SPM)",
+"@agentAmountLabel": { "description": "Label champ montant rechargement" },
+
+"agentScanAnother": "Scanner un autre client",
+"@agentScanAnother": { "description": "Bouton scanner un autre client" },
+
+"agentUserNotFound": "Utilisateur non trouvé",
+"@agentUserNotFound": { "description": "Erreur utilisateur non trouvé" },
+
+"agentInvalidAmount": "Entrez un montant valide",
+"@agentInvalidAmount": { "description": "Erreur montant invalide" },
+
+"agentNewBalance": "Nouveau solde : {balance} SPM",
+"@agentNewBalance": {
+  "description": "Nouveau solde après rechargement",
+  "placeholders": {
+    "balance": { "type": "int", "description": "Nouveau solde" }
+  }
+},
+
+"agentClient": "Client",
+"@agentClient": { "description": "Label client dans les détails" },
+
+"agentClientNewBalance": "Nouveau solde client",
+"@agentClientNewBalance": { "description": "Label nouveau solde client dans les détails" },
+
+"agentTitle": "Agent",
+"@agentTitle": { "description": "Nom générique agent" },
+"agentAmountCredited": "+{amount} SPM",
+"@agentAmountCredited": {
+  "description": "Montant crédité avec signe +",
+  "placeholders": {
+    "amount": { "type": "int", "description": "Montant en SPM" }
+  }
+},
+"agentSuccess": "Rechargement effectué !",
+"@agentSuccess": { "description": "Message succès rechargement" },
+"agentConfirm": "Confirmer le rechargement !",
+"@agentConfirm": { "description": "Message confirmer rechargement" },
+"notifTopUpBody": "Vous avez reçu {amount} SPM. Nouveau solde : {newBalance} SPM.",
+"@notifTopUpBody": {
+  "description": "Corps notification rechargement reçu",
+  "placeholders": {
+    "amount": { "type": "int", "description": "Montant reçu" },
+    "newBalance": { "type": "int", "description": "Nouveau solde" }
+  }
+},
+
+"notifBookingConfirmed": "Réservation confirmée — Place {spotId}",
+"@notifBookingConfirmed": {
+  "description": "Corps notification réservation confirmée",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "ID de la place" }
+  }
+},
+
+"bookingNoVehicleAdd": "Aucun véhicule — appuyez pour en ajouter un",
+"@bookingNoVehicleAdd": {
+  "description": "Message et action quand aucun véhicule dans le stepper"
+},
+"commonOk": "OK",
+"@commonOk": {
+  "description": "Bouton OK générique"
+}}

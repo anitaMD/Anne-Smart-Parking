@@ -22,7 +22,6 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/booking_viewmodel.dart';
 import '../../viewmodels/parking_viewmodel.dart';
 import '../../viewmodels/user_viewmodel.dart';
-import '../../widgets/connectivity_wrapper.dart';
 import '../../widgets/license_plate_widget.dart';
 import '../../router/app_router.dart';
 
@@ -35,7 +34,8 @@ class HomeScreenDrawer extends ConsumerStatefulWidget {
 
 enum _Section { dashboard, profile, bookings, wallet, notifications, settings }
 
-class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
+class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer>
+    with WidgetsBindingObserver {
   _Section _current = _Section.dashboard;
 
   String _sectionTitle(AppLocalizations l10n) => switch (_current) {
@@ -46,6 +46,31 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
         _Section.notifications => l10n.dashboardNotifications,
         _Section.settings => l10n.dashboardSettings,
       };
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this); // ← ajouter
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // ← ajouter
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App revenue au premier plan → rafraîchir les réservations
+      final authState = ref.read(authProvider);
+      if (authState is AuthAuthenticated) {
+        debugPrint('[App] Resumed → refresh bookings');
+        ref.read(bookingProvider.notifier).loadBookings(authState.user.id);
+        ref.read(userProvider.notifier).loadUserData(authState.user.id);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,180 +100,181 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer> {
       });
     }
 
-    return ConnectivityWrapper(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_sectionTitle(l10n)),
-          flexibleSpace: Container(decoration: AppDecorations.gradientAppBar),
-          leading: _current == _Section.dashboard
-              ? Builder(
-                  builder: (ctx) => IconButton(
-                    icon: const Icon(Icons.menu),
-                    onPressed: () => Scaffold.of(ctx).openDrawer(),
-                  ),
-                )
-              : IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () =>
-                      setState(() => _current = _Section.dashboard),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_sectionTitle(l10n)),
+        flexibleSpace: Container(decoration: AppDecorations.gradientAppBar),
+        leading: _current == _Section.dashboard
+            ? Builder(
+                builder: (ctx) => IconButton(
+                  icon: const Icon(Icons.menu),
+                  onPressed: () => Scaffold.of(ctx).openDrawer(),
                 ),
-          actions: [
-            Stack(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.notifications_outlined),
-                  onPressed: () =>
-                      setState(() => _current = _Section.notifications),
-                ),
-                if (unread > 0)
-                  // Remplacer le hint actuel par :
-                  Positioned(
-                    bottom: 4,
-                    right: 4,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
+              )
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => setState(() => _current = _Section.dashboard),
+              ),
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: () =>
+                    setState(() => _current = _Section.notifications),
+              ),
+              if (unread > 0)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: AppColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints:
+                        const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      unread > 9 ? '9+' : '$unread',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
                       ),
-                      child: const Icon(
-                        Icons.swap_horiz,
-                        color: Colors.white70,
-                        size: 12,
-                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-              ],
+                ),
+            ],
+          ),
+        ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            UserAccountsDrawerHeader(
+              decoration:
+                  const BoxDecoration(gradient: AppColors.primaryGradient),
+              accountName: userState.isLoading
+                  ? const SizedBox(
+                      height: 12,
+                      width: 100,
+                      child: LinearProgressIndicator(
+                        backgroundColor: Colors.white24,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ))
+                  : Text(userState.user?.fullName ?? '',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+              accountEmail: Text(userState.user?.email ?? ''),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: userState.isLoading
+                    ? const CircularProgressIndicator(
+                        color: AppColors.primary, strokeWidth: 2)
+                    : userState.user?.hasProfileImage == true
+                        ? ClipOval(
+                            child: Image.network(
+                            userState.user!.profileImageUrl,
+                            width: AppSizes.avatarM,
+                            height: AppSizes.avatarM,
+                            fit: BoxFit.cover,
+                          ))
+                        : Text(userState.user?.initials ?? '?',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
+                            )),
+              ),
+            ),
+            _DrawerItem(
+              icon: Icons.dashboard_outlined,
+              label: l10n.dashboardTitle,
+              selected: _current == _Section.dashboard,
+              onTap: () {
+                setState(() => _current = _Section.dashboard);
+                Navigator.pop(context);
+              },
+            ),
+            _DrawerItem(
+              icon: Icons.person_outline,
+              label: l10n.dashboardProfile,
+              selected: _current == _Section.profile,
+              onTap: () {
+                setState(() => _current = _Section.profile);
+                Navigator.pop(context);
+              },
+            ),
+            _DrawerItem(
+              icon: Icons.history,
+              label: l10n.dashboardBookings,
+              selected: _current == _Section.bookings,
+              onTap: () {
+                setState(() => _current = _Section.bookings);
+                Navigator.pop(context);
+              },
+            ),
+            _DrawerItem(
+              icon: Icons.account_balance_wallet_outlined,
+              label: l10n.dashboardWallet,
+              selected: _current == _Section.wallet,
+              onTap: () {
+                setState(() => _current = _Section.wallet);
+                Navigator.pop(context);
+              },
+            ),
+            _DrawerItem(
+              icon: Icons.notifications_outlined,
+              label: l10n.dashboardNotifications,
+              selected: _current == _Section.notifications,
+              badge: unread,
+              onTap: () {
+                setState(() => _current = _Section.notifications);
+                Navigator.pop(context);
+              },
+            ),
+            const Divider(),
+            _DrawerItem(
+              icon: Icons.settings_outlined,
+              label: l10n.dashboardSettings,
+              selected: _current == _Section.settings,
+              onTap: () {
+                setState(() => _current = _Section.settings);
+                Navigator.pop(context);
+              },
+            ),
+            _DrawerItem(
+              icon: Icons.logout,
+              label: l10n.dashboardLogout,
+              selected: false,
+              color: AppColors.error,
+              onTap: () async {
+                Navigator.pop(context);
+                await ref.read(authProvider.notifier).signOut();
+              },
             ),
           ],
         ),
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              UserAccountsDrawerHeader(
-                decoration:
-                    const BoxDecoration(gradient: AppColors.primaryGradient),
-                accountName: userState.isLoading
-                    ? const SizedBox(
-                        height: 12,
-                        width: 100,
-                        child: LinearProgressIndicator(
-                          backgroundColor: Colors.white24,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ))
-                    : Text(userState.user?.fullName ?? '',
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                accountEmail: Text(userState.user?.email ?? ''),
-                currentAccountPicture: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: userState.isLoading
-                      ? const CircularProgressIndicator(
-                          color: AppColors.primary, strokeWidth: 2)
-                      : userState.user?.hasProfileImage == true
-                          ? ClipOval(
-                              child: Image.network(
-                              userState.user!.profileImageUrl,
-                              width: AppSizes.avatarM,
-                              height: AppSizes.avatarM,
-                              fit: BoxFit.cover,
-                            ))
-                          : Text(userState.user?.initials ?? '?',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).primaryColor,
-                              )),
-                ),
-              ),
-              _DrawerItem(
-                icon: Icons.dashboard_outlined,
-                label: l10n.dashboardTitle,
-                selected: _current == _Section.dashboard,
-                onTap: () {
-                  setState(() => _current = _Section.dashboard);
-                  Navigator.pop(context);
-                },
-              ),
-              _DrawerItem(
-                icon: Icons.person_outline,
-                label: l10n.dashboardProfile,
-                selected: _current == _Section.profile,
-                onTap: () {
-                  setState(() => _current = _Section.profile);
-                  Navigator.pop(context);
-                },
-              ),
-              _DrawerItem(
-                icon: Icons.history,
-                label: l10n.dashboardBookings,
-                selected: _current == _Section.bookings,
-                onTap: () {
-                  setState(() => _current = _Section.bookings);
-                  Navigator.pop(context);
-                },
-              ),
-              _DrawerItem(
-                icon: Icons.account_balance_wallet_outlined,
-                label: l10n.dashboardWallet,
-                selected: _current == _Section.wallet,
-                onTap: () {
-                  setState(() => _current = _Section.wallet);
-                  Navigator.pop(context);
-                },
-              ),
-              _DrawerItem(
-                icon: Icons.notifications_outlined,
-                label: l10n.dashboardNotifications,
-                selected: _current == _Section.notifications,
-                badge: unread,
-                onTap: () {
-                  setState(() => _current = _Section.notifications);
-                  Navigator.pop(context);
-                },
-              ),
-              const Divider(),
-              _DrawerItem(
-                icon: Icons.settings_outlined,
-                label: l10n.dashboardSettings,
-                selected: _current == _Section.settings,
-                onTap: () {
-                  setState(() => _current = _Section.settings);
-                  Navigator.pop(context);
-                },
-              ),
-              _DrawerItem(
-                icon: Icons.logout,
-                label: l10n.dashboardLogout,
-                selected: false,
-                color: AppColors.error,
-                onTap: () async {
-                  Navigator.pop(context);
-                  await ref.read(authProvider.notifier).signOut();
-                },
-              ),
-            ],
-          ),
-        ),
-        body: _current == _Section.dashboard
-            ? _DashboardBody(
-                onViewAllBookings: () =>
-                    setState(() => _current = _Section.bookings))
-            : _current == _Section.wallet
-                ? WalletScreen()
-                : _current == _Section.profile
-                    ? ProfileScreen(
-                        l10n: l10n,
-                      )
-                    : _current == _Section.notifications
-                        ? NotificationsScreen()
-                        : _current == _Section.bookings
-                            ? BookingHistoryScreen()
-                            : _current == _Section.settings
-                                ? SettingsScreen()
-                                : _PlaceholderBody(label: _sectionTitle(l10n)),
       ),
+      body: _current == _Section.dashboard
+          ? _DashboardBody(
+              onViewAllBookings: () =>
+                  setState(() => _current = _Section.bookings))
+          : _current == _Section.wallet
+              ? WalletScreen()
+              : _current == _Section.profile
+                  ? ProfileScreen(
+                      l10n: l10n,
+                    )
+                  : _current == _Section.notifications
+                      ? NotificationsScreen()
+                      : _current == _Section.bookings
+                          ? BookingHistoryScreen()
+                          : _current == _Section.settings
+                              ? SettingsScreen()
+                              : _PlaceholderBody(label: _sectionTitle(l10n)),
     );
   }
 }

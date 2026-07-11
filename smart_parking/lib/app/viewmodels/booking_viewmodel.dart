@@ -112,7 +112,6 @@ class BookingNotifier extends Notifier<BookingState> {
         isLoading: false,
       );
     } catch (e) {
-      debugPrint('[Booking] loadBookings error: $e');
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -123,7 +122,6 @@ class BookingNotifier extends Notifier<BookingState> {
     try {
       final bookings = await _firestoreService.getUserArchivedBookings(uid);
       state = state.copyWith(archivedBookings: bookings);
-      debugPrint('[Booking] ${bookings.length} réservations archivées');
     } catch (e) {
       debugPrint('[Booking] loadArchivedBookings error: $e');
     }
@@ -157,7 +155,18 @@ class BookingNotifier extends Notifier<BookingState> {
     );
 
     final bookingId = await _firestoreService.createBookingAtomic(booking);
+// Notifier l'utilisateur
+    await _firestoreService.saveNotification(
+      uid: clientId,
+      title: 'Réservation confirmée!',
+      body: 'Place $spotId — $parkingName',
+    );
 
+    await NotificationService().show(
+      title: '✅ Réservation confirmée !',
+      body: 'Place $spotId — $parkingName',
+      uid: clientId,
+    );
 // Planifier les rappels
     final bookingWithId = BookingModel(
       id: bookingId,
@@ -236,7 +245,6 @@ class BookingNotifier extends Notifier<BookingState> {
     }
 
     if (edits.isEmpty) {
-      debugPrint('[Booking] Aucune modification');
       return;
     }
 
@@ -300,7 +308,6 @@ class BookingNotifier extends Notifier<BookingState> {
       final updated =
           state.unArchivedBookings.where((b) => b.id != bookingId).toList();
       state = state.copyWith(unArchivedBookings: updated);
-      debugPrint('[Booking] Annulée : $bookingId');
     } catch (e) {
       debugPrint('[Booking] cancelBooking error: $e');
     }

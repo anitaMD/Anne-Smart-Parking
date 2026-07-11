@@ -237,8 +237,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     durationMinutes: _durationMinutes, // variable du state
                     selectedSpotId: _selectedSpotId, // variable du state
                     selectedVehicle: _selectedVehicle, // variable du state
-                    onDateChanged: (date) =>
-                        setState(() => _selectedDate = date),
+                    onDateChanged: (date) => setState(() {
+                          _selectedDate = date;
+                          _selectedSlot = null; // ← reset
+                          _durationMinutes = 30; // ← reset
+                          _selectedSpotId = null; // ← reset
+                        }),
                     onSlotChanged: (slot) =>
                         setState(() => _selectedSlot = slot),
                     onDurationChanged: (d) =>

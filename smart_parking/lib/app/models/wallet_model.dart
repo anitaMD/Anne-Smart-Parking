@@ -69,6 +69,7 @@ class TransactionModel {
   final String? parkingId;
   final String? parkingName;
   final TopUpSource? topUpSource;
+  final String? agentId;
 
   const TransactionModel({
     required this.id,
@@ -79,6 +80,7 @@ class TransactionModel {
     this.parkingId,
     this.parkingName,
     this.topUpSource,
+    this.agentId,
   });
 
   factory TransactionModel.debitFromFirestore(DocumentSnapshot doc) {
@@ -103,6 +105,7 @@ class TransactionModel {
       amount: data['amount'] as int? ?? 0,
       newBalance: data['newBalance'] as int? ?? 0,
       timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      agentId: data['creditedBy'] as String?,
       topUpSource: TopUpSource.values.firstWhere(
         (e) => e.name == sourceStr,
         orElse: () => TopUpSource.agent,
@@ -133,6 +136,5 @@ class TransactionModel {
   String get signedAmount => isDebit ? '-$amount SPM' : '+$amount SPM';
 
   @override
-  String toString() =>
-      'TransactionModel(${type.name}, amount: $amount)';
+  String toString() => 'TransactionModel(${type.name}, amount: $amount)';
 }

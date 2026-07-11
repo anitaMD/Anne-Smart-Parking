@@ -213,6 +213,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get registerCardRequired => 'Please upload both sides of your card.';
 
   @override
+  String get parkingClosedToday => 'This parking is closed. Please select another date.';
+
+  @override
+  String get agentInsufficientBalance => 'Insufficient balance to complete this top up.';
+
+  @override
   String get noParkingSpotSelected => 'As you have not selected a specific parking spot, you will be assigned a random available one.';
 
   @override
@@ -753,6 +759,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNotifEndSubtitle => 'Imminent end reminder';
 
   @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String get notificationsEmpty => 'No notifications';
+
+  @override
+  String get notificationsMarkAllRead => 'Mark all read';
+
+  @override
+  String get notificationsSnooze => 'Snooze reminder';
+
+  @override
+  String get notifBookingConfirmedTitle => 'Booking confirmed!';
+
+  @override
+  String notifBookingConfirmedBody(String spotId, String parkingName) {
+    return 'Spot $spotId — $parkingName';
+  }
+
+  @override
+  String get notifReminder30min => '⏰ Parking reminder';
+
+  @override
+  String notifReminder10min(String spotId) {
+    return '🚗 Almost time! Spot $spotId';
+  }
+
+  @override
+  String notifReminderStart(String spotId) {
+    return '✅ Active booking — Spot $spotId';
+  }
+
+  @override
+  String notifReminderEnd(String spotId) {
+    return '⚠️ Ending in 15min — Spot $spotId';
+  }
+
+  @override
+  String notifSnoozeMinutes(int minutes) {
+    return 'In $minutes minutes';
+  }
+
+  @override
+  String notifSnoozed(int minutes) {
+    return 'Reminder snoozed for $minutes minutes';
+  }
+
+  @override
+  String get notificationsEmptySubtitle => 'Your reminders and alerts will appear here';
+
+  @override
   String get profileTitle => 'My Profile';
 
   @override
@@ -925,4 +982,100 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get walletNoTransactionsSubtitle => 'Your debits and top ups will appear here';
+
+  @override
+  String get agentDashboardTitle => 'YSP Agent';
+
+  @override
+  String get agentScanTitle => 'Scan client';
+
+  @override
+  String get agentTopUpTitle => 'Top up';
+
+  @override
+  String get agentBadge => 'YSP Agent';
+
+  @override
+  String get agentNewScan => 'New scan';
+
+  @override
+  String agentMyBalance(int balance) {
+    return 'My balance: $balance SPM';
+  }
+
+  @override
+  String get agentToday => 'Today';
+
+  @override
+  String get agentTotal => 'Total';
+
+  @override
+  String get agentScanClient => 'Scan a client';
+
+  @override
+  String get agentRecentTopUps => 'Recent top ups';
+
+  @override
+  String get agentNoTopUps => 'No top ups yet';
+
+  @override
+  String get agentClientIdentified => 'Client identified';
+
+  @override
+  String agentClientBalance(int balance) {
+    return 'Current balance: $balance SPM';
+  }
+
+  @override
+  String get agentAmountLabel => 'Amount to credit (SPM)';
+
+  @override
+  String get agentScanAnother => 'Scan another client';
+
+  @override
+  String get agentUserNotFound => 'User not found';
+
+  @override
+  String get agentInvalidAmount => 'Enter a valid amount';
+
+  @override
+  String agentNewBalance(int balance) {
+    return 'New balance: $balance SPM';
+  }
+
+  @override
+  String get agentClient => 'Client';
+
+  @override
+  String get agentClientNewBalance => 'Client new balance';
+
+  @override
+  String get agentTitle => 'Agent';
+
+  @override
+  String agentAmountCredited(int amount) {
+    return '+$amount SPM';
+  }
+
+  @override
+  String notifTopUpBody(int amount, int newBalance) {
+    return 'You received $amount SPM. New balance: $newBalance SPM.';
+  }
+
+  @override
+  String notifBookingConfirmed(String spotId) {
+    return 'Booking confirmed — Spot $spotId';
+  }
+
+  @override
+  String get agentSuccess => 'Top up successful!';
+
+  @override
+  String get agentConfirm => 'Confirm top up !';
+
+  @override
+  String get commonOk => 'OK';
+
+  @override
+  String get bookingNoVehicleAdd => 'No vehicle — tap to add one';
 }

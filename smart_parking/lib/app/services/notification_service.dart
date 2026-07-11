@@ -25,7 +25,7 @@ class NotificationService {
           channelDescription: _channel.description,
           importance: Importance.high,
           priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+          icon: '@drawable/ic_notification',
         ),
       );
 
@@ -36,7 +36,7 @@ class NotificationService {
           channelDescription: _channel.description,
           importance: Importance.high,
           priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+          icon: 'drawable/ic_notification',
           actions: const [
             AndroidNotificationAction('snooze_5', 'Reporter 5min'),
             AndroidNotificationAction('snooze_10', 'Reporter 10min'),
@@ -57,7 +57,7 @@ class NotificationService {
 
   Future<void> init() async {
     const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@drawable/ic_notification');
     const initSettings = InitializationSettings(android: androidSettings);
 
     await _localNotifications.initialize(
@@ -69,6 +69,11 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(_channel);
+    // Android — afficher les notifications en foreground
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
 
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
@@ -177,13 +182,22 @@ class NotificationService {
     required String body,
     required DateTime scheduledDate,
   }) async {
+    final androidPlugin =
+        _localNotifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    final canSchedule =
+        await androidPlugin?.canScheduleExactNotifications() ?? false;
+
     await _localNotifications.zonedSchedule(
       id: id,
       title: title,
       body: body,
       scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
       notificationDetails: _reminderDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: canSchedule
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexact,
     );
   }
 

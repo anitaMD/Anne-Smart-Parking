@@ -281,6 +281,13 @@
   "registerCardRequired": "Please upload both sides of your card.",
   "@registerCardRequired": { "description": "Card upload required error" },
   
+  "parkingClosedToday": "This parking is closed. Please select another date.",
+    "@parkingClosedToday": {"description": "Ce parking est fermé. Choisissez une autre date."},
+
+"agentInsufficientBalance": "Insufficient balance to complete this top up.",
+    "@agentInsufficientBalance": {"description": "Solde insuffisant pour effectuer ce rechargement"},
+
+
     "noParkingSpotSelected": "As you have not selected a specific parking spot, you will be assigned a random available one.",
     "@noParkingSpotSelected": {
         "description": "The user is asked if he wants to continue the booking without selecting a parking spot."
@@ -848,6 +855,88 @@
 "settingsNotifEndSubtitle": "Imminent end reminder",
 "@settingsNotifEndSubtitle": { "description": "End reminder subtitle" },
 
+"notificationsTitle": "Notifications",
+"@notificationsTitle": {
+  "description": "Notifications screen title"
+},
+
+"notificationsEmpty": "No notifications",
+"@notificationsEmpty": {
+  "description": "No notifications message"
+},
+
+"notificationsMarkAllRead": "Mark all read",
+"@notificationsMarkAllRead": {
+  "description": "Mark all notifications as read button"
+},
+
+"notificationsSnooze": "Snooze reminder",
+"@notificationsSnooze": {
+  "description": "Snooze reminder label"
+},
+
+
+"notifBookingConfirmedTitle": "Booking confirmed!",
+"@notifBookingConfirmedTitle": {
+  "description": "Booking confirmed notification title"
+},
+
+"notifBookingConfirmedBody": "Spot {spotId} — {parkingName}",
+"@notifBookingConfirmedBody": {
+  "description": "Booking confirmed notification body",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "Spot ID" },
+    "parkingName": { "type": "String", "description": "Parking name" }
+  }
+},
+
+"notifReminder30min": "⏰ Parking reminder",
+"@notifReminder30min": {
+  "description": "30min before reminder title"
+},
+
+"notifReminder10min": "🚗 Almost time! Spot {spotId}",
+"@notifReminder10min": {
+  "description": "10min before reminder title",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "Spot ID" }
+  }
+},
+
+"notifReminderStart": "✅ Active booking — Spot {spotId}",
+"@notifReminderStart": {
+  "description": "Booking start notification title",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "Spot ID" }
+  }
+},
+
+"notifReminderEnd": "⚠️ Ending in 15min — Spot {spotId}",
+"@notifReminderEnd": {
+  "description": "15min before end reminder title",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "Spot ID" }
+  }
+},
+
+"notifSnoozeMinutes": "In {minutes} minutes",
+"@notifSnoozeMinutes": {
+  "description": "Snooze option in minutes",
+  "placeholders": {
+    "minutes": { "type": "int", "description": "Number of minutes" }
+  }
+},
+
+"notifSnoozed": "Reminder snoozed for {minutes} minutes",
+"@notifSnoozed": {
+  "description": "Snooze confirmation message",
+  "placeholders": {
+    "minutes": { "type": "int", "description": "Number of minutes" }
+  }
+},"notificationsEmptySubtitle": "Your reminders and alerts will appear here",
+"@notificationsEmptySubtitle": {
+  "description": "No notifications subtitle"
+},
 "profileTitle": "My Profile",
 "@profileTitle": { "description": "Profile screen title" },
 
@@ -1038,6 +1127,120 @@
 "@walletNoTransactions": { "description": "No transactions message" },
 
 "walletNoTransactionsSubtitle": "Your debits and top ups will appear here",
-"@walletNoTransactionsSubtitle": { "description": "No transactions subtitle" }
+"@walletNoTransactionsSubtitle": { "description": "No transactions subtitle" },
+
+"agentDashboardTitle": "YSP Agent",
+"@agentDashboardTitle": { "description": "Agent dashboard title" },
+
+"agentScanTitle": "Scan client",
+"@agentScanTitle": { "description": "Scanner AppBar title" },
+
+"agentTopUpTitle": "Top up",
+"@agentTopUpTitle": { "description": "Top up AppBar title" },
+
+"agentBadge": "YSP Agent",
+"@agentBadge": { "description": "YSP Agent badge in header" },
+
+"agentNewScan": "New scan",
+"@agentNewScan": { "description": "New scan button tooltip" },
+
+"agentMyBalance": "My balance: {balance} SPM",
+"@agentMyBalance": {
+  "description": "Agent wallet balance",
+  "placeholders": {
+    "balance": { "type": "int", "description": "Agent balance" }
+  }
+},
+
+"agentToday": "Today",
+"@agentToday": { "description": "Today stat label" },
+
+"agentTotal": "Total",
+"@agentTotal": { "description": "Total stat label" },
+
+"agentScanClient": "Scan a client",
+"@agentScanClient": { "description": "Scan client button" },
+
+"agentRecentTopUps": "Recent top ups",
+"@agentRecentTopUps": { "description": "Recent top ups section title" },
+
+"agentNoTopUps": "No top ups yet",
+"@agentNoTopUps": { "description": "No top ups message" },
+
+"agentClientIdentified": "Client identified",
+"@agentClientIdentified": { "description": "Client identified after scan" },
+
+"agentClientBalance": "Current balance: {balance} SPM",
+"@agentClientBalance": {
+  "description": "Client current balance",
+  "placeholders": {
+    "balance": { "type": "int", "description": "Client balance" }
+  }
+},
+
+"agentAmountLabel": "Amount to credit (SPM)",
+"@agentAmountLabel": { "description": "Top up amount field label" },
+
+"agentScanAnother": "Scan another client",
+"@agentScanAnother": { "description": "Scan another client button" },
+
+"agentUserNotFound": "User not found",
+"@agentUserNotFound": { "description": "User not found error" },
+
+"agentInvalidAmount": "Enter a valid amount",
+"@agentInvalidAmount": { "description": "Invalid amount error" },
+
+"agentNewBalance": "New balance: {balance} SPM",
+"@agentNewBalance": {
+  "description": "New balance after top up",
+  "placeholders": {
+    "balance": { "type": "int", "description": "New balance" }
+  }
+},
+
+"agentClient": "Client",
+"@agentClient": { "description": "Client label in details" },
+
+"agentClientNewBalance": "Client new balance",
+"@agentClientNewBalance": { "description": "Client new balance label in details" },
+
+"agentTitle": "Agent",
+"@agentTitle": { "description": "Generic agent name" },
+"agentAmountCredited": "+{amount} SPM",
+"@agentAmountCredited": {
+  "description": "Credited amount with + sign",
+  "placeholders": {
+    "amount": { "type": "int", "description": "Amount in SPM" }
+  }
+},
+"notifTopUpBody": "You received {amount} SPM. New balance: {newBalance} SPM.",
+"@notifTopUpBody": {
+  "description": "Top up received notification body",
+  "placeholders": {
+    "amount": { "type": "int", "description": "Amount received" },
+    "newBalance": { "type": "int", "description": "New balance" }
+  }
+},
+
+"notifBookingConfirmed": "Booking confirmed — Spot {spotId}",
+"@notifBookingConfirmed": {
+  "description": "Booking confirmed notification body",
+  "placeholders": {
+    "spotId": { "type": "String", "description": "Spot ID" }
+  }
+},
+
+"agentSuccess": "Top up successful!",
+"@agentSuccess": { "description": "Message succès rechargement" },
+"agentConfirm": "Confirm top up !",
+"@agentConfirm": { "description": "Message confirmer rechargement" },
+"commonOk": "OK",
+"@commonOk": {
+  "description": "Generic OK button"
+},
+"bookingNoVehicleAdd": "No vehicle — tap to add one",
+"@bookingNoVehicleAdd": {
+  "description": "Message and action when no vehicle in stepper"
+}
     
 }

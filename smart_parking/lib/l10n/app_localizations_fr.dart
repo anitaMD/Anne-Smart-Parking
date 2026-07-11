@@ -213,6 +213,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get registerCardRequired => 'Veuillez uploader le recto et le verso de votre carte.';
 
   @override
+  String get parkingClosedToday => 'Ce parking est fermé. Choisissez une autre date.';
+
+  @override
+  String get agentInsufficientBalance => 'Solde insuffisant pour effectuer ce rechargement.';
+
+  @override
   String get noParkingSpotSelected => 'Il semble que vous n\'avez pas sélectionné une place de parking. Il vous sera donc attribué une parmi celles présentement disponibles.';
 
   @override
@@ -753,6 +759,57 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsNotifEndSubtitle => 'Rappel de fin imminente';
 
   @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String get notificationsEmpty => 'Aucune notification';
+
+  @override
+  String get notificationsMarkAllRead => 'Tout lire';
+
+  @override
+  String get notificationsSnooze => 'Reporter le rappel';
+
+  @override
+  String get notifBookingConfirmedTitle => 'Réservation confirmée !';
+
+  @override
+  String notifBookingConfirmedBody(String spotId, String parkingName) {
+    return 'Place $spotId — $parkingName';
+  }
+
+  @override
+  String get notifReminder30min => '⏰ Rappel parking';
+
+  @override
+  String notifReminder10min(String spotId) {
+    return '🚗 Bientôt ! Place $spotId';
+  }
+
+  @override
+  String notifReminderStart(String spotId) {
+    return '✅ Réservation active — Place $spotId';
+  }
+
+  @override
+  String notifReminderEnd(String spotId) {
+    return '⚠️ Fin dans 15min — Place $spotId';
+  }
+
+  @override
+  String notifSnoozeMinutes(int minutes) {
+    return 'Dans $minutes minutes';
+  }
+
+  @override
+  String notifSnoozed(int minutes) {
+    return 'Rappel reporté de $minutes minutes';
+  }
+
+  @override
+  String get notificationsEmptySubtitle => 'Vos rappels et alertes apparaîtront ici';
+
+  @override
   String get profileTitle => 'Mon Profil';
 
   @override
@@ -925,4 +982,100 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get walletNoTransactionsSubtitle => 'Vos débits et rechargements apparaîtront ici';
+
+  @override
+  String get agentDashboardTitle => 'Agent YSP';
+
+  @override
+  String get agentScanTitle => 'Scanner client';
+
+  @override
+  String get agentTopUpTitle => 'Rechargement';
+
+  @override
+  String get agentBadge => 'Agent YSP';
+
+  @override
+  String get agentNewScan => 'Nouveau scan';
+
+  @override
+  String agentMyBalance(int balance) {
+    return 'Mon solde : $balance SPM';
+  }
+
+  @override
+  String get agentToday => 'Aujourd\'hui';
+
+  @override
+  String get agentTotal => 'Total';
+
+  @override
+  String get agentScanClient => 'Scanner un client';
+
+  @override
+  String get agentRecentTopUps => 'Rechargements récents';
+
+  @override
+  String get agentNoTopUps => 'Aucun rechargement effectué';
+
+  @override
+  String get agentClientIdentified => 'Client identifié';
+
+  @override
+  String agentClientBalance(int balance) {
+    return 'Solde actuel : $balance SPM';
+  }
+
+  @override
+  String get agentAmountLabel => 'Montant à créditer (SPM)';
+
+  @override
+  String get agentScanAnother => 'Scanner un autre client';
+
+  @override
+  String get agentUserNotFound => 'Utilisateur non trouvé';
+
+  @override
+  String get agentInvalidAmount => 'Entrez un montant valide';
+
+  @override
+  String agentNewBalance(int balance) {
+    return 'Nouveau solde : $balance SPM';
+  }
+
+  @override
+  String get agentClient => 'Client';
+
+  @override
+  String get agentClientNewBalance => 'Nouveau solde client';
+
+  @override
+  String get agentTitle => 'Agent';
+
+  @override
+  String agentAmountCredited(int amount) {
+    return '+$amount SPM';
+  }
+
+  @override
+  String notifTopUpBody(int amount, int newBalance) {
+    return 'Vous avez reçu $amount SPM. Nouveau solde : $newBalance SPM.';
+  }
+
+  @override
+  String notifBookingConfirmed(String spotId) {
+    return 'Réservation confirmée — Place $spotId';
+  }
+
+  @override
+  String get agentSuccess => 'Rechargement effectué !';
+
+  @override
+  String get agentConfirm => 'Confirmer le rechargement !';
+
+  @override
+  String get commonOk => 'OK';
+
+  @override
+  String get bookingNoVehicleAdd => 'Aucun véhicule — appuyez pour en ajouter un';
 }

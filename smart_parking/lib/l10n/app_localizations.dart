@@ -503,6 +503,18 @@ abstract class AppLocalizations {
   /// **'Please upload both sides of your card.'**
   String get registerCardRequired;
 
+  /// Ce parking est fermé. Choisissez une autre date.
+  ///
+  /// In en, this message translates to:
+  /// **'This parking is closed. Please select another date.'**
+  String get parkingClosedToday;
+
+  /// Solde insuffisant pour effectuer ce rechargement
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient balance to complete this top up.'**
+  String get agentInsufficientBalance;
+
   /// The user is asked if he wants to continue the booking without selecting a parking spot.
   ///
   /// In en, this message translates to:
@@ -1559,6 +1571,84 @@ abstract class AppLocalizations {
   /// **'Imminent end reminder'**
   String get settingsNotifEndSubtitle;
 
+  /// Notifications screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTitle;
+
+  /// No notifications message
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications'**
+  String get notificationsEmpty;
+
+  /// Mark all notifications as read button
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get notificationsMarkAllRead;
+
+  /// Snooze reminder label
+  ///
+  /// In en, this message translates to:
+  /// **'Snooze reminder'**
+  String get notificationsSnooze;
+
+  /// Booking confirmed notification title
+  ///
+  /// In en, this message translates to:
+  /// **'Booking confirmed!'**
+  String get notifBookingConfirmedTitle;
+
+  /// Booking confirmed notification body
+  ///
+  /// In en, this message translates to:
+  /// **'Spot {spotId} — {parkingName}'**
+  String notifBookingConfirmedBody(String spotId, String parkingName);
+
+  /// 30min before reminder title
+  ///
+  /// In en, this message translates to:
+  /// **'⏰ Parking reminder'**
+  String get notifReminder30min;
+
+  /// 10min before reminder title
+  ///
+  /// In en, this message translates to:
+  /// **'🚗 Almost time! Spot {spotId}'**
+  String notifReminder10min(String spotId);
+
+  /// Booking start notification title
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Active booking — Spot {spotId}'**
+  String notifReminderStart(String spotId);
+
+  /// 15min before end reminder title
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Ending in 15min — Spot {spotId}'**
+  String notifReminderEnd(String spotId);
+
+  /// Snooze option in minutes
+  ///
+  /// In en, this message translates to:
+  /// **'In {minutes} minutes'**
+  String notifSnoozeMinutes(int minutes);
+
+  /// Snooze confirmation message
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder snoozed for {minutes} minutes'**
+  String notifSnoozed(int minutes);
+
+  /// No notifications subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Your reminders and alerts will appear here'**
+  String get notificationsEmptySubtitle;
+
   /// Profile screen title
   ///
   /// In en, this message translates to:
@@ -1882,6 +1972,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your debits and top ups will appear here'**
   String get walletNoTransactionsSubtitle;
+
+  /// Agent dashboard title
+  ///
+  /// In en, this message translates to:
+  /// **'YSP Agent'**
+  String get agentDashboardTitle;
+
+  /// Scanner AppBar title
+  ///
+  /// In en, this message translates to:
+  /// **'Scan client'**
+  String get agentScanTitle;
+
+  /// Top up AppBar title
+  ///
+  /// In en, this message translates to:
+  /// **'Top up'**
+  String get agentTopUpTitle;
+
+  /// YSP Agent badge in header
+  ///
+  /// In en, this message translates to:
+  /// **'YSP Agent'**
+  String get agentBadge;
+
+  /// New scan button tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'New scan'**
+  String get agentNewScan;
+
+  /// Agent wallet balance
+  ///
+  /// In en, this message translates to:
+  /// **'My balance: {balance} SPM'**
+  String agentMyBalance(int balance);
+
+  /// Today stat label
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get agentToday;
+
+  /// Total stat label
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get agentTotal;
+
+  /// Scan client button
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a client'**
+  String get agentScanClient;
+
+  /// Recent top ups section title
+  ///
+  /// In en, this message translates to:
+  /// **'Recent top ups'**
+  String get agentRecentTopUps;
+
+  /// No top ups message
+  ///
+  /// In en, this message translates to:
+  /// **'No top ups yet'**
+  String get agentNoTopUps;
+
+  /// Client identified after scan
+  ///
+  /// In en, this message translates to:
+  /// **'Client identified'**
+  String get agentClientIdentified;
+
+  /// Client current balance
+  ///
+  /// In en, this message translates to:
+  /// **'Current balance: {balance} SPM'**
+  String agentClientBalance(int balance);
+
+  /// Top up amount field label
+  ///
+  /// In en, this message translates to:
+  /// **'Amount to credit (SPM)'**
+  String get agentAmountLabel;
+
+  /// Scan another client button
+  ///
+  /// In en, this message translates to:
+  /// **'Scan another client'**
+  String get agentScanAnother;
+
+  /// User not found error
+  ///
+  /// In en, this message translates to:
+  /// **'User not found'**
+  String get agentUserNotFound;
+
+  /// Invalid amount error
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount'**
+  String get agentInvalidAmount;
+
+  /// New balance after top up
+  ///
+  /// In en, this message translates to:
+  /// **'New balance: {balance} SPM'**
+  String agentNewBalance(int balance);
+
+  /// Client label in details
+  ///
+  /// In en, this message translates to:
+  /// **'Client'**
+  String get agentClient;
+
+  /// Client new balance label in details
+  ///
+  /// In en, this message translates to:
+  /// **'Client new balance'**
+  String get agentClientNewBalance;
+
+  /// Generic agent name
+  ///
+  /// In en, this message translates to:
+  /// **'Agent'**
+  String get agentTitle;
+
+  /// Credited amount with + sign
+  ///
+  /// In en, this message translates to:
+  /// **'+{amount} SPM'**
+  String agentAmountCredited(int amount);
+
+  /// Top up received notification body
+  ///
+  /// In en, this message translates to:
+  /// **'You received {amount} SPM. New balance: {newBalance} SPM.'**
+  String notifTopUpBody(int amount, int newBalance);
+
+  /// Booking confirmed notification body
+  ///
+  /// In en, this message translates to:
+  /// **'Booking confirmed — Spot {spotId}'**
+  String notifBookingConfirmed(String spotId);
+
+  /// Message succès rechargement
+  ///
+  /// In en, this message translates to:
+  /// **'Top up successful!'**
+  String get agentSuccess;
+
+  /// Message confirmer rechargement
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm top up !'**
+  String get agentConfirm;
+
+  /// Generic OK button
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get commonOk;
+
+  /// Message and action when no vehicle in stepper
+  ///
+  /// In en, this message translates to:
+  /// **'No vehicle — tap to add one'**
+  String get bookingNoVehicleAdd;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

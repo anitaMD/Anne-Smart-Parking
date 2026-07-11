@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:smart_parking/app/viewmodels/auth_viewmodel.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../router/app_router.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../models/wallet_model.dart';
-import '../../services/firestore_service.dart';
 import '../../viewmodels/user_viewmodel.dart';
 
 class AgentScreen extends ConsumerStatefulWidget {
@@ -77,7 +77,7 @@ class _AgentScreenState extends ConsumerState<AgentScreen> {
 
   // ── Confirm Top Up ────────────────────────────────────────
 
-  Future<void> _confirmTopUp() async {
+  Future<void> _confirmTopUp(AppLocalizations l10n) async {
     final amount = int.tryParse(_amountController.text.trim());
     if (amount == null || amount <= 0) {
       _showSnack('Entrez un montant valide');
@@ -88,9 +88,20 @@ class _AgentScreenState extends ConsumerState<AgentScreen> {
     final authState = ref.read(authProvider);
     if (authState is! AuthAuthenticated) return;
 
+    // Check agent has enough SPM balance
+    final agentWallet = ref.read(userProvider).wallet;
+    if (agentWallet == null || agentWallet.balance < amount) {
+      _showSnack(l10n.agentInsufficientBalance);
+      return;
+    }
+
     setState(() => _isConfirming = true);
     try {
       final fs = ref.read(firestoreServiceProvider);
+      // Debit agent wallet
+      await fs.updateWalletBalance(
+          authState.user.id, agentWallet.id, agentWallet.balance - amount);
+      // Credit client wallet
       final newBalance = _wallet!.balance + amount;
       await fs.updateWalletBalance(_scannedUid!, _wallet!.id, newBalance);
       await fs.addTopUp(
@@ -254,16 +265,24 @@ class _AgentScreenState extends ConsumerState<AgentScreen> {
   Widget _buildDashboard(dynamic agent) {
     final authState = ref.read(authProvider);
     final uid = authState is AuthAuthenticated ? authState.user.id : '';
+    final l10n = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSizes.spaceM),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Bonjour outside card - like dashboard
+          Text(
+            '${l10n.dashboardHello}, ${agent?.fullName ?? l10n.agentTitle} 👋',
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: AppSizes.spaceM),
+
+          // Card with badge + location + balance
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(AppSizes.spaceXL),
+            padding: const EdgeInsets.all(AppSizes.spaceL),
             decoration: BoxDecoration(
               gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(AppSizes.radiusXL),
@@ -285,26 +304,19 @@ class _AgentScreenState extends ConsumerState<AgentScreen> {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.verified_user, color: Colors.white, size: 14),
-                      SizedBox(width: 4),
-                      Text('Agent YSP',
-                          style: TextStyle(
+                      const Icon(Icons.verified_user,
+                          color: Colors.white, size: 14),
+                      const SizedBox(width: 4),
+                      Text(l10n.agentBadge,
+                          style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w600)),
                     ],
                   ),
-                ),
-                const SizedBox(height: AppSizes.spaceM),
-                Text(
-                  'Bonjour, ${agent?.fullName ?? 'Agent'} 👋',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold),
                 ),
                 if (agent?.location != null) ...[
                   const SizedBox(height: 4),
@@ -421,6 +433,7 @@ class _AgentScreenState extends ConsumerState<AgentScreen> {
   // ── Top Up Form ───────────────────────────────────────────
 
   Widget _buildTopUpForm() {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSizes.spaceL),
       child: Column(
@@ -530,7 +543,7 @@ class _AgentScreenState extends ConsumerState<AgentScreen> {
             child: _isConfirming
                 ? const Center(child: CircularProgressIndicator())
                 : ElevatedButton.icon(
-                    onPressed: _confirmTopUp,
+                    onPressed: () => _confirmTopUp(l10n),
                     icon: const Icon(Icons.check, size: 20),
                     label: const Text('Confirmer le rechargement',
                         style: TextStyle(fontSize: 16)),
@@ -708,9 +721,6 @@ class _AgentTopUpHistory extends ConsumerWidget {
             final date = ts?.toDate() as DateTime?;
             final amount = t['amount'] as int? ?? 0;
             final clientId = t['clientId'] as String? ?? '';
-            final shortId = clientId.length > 8
-                ? '${clientId.substring(0, 8)}...'
-                : clientId;
 
             return _TopUpHistoryTile(
               topUp: t,

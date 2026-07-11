@@ -109,6 +109,20 @@ class UserNotifier extends Notifier<UserState> {
         notifications: results[3] as List<NotificationModel>,
         isLoading: false,
       );
+
+      // Stream notifications en temps réel pour mettre à jour le badge
+      _firestoreService.watchNotifications(uid).listen((notifs) {
+        if (state.user != null) {
+          state = state.copyWith(notifications: notifs);
+        }
+      });
+
+      // Stream wallet en temps réel pour badge solde après topup
+      _firestoreService.watchWallet(uid).listen((wallet) {
+        if (wallet != null) {
+          state = state.copyWith(wallet: wallet);
+        }
+      });
       debugPrint('[User] Données chargées pour $uid');
     } catch (e) {
       debugPrint('[User] Erreur chargement: $e');

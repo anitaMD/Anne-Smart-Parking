@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smart_parking/app/screens/dashboard/add_vehicle_screen.dart';
 import 'package:smart_parking/app/screens/settings/settings_screen.dart';
 import 'package:smart_parking/app/viewmodels/auth_viewmodel.dart';
 import 'package:smart_parking/l10n/app_localizations.dart';
@@ -103,6 +104,21 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
     }
     return openTime;
   }
+  // ── Parking fermé aujourd'hui ─────────────────────────────
+
+  bool get _isParkingClosedToday {
+    final now = DateTime.now();
+    final selectedDate = widget.selectedDate ?? now;
+    final isToday = selectedDate.year == now.year &&
+        selectedDate.month == now.month &&
+        selectedDate.day == now.day;
+    if (!isToday) return false;
+    final closeParts = widget.parking.closingHour.split(':');
+    final closeMinutes =
+        int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
+    return now.hour * 60 + now.minute >= closeMinutes - 30;
+  }
+
   // ── Max end time (closing - 30min) ────────────────────────
 
   TimeOfDay get _maxEndTime {
@@ -140,15 +156,23 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
     _occupiedSub?.cancel();
 
     final date = overrideDate ?? widget.selectedDate;
-    if (date == null || widget.selectedSlot == null) return;
+    if (date == null ||
+        widget.selectedSlot == null ||
+        widget.selectedSlot!.isEmpty) {
+      return;
+    }
 
     final parts = widget.selectedSlot!.split(':');
+    if (parts.length != 2) return;
+    final slotH = int.tryParse(parts[0]);
+    final slotM = int.tryParse(parts[1]);
+    if (slotH == null || slotM == null) return;
     final bookingStart = DateTime(
       date.year,
       date.month,
       date.day,
-      int.parse(parts[0]),
-      int.parse(parts[1]),
+      slotH,
+      slotM,
     );
     final bookingEnd =
         bookingStart.add(Duration(minutes: widget.durationMinutes));
@@ -177,6 +201,16 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
   // ── Open time range picker ────────────────────────────────
 
   Future<void> _openTimePicker(AppLocalizations l10n) async {
+    if (_isParkingClosedToday) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.parkingClosedToday),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     TimeOfDay startInit = _minStartTime;
     TimeOfDay endInit = _maxEndTime;
 
@@ -193,13 +227,17 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
       return; // ← ne pas ouvrir le picker
     }
 
-    if (widget.selectedSlot != null) {
+    if (widget.selectedSlot != null && widget.selectedSlot!.isNotEmpty) {
       final parts = widget.selectedSlot!.split(':');
-      startInit =
-          TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
-      final endMinutes =
-          startInit.hour * 60 + startInit.minute + widget.durationMinutes;
-      endInit = TimeOfDay(hour: endMinutes ~/ 60, minute: endMinutes % 60);
+      if (parts.length == 2) {
+        final slotH = int.tryParse(parts[0]);
+        final slotM = int.tryParse(parts[1]);
+        if (slotH != null && slotM != null) {
+          startInit = TimeOfDay(hour: slotH, minute: slotM);
+          final endMinutes = slotH * 60 + slotM + widget.durationMinutes;
+          endInit = TimeOfDay(hour: endMinutes ~/ 60, minute: endMinutes % 60);
+        }
+      }
     }
 
     final result = await showTimeRangePicker(
@@ -369,7 +407,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
             displayMonth: _displayMonth,
             onDateSelected: (date) {
               widget.onDateChanged(date);
-              widget.onDateChanged(date);
+
               _watchOccupied(overrideDate: date);
             },
             onMonthChanged: (m) => setState(() => _displayMonth = m),
@@ -385,7 +423,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
             durationMinutes: widget.durationMinutes,
             onTap: () => _openTimePicker(l10n),
             fmtTOD: fmtTOD,
-            isParkingClosed: _isParkingClosed,
+            isParkingClosed: _isParkingClosedToday,
           ),
           const SizedBox(height: AppSizes.spaceL),
 
@@ -393,9 +431,11 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _SectionHeader(
-                  icon: Icons.local_parking,
-                  title: l10n.bookingSelectSpotTitle),
+              Flexible(
+                child: _SectionHeader(
+                    icon: Icons.local_parking,
+                    title: l10n.bookingSelectSpotTitle),
+              ),
               if (_isLoadingOccupied)
                 const SizedBox(
                     width: 16,
@@ -419,9 +459,11 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
                 Icon(Icons.info_outline,
                     color: AppColors.textSecondary, size: 18),
                 SizedBox(width: AppSizes.spaceS),
-                Text(l10n.bookingSelectTimeSlot,
-                    style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 13)),
+                Expanded(
+                  child: Text(l10n.bookingSelectTimeSlot,
+                      style: const TextStyle(
+                          color: AppColors.textSecondary, fontSize: 13)),
+                ),
               ]),
             )
           else
@@ -642,13 +684,17 @@ class _TimeRangeSelector extends StatelessWidget {
       required this.isParkingClosed});
 
   String get _endTime {
-    if (selectedSlot == null) return '--:--';
+    if (selectedSlot == null || selectedSlot!.isEmpty) return '--:--';
     final parts = selectedSlot!.split(':');
-    final startMins = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+    if (parts.length != 2) return '--:--';
+    final slotH = int.tryParse(parts[0]);
+    final slotM = int.tryParse(parts[1]);
+    if (slotH == null || slotM == null) return '--:--';
+    final startMins = slotH * 60 + slotM;
     final endMins = startMins + durationMinutes;
-    final h = (endMins ~/ 60).toString().padLeft(2, '0');
-    final m = (endMins % 60).toString().padLeft(2, '0');
-    return '$h:$m';
+    final endH = (endMins ~/ 60).toString().padLeft(2, '0');
+    final endM = (endMins % 60).toString().padLeft(2, '0');
+    return '$endH:$endM';
   }
 
   String get _durationStr {
@@ -660,7 +706,7 @@ class _TimeRangeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasSlot = selectedSlot != null;
+    final hasSlot = selectedSlot != null && selectedSlot!.isNotEmpty;
     final l10n = AppLocalizations.of(context)!;
     if (isParkingClosed) {
       return Container(
@@ -827,17 +873,17 @@ class _SpotGridState extends State<_SpotGrid> {
         aisleA.length > aisleB.length ? aisleA.length : aisleB.length;
 
     const double rowHeight = 122;
-    const int visibleRows = 6;
+    const int visibleRows = 3;
     const double fixedHeight = rowHeight * visibleRows + 60;
 
     // Toujours une hauteur fixe pour éviter le crash Expanded sans contrainte
-    final containerHeight =
-        maxLen > visibleRows ? fixedHeight : maxLen * rowHeight + 60;
+    /*  final containerHeight =
+        maxLen > visibleRows ? fixedHeight : rowHeight * visibleRows + 260;*/
 
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      height: containerHeight,
+      height: fixedHeight,
       padding: const EdgeInsets.symmetric(
         vertical: AppSizes.spaceM,
         horizontal: AppSizes.spaceS,
@@ -1237,24 +1283,44 @@ class _VehicleSelector extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     if (vehicles.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(AppSizes.spaceL),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(AppSizes.radiusM),
-          border: Border.all(color: AppColors.border),
+      return GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AddVehicleScreen()),
         ),
-        child: Row(children: [
-          Icon(Icons.directions_car_outlined, color: AppColors.textSecondary),
-          SizedBox(width: AppSizes.spaceS),
-          Expanded(
-            child: Text(l10n.bookingUserHasNoVehicle,
-                style: TextStyle(color: AppColors.textSecondary)),
+        child: Container(
+          padding: const EdgeInsets.all(AppSizes.spaceL),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(AppSizes.radiusM),
+            border: Border.all(color: AppColors.border),
           ),
-        ]),
+          child: Row(children: [
+            const Icon(Icons.directions_car_outlined,
+                color: AppColors.textSecondary),
+            const SizedBox(width: AppSizes.spaceS),
+            Expanded(
+              child: Text(l10n.bookingNoVehicleAdd,
+                  style: const TextStyle(color: AppColors.textSecondary)),
+            ),
+            const SizedBox(width: AppSizes.spaceS),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.spaceM, vertical: AppSizes.spaceXS),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(AppSizes.radiusFull),
+              ),
+              child: Text(l10n.dashboardAddVehicle,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold)),
+            ),
+          ]),
+        ),
       );
     }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1350,8 +1416,10 @@ class _SectionHeader extends StatelessWidget {
         child: Icon(icon, color: Colors.white, size: 16),
       ),
       const SizedBox(width: AppSizes.spaceS),
-      Text(title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      Flexible(
+          child: Text(title,
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
     ]);
   }
 }
