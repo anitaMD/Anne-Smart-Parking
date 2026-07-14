@@ -468,7 +468,8 @@ class FirestoreService implements FirestoreServiceBase {
         .map((s) => s.docs
             .map((d) => {
                   ...d.data(),
-                  'clientId': d.reference.parent.parent?.id ?? '',
+                  'clientId':
+                      d.reference.parent.parent?.parent.parent?.id ?? '',
                 })
             .toList());
   }

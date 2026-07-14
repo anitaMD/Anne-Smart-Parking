@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:smart_parking/app/models/user_model.dart';
 import 'package:smart_parking/app/viewmodels/auth_viewmodel.dart';
 import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
@@ -18,7 +19,7 @@ class AgentScreen extends ConsumerStatefulWidget {
 }
 
 class _AgentScreenState extends ConsumerState<AgentScreen> {
-  final MobileScannerController _scanController = MobileScannerController();
+  MobileScannerController _scanController = MobileScannerController();
   final TextEditingController _amountController = TextEditingController();
 
   String? _scannedUid;
@@ -180,9 +181,8 @@ class _AgentScreenState extends ConsumerState<AgentScreen> {
 
   Future<void> _reset() async {
     _amountController.clear();
-    await _scanController.stop();
-    await Future.delayed(const Duration(milliseconds: 300));
-    await _scanController.start();
+    _scanController.dispose();
+    _scanController = MobileScannerController();
     if (mounted) {
       setState(() {
         _scannedUid = null;
@@ -229,6 +229,7 @@ class _AgentScreenState extends ConsumerState<AgentScreen> {
                     _showScanner = false;
                     _isScanning = true;
                     _scannedUid = null;
+                    _clientName = null;
                     _wallet = null;
                     _amountController.clear();
                   });
@@ -371,11 +372,12 @@ class _AgentScreenState extends ConsumerState<AgentScreen> {
             height: 56,
             child: ElevatedButton.icon(
               onPressed: () async {
+                _scanController.dispose();
+                _scanController = MobileScannerController();
                 setState(() {
                   _showScanner = true;
                   _isScanning = true;
                 });
-                await _scanController.start();
               },
               icon: const Icon(Icons.qr_code_scanner, size: 22),
               label: const Text('Scanner un client',
@@ -812,7 +814,14 @@ class _TopUpHistoryTile extends ConsumerWidget {
     required this.ref,
   });
 
-  void _showDetails(BuildContext context, String? clientName) {
+  /// Solde précédent = solde après - montant crédité
+  int get _previousBalance {
+    final newBal = topUp['newBalance'] as int? ?? 0;
+    return newBal - amount;
+  }
+
+  void _showDetails(
+      BuildContext context, String? clientName, String? clientPhone) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -852,8 +861,11 @@ class _TopUpHistoryTile extends ConsumerWidget {
             const SizedBox(height: AppSizes.spaceL),
             const Divider(),
             const SizedBox(height: AppSizes.spaceS),
-            if (clientName != null)
-              _AgentDetailRow(label: 'Client', value: clientName),
+            _AgentDetailRow(label: 'Client', value: clientName ?? clientId),
+            if (clientPhone != null && clientPhone.isNotEmpty) ...[
+              const SizedBox(height: AppSizes.spaceS),
+              _AgentDetailRow(label: 'Téléphone', value: clientPhone),
+            ],
             if (date != null) ...[
               const SizedBox(height: AppSizes.spaceS),
               _AgentDetailRow(
@@ -863,7 +875,12 @@ class _TopUpHistoryTile extends ConsumerWidget {
             ],
             const SizedBox(height: AppSizes.spaceS),
             _AgentDetailRow(
-              label: 'Nouveau solde client',
+              label: 'Solde précédent',
+              value: '$_previousBalance SPM',
+            ),
+            const SizedBox(height: AppSizes.spaceS),
+            _AgentDetailRow(
+              label: 'Nouveau solde',
               value: '${topUp['newBalance'] ?? 0} SPM',
             ),
             const SizedBox(height: AppSizes.spaceL),
@@ -875,16 +892,24 @@ class _TopUpHistoryTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return FutureBuilder<String?>(
-      future: ref
-          .read(firestoreServiceProvider)
-          .getUser(clientId)
-          .then((u) => u?.fullName),
+    return FutureBuilder<UserModel?>(
+      future: clientId.isEmpty
+          ? Future.value(null)
+          : ref
+              .read(firestoreServiceProvider)
+              .getUser(clientId)
+              .catchError((e) {
+              debugPrint('[Agent] getUser error for $clientId: $e');
+              return null;
+            }),
       builder: (context, snapshot) {
-        final clientName = snapshot.data;
+        final user = snapshot.data;
+        final clientName = user?.fullName;
+        final clientPhone = user?.phoneNumber;
+        debugPrint('[Agent] $clientId: $clientName, $clientPhone');
 
         return GestureDetector(
-          onTap: () => _showDetails(context, clientName),
+          onTap: () => _showDetails(context, clientName, clientPhone),
           child: Container(
             margin: const EdgeInsets.only(bottom: AppSizes.spaceS),
             padding: const EdgeInsets.all(AppSizes.spaceM),
@@ -915,10 +940,15 @@ class _TopUpHistoryTile extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      clientName ?? 'Client',
+                      clientName ?? clientId,
                       style: const TextStyle(
                           fontWeight: FontWeight.w600, fontSize: 13),
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    if (clientPhone != null && clientPhone.isNotEmpty)
+                      Text(clientPhone,
+                          style: const TextStyle(
+                              color: AppColors.textSecondary, fontSize: 11)),
                     if (date != null)
                       Text(
                         DateFormat('dd MMM yyyy · HH:mm', 'fr').format(date!),

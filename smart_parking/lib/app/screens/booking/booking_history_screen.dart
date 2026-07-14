@@ -61,6 +61,15 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen> {
         all.where((b) => b.status == BookingStatus.canceled).toList();
     final l10n = AppLocalizations.of(context)!;
 
+    debugPrint('[History] all: ${all.length}');
+    debugPrint(
+        '[History] unArchived: ${bookingState.unArchivedBookings.length}');
+    debugPrint(
+        '[History] archived: ${bookingState.allArchivedBookings.length}');
+    for (final b in all) {
+      debugPrint(
+          '[History] ${b.id} status=${b.status} isArchived=${b.isArchived} end=${b.bookingEnd}');
+    }
     List<BookingModel> filtered;
     switch (_filter) {
       case _Filter.all:

@@ -93,6 +93,7 @@ class BookingNotifier extends Notifier<BookingState> {
 
     final authState = ref.read(authProvider);
     if (authState is AuthAuthenticated) {
+      debugPrint('[Booking] build() - calling load for ${authState.user.id}');
       loadBookings(authState.user.id);
       loadArchivedBookings(authState.user.id);
     }
@@ -105,8 +106,9 @@ class BookingNotifier extends Notifier<BookingState> {
   Future<void> loadBookings(String uid) async {
     state = state.copyWith(isLoading: true);
     try {
+      debugPrint('[Booking] loading unarchived for $uid');
       final bookings = await _firestoreService.getUserUnarchivedBookings(uid);
-      debugPrint('[Booking] ${bookings.length} réservations actives');
+      debugPrint('[Booking] unarchived loaded: ${bookings.length}');
       state = state.copyWith(
         unArchivedBookings: bookings,
         isLoading: false,
@@ -120,10 +122,13 @@ class BookingNotifier extends Notifier<BookingState> {
 
   Future<void> loadArchivedBookings(String uid) async {
     try {
+      debugPrint('[Booking] loading archived for $uid');
       final bookings = await _firestoreService.getUserArchivedBookings(uid);
+      debugPrint('[Booking] archived loaded: ${bookings.length}');
       state = state.copyWith(archivedBookings: bookings);
-    } catch (e) {
-      debugPrint('[Booking] loadArchivedBookings error: $e');
+    } catch (e, stack) {
+      debugPrint('[Booking] loadArchivedBookings ERROR: $e');
+      debugPrint('[Booking] stack: $stack');
     }
   }
 
