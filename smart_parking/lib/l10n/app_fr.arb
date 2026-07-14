@@ -802,6 +802,8 @@
 "bookingSuccessEdit": "Réservation modifiée avec succès !",
 "@bookingSuccessEdit": { "description": "Message succès modification réservation" },
 
+
+
 "bookingErrorGeneric": "Erreur : {message}",
 "@bookingErrorGeneric": {
   "description": "Message erreur générique",
@@ -892,7 +894,7 @@
 "settingsNotif10minSubtitle": "Rappel urgent",
 "@settingsNotif10minSubtitle": { "description": "Sous-titre rappel 10min" },
 
-"settingsNotifStart": "!  Début de réservation",
+"settingsNotifStart": "Début de réservation",
 "@settingsNotifStart": { "description": "Toggle notif début réservation" },
 
 "settingsNotifStartSubtitle": "Quand votre créneau commence",

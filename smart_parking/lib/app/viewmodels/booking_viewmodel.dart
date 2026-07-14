@@ -167,11 +167,6 @@ class BookingNotifier extends Notifier<BookingState> {
       body: 'Place $spotId — $parkingName',
     );
 
-    await NotificationService().show(
-      title: '✅ Réservation confirmée !',
-      body: 'Place $spotId — $parkingName',
-      uid: clientId,
-    );
 // Planifier les rappels
     final bookingWithId = BookingModel(
       id: bookingId,
@@ -187,9 +182,16 @@ class BookingNotifier extends Notifier<BookingState> {
       isArchived: booking.isArchived,
       createdAt: booking.createdAt,
     );
+
     final notifSettings = ref.read(notifSettingsProvider);
     if (notifSettings.allEnabled) {
-      NotificationService().scheduleBookingReminders(bookingWithId);
+      NotificationService().scheduleBookingReminders(
+        bookingWithId,
+        remind30min: notifSettings.remind30min,
+        remind10min: notifSettings.remind10min,
+        remindStart: notifSettings.remindStart,
+        remindEnd15min: notifSettings.remindEnd15min,
+      );
     }
     // Débiter le wallet
     final userState = ref.read(userProvider);

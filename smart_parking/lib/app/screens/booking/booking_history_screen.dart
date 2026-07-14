@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:smart_parking/app/screens/settings/settings_screen.dart';
+import 'package:smart_parking/app/viewmodels/user_viewmodel.dart';
 import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
@@ -405,6 +406,24 @@ class _BookingCard extends ConsumerWidget {
                     icon: Icons.calendar_today_outlined,
                     text: _fmtDate(booking.bookingStart)),
                 const SizedBox(height: 4),
+                Builder(builder: (context) {
+                  final vehicles = ref.watch(userProvider).vehicles;
+                  final vehicle = vehicles
+                      .where((v) => v.id == booking.vehicleId)
+                      .firstOrNull;
+                  if (vehicle == null) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Row(
+                        icon: Icons.directions_car_outlined,
+                        text:
+                            '${vehicle.brand} ${vehicle.modelDetail} · ${vehicle.licensePlate}',
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  );
+                }),
                 _Row(
                   icon: Icons.schedule_outlined,
                   text:
@@ -536,7 +555,7 @@ class _Row extends StatelessWidget {
 class _EmptyState extends StatelessWidget {
   final _Filter filter;
   const _EmptyState({required this.filter});
-
+//TODO: add arb keys
   String get _message {
     switch (filter) {
       case _Filter.upcoming:

@@ -114,6 +114,13 @@ class _AgentScreenState extends ConsumerState<AgentScreen> {
         agentUid: authState.user.id,
       );
 
+      // Notification locale + Firestore pour le client
+      await fs.saveNotification(
+        uid: _scannedUid!,
+        title: '💰 Rechargement effectué !',
+        body: 'Vous avez reçu $amount SPM. Nouveau solde : $newBalance SPM.',
+      );
+
       if (mounted) {
         await showDialog(
           context: context,

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_parking/app/services/notification_service.dart';
 import '../models/user_model.dart';
 import '../models/vehicle_model.dart';
 import '../models/wallet_model.dart';
@@ -64,43 +67,52 @@ class UserState {
 class UserNotifier extends Notifier<UserState> {
   late FirestoreServiceBase _firestoreService;
   late StorageService _storageService;
+  StreamSubscription? _notifSubscription;
+  StreamSubscription? _walletSubscription;
+  int _loadGeneration = 0; // ← ajouter
 
   @override
   UserState build() {
     _firestoreService = ref.read(firestoreServiceProvider);
     _storageService = StorageService();
 
-    // Écouter l'état d'auth — charger les données quand connecté
     ref.listen(authProvider, (previous, next) {
       if (next is AuthAuthenticated) {
         loadUserData(next.user.id);
       } else if (next is AuthUnauthenticated) {
-        // Vider les données à la déconnexion
+        _loadGeneration++; // ← invalide tout appel en cours
+        _notifSubscription?.cancel();
+        _walletSubscription?.cancel();
         state = const UserState();
       }
     });
 
-    // Charger les données si déjà connecté
     final authState = ref.read(authProvider);
     if (authState is AuthAuthenticated) {
       loadUserData(authState.user.id);
     }
 
+    ref.onDispose(() {
+      _notifSubscription?.cancel();
+      _walletSubscription?.cancel();
+    });
+
     return const UserState();
   }
 
-  // ── Chargement ────────────────────────────────────────────
-
   Future<void> loadUserData(String uid) async {
+    final myGeneration = ++_loadGeneration; // ← snapshot de génération
     state = state.copyWith(isLoading: true);
     try {
-      // Chargement parallèle pour être plus rapide
       final results = await Future.wait([
         _firestoreService.getUser(uid),
         _firestoreService.getWallet(uid),
         _firestoreService.getVehicles(uid),
         _firestoreService.watchNotifications(uid).first,
       ]);
+
+      // Si un appel plus récent a démarré entre-temps, on abandonne
+      if (myGeneration != _loadGeneration) return;
 
       state = UserState(
         user: results[0] as UserModel?,
@@ -110,20 +122,39 @@ class UserNotifier extends Notifier<UserState> {
         isLoading: false,
       );
 
-      // Stream notifications en temps réel pour mettre à jour le badge
-      _firestoreService.watchNotifications(uid).listen((notifs) {
-        if (state.user != null) {
-          state = state.copyWith(notifications: notifs);
+      bool isFirstEmission = true; // ← nouveau flag propre par souscription
+
+      await _notifSubscription?.cancel();
+      _notifSubscription =
+          _firestoreService.watchNotifications(uid).listen((notifs) {
+        if (myGeneration != _loadGeneration) return; // ← ignore si obsolète
+        if (state.user == null) return;
+
+        if (!isFirstEmission) {
+          final previousIds = state.notifications.map((n) => n.id).toSet();
+          final newOnes =
+              notifs.where((n) => !previousIds.contains(n.id)).toList();
+          for (final notif in newOnes) {
+            NotificationService().show(
+              title: notif.title,
+              body: notif.body,
+            );
+          }
         }
+        isFirstEmission = false;
+
+        state = state.copyWith(notifications: notifs);
       });
 
-      // Stream wallet en temps réel pour badge solde après topup
-      _firestoreService.watchWallet(uid).listen((wallet) {
+      await _walletSubscription?.cancel();
+      _walletSubscription = _firestoreService.watchWallet(uid).listen((wallet) {
+        if (myGeneration != _loadGeneration) return;
         if (wallet != null) {
           state = state.copyWith(wallet: wallet);
         }
       });
-      debugPrint('[User] Données chargées pour $uid');
+
+      debugPrint('[User] Données chargées pour $uid (gen $myGeneration)');
     } catch (e) {
       debugPrint('[User] Erreur chargement: $e');
       state = state.copyWith(isLoading: false, error: e.toString());

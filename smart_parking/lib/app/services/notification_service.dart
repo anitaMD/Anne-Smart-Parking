@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../models/booking_model.dart';
@@ -9,6 +10,8 @@ class NotificationService {
   final FirebaseMessaging _messaging;
   final FlutterLocalNotificationsPlugin _localNotifications;
   final FirestoreService _firestoreService;
+  bool _isRequestingExactAlarm = false;
+  bool _isRequestingNotif = false;
 
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'high_importance_channel',
@@ -108,55 +111,82 @@ class NotificationService {
 
   // ── Rappels réservation ───────────────────────────────────
 
-  Future<void> scheduleBookingReminders(BookingModel booking) async {
+  Future<void> scheduleBookingReminders(
+    BookingModel booking, {
+    bool remind30min = true,
+    bool remind10min = true,
+    bool remindStart = true,
+    bool remindEnd15min = true,
+  }) async {
     final now = DateTime.now();
     await cancelBookingReminders(booking.id);
 
-    final before30 = booking.bookingStart.subtract(const Duration(minutes: 30));
-    if (before30.isAfter(now)) {
-      await _scheduleReminder(
-        id: '${booking.id}_30'.hashCode.abs() % 100000,
-        title: '⏰ Rappel parking',
-        body: 'Place ${booking.spotId} commence dans 30 minutes.',
-        scheduledDate: before30,
-      );
+    if (remind30min) {
+      final before30 =
+          booking.bookingStart.subtract(const Duration(minutes: 30));
+      if (before30.isAfter(now)) {
+        await _scheduleReminder(
+          id: '${booking.id}_30'.hashCode.abs() % 100000,
+          title: '⏰ Rappel parking',
+          body: 'Place ${booking.spotId} commence dans 30 minutes.',
+          scheduledDate: before30,
+        );
+      }
     }
 
-    final before10 = booking.bookingStart.subtract(const Duration(minutes: 10));
-    if (before10.isAfter(now)) {
-      await _scheduleReminder(
-        id: '${booking.id}_10'.hashCode.abs() % 100000,
-        title: '🚗 Bientôt ! Place ${booking.spotId}',
-        body: 'Votre réservation commence dans 10 minutes.',
-        scheduledDate: before10,
-      );
+    if (remind10min) {
+      final before10 =
+          booking.bookingStart.subtract(const Duration(minutes: 10));
+      if (before10.isAfter(now)) {
+        await _scheduleReminder(
+          id: '${booking.id}_10'.hashCode.abs() % 100000,
+          title: '🚗 Bientôt ! Place ${booking.spotId}',
+          body: 'Votre réservation commence dans 10 minutes.',
+          scheduledDate: before10,
+        );
+      }
     }
 
-    if (booking.bookingStart.isAfter(now)) {
-      final h = booking.bookingEnd.hour.toString().padLeft(2, '0');
-      final m = booking.bookingEnd.minute.toString().padLeft(2, '0');
-      await _scheduleReminder(
-        id: '${booking.id}_start'.hashCode.abs() % 100000,
-        title: '! Réservation active — Place ${booking.spotId}',
-        body: 'Fin prévue à $h:$m.',
-        scheduledDate: booking.bookingStart,
-      );
+    if (remindStart) {
+      if (booking.bookingStart.isAfter(now)) {
+        final h = booking.bookingEnd.hour.toString().padLeft(2, '0');
+        final m = booking.bookingEnd.minute.toString().padLeft(2, '0');
+        await _scheduleReminder(
+          id: '${booking.id}_start'.hashCode.abs() % 100000,
+          title: '✅ Réservation active — Place ${booking.spotId}',
+          body: 'Fin prévue à $h:$m.',
+          scheduledDate: booking.bookingStart,
+        );
+      }
     }
 
-    final before15End =
-        booking.bookingEnd.subtract(const Duration(minutes: 15));
-    if (before15End.isAfter(now)) {
+    if (remindEnd15min) {
+      final before15End =
+          booking.bookingEnd.subtract(const Duration(minutes: 15));
+      if (before15End.isAfter(now)) {
+        await _scheduleReminder(
+          id: '${booking.id}_end15'.hashCode.abs() % 100000,
+          title: '⚠️ Fin dans 15min — Place ${booking.spotId}',
+          body: 'Votre réservation se termine bientôt.',
+          scheduledDate: before15End,
+        );
+      }
+    }
+
+    // Notification exacte à la fin - toujours activée (pas de toggle dédié)
+    if (booking.bookingEnd.isAfter(now)) {
       await _scheduleReminder(
-        id: '${booking.id}_end'.hashCode.abs() % 100000,
-        title: '⚠️ Fin dans 15min — Place ${booking.spotId}',
-        body: 'Votre réservation se termine bientôt.',
-        scheduledDate: before15End,
+        id: '${booking.id}_ended'.hashCode.abs() % 100000,
+        title: '🏁 Réservation terminée',
+        body:
+            'Votre réservation Place ${booking.spotId} est terminée. Merci d\'avoir utilisé YSP !',
+        scheduledDate: booking.bookingEnd,
       );
     }
   }
 
   Future<void> cancelBookingReminders(String bookingId) async {
-    for (final suffix in ['_30', '_10', '_start', '_end']) {
+    for (final suffix in ['_30', '_10', '_start', '_end15', '_ended']) {
       await _localNotifications.cancel(
           id: '$bookingId$suffix'.hashCode.abs() % 100000);
     }
@@ -176,6 +206,46 @@ class NotificationService {
     );
   }
 
+  Future<bool> areNotificationsEnabled() async {
+    final androidPlugin =
+        _localNotifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    return await androidPlugin?.areNotificationsEnabled() ?? false;
+  }
+
+  Future<bool> requestPermission() async {
+    if (_isRequestingNotif) return false;
+    _isRequestingNotif = true;
+    try {
+      final androidPlugin =
+          _localNotifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      return await androidPlugin?.requestNotificationsPermission() ?? false;
+    } catch (e) {
+      debugPrint('[Notif] requestPermission error: $e');
+      return false;
+    } finally {
+      _isRequestingNotif = false;
+    }
+  }
+
+  Future<bool> requestExactAlarmPermission() async {
+    if (_isRequestingExactAlarm) return false;
+    _isRequestingExactAlarm = true;
+
+    try {
+      final androidPlugin =
+          _localNotifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      return await androidPlugin?.requestExactAlarmsPermission() ?? false;
+    } catch (e) {
+      debugPrint('[Notif] requestExactAlarmPermission error: $e');
+      return false;
+    } finally {
+      _isRequestingExactAlarm = false;
+    }
+  }
+
   Future<void> _scheduleReminder({
     required int id,
     required String title,
@@ -186,19 +256,26 @@ class NotificationService {
         _localNotifications.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
-    final canSchedule =
+    final canScheduleExact =
         await androidPlugin?.canScheduleExactNotifications() ?? false;
 
-    await _localNotifications.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
-      notificationDetails: _reminderDetails,
-      androidScheduleMode: canSchedule
-          ? AndroidScheduleMode.exactAllowWhileIdle
-          : AndroidScheduleMode.inexact,
-    );
+    debugPrint('[Notif] canScheduleExact: $canScheduleExact');
+
+    try {
+      await _localNotifications.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+        notificationDetails: _reminderDetails,
+        androidScheduleMode: canScheduleExact
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+      debugPrint('[Notif] _scheduleReminder SUCCESS id=$id');
+    } catch (e) {
+      debugPrint('[Notif] _scheduleReminder ERROR id=$id: $e');
+    }
   }
 
   // ── Handlers ─────────────────────────────────────────────
@@ -216,4 +293,25 @@ class NotificationService {
   void _handleNotificationTap(RemoteMessage message) {}
 
   void _onNotificationTap(NotificationResponse response) {}
+
+  // ── FCM Token ──────────────────────────────────────────────
+
+  Future<void> saveFcmToken(String uid) async {
+    try {
+      final token = await _messaging.getToken();
+      debugPrint('[Notification] FCM token: $token');
+
+      if (token != null) {
+        await _firestoreService.updateUser(uid, {'fcmToken': token});
+      }
+
+      // Écouter le refresh du token (arrive parfois, ex: réinstall app)
+      _messaging.onTokenRefresh.listen((newToken) async {
+        debugPrint('[Notification] FCM token refreshed: $newToken');
+        await _firestoreService.updateUser(uid, {'fcmToken': newToken});
+      });
+    } catch (e) {
+      debugPrint('[Notification] saveFcmToken error: $e');
+    }
+  }
 }

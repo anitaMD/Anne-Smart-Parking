@@ -83,7 +83,7 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
   // ── Min start time ────────────────────────────────────────
 
   TimeOfDay get _minStartTime {
-    final now = DateTime.now();
+    final now = DateTime.now().add(const Duration(minutes: 3));
     final selectedDate = widget.selectedDate ?? now;
     final isToday = selectedDate.year == now.year &&
         selectedDate.month == now.month &&

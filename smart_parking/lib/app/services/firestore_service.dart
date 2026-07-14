@@ -272,7 +272,7 @@ class FirestoreService implements FirestoreServiceBase {
     String bookingId = '';
 
     await _db.runTransaction((transaction) async {
-      // Vérifier absence de conflit
+      //1. Vérifier absence de conflit liés aux places
       final snap = await _bookings
           .where('parkingId', isEqualTo: booking.parkingId)
           .where('spotId', isEqualTo: booking.spotId)
@@ -287,11 +287,30 @@ class FirestoreService implements FirestoreServiceBase {
       });
 
       if (conflict) {
+        //TODO: add arb
         throw Exception(
             'Cette place vient d\'être réservée. Veuillez en choisir une autre.');
       }
 
-      // Créer atomiquement
+      // 2. Vérifier conflit de VÉHICULE
+      final vehicleSnap = await _bookings
+          .where('vehicleId', isEqualTo: booking.vehicleId)
+          .where('status', whereNotIn: ['canceled'])
+          .where('bookingStart',
+              isLessThan: Timestamp.fromDate(booking.bookingEnd))
+          .get();
+
+      final vehicleConflict = vehicleSnap.docs.any((doc) {
+        final end = (doc['bookingEnd'] as Timestamp).toDate();
+        return end.isAfter(booking.bookingStart);
+      });
+
+      if (vehicleConflict) {
+        throw Exception(
+            'Ce véhicule a déjà une réservation active sur ce créneau.');
+      }
+
+      //3. Créer atomiquement
       final ref = _bookings.doc();
       bookingId = ref.id;
       transaction.set(ref, booking.toFirestore());

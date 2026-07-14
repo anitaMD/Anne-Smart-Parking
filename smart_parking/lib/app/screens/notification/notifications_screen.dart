@@ -34,11 +34,6 @@ class NotificationsScreen extends ConsumerWidget {
               AppSizes.spaceM, AppSizes.spaceS),
           child: Row(
             children: [
-              Expanded(
-                child: Text(l10n.notificationsTitle,
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold)),
-              ),
               if (unread.isNotEmpty)
                 TextButton.icon(
                   onPressed: () async {

@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_parking/app/viewmodels/booking_viewmodel.dart';
 
 /// État d'une réservation
 enum BookingStatus { upcoming, ongoing, completed, canceled }
@@ -59,7 +61,7 @@ class BookingModel {
   final DateTime? vehicleDepartedAt;
   final List<BookingEdit> editHistory;
 
-  const BookingModel({
+  BookingModel({
     required this.id,
     required this.clientId,
     required this.parkingId,
@@ -178,3 +180,12 @@ class BookingModel {
   String toString() =>
       'BookingModel(id: $id, spot: $spotId, status: ${status.name})';
 }
+
+final ongoingBookingProvider = Provider<BookingModel?>((ref) {
+  return ref.watch(bookingProvider).ongoingBooking;
+});
+
+// ── Ticker pour rafraîchir l'UI périodiquement (countdown, isOngoing) ──
+final dashboardTickerProvider = StreamProvider<int>((ref) {
+  return Stream.periodic(const Duration(seconds: 15), (i) => i);
+});

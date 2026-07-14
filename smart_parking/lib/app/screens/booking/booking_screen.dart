@@ -148,13 +148,11 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     final userState = ref.read(userProvider);
     final wallet = userState.wallet;
 
-    // Vérifier solde suffisant
     if ((wallet?.balance ?? 0) < _totalCost) {
       _showSnack(l10n.bookingInsufficientBalance);
       return;
     }
 
-    // Vérifier véhicule par défaut
     if (userState.defaultVehicle == null) {
       _showSnack(l10n.bookingSelectVehicleError);
       return;
@@ -163,19 +161,31 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     setState(() => _isConfirming = true);
 
     try {
-      await ref.read(bookingProvider.notifier).createBooking(
-            clientId: authState.user.id,
-            parkingId: widget.parking.id,
-            spotId: _selectedSpotId!,
-            vehicleId: userState.defaultVehicle!.id,
-            bookingStart: _bookingStart,
-            bookingEnd: _bookingEnd,
-            totalCost: _totalCost,
-            parkingName: widget.parking.name, // ← ajouter
-          );
+      if (widget.existingBooking != null) {
+        // ← MODE ÉDITION
+        await ref.read(bookingProvider.notifier).editBooking(
+              booking: widget.existingBooking!,
+              newStart: _bookingStart,
+              newEnd: _bookingEnd,
+              newSpotId: _selectedSpotId!,
+              parkingName: widget.parking.name,
+              feePerSlot: widget.parking.feePerSlot,
+            );
+      } else {
+        // ← MODE CRÉATION
+        await ref.read(bookingProvider.notifier).createBooking(
+              clientId: authState.user.id,
+              parkingId: widget.parking.id,
+              spotId: _selectedSpotId!,
+              vehicleId: userState.defaultVehicle!.id,
+              bookingStart: _bookingStart,
+              bookingEnd: _bookingEnd,
+              totalCost: _totalCost,
+              parkingName: widget.parking.name,
+            );
+      }
 
       if (mounted) {
-        // Succès → retour au dashboard
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(widget.existingBooking != null

@@ -843,7 +843,7 @@
 "settingsNotif10minSubtitle": "Urgent reminder",
 "@settingsNotif10minSubtitle": { "description": "10min reminder subtitle" },
 
-"settingsNotifStart": "!  Booking start",
+"settingsNotifStart": "Booking started",
 "@settingsNotifStart": { "description": "Booking start notif toggle" },
 
 "settingsNotifStartSubtitle": "When your slot begins",

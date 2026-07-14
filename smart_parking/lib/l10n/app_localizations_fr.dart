@@ -747,7 +747,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsNotif10minSubtitle => 'Rappel urgent';
 
   @override
-  String get settingsNotifStart => '!  Début de réservation';
+  String get settingsNotifStart => 'Début de réservation';
 
   @override
   String get settingsNotifStartSubtitle => 'Quand votre créneau commence';

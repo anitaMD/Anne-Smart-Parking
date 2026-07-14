@@ -25,19 +25,20 @@ class UserModel {
   final DateTime? createdAt;
   final String role; // "user" | "agent"
   final String? location;
+  final String? fcmToken;
 
-  const UserModel({
-    required this.id,
-    required this.fullName,
-    required this.email,
-    required this.phoneNumber,
-    required this.profileImageUrl,
-    required this.isSpecialAccessUser,
-    required this.role,
-    this.equalityCardPaths = const [],
-    this.createdAt,
-    this.location,
-  });
+  const UserModel(
+      {required this.id,
+      required this.fullName,
+      required this.email,
+      required this.phoneNumber,
+      required this.profileImageUrl,
+      required this.isSpecialAccessUser,
+      required this.role,
+      this.equalityCardPaths = const [],
+      this.createdAt,
+      this.location,
+      this.fcmToken});
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;

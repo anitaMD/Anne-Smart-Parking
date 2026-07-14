@@ -747,7 +747,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNotif10minSubtitle => 'Urgent reminder';
 
   @override
-  String get settingsNotifStart => '!  Booking start';
+  String get settingsNotifStart => 'Booking started';
 
   @override
   String get settingsNotifStartSubtitle => 'When your slot begins';

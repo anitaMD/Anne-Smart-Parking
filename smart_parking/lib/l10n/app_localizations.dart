@@ -1550,7 +1550,7 @@ abstract class AppLocalizations {
   /// Booking start notif toggle
   ///
   /// In en, this message translates to:
-  /// **'!  Booking start'**
+  /// **'Booking started'**
   String get settingsNotifStart;
 
   /// Booking start notif subtitle

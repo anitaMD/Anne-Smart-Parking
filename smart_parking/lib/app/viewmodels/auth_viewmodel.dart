@@ -333,6 +333,8 @@ class AuthNotifier extends Notifier<AuthState> {
               .createWallet(currentUser.uid)
               .then((_) => debugPrint('[Auth] Wallet créé en arrière-plan'));
         }
+        // TODO: réactiver après passage au plan Blaze pour push FCM cross-device
+        // await NotificationService().saveFcmToken(currentUser.uid);
         state = AuthAuthenticated(user);
       } else {
         // Nouvel utilisateur — profil minimal

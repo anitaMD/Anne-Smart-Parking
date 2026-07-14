@@ -15,6 +15,24 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile", "console": "debugConsole", 
-        }
-    ]
+        },
+         {
+      "name": "USB Device",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "5203045342069357" 
+    },
+    {
+      "name": "Wi-Fi Device",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "R5CX734ATNK" 
+    },
+    ],
+    "compounds": [
+    {
+      "name": "Run on Both",
+      "configurations": ["USB Device", "Wi-Fi Device"]
+    }
+  ]
 }

@@ -2,6 +2,7 @@ import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_parking/app/services/notification_service.dart';
 import 'package:smart_parking/l10n/app_localizations.dart';
 import 'package:smart_parking/app/models/vehicle_model.dart';
 import 'package:smart_parking/app/screens/booking/booking_history_screen.dart';
@@ -50,13 +51,46 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // ← ajouter
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _checkNotificationPermission());
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // ← ajouter
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  Future<void> _checkNotificationPermission() async {
+    final enabled = await NotificationService().areNotificationsEnabled();
+    if (!enabled && mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Activer les notifications'),
+          content: const Text(
+            'YSP a besoin de la permission notifications pour vous alerter '
+            'du début/fin de vos réservations et des rechargements. '
+            'Voulez-vous les activer maintenant ?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Plus tard'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await NotificationService().requestPermission();
+              },
+              child: const Text('Activer'),
+            ),
+          ],
+        ),
+      );
+    }
+    await NotificationService().requestExactAlarmPermission();
   }
 
   @override
@@ -77,6 +111,7 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer>
     final l10n = AppLocalizations.of(context)!;
     final userState = ref.watch(userProvider);
     final unread = ref.watch(unreadNotificationsProvider);
+    ref.watch(dashboardTickerProvider); // ← force rebuild toutes les 15s
 
     ref.listen(authProvider, (_, next) {
       if (next is AuthAuthenticated) {
@@ -1022,11 +1057,13 @@ class _CountdownCard extends ConsumerStatefulWidget {
 
 class _CountdownCardState extends ConsumerState<_CountdownCard> {
   final CountDownController _controller = CountDownController();
+  int _lastSeconds = 0;
 
   String get _statusLabel {
     if (widget.booking.isOngoing) return 'EN COURS';
     if (widget.booking.secondsUntilStart < 0) return 'EN RETARD';
     return 'À VENIR';
+    //TODO: add arb keys
   }
 
   Color get _statusColor {
@@ -1050,9 +1087,22 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(dashboardTickerProvider, (_, __) {
+      final newSeconds = widget.isOngoing
+          ? widget.booking.secondsUntilEnd
+          : widget.booking.secondsUntilStart.abs();
+
+      // Redémarre le countdown avec la nouvelle durée si elle a changé
+      if ((newSeconds - _lastSeconds).abs() > 2) {
+        _controller.restart(duration: newSeconds > 0 ? newSeconds : 1);
+        _lastSeconds = newSeconds;
+      }
+    });
+
     final seconds = widget.isOngoing
         ? widget.booking.secondsUntilEnd
         : widget.booking.secondsUntilStart.abs();
+    _lastSeconds = seconds; // ← initialise au premier build
     final color = _statusColor;
 
     // Get parking name from provider
