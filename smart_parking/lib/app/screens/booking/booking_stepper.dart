@@ -113,10 +113,15 @@ class _BookingStep1State extends ConsumerState<BookingStep1> {
         selectedDate.month == now.month &&
         selectedDate.day == now.day;
     if (!isToday) return false;
-    final closeParts = widget.parking.closingHour.split(':');
-    final closeMinutes =
-        int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
-    return now.hour * 60 + now.minute >= closeMinutes - 30;
+
+    // Compare directement minStartTime (avec marge) vs maxEndTime
+    final minStart = _minStartTime;
+    final maxEnd = _maxEndTime;
+    final minStartMinutes = minStart.hour * 60 + minStart.minute;
+    final maxEndMinutes = maxEnd.hour * 60 + maxEnd.minute;
+
+    // Fermé si il ne reste pas au moins 30min entre minStart et maxEnd
+    return minStartMinutes + 30 > maxEndMinutes;
   }
 
   // ── Max end time (closing - 30min) ────────────────────────

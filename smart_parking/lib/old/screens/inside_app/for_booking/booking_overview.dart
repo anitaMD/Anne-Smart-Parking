@@ -112,12 +112,6 @@ class _BookingOverviewFinalState extends State<BookingOverviewFinal> {
         ? allBookingDetailItems
             .addAll({item1, item2, item3, item4, item5, item6})
         : null;
-    var durationMinutePart =
-        int.parse(durationToString(duration).split(' ').last.substring(0, 2));
-    debugPrint(
-        "THIS IS WHAT YOU GET: ${widget.bookerFirstPageInfoFetched} \t ${widget.bookerSecondPageInfoFetched} _ ${widget.bookerFirstPageInfoFetched['Selected Vehicule Info']['Specs']['Brand']} __________ $durationMinutePart");
-    widget.bookerFirstPageInfoFetched['Selected Vehicule Info']['Specs']
-        ['Brand'];
 
     return SingleChildScrollView(
       child: Column(

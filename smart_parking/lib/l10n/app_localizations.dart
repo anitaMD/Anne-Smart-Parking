@@ -659,6 +659,12 @@ abstract class AppLocalizations {
   /// **'Available parkings'**
   String get dashboardNearbyParkings;
 
+  /// Badge statut réservation en retard
+  ///
+  /// In en, this message translates to:
+  /// **'EN RETARD'**
+  String get dashboardLate;
+
   /// No parkings available
   ///
   /// In en, this message translates to:
@@ -2140,6 +2146,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No vehicle — tap to add one'**
   String get bookingNoVehicleAdd;
+
+  /// Spot conflict error when booking
+  ///
+  /// In en, this message translates to:
+  /// **'This spot was just booked. Please choose another one.'**
+  String get bookingSpotConflict;
+
+  /// Vehicle conflict error — same vehicle booked elsewhere during an overlapping slot
+  ///
+  /// In en, this message translates to:
+  /// **'This vehicle already has an active booking during this time slot, possibly at another parking. Cancel or edit that booking, or choose a time slot that doesn\'t overlap.'**
+  String get bookingVehicleConflict;
+
+  /// No upcoming booking message in history
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming bookings'**
+  String get bookingHistoryNoUpcoming;
+
+  /// No past booking message in history
+  ///
+  /// In en, this message translates to:
+  /// **'No past bookings'**
+  String get bookingHistoryNoPast;
+
+  /// No canceled booking message in history
+  ///
+  /// In en, this message translates to:
+  /// **'No canceled bookings'**
+  String get bookingHistoryNoCanceled;
+
+  /// No booking message (all filter)
+  ///
+  /// In en, this message translates to:
+  /// **'No bookings'**
+  String get bookingHistoryNoBookings;
+
+  /// Full 30min reminder body
+  ///
+  /// In en, this message translates to:
+  /// **'Spot {spotId} starts in 30 minutes.'**
+  String notif30MinFullBody(String spotId);
+
+  /// 10min reminder body
+  ///
+  /// In en, this message translates to:
+  /// **'Your booking starts in 10 minutes.'**
+  String get notif10MinBody;
+
+  /// Booking start body
+  ///
+  /// In en, this message translates to:
+  /// **'Ending at {time}.'**
+  String notifStartBody(String time);
+
+  /// 15min before end reminder body
+  ///
+  /// In en, this message translates to:
+  /// **'Your booking is ending soon.'**
+  String get notifEnd15Body;
+
+  /// Booking ended title
+  ///
+  /// In en, this message translates to:
+  /// **'🏁 Booking ended'**
+  String get notifBookingEndedTitle;
+
+  /// Booking ended body
+  ///
+  /// In en, this message translates to:
+  /// **'Your booking at Spot {spotId} has ended. Thank you for using YSP!'**
+  String notifBookingEndedBody(String spotId);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

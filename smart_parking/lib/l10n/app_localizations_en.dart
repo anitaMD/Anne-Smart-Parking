@@ -291,6 +291,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardNearbyParkings => 'Available parkings';
 
   @override
+  String get dashboardLate => 'EN RETARD';
+
+  @override
   String get dashboardNoParkings => 'No parking available';
 
   @override
@@ -1078,4 +1081,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bookingNoVehicleAdd => 'No vehicle — tap to add one';
+
+  @override
+  String get bookingSpotConflict => 'This spot was just booked. Please choose another one.';
+
+  @override
+  String get bookingVehicleConflict => 'This vehicle already has an active booking during this time slot, possibly at another parking. Cancel or edit that booking, or choose a time slot that doesn\'t overlap.';
+
+  @override
+  String get bookingHistoryNoUpcoming => 'No upcoming bookings';
+
+  @override
+  String get bookingHistoryNoPast => 'No past bookings';
+
+  @override
+  String get bookingHistoryNoCanceled => 'No canceled bookings';
+
+  @override
+  String get bookingHistoryNoBookings => 'No bookings';
+
+  @override
+  String notif30MinFullBody(String spotId) {
+    return 'Spot $spotId starts in 30 minutes.';
+  }
+
+  @override
+  String get notif10MinBody => 'Your booking starts in 10 minutes.';
+
+  @override
+  String notifStartBody(String time) {
+    return 'Ending at $time.';
+  }
+
+  @override
+  String get notifEnd15Body => 'Your booking is ending soon.';
+
+  @override
+  String get notifBookingEndedTitle => '🏁 Booking ended';
+
+  @override
+  String notifBookingEndedBody(String spotId) {
+    return 'Your booking at Spot $spotId has ended. Thank you for using YSP!';
+  }
 }

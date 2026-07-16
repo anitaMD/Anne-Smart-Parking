@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:smart_parking/app/core/utils/number_formatter.dart';
 
 /// Modèle portefeuille YSP Coin
 ///
@@ -30,7 +31,7 @@ class WalletModel {
   bool canAfford(int cost) => balance >= cost;
 
   @override
-  String toString() => 'WalletModel(balance: $balance SPM)';
+  String toString() => 'WalletModel(balance: ${formatSPM(balance)} SPM)';
 }
 
 /// Type de transaction

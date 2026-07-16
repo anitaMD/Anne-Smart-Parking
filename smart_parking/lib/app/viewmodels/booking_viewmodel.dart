@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smart_parking/app/screens/settings/settings_screen.dart';
 import 'package:smart_parking/app/services/notification_service.dart';
@@ -184,9 +184,14 @@ class BookingNotifier extends Notifier<BookingState> {
     );
 
     final notifSettings = ref.read(notifSettingsProvider);
+    debugPrint(
+        '[Notif] Settings: all=${notifSettings.allEnabled} 30min=${notifSettings.remind30min} 10min=${notifSettings.remind10min} start=${notifSettings.remindStart} end15=${notifSettings.remindEnd15min}');
+    final locale = WidgetsBinding.instance.platformDispatcher.locale;
+
     if (notifSettings.allEnabled) {
       NotificationService().scheduleBookingReminders(
         bookingWithId,
+        locale: locale,
         remind30min: notifSettings.remind30min,
         remind10min: notifSettings.remind10min,
         remindStart: notifSettings.remindStart,
@@ -312,6 +317,10 @@ class BookingNotifier extends Notifier<BookingState> {
         'isArchived': true,
         'canceledAt': FieldValue.serverTimestamp(),
       });
+
+      // Nettoyer les rappels programmés
+      await NotificationService().cancelBookingReminders(bookingId);
+
       final updated =
           state.unArchivedBookings.where((b) => b.id != bookingId).toList();
       state = state.copyWith(unArchivedBookings: updated);

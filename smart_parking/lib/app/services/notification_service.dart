@@ -1,7 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:smart_parking/l10n/app_localizations.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../models/booking_model.dart';
 import 'firestore_service.dart';
@@ -39,11 +40,12 @@ class NotificationService {
           channelDescription: _channel.description,
           importance: Importance.high,
           priority: Priority.high,
-          icon: 'drawable/ic_notification',
+          icon:
+              '@drawable/ic_notification', /*
           actions: const [
             AndroidNotificationAction('snooze_5', 'Reporter 5min'),
             AndroidNotificationAction('snooze_10', 'Reporter 10min'),
-          ],
+          ],*/
         ),
       );
 
@@ -113,11 +115,13 @@ class NotificationService {
 
   Future<void> scheduleBookingReminders(
     BookingModel booking, {
+    required Locale locale,
     bool remind30min = true,
     bool remind10min = true,
     bool remindStart = true,
     bool remindEnd15min = true,
   }) async {
+    final l10n = lookupAppLocalizations(locale);
     final now = DateTime.now();
     await cancelBookingReminders(booking.id);
 
@@ -127,8 +131,8 @@ class NotificationService {
       if (before30.isAfter(now)) {
         await _scheduleReminder(
           id: '${booking.id}_30'.hashCode.abs() % 100000,
-          title: '⏰ Rappel parking',
-          body: 'Place ${booking.spotId} commence dans 30 minutes.',
+          title: l10n.notifReminder30min,
+          body: l10n.notif30MinFullBody(booking.spotId),
           scheduledDate: before30,
         );
       }
@@ -140,8 +144,8 @@ class NotificationService {
       if (before10.isAfter(now)) {
         await _scheduleReminder(
           id: '${booking.id}_10'.hashCode.abs() % 100000,
-          title: '🚗 Bientôt ! Place ${booking.spotId}',
-          body: 'Votre réservation commence dans 10 minutes.',
+          title: l10n.notifReminder10min(booking.spotId),
+          body: l10n.notif10MinBody,
           scheduledDate: before10,
         );
       }
@@ -153,8 +157,8 @@ class NotificationService {
         final m = booking.bookingEnd.minute.toString().padLeft(2, '0');
         await _scheduleReminder(
           id: '${booking.id}_start'.hashCode.abs() % 100000,
-          title: '✅ Réservation active — Place ${booking.spotId}',
-          body: 'Fin prévue à $h:$m.',
+          title: l10n.notifReminderStart(booking.spotId),
+          body: l10n.notifStartBody('$h:$m'),
           scheduledDate: booking.bookingStart,
         );
       }
@@ -166,20 +170,18 @@ class NotificationService {
       if (before15End.isAfter(now)) {
         await _scheduleReminder(
           id: '${booking.id}_end15'.hashCode.abs() % 100000,
-          title: '⚠️ Fin dans 15min — Place ${booking.spotId}',
-          body: 'Votre réservation se termine bientôt.',
+          title: l10n.notifReminderEnd(booking.spotId),
+          body: l10n.notifEnd15Body,
           scheduledDate: before15End,
         );
       }
     }
 
-    // Notification exacte à la fin - toujours activée (pas de toggle dédié)
     if (booking.bookingEnd.isAfter(now)) {
       await _scheduleReminder(
         id: '${booking.id}_ended'.hashCode.abs() % 100000,
-        title: '🏁 Réservation terminée',
-        body:
-            'Votre réservation Place ${booking.spotId} est terminée. Merci d\'avoir utilisé YSP !',
+        title: l10n.notifBookingEndedTitle,
+        body: l10n.notifBookingEndedBody(booking.spotId),
         scheduledDate: booking.bookingEnd,
       );
     }
@@ -261,6 +263,11 @@ class NotificationService {
 
     debugPrint('[Notif] canScheduleExact: $canScheduleExact');
 
+    // vérifier que le canal existe bien
+    final channels = await androidPlugin?.getNotificationChannels();
+    debugPrint(
+        '[Notif] Channels: ${channels?.map((c) => "${c.id}:${c.importance}").join(", ")}');
+
     try {
       await _localNotifications.zonedSchedule(
         id: id,
@@ -271,6 +278,7 @@ class NotificationService {
         androidScheduleMode: canScheduleExact
             ? AndroidScheduleMode.exactAllowWhileIdle
             : AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: '$title|$body',
       );
       debugPrint('[Notif] _scheduleReminder SUCCESS id=$id');
     } catch (e) {
@@ -292,7 +300,24 @@ class NotificationService {
 
   void _handleNotificationTap(RemoteMessage message) {}
 
-  void _onNotificationTap(NotificationResponse response) {}
+  void _onNotificationTap(NotificationResponse response) {
+    debugPrint(
+        '[Notif] Tapped: actionId=${response.actionId}, payload=${response.payload}, id=${response.id}');
+
+    if (response.actionId == 'snooze_5' || response.actionId == 'snooze_10') {
+      final minutes = response.actionId == 'snooze_5' ? 5 : 10;
+      final parts = response.payload?.split('|') ?? [];
+      final title = parts.isNotEmpty ? parts[0] : 'Rappel';
+      final body = parts.length > 1 ? parts[1] : '';
+
+      snoozeReminder(
+        title: title,
+        body: body,
+        minutes: minutes,
+        bookingId: '',
+      );
+    }
+  }
 
   // ── FCM Token ──────────────────────────────────────────────
 

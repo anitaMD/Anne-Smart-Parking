@@ -13,16 +13,29 @@ import '../../viewmodels/user_viewmodel.dart';
 // SCREEN
 // ─────────────────────────────────────────────────────────────
 
-class NotificationsScreen extends ConsumerWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  final Set<String> _dismissedIds = {}; // ← ajoute ce state local
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final userState = ref.watch(userProvider);
     final authState = ref.watch(authProvider);
     final uid = authState is AuthAuthenticated ? authState.user.id : '';
-    final notifications = userState.notifications;
+
+    // Filtre les notifications déjà dismissées localement
+    final notifications = userState.notifications
+        .where((n) => !_dismissedIds.contains(n.id))
+        .toList();
+
     final unread = notifications.where((n) => !n.isRead).toList();
 
     return Column(
@@ -62,6 +75,8 @@ class NotificationsScreen extends ConsumerWidget {
                   itemBuilder: (_, i) => _NotificationTile(
                     notification: notifications[i],
                     uid: uid,
+                    onDismissed: () => setState(() =>
+                        _dismissedIds.add(notifications[i].id)), // ← ajoute
                   ),
                 ),
         ),
@@ -77,9 +92,12 @@ class NotificationsScreen extends ConsumerWidget {
 class _NotificationTile extends ConsumerWidget {
   final NotificationModel notification;
   final String uid;
+  final VoidCallback onDismissed;
 
-  const _NotificationTile({required this.notification, required this.uid});
-
+  const _NotificationTile(
+      {required this.notification,
+      required this.uid,
+      required this.onDismissed});
   IconData get _icon {
     final t = notification.title.toLowerCase();
     if (t.contains('réservation') ||
@@ -168,9 +186,9 @@ class _NotificationTile extends ConsumerWidget {
         child: const Icon(Icons.done_outlined, color: AppColors.success),
       ),
       onDismissed: (_) async {
-        await ref
-            .read(userProvider.notifier)
-            .markNotificationRead(uid, notification.id);
+        onDismissed();
+        ref.read(userProvider.notifier).markNotificationRead(
+            uid, notification.id); // persist en arrière-plan
       },
       child: GestureDetector(
         onTap: () async {

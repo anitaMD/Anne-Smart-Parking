@@ -69,7 +69,7 @@ class UserNotifier extends Notifier<UserState> {
   late StorageService _storageService;
   StreamSubscription? _notifSubscription;
   StreamSubscription? _walletSubscription;
-  int _loadGeneration = 0; // ← ajouter
+  int _loadGeneration = 0;
 
   @override
   UserState build() {
@@ -200,11 +200,14 @@ class UserNotifier extends Notifier<UserState> {
   // ── Notifications ─────────────────────────────────────────
 
   Future<void> markNotificationRead(String uid, String notifId) async {
-    await _firestoreService.markNotificationRead(uid, notifId);
+    // Mise à jour optimiste immédiate du state
     final updated = state.notifications.map((n) {
       return n.id == notifId ? n.copyWith(isRead: true) : n;
     }).toList();
     state = state.copyWith(notifications: updated);
+
+    // Puis persist en arrière-plan
+    await _firestoreService.markNotificationRead(uid, notifId);
   }
 }
 

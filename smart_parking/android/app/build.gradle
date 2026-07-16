@@ -10,7 +10,7 @@ android {
     compileSdk 36
     ndkVersion = "28.2.13676358"
     compileOptions {
-        coreLibraryDesugaringEnabled true    // ← AJOUTER
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -30,6 +30,7 @@ android {
 
     buildTypes {
         release {
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.debug
         }
     }
@@ -48,7 +49,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-auth:20.3.0'
     implementation 'com.google.android.gms:play-services-auth-api-phone:18.0.1'
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'  // ← AJOUTER
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 
     
 

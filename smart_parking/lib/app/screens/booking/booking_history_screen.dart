@@ -555,22 +555,24 @@ class _Row extends StatelessWidget {
 class _EmptyState extends StatelessWidget {
   final _Filter filter;
   const _EmptyState({required this.filter});
-//TODO: add arb keys
-  String get _message {
+
+  String _message(AppLocalizations l10n) {
     switch (filter) {
       case _Filter.upcoming:
-        return 'Aucune réservation à venir';
+        return l10n.bookingHistoryNoUpcoming;
       case _Filter.past:
-        return 'Aucune réservation passée';
+        return l10n.bookingHistoryNoPast;
       case _Filter.canceled:
-        return 'Aucune réservation annulée';
+        return l10n.bookingHistoryNoCanceled;
       default:
-        return 'Aucune réservation';
+        return l10n.bookingHistoryNoBookings;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -578,7 +580,7 @@ class _EmptyState extends StatelessWidget {
           Icon(Icons.bookmark_border_outlined,
               size: 56, color: AppColors.textSecondary.withValues(alpha: 0.4)),
           const SizedBox(height: AppSizes.spaceM),
-          Text(_message,
+          Text(_message(l10n),
               style:
                   const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: AppSizes.spaceXS),

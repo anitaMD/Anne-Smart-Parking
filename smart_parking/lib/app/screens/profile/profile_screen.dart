@@ -600,7 +600,7 @@ class _ProfileField extends StatelessWidget {
   final TextInputType? keyboardType;
   final bool readOnly;
   final String? Function(String?)? validator;
-  final VoidCallback? onEditTap; // ← ajouter
+  final VoidCallback? onEditTap;
 
   const _ProfileField(
       {required this.controller,

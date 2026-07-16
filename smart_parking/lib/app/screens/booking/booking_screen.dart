@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_parking/app/core/exceptions/booking_exceptions.dart';
+import 'package:smart_parking/app/core/utils/number_formatter.dart';
 import 'package:smart_parking/app/models/booking_model.dart';
 import 'package:smart_parking/app/models/vehicle_model.dart';
 import 'package:smart_parking/app/screens/booking/booking_stepper.dart';
@@ -198,7 +200,15 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _showSnack(l10n.bookingErrorGeneric(e.toString()));
+        String message;
+        if (e is SpotConflictException) {
+          message = l10n.bookingSpotConflict;
+        } else if (e is VehicleConflictException) {
+          message = l10n.bookingVehicleConflict;
+        } else {
+          message = l10n.bookingErrorGeneric(e.toString());
+        }
+        _showSnack(message);
         setState(() => _isConfirming = false);
       }
     }
@@ -543,7 +553,7 @@ class _SummaryPage extends ConsumerWidget {
                       _SummaryRow(
                         icon: Icons.account_balance_wallet_outlined,
                         label: l10n.bookingCurrentBalance,
-                        value: '$balance SPM',
+                        value: '${formatSPM(balance)} SPM',
                       ),
                       _SummaryRow(
                         icon: Icons.arrow_forward_outlined,
@@ -607,12 +617,12 @@ class _SummaryPage extends ConsumerWidget {
                 _SummaryRow(
                   icon: Icons.account_balance_wallet_outlined,
                   label: l10n.bookingCurrentBalance,
-                  value: '$balance SPM',
+                  value: '${formatSPM(balance)} SPM',
                 ),
                 _SummaryRow(
                   icon: Icons.arrow_forward_outlined,
                   label: l10n.bookingBalanceAfter,
-                  value: '$balanceAfter SPM',
+                  value: '${formatSPM(balance)} SPM',
                   valueColor:
                       balanceAfter < 0 ? AppColors.error : AppColors.success,
                   valueBold: true,

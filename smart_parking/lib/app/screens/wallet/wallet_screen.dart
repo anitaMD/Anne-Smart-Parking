@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:smart_parking/app/core/utils/number_formatter.dart';
 import 'package:smart_parking/l10n/app_localizations.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
@@ -145,7 +146,7 @@ class _WalletHeader extends ConsumerWidget {
                     style:
                         const TextStyle(color: Colors.white70, fontSize: 13)),
                 const SizedBox(height: 4),
-                Text('$balance SPM',
+                Text('${formatSPM(balance)} SPM',
                     style: const TextStyle(
                         color: Colors.white,
                         fontSize: 30,

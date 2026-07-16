@@ -169,7 +169,7 @@ class BookingModel {
   int get secondsUntilEnd => bookingEnd.difference(DateTime.now()).inSeconds;
   bool get isOngoing {
     final now = DateTime.now();
-    return now.isAfter(bookingStart) && now.isBefore(bookingEnd);
+    return now.isAfter(bookingStart) && now.isBefore(bookingEnd) && !isArchived;
   }
 
   bool get isExpired => DateTime.now().isAfter(bookingEnd);
@@ -187,5 +187,5 @@ final ongoingBookingProvider = Provider<BookingModel?>((ref) {
 
 // ── Ticker pour rafraîchir l'UI périodiquement (countdown, isOngoing) ──
 final dashboardTickerProvider = StreamProvider<int>((ref) {
-  return Stream.periodic(const Duration(seconds: 15), (i) => i);
+  return Stream.periodic(const Duration(seconds: 5), (i) => i);
 });

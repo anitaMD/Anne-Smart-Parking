@@ -356,6 +356,8 @@
   "@dashboardOngoingBooking": { "description": "Ongoing booking section" },
   "dashboardNearbyParkings": "Available parkings",
   "@dashboardNearbyParkings": { "description": "Nearby parkings section" },
+  "dashboardLate": "EN RETARD",
+"@dashboardLate": { "description": "Badge statut réservation en retard" },
   "dashboardNoParkings": "No parking available",
   "@dashboardNoParkings": { "description": "No parkings available" },
   "dashboardNavigate": "Navigate",
@@ -370,6 +372,7 @@
   "@walletYspCoin": { "description": "Wallet coin name" },
   "walletPortfolio": "YSP Wallet",
   "@walletPortfolio": { "description": "Wallet portfolio label" },
+  
 
   "panelFavParkings": "My Favourites",
 "@panelFavParkings": { "description": "Favorite parkings tab" },
@@ -1241,6 +1244,56 @@
 "bookingNoVehicleAdd": "No vehicle — tap to add one",
 "@bookingNoVehicleAdd": {
   "description": "Message and action when no vehicle in stepper"
+},
+"bookingSpotConflict": "This spot was just booked. Please choose another one.",
+"@bookingSpotConflict": {
+  "description": "Spot conflict error when booking"
+},
+
+"bookingVehicleConflict": "This vehicle already has an active booking during this time slot, possibly at another parking. Cancel or edit that booking, or choose a time slot that doesn't overlap.",
+"@bookingVehicleConflict": {
+  "description": "Vehicle conflict error — same vehicle booked elsewhere during an overlapping slot"
 }
-    
+    ,
+    "bookingHistoryNoUpcoming": "No upcoming bookings",
+"@bookingHistoryNoUpcoming": { "description": "No upcoming booking message in history" },
+
+"bookingHistoryNoPast": "No past bookings",
+"@bookingHistoryNoPast": { "description": "No past booking message in history" },
+
+"bookingHistoryNoCanceled": "No canceled bookings",
+"@bookingHistoryNoCanceled": { "description": "No canceled booking message in history" },
+
+"bookingHistoryNoBookings": "No bookings",
+"@bookingHistoryNoBookings": { "description": "No booking message (all filter)" },
+
+"notif30MinFullBody": "Spot {spotId} starts in 30 minutes.",
+"@notif30MinFullBody": {
+  "description": "Full 30min reminder body",
+  "placeholders": { "spotId": { "type": "String" } }
+},
+
+
+"notif10MinBody": "Your booking starts in 10 minutes.",
+"@notif10MinBody": { "description": "10min reminder body" },
+
+
+"notifStartBody": "Ending at {time}.",
+"@notifStartBody": {
+  "description": "Booking start body",
+  "placeholders": { "time": { "type": "String" } }
+},
+
+
+"notifEnd15Body": "Your booking is ending soon.",
+"@notifEnd15Body": { "description": "15min before end reminder body" },
+
+"notifBookingEndedTitle": "🏁 Booking ended",
+"@notifBookingEndedTitle": { "description": "Booking ended title" },
+
+"notifBookingEndedBody": "Your booking at Spot {spotId} has ended. Thank you for using YSP!",
+"@notifBookingEndedBody": {
+  "description": "Booking ended body",
+  "placeholders": { "spotId": { "type": "String" } }
+}
 }

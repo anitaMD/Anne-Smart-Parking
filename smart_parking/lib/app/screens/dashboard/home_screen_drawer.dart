@@ -2,6 +2,8 @@ import 'package:circular_countdown_timer/circular_countdown_timer.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smart_parking/app/core/utils/number_formatter.dart';
 import 'package:smart_parking/app/services/notification_service.dart';
 import 'package:smart_parking/l10n/app_localizations.dart';
 import 'package:smart_parking/app/models/vehicle_model.dart';
@@ -63,11 +65,20 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer>
   }
 
   Future<void> _checkNotificationPermission() async {
+    final prefs = await SharedPreferences.getInstance();
+    final alreadyAsked = prefs.getBool('notif_permission_asked') ?? false;
+
     final enabled = await NotificationService().areNotificationsEnabled();
-    if (!enabled && mounted) {
-      showDialog(
+
+    if (!enabled && !alreadyAsked && mounted) {
+      // ← check après le premier await
+      await prefs.setBool('notif_permission_asked', true);
+
+      if (!mounted) return; // ← check après le deuxième await
+
+      await showDialog(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: const Text('Activer les notifications'),
           content: const Text(
             'YSP a besoin de la permission notifications pour vous alerter '
@@ -76,12 +87,12 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer>
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Plus tard'),
             ),
             ElevatedButton(
               onPressed: () async {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 await NotificationService().requestPermission();
               },
               child: const Text('Activer'),
@@ -89,7 +100,10 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer>
           ],
         ),
       );
+
+      await Future.delayed(const Duration(milliseconds: 800));
     }
+
     await NotificationService().requestExactAlarmPermission();
   }
 
@@ -310,6 +324,38 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer>
                           : _current == _Section.settings
                               ? SettingsScreen()
                               : _PlaceholderBody(label: _sectionTitle(l10n)),
+      /*floatingActionButton: _current == _Section.dashboard
+          ? Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    spreadRadius: 5,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: FloatingActionButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ParkingMapScreen()),
+                ),
+                backgroundColor: Colors.white,
+                elevation: 0,
+                shape: const CircleBorder(),
+                tooltip: l10n.dashboardVoirCarte,
+                child: Icon(
+                  Icons.map_outlined,
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  size: 26,
+                ),
+              ),
+            )
+          : null,*/
     );
   }
 }
@@ -400,12 +446,36 @@ class _DashboardBody extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Bienvenue ─────────────────────────────────
-            Text(
-              '${l10n.dashboardHello}, ${userState.user?.firstName ?? ''} 👋',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    '${l10n.dashboardHello}, ${userState.user?.firstName ?? ''} 👋',
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ParkingMapScreen()),
+                    ),
+                    icon: const Icon(Icons.map_outlined,
+                        color: AppColors.primary),
+                    tooltip: l10n.dashboardVoirCarte,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: AppSizes.spaceXS),
             Text(l10n.dashboardSubtitle,
@@ -438,9 +508,13 @@ class _DashboardBody extends ConsumerWidget {
             const SizedBox(height: AppSizes.spaceS),
             if (bookingState.hasOngoing)
               _CountdownCard(
-                  booking: bookingState.ongoingBooking!, isOngoing: true)
+                  key: ValueKey('${bookingState.ongoingBooking!.id}_ongoing'),
+                  booking: bookingState.ongoingBooking!,
+                  isOngoing: true)
             else if (bookingState.upcomingBookings.isNotEmpty)
               _CountdownCard(
+                  key: ValueKey(
+                      '${bookingState.upcomingBookings.first.id}_upcoming'),
                   booking: bookingState.upcomingBookings.first,
                   isOngoing: false)
             else
@@ -1049,7 +1123,8 @@ class _FavParkingCardState extends ConsumerState<_FavParkingCard> {
 class _CountdownCard extends ConsumerStatefulWidget {
   final BookingModel booking;
   final bool isOngoing;
-  const _CountdownCard({required this.booking, required this.isOngoing});
+  const _CountdownCard(
+      {super.key, required this.booking, required this.isOngoing});
 
   @override
   ConsumerState<_CountdownCard> createState() => _CountdownCardState();
@@ -1059,11 +1134,10 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
   final CountDownController _controller = CountDownController();
   int _lastSeconds = 0;
 
-  String get _statusLabel {
-    if (widget.booking.isOngoing) return 'EN COURS';
-    if (widget.booking.secondsUntilStart < 0) return 'EN RETARD';
-    return 'À VENIR';
-    //TODO: add arb keys
+  String _statusLabel(AppLocalizations l10n) {
+    if (widget.booking.isOngoing) return l10n.bookingStatusOngoing;
+    if (widget.booking.secondsUntilStart < 0) return l10n.dashboardLate;
+    return l10n.bookingStatusUpcoming;
   }
 
   Color get _statusColor {
@@ -1074,7 +1148,8 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
   }
 
   String _fmt(DateTime dt) => DateFormat('HH:mm').format(dt);
-  String _fmtDate(DateTime dt) => DateFormat('EEE d MMM', 'fr').format(dt);
+  String _fmtDate(DateTime dt, String locale) =>
+      DateFormat('EEE d MMM', locale).format(dt);
 
   String get _duration {
     final mins = widget.booking.bookingEnd
@@ -1087,6 +1162,8 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
     ref.listen(dashboardTickerProvider, (_, __) {
       final newSeconds = widget.isOngoing
           ? widget.booking.secondsUntilEnd
@@ -1143,7 +1220,7 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
                   color: Colors.white.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(AppSizes.radiusFull),
                 ),
-                child: Text(_statusLabel,
+                child: Text(_statusLabel(l10n),
                     style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -1215,7 +1292,7 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
                     // Date
                     _InfoRow(
                       icon: Icons.calendar_today_outlined,
-                      text: _fmtDate(widget.booking.bookingStart),
+                      text: _fmtDate(widget.booking.bookingStart, locale),
                       bold: true,
                     ),
                     const SizedBox(height: AppSizes.spaceXS),
@@ -1326,39 +1403,69 @@ class _WalletCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final balance = wallet?.balance ?? 0;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSizes.spaceL),
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        gradient: AppColors
+            .primaryGradient, // ← utilise le gradient existant de l'app
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text(l10n.walletYspCoin,
-              style: const TextStyle(color: Colors.white70, fontSize: 14)),
-          const SizedBox(height: AppSizes.spaceXS),
-          Text('${wallet?.balance ?? 0} SPM',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold)),
-          const SizedBox(height: AppSizes.spaceXS),
-          Row(children: [
-            const Icon(Icons.account_balance_wallet,
-                color: Colors.white70, size: 16),
-            const SizedBox(width: AppSizes.spaceXS),
-            Text(l10n.walletPortfolio,
-                style: const TextStyle(color: Colors.white70, fontSize: 12)),
-          ]),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFF5A623), Color(0xFFFFD37A)],
+                      ),
+                    ),
+                    child: const Icon(Icons.bolt,
+                        color: Color(0xFF1A1B4B), size: 16),
+                  ),
+                  const SizedBox(width: AppSizes.spaceXS),
+                  Text(l10n.walletYspCoin,
+                      style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3)),
+                ],
+              ),
+              const SizedBox(height: AppSizes.spaceM),
+              Text('${formatSPM(balance)} SPM',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 34,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5)),
+              const SizedBox(height: AppSizes.spaceS),
+              Row(children: [
+                const Icon(Icons.account_balance_wallet_outlined,
+                    color: Colors.white60, size: 14),
+                const SizedBox(width: 6),
+                Text(l10n.walletPortfolio,
+                    style:
+                        const TextStyle(color: Colors.white60, fontSize: 12)),
+              ]),
+            ],
+          ),
         ],
       ),
     );

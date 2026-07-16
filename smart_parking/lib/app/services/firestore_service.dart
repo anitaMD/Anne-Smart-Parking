@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:smart_parking/app/core/exceptions/booking_exceptions.dart';
 import '../models/user_model.dart';
 import '../models/vehicle_model.dart';
 import '../models/parking_model.dart';
@@ -272,7 +273,7 @@ class FirestoreService implements FirestoreServiceBase {
     String bookingId = '';
 
     await _db.runTransaction((transaction) async {
-      //1. Vérifier absence de conflit liés aux places
+      // 1. Vérifier absence de conflit liés aux places
       final snap = await _bookings
           .where('parkingId', isEqualTo: booking.parkingId)
           .where('spotId', isEqualTo: booking.spotId)
@@ -287,12 +288,10 @@ class FirestoreService implements FirestoreServiceBase {
       });
 
       if (conflict) {
-        //TODO: add arb
-        throw Exception(
-            'Cette place vient d\'être réservée. Veuillez en choisir une autre.');
+        throw const SpotConflictException();
       }
 
-      // 2. Vérifier conflit de VÉHICULE
+      // 2. Vérifier conflit de VÉHICULE (même véhicule, n'importe quel parking)
       final vehicleSnap = await _bookings
           .where('vehicleId', isEqualTo: booking.vehicleId)
           .where('status', whereNotIn: ['canceled'])
@@ -306,11 +305,10 @@ class FirestoreService implements FirestoreServiceBase {
       });
 
       if (vehicleConflict) {
-        throw Exception(
-            'Ce véhicule a déjà une réservation active sur ce créneau.');
+        throw const VehicleConflictException();
       }
 
-      //3. Créer atomiquement
+      // 3. Créer atomiquement
       final ref = _bookings.doc();
       bookingId = ref.id;
       transaction.set(ref, booking.toFirestore());

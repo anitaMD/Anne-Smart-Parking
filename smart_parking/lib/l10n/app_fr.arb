@@ -392,6 +392,8 @@
   "@dashboardOngoingBooking": { "description": "Ongoing booking section" },
   "dashboardNearbyParkings": "Parkings disponibles",
   "@dashboardNearbyParkings": { "description": "Nearby parkings section" },
+  "dashboardLate": "LATE",
+"@dashboardLate": { "description": "Late booking status badge" },
   "dashboardNoParkings": "Aucun parking disponible",
   "@dashboardNoParkings": { "description": "No parkings available" },
   "dashboardNavigate": "Naviguer",
@@ -1292,4 +1294,56 @@
 "commonOk": "OK",
 "@commonOk": {
   "description": "Bouton OK générique"
-}}
+},
+"bookingSpotConflict": "Cette place vient d'être réservée. Veuillez en choisir une autre.",
+"@bookingSpotConflict": {
+  "description": "Erreur conflit de place lors de la réservation"
+},
+
+"bookingVehicleConflict": "Ce véhicule a déjà une réservation active sur ce créneau, potentiellement dans un autre parking. Annulez ou modifiez cette réservation, ou choisissez un créneau qui ne chevauche pas.",
+"@bookingVehicleConflict": {
+  "description": "Erreur conflit de véhicule — même véhicule réservé ailleurs sur un créneau qui se chevauche"
+},
+"bookingHistoryNoUpcoming": "Aucune réservation à venir",
+"@bookingHistoryNoUpcoming": { "description": "Message aucune réservation à venir dans l'historique" },
+
+"bookingHistoryNoPast": "Aucune réservation passée",
+"@bookingHistoryNoPast": { "description": "Message aucune réservation passée dans l'historique" },
+
+"bookingHistoryNoCanceled": "Aucune réservation annulée",
+"@bookingHistoryNoCanceled": { "description": "Message aucune réservation annulée dans l'historique" },
+
+"bookingHistoryNoBookings": "Aucune réservation",
+"@bookingHistoryNoBookings": { "description": "Message aucune réservation (filtre 'toutes')" }
+
+,
+
+"notif30MinFullBody": "Place {spotId} commence dans 30 minutes.",
+"@notif30MinFullBody": {
+  "description": "Corps complet rappel 30min",
+  "placeholders": { "spotId": { "type": "String" } }
+},
+
+"notif10MinBody": "Votre réservation commence dans 10 minutes.",
+"@notif10MinBody": { "description": "Corps rappel 10min" },
+
+
+"notifStartBody": "Fin prévue à {time}.",
+"@notifStartBody": {
+  "description": "Corps début réservation",
+  "placeholders": { "time": { "type": "String" } }
+},
+
+
+"notifEnd15Body": "Votre réservation se termine bientôt.",
+"@notifEnd15Body": { "description": "Corps rappel 15min avant fin" },
+
+"notifBookingEndedTitle": "🏁 Réservation terminée",
+"@notifBookingEndedTitle": { "description": "Titre réservation terminée" },
+
+"notifBookingEndedBody": "Votre réservation Place {spotId} est terminée. Merci d'avoir utilisé YSP !",
+"@notifBookingEndedBody": {
+  "description": "Corps réservation terminée",
+  "placeholders": { "spotId": { "type": "String" } }
+}
+}
