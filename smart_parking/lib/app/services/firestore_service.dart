@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:smart_parking/app/core/exceptions/booking_exceptions.dart';
+import 'package:smart_parking/app/core/utils/booking_conflict_util.dart';
 import '../models/user_model.dart';
 import '../models/vehicle_model.dart';
 import '../models/parking_model.dart';
@@ -283,8 +284,14 @@ class FirestoreService implements FirestoreServiceBase {
           .get();
 
       final conflict = snap.docs.any((doc) {
-        final end = (doc['bookingEnd'] as Timestamp).toDate();
-        return end.isAfter(booking.bookingStart);
+        final docStart = (doc['bookingStart'] as Timestamp).toDate();
+        final docEnd = (doc['bookingEnd'] as Timestamp).toDate();
+        return doTimeSlotsOverlap(
+          aStart: docStart,
+          aEnd: docEnd,
+          bStart: booking.bookingStart,
+          bEnd: booking.bookingEnd,
+        );
       });
 
       if (conflict) {

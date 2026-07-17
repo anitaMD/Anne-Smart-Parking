@@ -2,9 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:smart_parking/l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../models/booking_model.dart';
+import '../core/utils/booking_reminder_util.dart';
 import 'firestore_service.dart';
 
 class NotificationService {
@@ -121,76 +122,33 @@ class NotificationService {
     bool remindStart = true,
     bool remindEnd15min = true,
   }) async {
-    final l10n = lookupAppLocalizations(locale);
-    final now = DateTime.now();
     await cancelBookingReminders(booking.id);
 
-    if (remind30min) {
-      final before30 =
-          booking.bookingStart.subtract(const Duration(minutes: 30));
-      if (before30.isAfter(now)) {
-        await _scheduleReminder(
-          id: '${booking.id}_30'.hashCode.abs() % 100000,
-          title: l10n.notifReminder30min,
-          body: l10n.notif30MinFullBody(booking.spotId),
-          scheduledDate: before30,
-        );
-      }
-    }
+    // Décision (logique pure, testable indépendamment) :
+    final specs = computeBookingReminders(
+      booking,
+      now: DateTime.now(),
+      locale: locale,
+      remind30min: remind30min,
+      remind10min: remind10min,
+      remindStart: remindStart,
+      remindEnd15min: remindEnd15min,
+    );
 
-    if (remind10min) {
-      final before10 =
-          booking.bookingStart.subtract(const Duration(minutes: 10));
-      if (before10.isAfter(now)) {
-        await _scheduleReminder(
-          id: '${booking.id}_10'.hashCode.abs() % 100000,
-          title: l10n.notifReminder10min(booking.spotId),
-          body: l10n.notif10MinBody,
-          scheduledDate: before10,
-        );
-      }
-    }
-
-    if (remindStart) {
-      if (booking.bookingStart.isAfter(now)) {
-        final h = booking.bookingEnd.hour.toString().padLeft(2, '0');
-        final m = booking.bookingEnd.minute.toString().padLeft(2, '0');
-        await _scheduleReminder(
-          id: '${booking.id}_start'.hashCode.abs() % 100000,
-          title: l10n.notifReminderStart(booking.spotId),
-          body: l10n.notifStartBody('$h:$m'),
-          scheduledDate: booking.bookingStart,
-        );
-      }
-    }
-
-    if (remindEnd15min) {
-      final before15End =
-          booking.bookingEnd.subtract(const Duration(minutes: 15));
-      if (before15End.isAfter(now)) {
-        await _scheduleReminder(
-          id: '${booking.id}_end15'.hashCode.abs() % 100000,
-          title: l10n.notifReminderEnd(booking.spotId),
-          body: l10n.notifEnd15Body,
-          scheduledDate: before15End,
-        );
-      }
-    }
-
-    if (booking.bookingEnd.isAfter(now)) {
+    // Effet de bord — transmission au plugin natif :
+    for (final spec in specs) {
       await _scheduleReminder(
-        id: '${booking.id}_ended'.hashCode.abs() % 100000,
-        title: l10n.notifBookingEndedTitle,
-        body: l10n.notifBookingEndedBody(booking.spotId),
-        scheduledDate: booking.bookingEnd,
+        id: spec.id,
+        title: spec.title,
+        body: spec.body,
+        scheduledDate: spec.scheduledDate,
       );
     }
   }
 
   Future<void> cancelBookingReminders(String bookingId) async {
     for (final suffix in ['_30', '_10', '_start', '_end15', '_ended']) {
-      await _localNotifications.cancel(
-          id: '$bookingId$suffix'.hashCode.abs() % 100000);
+      await _localNotifications.cancel(id: reminderIdFor(bookingId, suffix));
     }
   }
 
@@ -340,3 +298,7 @@ class NotificationService {
     }
   }
 }
+
+final notificationServiceProvider = Provider<NotificationService>((ref) {
+  return NotificationService();
+});

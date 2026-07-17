@@ -189,14 +189,14 @@ class BookingNotifier extends Notifier<BookingState> {
     final locale = WidgetsBinding.instance.platformDispatcher.locale;
 
     if (notifSettings.allEnabled) {
-      NotificationService().scheduleBookingReminders(
-        bookingWithId,
-        locale: locale,
-        remind30min: notifSettings.remind30min,
-        remind10min: notifSettings.remind10min,
-        remindStart: notifSettings.remindStart,
-        remindEnd15min: notifSettings.remindEnd15min,
-      );
+      ref.read(notificationServiceProvider).scheduleBookingReminders(
+            bookingWithId,
+            locale: locale,
+            remind30min: notifSettings.remind30min,
+            remind10min: notifSettings.remind10min,
+            remindStart: notifSettings.remindStart,
+            remindEnd15min: notifSettings.remindEnd15min,
+          );
     }
     // Débiter le wallet
     final userState = ref.read(userProvider);
@@ -319,7 +319,9 @@ class BookingNotifier extends Notifier<BookingState> {
       });
 
       // Nettoyer les rappels programmés
-      await NotificationService().cancelBookingReminders(bookingId);
+      await ref
+          .read(notificationServiceProvider)
+          .cancelBookingReminders(bookingId);
 
       final updated =
           state.unArchivedBookings.where((b) => b.id != bookingId).toList();

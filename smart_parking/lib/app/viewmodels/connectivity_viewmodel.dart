@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../core/utils/connectivity_check_util.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// État de connectivité
@@ -51,7 +51,7 @@ class ConnectivityNotifier extends Notifier<ConnectivityState> {
 
   Future<void> _init() async {
     final results = await _connectivity.checkConnectivity();
-    final hasInternet = await _checkRealInternet(results.first);
+    final hasInternet = await checkRealInternet(results.first);
     state = ConnectivityState(
       status: results.first,
       hasRealInternet: hasInternet,
@@ -61,7 +61,7 @@ class ConnectivityNotifier extends Notifier<ConnectivityState> {
     _subscription = _connectivity.onConnectivityChanged.listen(
       (results) async {
         final newStatus = results.first;
-        final hasInternet = await _checkRealInternet(newStatus);
+        final hasInternet = await checkRealInternet(newStatus);
         state = state.copyWith(
           status: newStatus,
           hasRealInternet: hasInternet,
@@ -70,20 +70,9 @@ class ConnectivityNotifier extends Notifier<ConnectivityState> {
     );
   }
 
-  Future<bool> _checkRealInternet(ConnectivityResult status) async {
-    if (status == ConnectivityResult.none) return false;
-    try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 5));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
-  }
-
   /// Force une re-vérification — bouton "Réessayer"
   Future<void> recheck() async {
-    final hasInternet = await _checkRealInternet(state.status);
+    final hasInternet = await checkRealInternet(state.status);
     state = state.copyWith(hasRealInternet: hasInternet);
   }
 }

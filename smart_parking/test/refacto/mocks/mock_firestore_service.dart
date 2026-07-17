@@ -98,51 +98,34 @@ class MockFirestoreService implements FirestoreServiceBase {
 
   @override
   Future<Set<String>> getOccupiedSpotIds(
-      {required String parkingId,
-      required DateTime bookingStart,
-      required DateTime bookingEnd}) {
-    // TODO: implement getOccupiedSpotIds
-    throw UnimplementedError();
-  }
+          {required String parkingId,
+          required DateTime bookingStart,
+          required DateTime bookingEnd}) async =>
+      {};
 
   @override
   Future<void> updateBookingFields(
-      String bookingId, Map<String, dynamic> fields) {
-    // TODO: implement updateBookingFields
-    throw UnimplementedError();
-  }
+      String bookingId, Map<String, dynamic> fields) async {}
 
   @override
-  Future<List<BookingModel>> getAllUserBookings(String uid) {
-    // TODO: implement getAllUserBookings
-    throw UnimplementedError();
-  }
+  Future<List<BookingModel>> getAllUserBookings(String uid) async => [];
 
   @override
-  Future<List<BookingModel>> getUserArchivedBookings(String uid) {
-    // TODO: implement getUserArchivedBookings
-    throw UnimplementedError();
-  }
+  Future<List<BookingModel>> getUserArchivedBookings(String uid) async => [];
 
   @override
   Stream<List<TransactionModel>> watchTransactions(
-      String uid, String walletId) {
-    // TODO: implement watchTransactions
-    throw UnimplementedError();
-  }
+          String uid, String walletId) =>
+      const Stream.empty();
 
   @override
   Stream<Set<String>> watchOccupiedSpotIds(
-      {required String parkingId,
-      required DateTime bookingStart,
-      required DateTime bookingEnd}) {
-    // TODO: implement watchOccupiedSpotIds
-    throw UnimplementedError();
-  }
+          {required String parkingId,
+          required DateTime bookingStart,
+          required DateTime bookingEnd}) =>
+      const Stream.empty();
 
   @override
-  Stream<List<Map<String, dynamic>>> watchAgentTopUps(String agentUid) {
-    // TODO: implement watchAgentTopUps
-    throw UnimplementedError();
-  }
+  Stream<List<Map<String, dynamic>>> watchAgentTopUps(String agentUid) =>
+      const Stream.empty();
 }

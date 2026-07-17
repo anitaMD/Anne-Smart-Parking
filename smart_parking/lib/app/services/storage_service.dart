@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloudinary_flutter/image/cld_image.dart';
 import 'package:cloudinary_url_gen/cloudinary.dart';*/
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -106,3 +107,7 @@ class StorageService {
         'utiliser une Cloud Function en production.');
   }
 }
+
+final storageServiceProvider = Provider<StorageService>((ref) {
+  return StorageService();
+});

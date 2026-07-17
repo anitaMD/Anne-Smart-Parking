@@ -74,8 +74,7 @@ class UserNotifier extends Notifier<UserState> {
   @override
   UserState build() {
     _firestoreService = ref.read(firestoreServiceProvider);
-    _storageService = StorageService();
-
+    _storageService = ref.read(storageServiceProvider);
     ref.listen(authProvider, (previous, next) {
       if (next is AuthAuthenticated) {
         loadUserData(next.user.id);
