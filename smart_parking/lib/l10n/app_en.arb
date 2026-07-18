@@ -1290,7 +1290,10 @@
 
 "notifBookingEndedTitle": "🏁 Booking ended",
 "@notifBookingEndedTitle": { "description": "Booking ended title" },
-
+"bookingSpotOverstayConflict": "This spot is currently occupied by a vehicle exceeding its reserved time. Please try again in a few minutes or choose another spot.",
+"@bookingSpotOverstayConflict": {
+  "description": "Overstay conflict error with actively overstaying vehicle"
+},
 "notifBookingEndedBody": "Your booking at Spot {spotId} has ended. Thank you for using YSP!",
 "@notifBookingEndedBody": {
   "description": "Booking ended body",

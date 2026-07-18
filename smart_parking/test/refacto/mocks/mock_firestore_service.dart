@@ -128,4 +128,8 @@ class MockFirestoreService implements FirestoreServiceBase {
   @override
   Stream<List<Map<String, dynamic>>> watchAgentTopUps(String agentUid) =>
       const Stream.empty();
+
+  @override
+  Stream<bool?> watchSensorStatus(String parkingId, String spotId) =>
+      const Stream.empty();
 }

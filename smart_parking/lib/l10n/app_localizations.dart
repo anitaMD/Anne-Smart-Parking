@@ -2213,6 +2213,12 @@ abstract class AppLocalizations {
   /// **'🏁 Booking ended'**
   String get notifBookingEndedTitle;
 
+  /// Overstay conflict error with actively overstaying vehicle
+  ///
+  /// In en, this message translates to:
+  /// **'This spot is currently occupied by a vehicle exceeding its reserved time. Please try again in a few minutes or choose another spot.'**
+  String get bookingSpotOverstayConflict;
+
   /// Booking ended body
   ///
   /// In en, this message translates to:

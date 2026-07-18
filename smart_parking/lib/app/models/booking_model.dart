@@ -61,6 +61,11 @@ class BookingModel {
   final DateTime? vehicleDepartedAt;
   final List<BookingEdit> editHistory;
 
+  // ── Dépassement (facturation ESP32/Raspberry Pi) ──────────
+  final int overstayMinutes;
+  final int overstayCharge;
+  final DateTime? lastOverstayCheckAt;
+
   BookingModel({
     required this.id,
     required this.clientId,
@@ -79,6 +84,9 @@ class BookingModel {
     this.vehicleArrivedAt,
     this.vehicleDepartedAt,
     this.editHistory = const [],
+    this.overstayMinutes = 0,
+    this.overstayCharge = 0,
+    this.lastOverstayCheckAt,
   });
 
   factory BookingModel.fromFirestore(DocumentSnapshot doc) {
@@ -111,6 +119,10 @@ class BookingModel {
       editHistory: (data['editHistory'] as List<dynamic>? ?? [])
           .map((e) => BookingEdit.fromMap(e as Map<String, dynamic>))
           .toList(),
+      overstayMinutes: data['overstayMinutes'] as int? ?? 0,
+      overstayCharge: data['overstayCharge'] as int? ?? 0,
+      lastOverstayCheckAt:
+          (data['lastOverstayCheckAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -127,6 +139,10 @@ class BookingModel {
         'isArchived': isArchived,
         'createdAt': FieldValue.serverTimestamp(),
         'editHistory': editHistory.map((e) => e.toMap()).toList(),
+        'overstayMinutes': overstayMinutes,
+        'overstayCharge': overstayCharge,
+        if (lastOverstayCheckAt != null)
+          'lastOverstayCheckAt': Timestamp.fromDate(lastOverstayCheckAt!),
       };
 
   BookingModel copyWith({
@@ -141,6 +157,9 @@ class BookingModel {
     DateTime? vehicleArrivedAt,
     DateTime? vehicleDepartedAt,
     List<BookingEdit>? editHistory,
+    int? overstayMinutes,
+    int? overstayCharge,
+    DateTime? lastOverstayCheckAt,
   }) =>
       BookingModel(
         id: id,
@@ -160,6 +179,9 @@ class BookingModel {
         vehicleArrivedAt: vehicleArrivedAt ?? this.vehicleArrivedAt,
         vehicleDepartedAt: vehicleDepartedAt ?? this.vehicleDepartedAt,
         editHistory: editHistory ?? this.editHistory,
+        overstayMinutes: overstayMinutes ?? this.overstayMinutes,
+        overstayCharge: overstayCharge ?? this.overstayCharge,
+        lastOverstayCheckAt: lastOverstayCheckAt ?? this.lastOverstayCheckAt,
       );
 
   // Computed
@@ -175,6 +197,17 @@ class BookingModel {
   bool get isExpired => DateTime.now().isAfter(bookingEnd);
   bool get hasNotStarted => DateTime.now().isBefore(bookingStart);
   bool get wasEdited => editHistory.isNotEmpty;
+
+  /// Le véhicule dépasse son créneau réservé — bookingEnd est passé,
+  /// mais le capteur physique (via vehicleDepartedAt encore null)
+  /// n'a pas confirmé le départ. Utilisé pour le badge dashboard
+  /// "EN RETARD" et le déclenchement de la facturation au dépassement
+  /// côté Raspberry Pi.
+  bool get isOverstaying =>
+      DateTime.now().isAfter(bookingEnd) &&
+      vehicleDepartedAt == null &&
+      status != BookingStatus.canceled &&
+      !isArchived;
 
   @override
   String toString() =>

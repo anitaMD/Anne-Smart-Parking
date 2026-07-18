@@ -5,7 +5,6 @@ import 'package:smart_parking/app/models/notification_model.dart';
 import 'package:smart_parking/app/models/user_model.dart';
 import 'package:smart_parking/app/models/vehicle_model.dart';
 import 'package:smart_parking/app/models/wallet_model.dart';
-import 'package:smart_parking/app/services/firestore_service.dart';
 import 'package:smart_parking/app/services/storage_service.dart';
 import 'package:smart_parking/app/viewmodels/auth_viewmodel.dart';
 import 'package:smart_parking/app/viewmodels/user_viewmodel.dart';
@@ -99,8 +98,7 @@ class _FakeUserFirestoreService extends MockFirestoreService {
   Future<WalletModel?> getWallet(String uid) async => walletToReturn;
 
   @override
-  Future<List<VehicleModel>> getVehicles(String uid) async =>
-      vehiclesToReturn;
+  Future<List<VehicleModel>> getVehicles(String uid) async => vehiclesToReturn;
 
   @override
   Stream<List<NotificationModel>> watchNotifications(String uid) =>
@@ -111,8 +109,7 @@ class _FakeUserFirestoreService extends MockFirestoreService {
       Stream.value(notificationsToReturn);
 
   @override
-  Stream<WalletModel?> watchWallet(String uid) =>
-      Stream.value(walletToReturn);
+  Stream<WalletModel?> watchWallet(String uid) => Stream.value(walletToReturn);
 
   @override
   Future<String> addVehicle(String uid, VehicleModel vehicle) async {
@@ -250,8 +247,7 @@ void main() {
       expect(state.isLoading, isFalse);
     });
 
-    test('état isLoading passe à false même sans utilisateur trouvé',
-        () async {
+    test('état isLoading passe à false même sans utilisateur trouvé', () async {
       final fakeService = _FakeUserFirestoreService(userToReturn: null);
       final container = _makeContainer(fakeService);
       addTearDown(container.dispose);
@@ -265,10 +261,8 @@ void main() {
   });
 
   group('UserNotifier — addVehicle', () {
-    test('ajoute le véhicule puis recharge les données utilisateur',
-        () async {
-      final fakeService =
-          _FakeUserFirestoreService(userToReturn: _user());
+    test('ajoute le véhicule puis recharge les données utilisateur', () async {
+      final fakeService = _FakeUserFirestoreService(userToReturn: _user());
       final container = _makeContainer(fakeService);
       addTearDown(container.dispose);
 
@@ -293,9 +287,7 @@ void main() {
       await container.read(userProvider.notifier).loadUserData('uid-1');
       expect(container.read(userProvider).vehicles.length, 2);
 
-      await container
-          .read(userProvider.notifier)
-          .deleteVehicle('uid-1', 'v1');
+      await container.read(userProvider.notifier).deleteVehicle('uid-1', 'v1');
 
       final state = container.read(userProvider);
       expect(state.vehicles.length, 1);
@@ -305,7 +297,8 @@ void main() {
   });
 
   group('UserNotifier — setDefaultVehicle', () {
-    test('marque le bon véhicule comme sélectionné et désélectionne'
+    test(
+        'marque le bon véhicule comme sélectionné et désélectionne'
         ' les autres', () async {
       final fakeService = _FakeUserFirestoreService(
         userToReturn: _user(),
@@ -363,8 +356,7 @@ void main() {
   });
 
   group('UserNotifier — updateProfilePicture', () {
-    test('upload réussi → met à jour Firestore et le state local',
-        () async {
+    test('upload réussi → met à jour Firestore et le state local', () async {
       final fakeService = _FakeUserFirestoreService(userToReturn: _user());
       final container = _makeContainer(
         fakeService,
@@ -381,15 +373,14 @@ void main() {
           .updateProfilePicture(File('fake_path.jpg'), 'uid-1');
 
       final state = container.read(userProvider);
-      expect(state.user?.profileImageUrl,
-          'https://cloudinary.com/new-photo.jpg');
+      expect(
+          state.user?.profileImageUrl, 'https://cloudinary.com/new-photo.jpg');
       expect(fakeService.updatedFieldsCalls, isNotEmpty);
       expect(fakeService.updatedFieldsCalls.first['profileImageUrl'],
           'https://cloudinary.com/new-photo.jpg');
     });
 
-    test('upload échoué (url null) → n\'écrit rien dans Firestore',
-        () async {
+    test('upload échoué (url null) → n\'écrit rien dans Firestore', () async {
       final fakeService = _FakeUserFirestoreService(userToReturn: _user());
       final container = _makeContainer(
         fakeService,

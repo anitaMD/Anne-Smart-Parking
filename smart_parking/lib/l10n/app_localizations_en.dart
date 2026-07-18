@@ -1120,6 +1120,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifBookingEndedTitle => '🏁 Booking ended';
 
   @override
+  String get bookingSpotOverstayConflict => 'This spot is currently occupied by a vehicle exceeding its reserved time. Please try again in a few minutes or choose another spot.';
+
+  @override
   String notifBookingEndedBody(String spotId) {
     return 'Your booking at Spot $spotId has ended. Thank you for using YSP!';
   }

@@ -330,6 +330,25 @@ class BookingNotifier extends Notifier<BookingState> {
       debugPrint('[Booking] cancelBooking error: $e');
     }
   }
+
+  Future<void> endBookingEarly(String bookingId) async {
+    try {
+      await _firestoreService.updateBookingFields(bookingId, {
+        'status': 'completed',
+        'isArchived': true,
+        'completedAt': FieldValue.serverTimestamp(),
+        'vehicleDepartedAt': FieldValue.serverTimestamp(),
+        'vehicleStatus': 'gone',
+      });
+      await NotificationService().cancelBookingReminders(bookingId);
+
+      final updated =
+          state.unArchivedBookings.where((b) => b.id != bookingId).toList();
+      state = state.copyWith(unArchivedBookings: updated);
+    } catch (e) {
+      debugPrint('[Booking] endBookingEarly error: $e');
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -63,6 +63,8 @@ abstract class FirestoreServiceBase {
   // Wallet
   Future<WalletModel?> getWallet(String uid);
   Stream<WalletModel?> watchWallet(String uid);
+
+  Stream<bool?> watchSensorStatus(String parkingId, String spotId);
   Stream<List<TransactionModel>> watchTransactions(String uid, String walletId);
   Future<void> createWallet(String uid);
   Future<void> updateWalletBalance(String uid, String walletId, int newBalance);
@@ -272,13 +274,21 @@ class FirestoreService implements FirestoreServiceBase {
   @override
   Future<String> createBookingAtomic(BookingModel booking) async {
     String bookingId = '';
+    final now = DateTime.now();
 
     await _db.runTransaction((transaction) async {
       // 1. Vérifier absence de conflit liés aux places
+      //
+      // isArchived == false est LE filtre définitif — couvre à la
+      // fois les réservations annulées (canceled) ET terminées
+      // (completed, que ce soit un départ anticipé volontaire via
+      // "Terminer maintenant" ou une clôture normale au capteur).
+      // Une réservation archivée ne bloque jamais un nouveau créneau,
+      // peu importe son bookingEnd original.
       final snap = await _bookings
           .where('parkingId', isEqualTo: booking.parkingId)
           .where('spotId', isEqualTo: booking.spotId)
-          .where('status', whereNotIn: ['canceled'])
+          .where('isArchived', isEqualTo: false)
           .where('bookingStart',
               isLessThan: Timestamp.fromDate(booking.bookingEnd))
           .get();
@@ -298,10 +308,37 @@ class FirestoreService implements FirestoreServiceBase {
         throw const SpotConflictException();
       }
 
+      // 1bis. Vérifier qu'aucun véhicule en DÉPASSEMENT ACTIF (donc
+      // physiquement toujours présent) n'occupe déjà cette place au
+      // moment où la nouvelle réservation souhaite démarrer.
+      //
+      // Limitation connue : ne protège que contre un dépassement
+      // DÉJÀ en cours au moment de cette création — pas contre un
+      // dépassement qui surviendrait plus tard sur une réservation
+      // future déjà validée sans conflit (voir booking_exceptions.dart
+      // pour la note complète).
+      if (!booking.bookingStart.isAfter(now)) {
+        final overstaySnap = await _bookings
+            .where('parkingId', isEqualTo: booking.parkingId)
+            .where('spotId', isEqualTo: booking.spotId)
+            .where('isArchived', isEqualTo: false)
+            .get();
+
+        final activeOverstay = overstaySnap.docs.any((doc) {
+          final end = (doc['bookingEnd'] as Timestamp).toDate();
+          final departed = doc['vehicleDepartedAt'] as Timestamp?;
+          return end.isBefore(now) && departed == null;
+        });
+
+        if (activeOverstay) {
+          throw const SpotOverstayConflictException();
+        }
+      }
+
       // 2. Vérifier conflit de VÉHICULE (même véhicule, n'importe quel parking)
       final vehicleSnap = await _bookings
           .where('vehicleId', isEqualTo: booking.vehicleId)
-          .where('status', whereNotIn: ['canceled'])
+          .where('isArchived', isEqualTo: false)
           .where('bookingStart',
               isLessThan: Timestamp.fromDate(booking.bookingEnd))
           .get();
@@ -393,6 +430,20 @@ class FirestoreService implements FirestoreServiceBase {
   Stream<WalletModel?> watchWallet(String uid) =>
       _users.doc(uid).collection('wallet').limit(1).snapshots().map((s) =>
           s.docs.isEmpty ? null : WalletModel.fromFirestore(s.docs.first));
+
+  @override
+  Stream<bool?> watchSensorStatus(String parkingId, String spotId) {
+    return _db
+        .collection('locations_v2')
+        .doc(parkingId)
+        .collection('sensors')
+        .doc(spotId)
+        .snapshots()
+        .map((snap) {
+      if (!snap.exists) return null;
+      return snap.data()?['occupied'] as bool?;
+    });
+  }
 
   @override
   Stream<List<TransactionModel>> watchTransactions(

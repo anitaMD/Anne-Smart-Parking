@@ -1319,6 +1319,56 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
               ),
             ],
           ),
+          // ── Bouton "Terminer maintenant" ──────────────────────
+          // Visible uniquement si la réservation est en cours, que
+          // le véhicule est bien arrivé, et pas encore parti. Le
+          // bouton ne devient ACTIF que si le capteur confirme déjà
+          // un vrai départ physique — empêche de contourner la
+          // facturation au dépassement en se déclarant "parti" tout
+          // en restant garé.
+          if (widget.isOngoing &&
+              widget.booking.vehicleArrivedAt != null &&
+              widget.booking.vehicleDepartedAt == null)
+            StreamBuilder<bool?>(
+              stream: ref.read(firestoreServiceProvider).watchSensorStatus(
+                  widget.booking.parkingId, widget.booking.spotId),
+              builder: (context, snapshot) {
+                final sensorOccupied = snapshot.data;
+                final canEnd = sensorOccupied == false;
+
+                return Padding(
+                  padding: const EdgeInsets.only(top: AppSizes.spaceM),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: canEnd
+                          ? () => _onEndBookingEarly(context, widget.booking)
+                          : null,
+                      icon: Icon(
+                        canEnd ? Icons.check_circle_outline : Icons.sensors,
+                        size: 18,
+                        color: canEnd ? Colors.white : Colors.white54,
+                      ),
+                      label: Text(
+                        canEnd
+                            ? 'Terminer maintenant'
+                            : 'En attente de confirmation du capteur...',
+                        style: TextStyle(
+                          color: canEnd ? Colors.white : Colors.white54,
+                          fontSize: 13,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: canEnd ? Colors.white70 : Colors.white24,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );
@@ -1361,6 +1411,34 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
               ref.read(bookingProvider.notifier).cancelBooking(booking.id);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: Text(l10n.commonYes),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onEndBookingEarly(BuildContext context, BookingModel booking) {
+    final l10n = AppLocalizations.of(context)!;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Terminer la réservation'),
+        content: const Text(
+          'Le capteur confirme que vous avez quitté votre place. '
+          'Voulez-vous terminer cette réservation maintenant ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.commonNo),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(bookingProvider.notifier).endBookingEarly(booking.id);
+            },
             child: Text(l10n.commonYes),
           ),
         ],

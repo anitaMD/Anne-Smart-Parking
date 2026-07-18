@@ -1334,7 +1334,10 @@
   "placeholders": { "time": { "type": "String" } }
 },
 
-
+"bookingSpotOverstayConflict": "Cette place est actuellement occupée par un véhicule en dépassement de créneau. Veuillez réessayer dans quelques minutes ou choisir une autre place.",
+"@bookingSpotOverstayConflict": {
+  "description": "Erreur conflit avec un véhicule en dépassement actif"
+},
 "notifEnd15Body": "Votre réservation se termine bientôt.",
 "@notifEnd15Body": { "description": "Corps rappel 15min avant fin" },
 

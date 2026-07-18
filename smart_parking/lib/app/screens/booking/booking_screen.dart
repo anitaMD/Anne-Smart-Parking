@@ -205,6 +205,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           message = l10n.bookingSpotConflict;
         } else if (e is VehicleConflictException) {
           message = l10n.bookingVehicleConflict;
+        } else if (e is SpotOverstayConflictException) {
+          message = l10n.bookingSpotOverstayConflict;
         } else {
           message = l10n.bookingErrorGeneric(e.toString());
         }

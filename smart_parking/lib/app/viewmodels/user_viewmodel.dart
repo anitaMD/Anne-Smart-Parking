@@ -71,6 +71,14 @@ class UserNotifier extends Notifier<UserState> {
   StreamSubscription? _walletSubscription;
   int _loadGeneration = 0;
 
+  // IDs de notifications déjà vues — au niveau de la classe (pas
+  // local au listener) pour survivre aux ré-abonnements successifs
+  // (ex: reprise de l'app en premier plan qui redéclenche
+  // loadUserData). Sans ça, une vraie nouvelle notification arrivant
+  // pile pendant un ré-abonnement pouvait être traitée à tort comme
+  // "déjà existante" et son popup natif supprimé.
+  final Set<String> _seenNotificationIds = {};
+
   @override
   UserState build() {
     _firestoreService = ref.read(firestoreServiceProvider);
@@ -82,6 +90,7 @@ class UserNotifier extends Notifier<UserState> {
         _loadGeneration++; // ← invalide tout appel en cours
         _notifSubscription?.cancel();
         _walletSubscription?.cancel();
+        _seenNotificationIds.clear();
         state = const UserState();
       }
     });
@@ -121,7 +130,12 @@ class UserNotifier extends Notifier<UserState> {
         isLoading: false,
       );
 
-      bool isFirstEmission = true; // ← nouveau flag propre par souscription
+      // Marque toutes les notifications déjà chargées comme "vues"
+      // AVANT de démarrer l'écoute en temps réel — évite le popup
+      // pour l'historique existant au premier chargement de session.
+      for (final notif in results[3] as List<NotificationModel>) {
+        _seenNotificationIds.add(notif.id);
+      }
 
       await _notifSubscription?.cancel();
       _notifSubscription =
@@ -129,18 +143,15 @@ class UserNotifier extends Notifier<UserState> {
         if (myGeneration != _loadGeneration) return; // ← ignore si obsolète
         if (state.user == null) return;
 
-        if (!isFirstEmission) {
-          final previousIds = state.notifications.map((n) => n.id).toSet();
-          final newOnes =
-              notifs.where((n) => !previousIds.contains(n.id)).toList();
-          for (final notif in newOnes) {
-            NotificationService().show(
-              title: notif.title,
-              body: notif.body,
-            );
-          }
+        final newOnes =
+            notifs.where((n) => !_seenNotificationIds.contains(n.id)).toList();
+        for (final notif in newOnes) {
+          NotificationService().show(
+            title: notif.title,
+            body: notif.body,
+          );
+          _seenNotificationIds.add(notif.id);
         }
-        isFirstEmission = false;
 
         state = state.copyWith(notifications: notifs);
       });
