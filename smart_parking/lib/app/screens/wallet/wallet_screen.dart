@@ -121,15 +121,26 @@ class _WalletHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final isDebt = balance < 0;
 
     return Container(
       padding: const EdgeInsets.all(AppSizes.spaceL),
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        gradient: isDebt
+            ? LinearGradient(
+                colors: [
+                  AppColors.error,
+                  AppColors.error.withValues(alpha: 0.75),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(AppSizes.radiusXL),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.4),
+            color: (isDebt ? AppColors.error : AppColors.primary)
+                .withValues(alpha: 0.4),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -142,9 +153,20 @@ class _WalletHeader extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.walletBalance,
-                    style:
-                        const TextStyle(color: Colors.white70, fontSize: 13)),
+                Row(
+                  children: [
+                    Text(
+                      isDebt ? l10n.walletDebtLabel : l10n.walletBalance,
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                    if (isDebt) ...[
+                      const SizedBox(width: 6),
+                      const Icon(Icons.warning_amber_rounded,
+                          color: Colors.white, size: 14),
+                    ],
+                  ],
+                ),
                 const SizedBox(height: 4),
                 Text('${formatSPM(balance)} SPM',
                     style: const TextStyle(
@@ -152,9 +174,10 @@ class _WalletHeader extends ConsumerWidget {
                         fontSize: 30,
                         fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
-                Text(l10n.walletPortfolioLabel,
-                    style:
-                        const TextStyle(color: Colors.white60, fontSize: 11)),
+                Text(
+                  isDebt ? l10n.walletDebtSubtitle : l10n.walletPortfolioLabel,
+                  style: const TextStyle(color: Colors.white60, fontSize: 11),
+                ),
               ],
             ),
           ),

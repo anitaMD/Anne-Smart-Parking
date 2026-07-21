@@ -315,6 +315,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletPortfolio => 'YSP Wallet';
 
   @override
+  String get walletDebtLabel => 'Debt';
+
+  @override
+  String get walletDebtSubtitle => 'Balance to settle';
+
+  @override
+  String bookingHistoryOverstayLine(int minutes, String charge) {
+    return 'Overstay: $minutes min — $charge SPM';
+  }
+
+  @override
+  String get bookingHistoryEmptySubtitle => 'Your bookings will appear here';
+
+  @override
   String get panelFavParkings => 'My Favourites';
 
   @override
@@ -1123,7 +1137,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookingSpotOverstayConflict => 'This spot is currently occupied by a vehicle exceeding its reserved time. Please try again in a few minutes or choose another spot.';
 
   @override
+  String get notifPermissionTitle => 'Enable notifications';
+
+  @override
+  String get notifPermissionBody => 'YSP needs notification permission to alert you about booking start/end and top ups. Would you like to enable them now?';
+
+  @override
+  String get notifPermissionLater => 'Later';
+
+  @override
+  String get notifPermissionEnable => 'Enable';
+
+  @override
   String notifBookingEndedBody(String spotId) {
     return 'Your booking at Spot $spotId has ended. Thank you for using YSP!';
   }
+
+  @override
+  String get notifBookingCanceledTitle => '❌ Booking canceled';
+
+  @override
+  String notifBookingCanceledBody(String spotId) {
+    return 'Spot $spotId — your booking has been canceled.';
+  }
+
+  @override
+  String get dashboardOverstaying => 'OVERSTAYING';
+
+  @override
+  String dashboardOverstayInfo(int minutes, int charge) {
+    return 'Overstay: $minutes min — $charge SPM charged';
+  }
+
+  @override
+  String get dashboardEndBookingNow => 'End now';
+
+  @override
+  String get dashboardEndBookingConfirmTitle => 'End booking';
+
+  @override
+  String get dashboardEndBookingConfirmContent => 'The sensor confirms you\'ve left your spot. Do you want to end this booking now?';
 }

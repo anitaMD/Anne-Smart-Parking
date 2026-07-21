@@ -52,6 +52,8 @@ abstract class FirestoreServiceBase {
   Future<String> createBookingAtomic(BookingModel booking);
   Future<List<BookingModel>> getUserUnarchivedBookings(String uid);
   Future<List<BookingModel>> getUserArchivedBookings(String uid);
+  Stream<List<BookingModel>> watchUserUnarchivedBookings(String uid);
+  Stream<List<BookingModel>> watchUserArchivedBookings(String uid);
   Future<List<BookingModel>> getAllUserBookings(String uid);
   Stream<List<BookingModel>> watchUserBookings(String uid);
   Future<void> updateBookingStatus(String bookingId, BookingStatus status);
@@ -109,6 +111,42 @@ class FirestoreService implements FirestoreServiceBase {
       _db.collection('locations_v2');
   CollectionReference<Map<String, dynamic>> get _bookings =>
       _db.collection('slotsReservations_v2');
+
+  // ── Requête centralisée — réservations "actives" ─────────────
+  //
+  // isArchived==false est LE filtre définitif pour "cette réservation
+  // compte-t-elle encore" (couvre canceled ET completed, peu importe
+  // la raison — départ anticipé volontaire ou clôture normale). Une
+  // réservation archivée ne doit JAMAIS bloquer une place ou un
+  // véhicule, peu importe son bookingEnd original.
+  //
+  // Centralise ce qui était dupliqué (avec des bugs d'incohérence
+  // entre les copies) dans createBookingAtomic, getOccupiedSpotIds
+  // et watchOccupiedSpotIds.
+  Query<Map<String, dynamic>> _activeBookingsQuery({
+    String? parkingId,
+    String? spotId,
+    String? vehicleId,
+    DateTime? startBefore,
+  }) {
+    Query<Map<String, dynamic>> query =
+        _bookings.where('isArchived', isEqualTo: false);
+
+    if (parkingId != null) {
+      query = query.where('parkingId', isEqualTo: parkingId);
+    }
+    if (spotId != null) {
+      query = query.where('spotId', isEqualTo: spotId);
+    }
+    if (vehicleId != null) {
+      query = query.where('vehicleId', isEqualTo: vehicleId);
+    }
+    if (startBefore != null) {
+      query = query.where('bookingStart',
+          isLessThan: Timestamp.fromDate(startBefore));
+    }
+    return query;
+  }
 
   // ── Users ─────────────────────────────────────────────────
   @override
@@ -233,20 +271,26 @@ class FirestoreService implements FirestoreServiceBase {
     required DateTime bookingStart,
     required DateTime bookingEnd,
   }) async {
-    // Un seul range filter → pas besoin d'index composite
-    final snap = await _bookings
-        .where('parkingId', isEqualTo: parkingId)
-        .where('status', whereNotIn: ['canceled'])
-        .where('bookingStart', isLessThan: Timestamp.fromDate(bookingEnd))
-        .get();
+    final snap = await _activeBookingsQuery(
+      parkingId: parkingId,
+      startBefore: bookingEnd,
+    ).get();
 
-    // Filtrer le second range côté Dart
+    // Chevauchement — réutilise la même logique testée que pour les
+    // conflits de création (une seule source de vérité).
     return snap.docs
         .where((doc) {
-          final end = (doc['bookingEnd'] as Timestamp).toDate();
-          return end.isAfter(bookingStart);
+          final data = doc.data();
+          final start = (data['bookingStart'] as Timestamp).toDate();
+          final end = (data['bookingEnd'] as Timestamp).toDate();
+          return doTimeSlotsOverlap(
+            aStart: start,
+            aEnd: end,
+            bStart: bookingStart,
+            bEnd: bookingEnd,
+          );
         })
-        .map((doc) => doc['spotId'] as String)
+        .map((doc) => (doc.data())['spotId'] as String)
         .toSet();
   }
 
@@ -256,18 +300,23 @@ class FirestoreService implements FirestoreServiceBase {
     required DateTime bookingStart,
     required DateTime bookingEnd,
   }) {
-    return _bookings
-        .where('parkingId', isEqualTo: parkingId)
-        .where('status', whereNotIn: ['canceled'])
-        .where('bookingStart', isLessThan: Timestamp.fromDate(bookingEnd))
-        .snapshots()
-        .map((snap) => snap.docs
-            .where((doc) {
-              final end = (doc['bookingEnd'] as Timestamp).toDate();
-              return end.isAfter(bookingStart);
-            })
-            .map((doc) => doc['spotId'] as String)
-            .toSet());
+    return _activeBookingsQuery(
+      parkingId: parkingId,
+      startBefore: bookingEnd,
+    ).snapshots().map((snap) => snap.docs
+        .where((doc) {
+          final data = doc.data();
+          final start = (data['bookingStart'] as Timestamp).toDate();
+          final end = (data['bookingEnd'] as Timestamp).toDate();
+          return doTimeSlotsOverlap(
+            aStart: start,
+            aEnd: end,
+            bStart: bookingStart,
+            bEnd: bookingEnd,
+          );
+        })
+        .map((doc) => (doc.data())['spotId'] as String)
+        .toSet());
   }
   // ── Bookings ──────────────────────────────────────────────
 
@@ -285,17 +334,16 @@ class FirestoreService implements FirestoreServiceBase {
       // "Terminer maintenant" ou une clôture normale au capteur).
       // Une réservation archivée ne bloque jamais un nouveau créneau,
       // peu importe son bookingEnd original.
-      final snap = await _bookings
-          .where('parkingId', isEqualTo: booking.parkingId)
-          .where('spotId', isEqualTo: booking.spotId)
-          .where('isArchived', isEqualTo: false)
-          .where('bookingStart',
-              isLessThan: Timestamp.fromDate(booking.bookingEnd))
-          .get();
+      final snap = await _activeBookingsQuery(
+        parkingId: booking.parkingId,
+        spotId: booking.spotId,
+        startBefore: booking.bookingEnd,
+      ).get();
 
       final conflict = snap.docs.any((doc) {
-        final docStart = (doc['bookingStart'] as Timestamp).toDate();
-        final docEnd = (doc['bookingEnd'] as Timestamp).toDate();
+        final data = doc.data();
+        final docStart = (data['bookingStart'] as Timestamp).toDate();
+        final docEnd = (data['bookingEnd'] as Timestamp).toDate();
         return doTimeSlotsOverlap(
           aStart: docStart,
           aEnd: docEnd,
@@ -318,15 +366,15 @@ class FirestoreService implements FirestoreServiceBase {
       // future déjà validée sans conflit (voir booking_exceptions.dart
       // pour la note complète).
       if (!booking.bookingStart.isAfter(now)) {
-        final overstaySnap = await _bookings
-            .where('parkingId', isEqualTo: booking.parkingId)
-            .where('spotId', isEqualTo: booking.spotId)
-            .where('isArchived', isEqualTo: false)
-            .get();
+        final overstaySnap = await _activeBookingsQuery(
+          parkingId: booking.parkingId,
+          spotId: booking.spotId,
+        ).get();
 
         final activeOverstay = overstaySnap.docs.any((doc) {
-          final end = (doc['bookingEnd'] as Timestamp).toDate();
-          final departed = doc['vehicleDepartedAt'] as Timestamp?;
+          final data = doc.data();
+          final end = (data['bookingEnd'] as Timestamp).toDate();
+          final departed = data['vehicleDepartedAt'] as Timestamp?;
           return end.isBefore(now) && departed == null;
         });
 
@@ -336,15 +384,14 @@ class FirestoreService implements FirestoreServiceBase {
       }
 
       // 2. Vérifier conflit de VÉHICULE (même véhicule, n'importe quel parking)
-      final vehicleSnap = await _bookings
-          .where('vehicleId', isEqualTo: booking.vehicleId)
-          .where('isArchived', isEqualTo: false)
-          .where('bookingStart',
-              isLessThan: Timestamp.fromDate(booking.bookingEnd))
-          .get();
+      final vehicleSnap = await _activeBookingsQuery(
+        vehicleId: booking.vehicleId,
+        startBefore: booking.bookingEnd,
+      ).get();
 
       final vehicleConflict = vehicleSnap.docs.any((doc) {
-        final end = (doc['bookingEnd'] as Timestamp).toDate();
+        final data = doc.data();
+        final end = (data['bookingEnd'] as Timestamp).toDate();
         return end.isAfter(booking.bookingStart);
       });
 
@@ -379,6 +426,31 @@ class FirestoreService implements FirestoreServiceBase {
         .orderBy('createdAt')
         .get();
     return snapshot.docs.map(BookingModel.fromFirestore).toList();
+  }
+
+  // ── Versions "stream" — mises à jour en temps réel, notamment
+  // pour refléter les écritures du script Raspberry Pi (arrivée,
+  // dépassement, départ) sans nécessiter de rafraîchissement manuel
+  // ni de redémarrage de l'app côté utilisateur. ────────────────
+
+  @override
+  Stream<List<BookingModel>> watchUserUnarchivedBookings(String uid) {
+    return _bookings
+        .where('clientId', isEqualTo: uid)
+        .where('isArchived', isEqualTo: false)
+        .orderBy('bookingStart')
+        .snapshots()
+        .map((snap) => snap.docs.map(BookingModel.fromFirestore).toList());
+  }
+
+  @override
+  Stream<List<BookingModel>> watchUserArchivedBookings(String uid) {
+    return _bookings
+        .where('clientId', isEqualTo: uid)
+        .where('isArchived', isEqualTo: true)
+        .orderBy('createdAt')
+        .snapshots()
+        .map((snap) => snap.docs.map(BookingModel.fromFirestore).toList());
   }
 
   @override

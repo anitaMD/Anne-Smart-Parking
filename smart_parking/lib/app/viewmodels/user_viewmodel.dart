@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_parking/app/screens/settings/settings_screen.dart';
 import 'package:smart_parking/app/services/notification_service.dart';
 import '../models/user_model.dart';
 import '../models/vehicle_model.dart';
@@ -121,6 +122,23 @@ class UserNotifier extends Notifier<UserState> {
 
       // Si un appel plus récent a démarré entre-temps, on abandonne
       if (myGeneration != _loadGeneration) return;
+
+      // Si l'utilisateur n'a jamais changé la langue manuellement,
+      // preferredLanguage n'a jamais été écrit dans Firestore — le
+      // script Raspberry Pi retombe alors sur le français par
+      // défaut pour ses notifications. On corrige ça une fois ici,
+      // avec la langue actuellement affichée dans l'app (déjà celle
+      // du téléphone par défaut, ou un choix déjà persistant côté
+      // SharedPreferences).
+      final loadedUser = results[0] as UserModel?;
+      if (loadedUser != null && loadedUser.preferredLanguage == null) {
+        final currentLocale = ref.read(localeProvider).languageCode;
+        _firestoreService.updateUser(uid, {
+          'preferredLanguage': currentLocale,
+        }).catchError((e) {
+          debugPrint('[User] Erreur backfill preferredLanguage: $e');
+        });
+      }
 
       state = UserState(
         user: results[0] as UserModel?,

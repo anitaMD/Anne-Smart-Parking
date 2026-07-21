@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/app/models/notification_model.dart';
 import 'package:smart_parking/app/models/user_model.dart';
 import 'package:smart_parking/app/models/vehicle_model.dart';
@@ -151,6 +152,9 @@ ProviderContainer _makeContainer(
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
+
   // ── 1. UserState — logique pure ───────────────────────────
 
   group('UserState — hasVehicles', () {
@@ -368,6 +372,11 @@ void main() {
 
       await container.read(userProvider.notifier).loadUserData('uid-1');
 
+      // Vide les appels accumulés par loadUserData (le backfill
+      // preferredLanguage peut avoir déclenché updateUser ici) — on
+      // ne veut vérifier QUE ce que updateProfilePicture fait.
+      fakeService.updatedFieldsCalls.clear();
+
       await container
           .read(userProvider.notifier)
           .updateProfilePicture(File('fake_path.jpg'), 'uid-1');
@@ -389,6 +398,11 @@ void main() {
       addTearDown(container.dispose);
 
       await container.read(userProvider.notifier).loadUserData('uid-1');
+
+      // Vide les appels accumulés par loadUserData (le backfill
+      // preferredLanguage peut avoir déclenché updateUser ici) —
+      // on ne veut vérifier QUE ce que updateProfilePicture fait.
+      fakeService.updatedFieldsCalls.clear();
 
       await container
           .read(userProvider.notifier)

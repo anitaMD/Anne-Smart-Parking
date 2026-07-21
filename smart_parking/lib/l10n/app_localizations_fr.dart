@@ -315,6 +315,20 @@ class AppLocalizationsFr extends AppLocalizations {
   String get walletPortfolio => 'Portefeuille YSP';
 
   @override
+  String get walletDebtLabel => 'Dette';
+
+  @override
+  String get walletDebtSubtitle => 'Solde à régulariser';
+
+  @override
+  String bookingHistoryOverstayLine(int minutes, String charge) {
+    return 'Dépassement : $minutes min — $charge SPM';
+  }
+
+  @override
+  String get bookingHistoryEmptySubtitle => 'Vos réservations apparaîtront ici';
+
+  @override
   String get panelFavParkings => 'Mes Favoris';
 
   @override
@@ -1123,7 +1137,44 @@ class AppLocalizationsFr extends AppLocalizations {
   String get bookingSpotOverstayConflict => 'Cette place est actuellement occupée par un véhicule en dépassement de créneau. Veuillez réessayer dans quelques minutes ou choisir une autre place.';
 
   @override
+  String get notifPermissionTitle => 'Activer les notifications';
+
+  @override
+  String get notifPermissionBody => 'YSP a besoin de la permission notifications pour vous alerter du début/fin de vos réservations et des rechargements. Voulez-vous les activer maintenant ?';
+
+  @override
+  String get notifPermissionLater => 'Plus tard';
+
+  @override
+  String get notifPermissionEnable => 'Activer';
+
+  @override
   String notifBookingEndedBody(String spotId) {
     return 'Votre réservation Place $spotId est terminée. Merci d\'avoir utilisé YSP !';
   }
+
+  @override
+  String get notifBookingCanceledTitle => '❌ Réservation annulée';
+
+  @override
+  String notifBookingCanceledBody(String spotId) {
+    return 'Place $spotId — votre réservation a bien été annulée.';
+  }
+
+  @override
+  String get dashboardOverstaying => 'EN DÉPASSEMENT';
+
+  @override
+  String dashboardOverstayInfo(int minutes, int charge) {
+    return 'Dépassement : $minutes min — $charge SPM facturés';
+  }
+
+  @override
+  String get dashboardEndBookingNow => 'Terminer maintenant';
+
+  @override
+  String get dashboardEndBookingConfirmTitle => 'Terminer la réservation';
+
+  @override
+  String get dashboardEndBookingConfirmContent => 'Le capteur confirme que vous avez quitté votre place. Voulez-vous terminer cette réservation maintenant ?';
 }

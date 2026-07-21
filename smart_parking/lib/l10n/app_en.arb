@@ -372,8 +372,26 @@
   "@walletYspCoin": { "description": "Wallet coin name" },
   "walletPortfolio": "YSP Wallet",
   "@walletPortfolio": { "description": "Wallet portfolio label" },
-  
+  "walletDebtLabel": "Debt",
+"@walletDebtLabel": {
+  "description": "Label shown when wallet balance is negative"
+},
 
+"walletDebtSubtitle": "Balance to settle",
+"@walletDebtSubtitle": {
+  "description": "Explanatory subtitle when balance is negative"
+},
+"bookingHistoryOverstayLine": "Overstay: {minutes} min — {charge} SPM",
+"@bookingHistoryOverstayLine": {
+  "description": "Overstay charge line in booking history",
+  "placeholders": {
+    "minutes": { "type": "int" },
+    "charge": { "type": "String" }
+  }
+},"bookingHistoryEmptySubtitle": "Your bookings will appear here",
+"@bookingHistoryEmptySubtitle": {
+  "description": "Empty state subtitle in booking history"
+},
   "panelFavParkings": "My Favourites",
 "@panelFavParkings": { "description": "Favorite parkings tab" },
 "panelNoFavParkings": "No favourite parking yet",
@@ -1294,9 +1312,57 @@
 "@bookingSpotOverstayConflict": {
   "description": "Overstay conflict error with actively overstaying vehicle"
 },
+"notifPermissionTitle": "Enable notifications",
+"@notifPermissionTitle": { "description": "Notification permission dialog title" },
+"notifPermissionBody": "YSP needs notification permission to alert you about booking start/end and top ups. Would you like to enable them now?",
+"@notifPermissionBody": { "description": "Notification permission dialog body" },
+"notifPermissionLater": "Later",
+"@notifPermissionLater": { "description": "Postpone permission button" },
+"notifPermissionEnable": "Enable",
+"@notifPermissionEnable": { "description": "Enable permission button" },
 "notifBookingEndedBody": "Your booking at Spot {spotId} has ended. Thank you for using YSP!",
 "@notifBookingEndedBody": {
   "description": "Booking ended body",
   "placeholders": { "spotId": { "type": "String" } }
+},
+
+"notifBookingCanceledTitle": "❌ Booking canceled",
+"@notifBookingCanceledTitle": {
+  "description": "Booking canceled notification title"
+},
+
+"notifBookingCanceledBody": "Spot {spotId} — your booking has been canceled.",
+"@notifBookingCanceledBody": {
+  "description": "Booking canceled notification body",
+  "placeholders": {
+    "spotId": { "type": "String" }
+  }
+},
+"dashboardOverstaying": "OVERSTAYING",
+"@dashboardOverstaying": {
+  "description": "Overstaying booking status badge"
+},
+
+"dashboardOverstayInfo": "Overstay: {minutes} min — {charge} SPM charged",
+"@dashboardOverstayInfo": {
+  "description": "Overstay info line on dashboard card",
+  "placeholders": {
+    "minutes": { "type": "int" },
+    "charge": { "type": "int" }
+  }
+},
+"dashboardEndBookingNow": "End now",
+"@dashboardEndBookingNow": {
+  "description": "Button text to end a booking before its end time, once departure is confirmed by the sensor"
+},
+
+"dashboardEndBookingConfirmTitle": "End booking",
+"@dashboardEndBookingConfirmTitle": {
+  "description": "Confirmation dialog title for ending a booking early"
+},
+
+"dashboardEndBookingConfirmContent": "The sensor confirms you've left your spot. Do you want to end this booking now?",
+"@dashboardEndBookingConfirmContent": {
+  "description": "Confirmation dialog body for ending a booking early"
 }
 }

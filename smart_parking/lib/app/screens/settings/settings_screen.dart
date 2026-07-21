@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/l10n/app_localizations.dart';
+import 'package:smart_parking/app/viewmodels/auth_viewmodel.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 
@@ -40,26 +41,76 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
 
 // Langue
 final localeProvider = StateNotifierProvider<LocaleNotifier, Locale>((ref) {
-  return LocaleNotifier();
+  return LocaleNotifier(ref);
 });
 
 class LocaleNotifier extends StateNotifier<Locale> {
-  LocaleNotifier() : super(const Locale('fr', 'FR')) {
+  final Ref ref;
+
+  // Langue du téléphone au tout premier lancement (avant toute
+  // préférence sauvegardée) — repli sur français si la langue du
+  // système n'est ni fr ni en (aucun ARB pour d'autres langues).
+  LocaleNotifier(this.ref) : super(_deviceLocale()) {
     _load();
+  }
+
+  static Locale _deviceLocale() {
+    final deviceLang =
+        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    return deviceLang == 'en'
+        ? const Locale('en', 'US')
+        : const Locale('fr', 'FR');
   }
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    final lang = prefs.getString('language') ?? 'fr';
-    state = lang == 'en' ? const Locale('en', 'US') : const Locale('fr', 'FR');
-    Get.updateLocale(state); //
+    final savedLang = prefs.getString('language');
+
+    // Si l'utilisateur a déjà choisi une langue manuellement dans le
+    // passé, ce choix prime toujours sur la langue du téléphone.
+    // Sinon, on garde la langue du téléphone détectée au constructeur.
+    if (savedLang != null) {
+      state = savedLang == 'en'
+          ? const Locale('en', 'US')
+          : const Locale('fr', 'FR');
+    }
+
+    // Get.updateLocale() nécessite un contexte GetX/rendu Flutter
+    // réel (GetMaterialApp monté) — Get.context reste null tant
+    // qu'aucune vraie app n'a été construite (notamment dans les
+    // tests unitaires purs, sans jamais appeler pumpWidget). On
+    // évite complètement l'appel dans ce cas plutôt que d'essayer
+    // de rattraper l'erreur après coup (l'assertion Flutter interne
+    // qu'il déclenche remonte de façon asynchrone, hors de portée
+    // d'un try-catch classique).
+    if (Get.context != null) {
+      Get.updateLocale(state);
+    }
   }
 
   Future<void> setLocale(Locale locale) async {
     state = locale;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('language', locale.languageCode);
-    Get.updateLocale(locale);
+    if (Get.context != null) {
+      Get.updateLocale(locale);
+    }
+
+    // Persiste aussi côté Firestore — nécessaire pour que le script
+    // Raspberry Pi (arrivée/dépassement/départ) puisse écrire les
+    // notifications dans la bonne langue, puisqu'il n'a pas accès
+    // aux SharedPreferences du téléphone.
+    final authState = ref.read(authProvider);
+    if (authState is AuthAuthenticated) {
+      try {
+        await ref.read(firestoreServiceProvider).updateUser(
+          authState.user.id,
+          {'preferredLanguage': locale.languageCode},
+        );
+      } catch (e) {
+        debugPrint('[Locale] Erreur sauvegarde Firestore: $e');
+      }
+    }
   }
 }
 

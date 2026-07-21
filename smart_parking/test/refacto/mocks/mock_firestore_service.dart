@@ -102,7 +102,13 @@ class MockFirestoreService implements FirestoreServiceBase {
           required DateTime bookingStart,
           required DateTime bookingEnd}) async =>
       {};
+  @override
+  Stream<List<BookingModel>> watchUserUnarchivedBookings(String uid) =>
+      const Stream.empty();
 
+  @override
+  Stream<List<BookingModel>> watchUserArchivedBookings(String uid) =>
+      const Stream.empty();
   @override
   Future<void> updateBookingFields(
       String bookingId, Map<String, dynamic> fields) async {}

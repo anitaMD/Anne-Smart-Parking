@@ -707,6 +707,30 @@ abstract class AppLocalizations {
   /// **'YSP Wallet'**
   String get walletPortfolio;
 
+  /// Label shown when wallet balance is negative
+  ///
+  /// In en, this message translates to:
+  /// **'Debt'**
+  String get walletDebtLabel;
+
+  /// Explanatory subtitle when balance is negative
+  ///
+  /// In en, this message translates to:
+  /// **'Balance to settle'**
+  String get walletDebtSubtitle;
+
+  /// Overstay charge line in booking history
+  ///
+  /// In en, this message translates to:
+  /// **'Overstay: {minutes} min — {charge} SPM'**
+  String bookingHistoryOverstayLine(int minutes, String charge);
+
+  /// Empty state subtitle in booking history
+  ///
+  /// In en, this message translates to:
+  /// **'Your bookings will appear here'**
+  String get bookingHistoryEmptySubtitle;
+
   /// Favorite parkings tab
   ///
   /// In en, this message translates to:
@@ -2219,11 +2243,77 @@ abstract class AppLocalizations {
   /// **'This spot is currently occupied by a vehicle exceeding its reserved time. Please try again in a few minutes or choose another spot.'**
   String get bookingSpotOverstayConflict;
 
+  /// Notification permission dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Enable notifications'**
+  String get notifPermissionTitle;
+
+  /// Notification permission dialog body
+  ///
+  /// In en, this message translates to:
+  /// **'YSP needs notification permission to alert you about booking start/end and top ups. Would you like to enable them now?'**
+  String get notifPermissionBody;
+
+  /// Postpone permission button
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get notifPermissionLater;
+
+  /// Enable permission button
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get notifPermissionEnable;
+
   /// Booking ended body
   ///
   /// In en, this message translates to:
   /// **'Your booking at Spot {spotId} has ended. Thank you for using YSP!'**
   String notifBookingEndedBody(String spotId);
+
+  /// Booking canceled notification title
+  ///
+  /// In en, this message translates to:
+  /// **'❌ Booking canceled'**
+  String get notifBookingCanceledTitle;
+
+  /// Booking canceled notification body
+  ///
+  /// In en, this message translates to:
+  /// **'Spot {spotId} — your booking has been canceled.'**
+  String notifBookingCanceledBody(String spotId);
+
+  /// Overstaying booking status badge
+  ///
+  /// In en, this message translates to:
+  /// **'OVERSTAYING'**
+  String get dashboardOverstaying;
+
+  /// Overstay info line on dashboard card
+  ///
+  /// In en, this message translates to:
+  /// **'Overstay: {minutes} min — {charge} SPM charged'**
+  String dashboardOverstayInfo(int minutes, int charge);
+
+  /// Button text to end a booking before its end time, once departure is confirmed by the sensor
+  ///
+  /// In en, this message translates to:
+  /// **'End now'**
+  String get dashboardEndBookingNow;
+
+  /// Confirmation dialog title for ending a booking early
+  ///
+  /// In en, this message translates to:
+  /// **'End booking'**
+  String get dashboardEndBookingConfirmTitle;
+
+  /// Confirmation dialog body for ending a booking early
+  ///
+  /// In en, this message translates to:
+  /// **'The sensor confirms you\'ve left your spot. Do you want to end this booking now?'**
+  String get dashboardEndBookingConfirmContent;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

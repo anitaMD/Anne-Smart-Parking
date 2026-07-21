@@ -130,6 +130,14 @@ class _FakeFirestoreServiceWithBookings extends MockFirestoreService {
       archived;
 
   @override
+  Stream<List<BookingModel>> watchUserUnarchivedBookings(String uid) =>
+      Stream.value(unarchived);
+
+  @override
+  Stream<List<BookingModel>> watchUserArchivedBookings(String uid) =>
+      Stream.value(archived);
+
+  @override
   Future<void> updateBookingFields(
       String bookingId, Map<String, dynamic> fields) async {
     // no-op — simule une écriture réussie
@@ -138,8 +146,8 @@ class _FakeFirestoreServiceWithBookings extends MockFirestoreService {
 
 class _FailingFirestoreService extends MockFirestoreService {
   @override
-  Future<List<BookingModel>> getUserUnarchivedBookings(String uid) async {
-    throw Exception('Network error simulée');
+  Stream<List<BookingModel>> watchUserUnarchivedBookings(String uid) {
+    return Stream.error(Exception('Network error simulée'));
   }
 }
 
@@ -416,6 +424,7 @@ void main() {
       addTearDown(container.dispose);
 
       await container.read(bookingProvider.notifier).loadBookings('uid-1');
+      await Future.delayed(Duration.zero); // laisse le stream émettre
 
       final state = container.read(bookingProvider);
       expect(state.unArchivedBookings.length, 2);
@@ -428,6 +437,7 @@ void main() {
       addTearDown(container.dispose);
 
       await container.read(bookingProvider.notifier).loadBookings('uid-1');
+      await Future.delayed(Duration.zero);
 
       final state = container.read(bookingProvider);
       expect(state.isLoading, isFalse);
@@ -446,6 +456,7 @@ void main() {
       await container
           .read(bookingProvider.notifier)
           .loadArchivedBookings('uid-1');
+      await Future.delayed(Duration.zero);
 
       final state = container.read(bookingProvider);
       expect(state.allArchivedBookings.length, 1);
@@ -463,6 +474,7 @@ void main() {
       addTearDown(container.dispose);
 
       await container.read(bookingProvider.notifier).loadBookings('uid-1');
+      await Future.delayed(Duration.zero);
       expect(container.read(bookingProvider).unArchivedBookings.length, 1);
 
       await container.read(bookingProvider.notifier).cancelBooking('to-cancel');

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_parking/app/core/utils/number_formatter.dart';
+import 'package:smart_parking/app/core/utils/overstay_billing_util.dart';
 import 'package:smart_parking/app/services/notification_service.dart';
 import 'package:smart_parking/l10n/app_localizations.dart';
 import 'package:smart_parking/app/models/vehicle_model.dart';
@@ -324,38 +325,6 @@ class _HomeScreenDrawerState extends ConsumerState<HomeScreenDrawer>
                           : _current == _Section.settings
                               ? SettingsScreen()
                               : _PlaceholderBody(label: _sectionTitle(l10n)),
-      /*floatingActionButton: _current == _Section.dashboard
-          ? Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 15,
-                    spreadRadius: 5,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: FloatingActionButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ParkingMapScreen()),
-                ),
-                backgroundColor: Colors.white,
-                elevation: 0,
-                shape: const CircleBorder(),
-                tooltip: l10n.dashboardVoirCarte,
-                child: Icon(
-                  Icons.map_outlined,
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  size: 26,
-                ),
-              ),
-            )
-          : null,*/
     );
   }
 }
@@ -1135,12 +1104,14 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
   int _lastSeconds = 0;
 
   String _statusLabel(AppLocalizations l10n) {
+    if (widget.booking.isOverstaying) return l10n.dashboardOverstaying;
     if (widget.booking.isOngoing) return l10n.bookingStatusOngoing;
     if (widget.booking.secondsUntilStart < 0) return l10n.dashboardLate;
     return l10n.bookingStatusUpcoming;
   }
 
   Color get _statusColor {
+    if (widget.booking.isOverstaying) return AppColors.error;
     if (widget.booking.isOngoing) return AppColors.success;
     if (widget.booking.secondsUntilStart < 0) return AppColors.error;
     if (widget.booking.secondsUntilStart > 0) return AppColors.info;
@@ -1164,7 +1135,14 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
+
+    // Force un rebuild périodique (dashboardTickerProvider) — utilisé
+    // pour rafraîchir l'estimation de dépassement en temps réel entre
+    // deux vérifications réelles du script Raspberry Pi.
+    ref.watch(dashboardTickerProvider);
+
     ref.listen(dashboardTickerProvider, (_, __) {
+      if (widget.booking.isOverstaying) return; // minuteur masqué, rien à faire
       final newSeconds = widget.isOngoing
           ? widget.booking.secondsUntilEnd
           : widget.booking.secondsUntilStart.abs();
@@ -1189,6 +1167,29 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
       orElse: () => parkings.first,
     );
     final parkingName = parking.name;
+
+    // ── Estimation de dépassement en temps réel ────────────────
+    // Le script Pi ne facture réellement que toutes les X secondes
+    // (CHECK_INTERVAL_SECONDS) — entre deux passages, on calcule une
+    // estimation client avec la MÊME formule déjà testée
+    // (computeOverstayCharge), pour un affichage qui semble vivant
+    // plutôt que figé entre deux vérifications serveur.
+    int liveOverstayMinutes = widget.booking.overstayMinutes;
+    int liveOverstayCharge = widget.booking.overstayCharge;
+    if (widget.booking.isOverstaying) {
+      final liveResult = computeOverstayCharge(
+        bookingEnd: widget.booking.bookingEnd,
+        now: DateTime.now(),
+        lastCheck: widget.booking.lastOverstayCheckAt,
+        feePerSlot: parking.feePerSlot,
+        currentOverstayMinutes: widget.booking.overstayMinutes,
+        currentOverstayCharge: widget.booking.overstayCharge,
+      );
+      if (liveResult != null) {
+        liveOverstayMinutes = liveResult.newOverstayMinutes;
+        liveOverstayCharge = liveResult.newOverstayCharge;
+      }
+    }
 
     return Container(
       padding: const EdgeInsets.all(AppSizes.spaceL),
@@ -1264,26 +1265,47 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
           // Countdown + infos
           Row(
             children: [
-              CircularCountDownTimer(
-                duration: seconds > 0 ? seconds : 1,
-                initialDuration: 0,
-                controller: _controller,
-                width: 88,
-                height: 88,
-                ringColor: Colors.white.withValues(alpha: 0.25),
-                fillColor: Colors.white,
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
-                strokeWidth: 5,
-                strokeCap: StrokeCap.round,
-                textStyle: const TextStyle(
-                    fontSize: 12,
+              // En dépassement — le minuteur circulaire n'a plus de
+              // sens (secondsUntilEnd est négatif). On affiche plutôt
+              // une icône d'alerte fixe, le vrai décompte de minutes
+              // de dépassement est donné dans les infos ci-dessous.
+              if (widget.booking.isOverstaying)
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.15),
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.4), width: 3),
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
                     color: Colors.white,
-                    fontWeight: FontWeight.w900),
-                textFormat: CountdownTextFormat.HH_MM_SS,
-                isReverse: true,
-                isReverseAnimation: true,
-                autoStart: true,
-              ),
+                    size: 40,
+                  ),
+                )
+              else
+                CircularCountDownTimer(
+                  duration: seconds > 0 ? seconds : 1,
+                  initialDuration: 0,
+                  controller: _controller,
+                  width: 88,
+                  height: 88,
+                  ringColor: Colors.white.withValues(alpha: 0.25),
+                  fillColor: Colors.white,
+                  backgroundColor: Colors.white.withValues(alpha: 0.1),
+                  strokeWidth: 5,
+                  strokeCap: StrokeCap.round,
+                  textStyle: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900),
+                  textFormat: CountdownTextFormat.HH_MM_SS,
+                  isReverse: true,
+                  isReverseAnimation: true,
+                  autoStart: true,
+                ),
               const SizedBox(width: AppSizes.spaceL),
               Expanded(
                 child: Column(
@@ -1312,20 +1334,33 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
                     // Coût
                     _InfoRow(
                       icon: Icons.monetization_on_outlined,
-                      text: '${widget.booking.totalCost} SPM',
+                      text: '${formatSPM(widget.booking.totalCost)} SPM',
                     ),
+                    // Dépassement — n'apparaît que si applicable, et
+                    // utilise l'estimation TEMPS RÉEL (pas juste la
+                    // dernière valeur synchronisée par le script Pi).
+                    if (widget.booking.isOverstaying &&
+                        liveOverstayMinutes > 0) ...[
+                      const SizedBox(height: AppSizes.spaceXS),
+                      _InfoRow(
+                        icon: Icons.timer_outlined,
+                        text: l10n.dashboardOverstayInfo(
+                          liveOverstayMinutes,
+                          liveOverstayCharge,
+                        ),
+                        bold: true,
+                      ),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
           // ── Bouton "Terminer maintenant" ──────────────────────
-          // Visible uniquement si la réservation est en cours, que
-          // le véhicule est bien arrivé, et pas encore parti. Le
-          // bouton ne devient ACTIF que si le capteur confirme déjà
-          // un vrai départ physique — empêche de contourner la
-          // facturation au dépassement en se déclarant "parti" tout
-          // en restant garé.
+          // Visible UNIQUEMENT une fois que le capteur confirme déjà
+          // un départ physique réel — jamais affiché comme "en
+          // attente" pendant un stationnement normal (ça n'a de sens
+          // que si l'utilisateur essaie activement de partir).
           if (widget.isOngoing &&
               widget.booking.vehicleArrivedAt != null &&
               widget.booking.vehicleDepartedAt == null)
@@ -1336,32 +1371,33 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
                 final sensorOccupied = snapshot.data;
                 final canEnd = sensorOccupied == false;
 
+                if (!canEnd) {
+                  // Toujours garé (ou capteur pas encore lu) — rien
+                  // à afficher, pas de message "en attente".
+                  return const SizedBox.shrink();
+                }
+
                 return Padding(
                   padding: const EdgeInsets.only(top: AppSizes.spaceM),
                   child: SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: canEnd
-                          ? () => _onEndBookingEarly(context, widget.booking)
-                          : null,
-                      icon: Icon(
-                        canEnd ? Icons.check_circle_outline : Icons.sensors,
+                      onPressed: () =>
+                          _onEndBookingEarly(context, widget.booking),
+                      icon: const Icon(
+                        Icons.check_circle_outline,
                         size: 18,
-                        color: canEnd ? Colors.white : Colors.white54,
+                        color: Colors.white,
                       ),
                       label: Text(
-                        canEnd
-                            ? 'Terminer maintenant'
-                            : 'En attente de confirmation du capteur...',
-                        style: TextStyle(
-                          color: canEnd ? Colors.white : Colors.white54,
+                        l10n.dashboardEndBookingNow,
+                        style: const TextStyle(
+                          color: Colors.white,
                           fontSize: 13,
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: canEnd ? Colors.white70 : Colors.white24,
-                        ),
+                        side: const BorderSide(color: Colors.white70),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                     ),
@@ -1424,11 +1460,8 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Terminer la réservation'),
-        content: const Text(
-          'Le capteur confirme que vous avez quitté votre place. '
-          'Voulez-vous terminer cette réservation maintenant ?',
-        ),
+        title: Text(l10n.dashboardEndBookingConfirmTitle),
+        content: Text(l10n.dashboardEndBookingConfirmContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1482,17 +1515,27 @@ class _WalletCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final balance = wallet?.balance ?? 0;
+    final isDebt = balance < 0;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSizes.spaceL),
       decoration: BoxDecoration(
-        gradient: AppColors
-            .primaryGradient, // ← utilise le gradient existant de l'app
+        gradient: isDebt
+            ? LinearGradient(
+                colors: [
+                  AppColors.error,
+                  AppColors.error.withValues(alpha: 0.75),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
+            color: (isDebt ? AppColors.error : AppColors.primary)
+                .withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -1510,20 +1553,29 @@ class _WalletCard extends StatelessWidget {
                     height: 28,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFF5A623), Color(0xFFFFD37A)],
-                      ),
+                      gradient: isDebt
+                          ? const LinearGradient(
+                              colors: [Colors.white, Colors.white70],
+                            )
+                          : const LinearGradient(
+                              colors: [Color(0xFFF5A623), Color(0xFFFFD37A)],
+                            ),
                     ),
-                    child: const Icon(Icons.bolt,
-                        color: Color(0xFF1A1B4B), size: 16),
+                    child: Icon(
+                      isDebt ? Icons.warning_amber_rounded : Icons.bolt,
+                      color: const Color(0xFF1A1B4B),
+                      size: 16,
+                    ),
                   ),
                   const SizedBox(width: AppSizes.spaceXS),
-                  Text(l10n.walletYspCoin,
-                      style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3)),
+                  Text(
+                    isDebt ? l10n.walletDebtLabel : l10n.walletYspCoin,
+                    style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3),
+                  ),
                 ],
               ),
               const SizedBox(height: AppSizes.spaceM),
@@ -1535,12 +1587,18 @@ class _WalletCard extends StatelessWidget {
                       letterSpacing: -0.5)),
               const SizedBox(height: AppSizes.spaceS),
               Row(children: [
-                const Icon(Icons.account_balance_wallet_outlined,
-                    color: Colors.white60, size: 14),
+                Icon(
+                  isDebt
+                      ? Icons.info_outline
+                      : Icons.account_balance_wallet_outlined,
+                  color: Colors.white60,
+                  size: 14,
+                ),
                 const SizedBox(width: 6),
-                Text(l10n.walletPortfolio,
-                    style:
-                        const TextStyle(color: Colors.white60, fontSize: 12)),
+                Text(
+                  isDebt ? l10n.walletDebtSubtitle : l10n.walletPortfolio,
+                  style: const TextStyle(color: Colors.white60, fontSize: 12),
+                ),
               ]),
             ],
           ),

@@ -213,7 +213,8 @@ void main() {
       expect(booking.secondsUntilStart, lessThan(0));
     });
 
-    test('secondsUntilEnd est positif tant que la réservation n\'est pas terminée',
+    test(
+        'secondsUntilEnd est positif tant que la réservation n\'est pas terminée',
         () {
       final now = DateTime.now();
       final booking = _makeBooking(
@@ -289,6 +290,34 @@ void main() {
 
       expect(updated.editHistory.length, 2);
       expect(updated.wasEdited, isTrue);
+    });
+
+    test(
+        'met à jour totalCost — régression: paramètre manquant'
+        ' historiquement, découvert via editBooking()', () {
+      final now = DateTime.now();
+      final original = _makeBooking(
+        bookingStart: now,
+        bookingEnd: now.add(const Duration(hours: 1)),
+      );
+
+      final updated = original.copyWith(totalCost: 1200);
+
+      expect(updated.totalCost, 1200);
+      expect(original.totalCost, 1000,
+          reason: 'L\'original ne doit pas être modifié (immutabilité)');
+    });
+
+    test('conserve totalCost si non fourni', () {
+      final now = DateTime.now();
+      final original = _makeBooking(
+        bookingStart: now,
+        bookingEnd: now.add(const Duration(hours: 1)),
+      );
+
+      final updated = original.copyWith(spotId: 'B2');
+
+      expect(updated.totalCost, original.totalCost);
     });
   });
 

@@ -26,6 +26,7 @@ class UserModel {
   final String role; // "user" | "agent"
   final String? location;
   final String? fcmToken;
+  final String? preferredLanguage;
 
   const UserModel(
       {required this.id,
@@ -38,7 +39,8 @@ class UserModel {
       this.equalityCardPaths = const [],
       this.createdAt,
       this.location,
-      this.fcmToken});
+      this.fcmToken,
+      this.preferredLanguage});
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -55,6 +57,7 @@ class UserModel {
       ),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
       location: data['location'] as String?,
+      preferredLanguage: data['preferredLanguage'] as String?,
     );
   }
 
@@ -68,6 +71,7 @@ class UserModel {
         'role': role,
         'createdAt': FieldValue.serverTimestamp(),
         if (location != null) 'location': location,
+        if (preferredLanguage != null) 'preferredLanguage': preferredLanguage,
       };
 
   UserModel copyWith({

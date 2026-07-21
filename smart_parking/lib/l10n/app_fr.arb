@@ -408,7 +408,26 @@
   "@walletYspCoin": { "description": "Wallet coin name" },
   "walletPortfolio": "Portefeuille YSP",
   "@walletPortfolio": { "description": "Wallet portfolio label" },
+"walletDebtLabel": "Dette",
+"@walletDebtLabel": {
+  "description": "Label affiché quand le solde du wallet est négatif"
+},
 
+"walletDebtSubtitle": "Solde à régulariser",
+"@walletDebtSubtitle": {
+  "description": "Sous-titre explicatif quand le solde est négatif"
+},"bookingHistoryOverstayLine": "Dépassement : {minutes} min — {charge} SPM",
+"@bookingHistoryOverstayLine": {
+  "description": "Ligne de dépassement facturé dans l'historique de réservation",
+  "placeholders": {
+    "minutes": { "type": "int" },
+    "charge": { "type": "String" }
+  }
+},
+"bookingHistoryEmptySubtitle": "Vos réservations apparaîtront ici",
+"@bookingHistoryEmptySubtitle": {
+  "description": "Sous-titre de l'état vide dans l'historique des réservations"
+},
   "panelFavParkings": "Mes Favoris",
 "@panelFavParkings": { "description": "Favorite parkings tab" },
 "panelNoFavParkings": "Aucun parking favori",
@@ -1343,10 +1362,58 @@
 
 "notifBookingEndedTitle": "🏁 Réservation terminée",
 "@notifBookingEndedTitle": { "description": "Titre réservation terminée" },
+"notifPermissionTitle": "Activer les notifications",
+"@notifPermissionTitle": { "description": "Titre dialog permission notifications" },
+"notifPermissionBody": "YSP a besoin de la permission notifications pour vous alerter du début/fin de vos réservations et des rechargements. Voulez-vous les activer maintenant ?",
+"@notifPermissionBody": { "description": "Corps dialog permission notifications" },
+"notifPermissionLater": "Plus tard",
+"@notifPermissionLater": { "description": "Bouton reporter permission" },
+"notifPermissionEnable": "Activer",
+"@notifPermissionEnable": { "description": "Bouton activer permission" },
 
 "notifBookingEndedBody": "Votre réservation Place {spotId} est terminée. Merci d'avoir utilisé YSP !",
 "@notifBookingEndedBody": {
   "description": "Corps réservation terminée",
   "placeholders": { "spotId": { "type": "String" } }
+},
+
+"notifBookingCanceledTitle": "❌ Réservation annulée",
+"@notifBookingCanceledTitle": {
+  "description": "Titre notification annulation"
+},
+
+"notifBookingCanceledBody": "Place {spotId} — votre réservation a bien été annulée.",
+"@notifBookingCanceledBody": {
+  "description": "Corps notification annulation",
+  "placeholders": {
+    "spotId": { "type": "String" }
+  }
+},
+"dashboardOverstaying": "EN DÉPASSEMENT",
+"@dashboardOverstaying": {
+  "description": "Badge statut réservation en dépassement de créneau"
+},
+
+"dashboardOverstayInfo": "Dépassement : {minutes} min — {charge} SPM facturés",
+"@dashboardOverstayInfo": {
+  "description": "Ligne info dépassement sur la carte dashboard",
+  "placeholders": {
+    "minutes": { "type": "int" },
+    "charge": { "type": "int" }
+  }
+},
+"dashboardEndBookingNow": "Terminer maintenant",
+"@dashboardEndBookingNow": {
+  "description": "Texte du bouton pour terminer une réservation avant l'heure de fin, une fois le départ confirmé par le capteur"
+},
+
+"dashboardEndBookingConfirmTitle": "Terminer la réservation",
+"@dashboardEndBookingConfirmTitle": {
+  "description": "Titre de la boîte de dialogue de confirmation pour terminer une réservation en avance"
+},
+
+"dashboardEndBookingConfirmContent": "Le capteur confirme que vous avez quitté votre place. Voulez-vous terminer cette réservation maintenant ?",
+"@dashboardEndBookingConfirmContent": {
+  "description": "Corps de la boîte de dialogue de confirmation pour terminer une réservation en avance"
 }
 }

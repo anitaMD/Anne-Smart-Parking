@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:smart_parking/app/core/utils/number_formatter.dart';
 import 'package:smart_parking/app/screens/settings/settings_screen.dart';
 import 'package:smart_parking/app/viewmodels/user_viewmodel.dart';
 import 'package:smart_parking/l10n/app_localizations.dart';
@@ -51,13 +52,16 @@ class _BookingHistoryScreenState extends ConsumerState<BookingHistoryScreen> {
     final parkings = ref.watch(parkingProvider).parkings;
     final all = bookingState.allBookings;
 
-    final ongoing = all.where((b) => b.isOngoing).toList();
+    final ongoing = all.where((b) => b.isOngoing || b.isOverstaying).toList();
     final upcoming = all
         .where((b) => b.hasNotStarted && b.status == BookingStatus.upcoming)
         .toList();
-    // Passées = bookingEnd dans le passé ET pas annulée
-    final past =
-        all.where((b) => b.bookingEnd.isBefore(DateTime.now())).toList();
+    // Passées = statut "completed" — PAS un filtre temporel. Une
+    // réservation terminée tôt (via "Terminer maintenant") garde son
+    // bookingEnd ORIGINAL, potentiellement encore dans le futur —
+    // filtrer par bookingEnd.isBefore(now) la ferait disparaître de
+    // tous les onglets alors qu'elle est objectivement terminée.
+    final past = all.where((b) => b.status == BookingStatus.completed).toList();
     final canceled =
         all.where((b) => b.status == BookingStatus.canceled).toList();
     final l10n = AppLocalizations.of(context)!;
@@ -270,7 +274,8 @@ class _BookingCard extends ConsumerWidget {
   const _BookingCard({required this.booking, required this.parking});
 
   String _fmt(DateTime dt) => DateFormat('HH:mm').format(dt);
-  String _fmtDate(DateTime dt) => DateFormat('EEE d MMM yyyy', 'fr').format(dt);
+  String _fmtDate(DateTime dt, String locale) =>
+      DateFormat('EEE d MMM yyyy', locale).format(dt);
 
   String get _duration {
     final mins = booking.durationMinutes;
@@ -279,27 +284,43 @@ class _BookingCard extends ConsumerWidget {
     return m == 0 ? '${h}h' : '${h}h${m}min';
   }
 
+  // Priorité au statut EXPLICITE (canceled/completed) sur les
+  // heuristiques temporelles (isExpired) — une réservation terminée
+  // tôt via "Terminer maintenant" garde un bookingEnd ORIGINAL encore
+  // dans le futur, donc isExpired resterait à tort "false" et la
+  // carte afficherait "À venir" pour une réservation déjà terminée.
   Color get _statusColor {
-    if (booking.isOngoing) return AppColors.success;
     if (booking.status == BookingStatus.canceled) return AppColors.error;
-    if (booking.isExpired) return AppColors.textSecondary;
+    if (booking.status == BookingStatus.completed) {
+      return AppColors.textSecondary;
+    }
+    if (booking.isOverstaying) return AppColors.error;
+    if (booking.isOngoing) return AppColors.success;
     return AppColors.warning;
   }
 
   String _statusLabel(AppLocalizations l10n) {
-    if (booking.isOngoing) return l10n.bookingStatusOngoing;
     if (booking.status == BookingStatus.canceled) {
       return l10n.bookingStatusCanceled;
     }
-    if (booking.isExpired) return l10n.bookingStatusDone;
+    if (booking.status == BookingStatus.completed) {
+      return l10n.bookingStatusDone;
+    }
+    if (booking.isOverstaying) return l10n.dashboardOverstaying;
+    if (booking.isOngoing) return l10n.bookingStatusOngoing;
     if (booking.wasEdited) return l10n.bookingStatusUpcomingEdited;
     return l10n.bookingStatusUpcoming;
   }
 
   IconData get _statusIcon {
+    if (booking.status == BookingStatus.canceled) {
+      return Icons.cancel_outlined;
+    }
+    if (booking.status == BookingStatus.completed) {
+      return Icons.check_circle_outline;
+    }
+    if (booking.isOverstaying) return Icons.warning_amber_rounded;
     if (booking.isOngoing) return Icons.radio_button_checked;
-    if (booking.status == BookingStatus.canceled) return Icons.cancel_outlined;
-    if (booking.isExpired) return Icons.check_circle_outline;
     return Icons.schedule_outlined;
   }
 
@@ -311,6 +332,7 @@ class _BookingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final locale = ref.watch(localeProvider).languageCode;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSizes.spaceM),
@@ -404,7 +426,7 @@ class _BookingCard extends ConsumerWidget {
                 const SizedBox(height: AppSizes.spaceS),
                 _Row(
                     icon: Icons.calendar_today_outlined,
-                    text: _fmtDate(booking.bookingStart)),
+                    text: _fmtDate(booking.bookingStart, locale)),
                 const SizedBox(height: 4),
                 Builder(builder: (context) {
                   final vehicles = ref.watch(userProvider).vehicles;
@@ -432,9 +454,22 @@ class _BookingCard extends ConsumerWidget {
                 const SizedBox(height: 4),
                 _Row(
                   icon: Icons.monetization_on_outlined,
-                  text: '${booking.totalCost} SPM',
+                  text: '${formatSPM(booking.totalCost)} SPM',
                   bold: true,
                 ),
+                // Ligne dépassement — n'apparaît que si un supplément
+                // a été facturé (overstayCharge > 0)
+                if (booking.overstayCharge > 0) ...[
+                  const SizedBox(height: 4),
+                  _Row(
+                    icon: Icons.timer_outlined,
+                    text: l10n.bookingHistoryOverstayLine(
+                      booking.overstayMinutes,
+                      formatSPM(booking.overstayCharge),
+                    ),
+                    bold: true,
+                  ),
+                ],
                 if (_canEdit || _canCancel) ...[
                   const SizedBox(height: AppSizes.spaceM),
                   const Divider(height: 1),
@@ -584,8 +619,9 @@ class _EmptyState extends StatelessWidget {
               style:
                   const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: AppSizes.spaceXS),
-          const Text('Vos réservations apparaîtront ici',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+          Text(l10n.bookingHistoryEmptySubtitle,
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 13)),
         ],
       ),
     );
