@@ -2314,6 +2314,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The sensor confirms you\'ve left your spot. Do you want to end this booking now?'**
   String get dashboardEndBookingConfirmContent;
+
+  /// Alert line shown when the time slot is active but no arrival has been detected by the sensor yet
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ You are late'**
+  String get dashboardNotParkedYet;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

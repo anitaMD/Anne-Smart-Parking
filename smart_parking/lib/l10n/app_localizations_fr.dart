@@ -1177,4 +1177,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get dashboardEndBookingConfirmContent => 'Le capteur confirme que vous avez quitté votre place. Voulez-vous terminer cette réservation maintenant ?';
+
+  @override
+  String get dashboardNotParkedYet => '⚠️ En retard!';
 }

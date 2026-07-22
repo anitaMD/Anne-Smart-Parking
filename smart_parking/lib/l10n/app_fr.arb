@@ -1415,5 +1415,9 @@
 "dashboardEndBookingConfirmContent": "Le capteur confirme que vous avez quitté votre place. Voulez-vous terminer cette réservation maintenant ?",
 "@dashboardEndBookingConfirmContent": {
   "description": "Corps de la boîte de dialogue de confirmation pour terminer une réservation en avance"
+},
+"dashboardNotParkedYet": "⚠️ En retard!",
+"@dashboardNotParkedYet": {
+  "description": "Ligne d'alerte affichée quand le créneau est actif mais qu'aucune arrivée n'a encore été détectée par le capteur"
 }
 }

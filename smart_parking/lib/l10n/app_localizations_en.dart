@@ -1177,4 +1177,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardEndBookingConfirmContent => 'The sensor confirms you\'ve left your spot. Do you want to end this booking now?';
+
+  @override
+  String get dashboardNotParkedYet => '⚠️ You are late';
 }

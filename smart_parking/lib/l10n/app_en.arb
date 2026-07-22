@@ -1364,5 +1364,9 @@
 "dashboardEndBookingConfirmContent": "The sensor confirms you've left your spot. Do you want to end this booking now?",
 "@dashboardEndBookingConfirmContent": {
   "description": "Confirmation dialog body for ending a booking early"
+},
+"dashboardNotParkedYet": "⚠️ You are late",
+"@dashboardNotParkedYet": {
+  "description": "Alert line shown when the time slot is active but no arrival has been detected by the sensor yet"
 }
 }

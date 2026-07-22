@@ -1105,6 +1105,9 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
 
   String _statusLabel(AppLocalizations l10n) {
     if (widget.booking.isOverstaying) return l10n.dashboardOverstaying;
+    if (widget.booking.isOngoing && widget.booking.vehicleArrivedAt == null) {
+      return l10n.dashboardLate;
+    }
     if (widget.booking.isOngoing) return l10n.bookingStatusOngoing;
     if (widget.booking.secondsUntilStart < 0) return l10n.dashboardLate;
     return l10n.bookingStatusUpcoming;
@@ -1112,6 +1115,9 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
 
   Color get _statusColor {
     if (widget.booking.isOverstaying) return AppColors.error;
+    if (widget.booking.isOngoing && widget.booking.vehicleArrivedAt == null) {
+      return AppColors.warning;
+    }
     if (widget.booking.isOngoing) return AppColors.success;
     if (widget.booking.secondsUntilStart < 0) return AppColors.error;
     if (widget.booking.secondsUntilStart > 0) return AppColors.info;
@@ -1309,50 +1315,50 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
               const SizedBox(width: AppSizes.spaceL),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Date
-                    _InfoRow(
-                      icon: Icons.calendar_today_outlined,
-                      text: _fmtDate(widget.booking.bookingStart, locale),
-                      bold: true,
-                    ),
-                    const SizedBox(height: AppSizes.spaceXS),
-                    // Horaires
-                    _InfoRow(
-                      icon: Icons.schedule_outlined,
-                      text:
-                          '${_fmt(widget.booking.bookingStart)} ~ ${_fmt(widget.booking.bookingEnd)} [$_duration]',
-                    ),
-                    const SizedBox(height: AppSizes.spaceXS),
-                    // Place
-                    _InfoRow(
-                      icon: Icons.local_parking,
-                      text: 'Place ${widget.booking.spotId}',
-                    ),
-                    const SizedBox(height: AppSizes.spaceXS),
-                    // Coût
-                    _InfoRow(
-                      icon: Icons.monetization_on_outlined,
-                      text: '${formatSPM(widget.booking.totalCost)} SPM',
-                    ),
-                    // Dépassement — n'apparaît que si applicable, et
-                    // utilise l'estimation TEMPS RÉEL (pas juste la
-                    // dernière valeur synchronisée par le script Pi).
-                    if (widget.booking.isOverstaying &&
-                        liveOverstayMinutes > 0) ...[
-                      const SizedBox(height: AppSizes.spaceXS),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Date
                       _InfoRow(
-                        icon: Icons.timer_outlined,
-                        text: l10n.dashboardOverstayInfo(
-                          liveOverstayMinutes,
-                          liveOverstayCharge,
-                        ),
+                        icon: Icons.calendar_today_outlined,
+                        text: _fmtDate(widget.booking.bookingStart, locale),
                         bold: true,
                       ),
-                    ],
-                  ],
-                ),
+                      const SizedBox(height: AppSizes.spaceXS),
+                      // Horaires
+                      _InfoRow(
+                        icon: Icons.schedule_outlined,
+                        text:
+                            '${_fmt(widget.booking.bookingStart)} ~ ${_fmt(widget.booking.bookingEnd)} [$_duration]',
+                      ),
+                      const SizedBox(height: AppSizes.spaceXS),
+                      // Place
+                      _InfoRow(
+                        icon: Icons.local_parking,
+                        text: 'Place ${widget.booking.spotId}',
+                      ),
+                      const SizedBox(height: AppSizes.spaceXS),
+                      // Coût
+                      _InfoRow(
+                        icon: Icons.monetization_on_outlined,
+                        text: '${formatSPM(widget.booking.totalCost)} SPM',
+                      ),
+                      // Dépassement — n'apparaît que si applicable, et
+                      // utilise l'estimation TEMPS RÉEL (pas juste la
+                      // dernière valeur synchronisée par le script Pi).
+
+                      if (widget.booking.isOverstaying &&
+                          liveOverstayMinutes > 0) ...[
+                        const SizedBox(height: AppSizes.spaceXS),
+                        _InfoRow(
+                          icon: Icons.timer_outlined,
+                          text: l10n.dashboardOverstayInfo(
+                            liveOverstayMinutes,
+                            liveOverstayCharge,
+                          ),
+                          bold: true,
+                        ),
+                      ],
+                    ]),
               ),
             ],
           ),
@@ -1379,26 +1385,29 @@ class _CountdownCardState extends ConsumerState<_CountdownCard> {
 
                 return Padding(
                   padding: const EdgeInsets.only(top: AppSizes.spaceM),
-                  child: SizedBox(
-                    width: double.infinity,
+                  child: Align(
+                    alignment: Alignment.centerRight,
                     child: OutlinedButton.icon(
                       onPressed: () =>
                           _onEndBookingEarly(context, widget.booking),
                       icon: const Icon(
                         Icons.check_circle_outline,
-                        size: 18,
+                        size: 16,
                         color: Colors.white,
                       ),
                       label: Text(
                         l10n.dashboardEndBookingNow,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 13,
+                          fontSize: 12,
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.white70),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppSizes.spaceM, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
                   ),

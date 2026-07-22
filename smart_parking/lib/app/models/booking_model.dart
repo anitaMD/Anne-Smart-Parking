@@ -200,12 +200,21 @@ class BookingModel {
   bool get wasEdited => editHistory.isNotEmpty;
 
   /// Le véhicule dépasse son créneau réservé — bookingEnd est passé,
-  /// mais le capteur physique (via vehicleDepartedAt encore null)
-  /// n'a pas confirmé le départ. Utilisé pour le badge dashboard
-  /// "EN RETARD" et le déclenchement de la facturation au dépassement
-  /// côté Raspberry Pi.
+  /// le véhicule a bien été confirmé garé au moins une fois
+  /// (vehicleArrivedAt non null), mais le capteur physique n'a pas
+  /// confirmé le départ (vehicleDepartedAt encore null). Utilisé
+  /// pour le badge dashboard "EN DÉPASSEMENT" et le déclenchement de
+  /// la facturation côté Raspberry Pi.
+  ///
+  /// Une réservation JAMAIS utilisée (vehicleArrivedAt toujours null)
+  /// ne doit jamais être considérée en dépassement — sans la
+  /// condition vehicleArrivedAt != null, une résa oubliée/jamais
+  /// utilisée affichait à tort "EN DÉPASSEMENT" dès bookingEnd
+  /// dépassé, uniquement parce que vehicleDepartedAt était aussi
+  /// null par défaut (jamais garé ≠ pas encore parti).
   bool get isOverstaying =>
       DateTime.now().isAfter(bookingEnd) &&
+      vehicleArrivedAt != null &&
       vehicleDepartedAt == null &&
       status != BookingStatus.canceled &&
       !isArchived;
