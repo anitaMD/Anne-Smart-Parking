@@ -802,7 +802,7 @@
 "bookingFilterUpcoming": "À venir",
 "@bookingFilterUpcoming": { "description": "Filtre réservations à venir" },
 
-"bookingFilterPast": "Passées",
+"bookingFilterPast": "Terminées",
 "@bookingFilterPast": { "description": "Filtre réservations passées" },
 
 "bookingFilterCanceled": "Annulées",
@@ -946,7 +946,7 @@
 "@notificationsSnooze": {
   "description": "Label snooze rappel"
 },
-"notifBookingConfirmedTitle": "Réservation confirmée !",
+"notifBookingConfirmedTitle": "✔ Réservation confirmée !",
 "@notifBookingConfirmedTitle": {
   "description": "Titre notification réservation confirmée"
 },

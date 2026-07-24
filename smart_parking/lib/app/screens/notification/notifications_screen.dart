@@ -49,12 +49,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             children: [
               if (unread.isNotEmpty)
                 TextButton.icon(
-                  onPressed: () async {
-                    for (final n in unread) {
-                      await ref
-                          .read(userProvider.notifier)
-                          .markNotificationRead(uid, n.id);
-                    }
+                  onPressed: () {
+                    ref
+                        .read(userProvider.notifier)
+                        .markAllNotificationsRead(uid);
                   },
                   icon: const Icon(Icons.done_all, size: 16),
                   label: Text(l10n.notificationsMarkAllRead,

@@ -755,7 +755,7 @@
 "bookingFilterUpcoming": "Upcoming",
 "@bookingFilterUpcoming": { "description": "Upcoming bookings filter" },
 
-"bookingFilterPast": "Past",
+"bookingFilterPast": "Completed",
 "@bookingFilterPast": { "description": "Past bookings filter" },
 
 "bookingFilterCanceled": "Canceled",
@@ -897,7 +897,7 @@
 },
 
 
-"notifBookingConfirmedTitle": "Booking confirmed!",
+"notifBookingConfirmedTitle": "✔ Booking confirmed!",
 "@notifBookingConfirmedTitle": {
   "description": "Booking confirmed notification title"
 },

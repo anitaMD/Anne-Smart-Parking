@@ -359,6 +359,81 @@ void main() {
     });
   });
 
+  group('UserNotifier — markAllNotificationsRead', () {
+    test(
+        'marque toutes les notifications non lues comme lues en un'
+        ' seul appel', () async {
+      final notifs = [
+        NotificationModel(
+          id: 'n1',
+          title: 'A',
+          body: 'A',
+          isRead: false,
+          receivedAt: DateTime.now(),
+        ),
+        NotificationModel(
+          id: 'n2',
+          title: 'B',
+          body: 'B',
+          isRead: false,
+          receivedAt: DateTime.now(),
+        ),
+        NotificationModel(
+          id: 'n3',
+          title: 'C',
+          body: 'C',
+          isRead: true,
+          receivedAt: DateTime.now(),
+        ),
+      ];
+      final fakeService = _FakeUserFirestoreService(
+        userToReturn: _user(),
+        notificationsToReturn: notifs,
+      );
+      final container = _makeContainer(fakeService);
+      addTearDown(container.dispose);
+
+      await container.read(userProvider.notifier).loadUserData('uid-1');
+      expect(container.read(userProvider).unreadNotificationsCount, 2);
+
+      await container
+          .read(userProvider.notifier)
+          .markAllNotificationsRead('uid-1');
+
+      final state = container.read(userProvider);
+      expect(state.unreadNotificationsCount, 0);
+      expect(fakeService.markedReadNotifIds, containsAll(['n1', 'n2']));
+      expect(fakeService.markedReadNotifIds, isNot(contains('n3')),
+          reason: 'Une notification déjà lue ne doit pas être re-marquée '
+              'inutilement');
+    });
+
+    test('ne fait rien s\'il n\'y a aucune notification non lue', () async {
+      final fakeService = _FakeUserFirestoreService(
+        userToReturn: _user(),
+        notificationsToReturn: [
+          NotificationModel(
+            id: 'n1',
+            title: 'A',
+            body: 'A',
+            isRead: true,
+            receivedAt: DateTime.now(),
+          ),
+        ],
+      );
+      final container = _makeContainer(fakeService);
+      addTearDown(container.dispose);
+
+      await container.read(userProvider.notifier).loadUserData('uid-1');
+
+      await container
+          .read(userProvider.notifier)
+          .markAllNotificationsRead('uid-1');
+
+      expect(fakeService.markedReadNotifIds, isEmpty);
+    });
+  });
+
   group('UserNotifier — updateProfilePicture', () {
     test('upload réussi → met à jour Firestore et le state local', () async {
       final fakeService = _FakeUserFirestoreService(userToReturn: _user());

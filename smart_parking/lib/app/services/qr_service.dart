@@ -22,10 +22,19 @@ class QRService {
   // IMPORTANT : en production, cette clé doit être stockée
   // de manière sécurisée (ex: Firebase Remote Config + secrets)
   // et NON en dur dans le code.
-  static final enc.Key _key = enc.Key.fromLength(32);
-  static final enc.IV _iv = enc.IV.fromLength(16);
-  static final enc.Encrypter _encrypter =
-      enc.Encrypter(enc.AES(_key));
+  // IMPORTANT : clé FIXE et partagée entre l'app Agent et l'app
+  // Utilisateur — Key.fromLength()/IV.fromLength() génèrent des
+  // octets ALÉATOIRES à chaque démarrage, ce qui rendait le
+  // déchiffrement structurellement impossible entre deux instances
+  // distinctes (chacune avec sa propre clé aléatoire). En
+  // production, cette valeur doit être injectée via une config
+  // sécurisée (ex: --dart-define, Firebase Remote Config), jamais
+  // codée en dur comme ici.
+  static final enc.Key _key =
+      enc.Key.fromUtf8('ysp32charsAESkeyFor256bitDemo!!!'); // 32 caractères
+  static final enc.IV _iv =
+      enc.IV.fromUtf8('ysp16charsIVDemo'); // 16 caractères
+  static final enc.Encrypter _encrypter = enc.Encrypter(enc.AES(_key));
 
   // ── Chiffrement ───────────────────────────────────────────
 

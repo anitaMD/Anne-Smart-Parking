@@ -665,7 +665,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookingFilterUpcoming => 'Upcoming';
 
   @override
-  String get bookingFilterPast => 'Past';
+  String get bookingFilterPast => 'Completed';
 
   @override
   String get bookingFilterCanceled => 'Canceled';
@@ -788,7 +788,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsSnooze => 'Snooze reminder';
 
   @override
-  String get notifBookingConfirmedTitle => 'Booking confirmed!';
+  String get notifBookingConfirmedTitle => '✔ Booking confirmed!';
 
   @override
   String notifBookingConfirmedBody(String spotId, String parkingName) {

@@ -856,4 +856,260 @@ void main() {
       expect(topUps, isEmpty);
     });
   });
+
+  group('watchVehicles', () {
+    test('émet la liste des véhicules en temps réel', () async {
+      await service.addVehicle(
+          'uid-1',
+          const VehicleModel(
+            id: '',
+            brand: 'Toyota',
+            modelDetail: 'Corolla',
+            color: 'Bleu',
+            licensePlate: 'DK-1234-2024',
+            registrationYear: '2024',
+            registrationCountry: 'Sénégal',
+            registrationCity: 'Dakar',
+            countryIso: 'SN',
+            cityIso: 'DK',
+          ));
+
+      final vehicles = await service.watchVehicles('uid-1').first;
+      expect(vehicles.length, 1);
+      expect(vehicles.first.licensePlate, 'DK-1234-2024');
+    });
+  });
+
+  group('updateVehicle', () {
+    test('met à jour les champs fournis sans toucher aux autres', () async {
+      final vehicleId = await service.addVehicle(
+          'uid-1',
+          const VehicleModel(
+            id: '',
+            brand: 'Toyota',
+            modelDetail: 'Corolla',
+            color: 'Bleu',
+            licensePlate: 'DK-1234-2024',
+            registrationYear: '2024',
+            registrationCountry: 'Sénégal',
+            registrationCity: 'Dakar',
+            countryIso: 'SN',
+            cityIso: 'DK',
+          ));
+
+      await service.updateVehicle('uid-1', vehicleId, {'color': 'Rouge'});
+
+      final vehicles = await service.getVehicles('uid-1');
+      final updated = vehicles.firstWhere((v) => v.id == vehicleId);
+      expect(updated.color, 'Rouge');
+      expect(updated.licensePlate, 'DK-1234-2024',
+          reason: 'Les autres champs ne doivent pas être affectés');
+    });
+  });
+
+  group('watchParkings', () {
+    test('émet la liste des parkings en temps réel', () async {
+      await fakeFirestore.collection('locations_v2').add({
+        'name': 'ECPI Smart Parking',
+        'streetAddress': 'Rue SC-184',
+        'city': 'Dakar',
+        'countryCode': 'SN',
+        'position': const GeoPoint(14.7167, -17.4677),
+        'openingHour': '07:00',
+        'closingHour': '20:00',
+        'feePerSlot': 300,
+      });
+
+      final parkings = await service.watchParkings().first;
+      expect(parkings.length, 1);
+      expect(parkings.first.name, 'ECPI Smart Parking');
+    });
+  });
+
+  group('updateParkingSpots', () {
+    test('met à jour les champs du document de places', () async {
+      final parkingRef =
+          await fakeFirestore.collection('locations_v2').add({'name': 'P1'});
+      final spotsRef = await parkingRef.collection('spots').add({
+        'regularIds': ['A0', 'A1'],
+        'availableIds': ['A0', 'A1'],
+      });
+
+      await service.updateParkingSpots(
+        parkingRef.id,
+        spotsRef.id,
+        {
+          'availableIds': ['A1']
+        },
+      );
+
+      final spots = await service.getParkingSpots(parkingRef.id);
+      expect(spots!.availableIds, ['A1']);
+    });
+  });
+
+  group('updateVehicleStatus', () {
+    test('met à jour vehicleStatus sur la réservation', () async {
+      final id = await service.createBookingAtomic(_booking(
+        parkingId: 'p1',
+        spotId: 'A1',
+        vehicleId: 'vehicle-A1',
+        start: DateTime.now(),
+        end: DateTime.now().add(const Duration(hours: 1)),
+      ));
+
+      await service.updateVehicleStatus(id, VehicleStatus.parked);
+
+      final doc =
+          await fakeFirestore.collection('slotsReservations_v2').doc(id).get();
+      expect(doc.data()!['vehicleStatus'], 'parked');
+    });
+  });
+
+  group('updateBookingFields', () {
+    test('applique plusieurs champs en un seul appel', () async {
+      final id = await service.createBookingAtomic(_booking(
+        parkingId: 'p1',
+        spotId: 'A1',
+        vehicleId: 'vehicle-A1',
+        start: DateTime.now(),
+        end: DateTime.now().add(const Duration(hours: 1)),
+      ));
+
+      await service.updateBookingFields(id, {
+        'status': 'completed',
+        'isArchived': true,
+      });
+
+      final doc =
+          await fakeFirestore.collection('slotsReservations_v2').doc(id).get();
+      expect(doc.data()!['status'], 'completed');
+      expect(doc.data()!['isArchived'], isTrue);
+    });
+  });
+
+  group('watchWallet', () {
+    test('émet le wallet en temps réel', () async {
+      await service.createWallet('uid-1');
+
+      final wallet = await service.watchWallet('uid-1').first;
+      expect(wallet, isNotNull);
+      expect(wallet!.balance, 0);
+    });
+
+    test('émet null si aucun wallet n\'existe', () async {
+      final wallet = await service.watchWallet('uid-inconnu').first;
+      expect(wallet, isNull);
+    });
+  });
+
+  group('watchTransactions', () {
+    test('combine débits et top-ups triés par date', () async {
+      await service.createWallet('uid-1');
+      final wallet = await service.getWallet('uid-1');
+
+      await service.addDebit(
+        uid: 'uid-1',
+        walletId: wallet!.id,
+        amount: 300,
+        newBalance: -300,
+        parkingId: 'p1',
+        parkingName: 'ECPI',
+      );
+      await service.addTopUp(
+        uid: 'uid-1',
+        walletId: wallet.id,
+        amount: 5000,
+        newBalance: 4700,
+        source: 'qrCode',
+      );
+
+      final transactions =
+          await service.watchTransactions('uid-1', wallet.id).first;
+
+      expect(transactions.length, 2);
+      expect(transactions.any((t) => t.isDebit), isTrue);
+      expect(transactions.any((t) => t.isTopUp), isTrue);
+    });
+  });
+
+  group('addDebit / addTopUp', () {
+    test('addDebit enregistre tous les champs attendus', () async {
+      await service.createWallet('uid-1');
+      final wallet = await service.getWallet('uid-1');
+
+      await service.addDebit(
+        uid: 'uid-1',
+        walletId: wallet!.id,
+        amount: 600,
+        newBalance: -600,
+        parkingId: 'p1',
+        parkingName: 'ECPI Smart Parking',
+      );
+
+      final debits = await fakeFirestore
+          .collection('users_v2')
+          .doc('uid-1')
+          .collection('wallet')
+          .doc(wallet.id)
+          .collection('debits')
+          .get();
+
+      expect(debits.docs.length, 1);
+      expect(debits.docs.first['parkingName'], 'ECPI Smart Parking');
+    });
+
+    test('addTopUp enregistre creditedBy pour un rechargement agent', () async {
+      await service.createWallet('uid-1');
+      final wallet = await service.getWallet('uid-1');
+
+      await service.addTopUp(
+        uid: 'uid-1',
+        walletId: wallet!.id,
+        amount: 5000,
+        newBalance: 5000,
+        source: 'agent',
+        agentUid: 'agent-1',
+      );
+
+      final topUps = await fakeFirestore
+          .collection('users_v2')
+          .doc('uid-1')
+          .collection('wallet')
+          .doc(wallet.id)
+          .collection('topUps')
+          .get();
+
+      expect(topUps.docs.first['creditedBy'], 'agent-1');
+    });
+  });
+
+  group('getAllUserBookings / watchUserBookings', () {
+    test('getAllUserBookings retourne réservations actives ET archivées',
+        () async {
+      await service.createBookingAtomic(_booking(
+        parkingId: 'p1',
+        spotId: 'A1',
+        vehicleId: 'v1',
+        start: DateTime.now().add(const Duration(hours: 1)),
+        end: DateTime.now().add(const Duration(hours: 2)),
+      ));
+
+      final bookings = await service.getAllUserBookings('client-1');
+      expect(bookings.length, 1);
+    });
+
+    test('watchUserBookings émet en temps réel', () async {
+      await service.createBookingAtomic(_booking(
+        parkingId: 'p1',
+        spotId: 'B1',
+        vehicleId: 'v2',
+        start: DateTime.now().add(const Duration(hours: 1)),
+        end: DateTime.now().add(const Duration(hours: 2)),
+      ));
+
+      final bookings = await service.watchUserBookings('client-1').first;
+      expect(bookings.length, 1);
+    });
+  });
 }

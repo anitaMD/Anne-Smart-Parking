@@ -237,6 +237,32 @@ class UserNotifier extends Notifier<UserState> {
     // Puis persist en arrière-plan
     await _firestoreService.markNotificationRead(uid, notifId);
   }
+
+  /// Marque toutes les notifications non lues comme lues.
+  ///
+  /// Déplacé depuis une boucle dans NotificationsScreen (widget) vers
+  /// ce viewmodel : le `ref` d'un ConsumerWidget appartient au widget
+  /// affiché à l'écran — si l'utilisateur navigue ailleurs pendant
+  /// que la boucle await est encore en cours, le widget est détruit
+  /// et le prochain `ref.read(...)` lève "Cannot use ref after the
+  /// widget was disposed". Le `ref` d'un Notifier, lui, reste valide
+  /// tant que le provider existe (durée de vie de l'app), pas liée à
+  /// un écran précis — donc sûr pour un traitement asynchrone qui
+  /// peut survivre à une navigation.
+  Future<void> markAllNotificationsRead(String uid) async {
+    final unreadIds =
+        state.notifications.where((n) => !n.isRead).map((n) => n.id).toList();
+
+    // Mise à jour optimiste immédiate de tout le lot
+    final updated = state.notifications.map((n) {
+      return unreadIds.contains(n.id) ? n.copyWith(isRead: true) : n;
+    }).toList();
+    state = state.copyWith(notifications: updated);
+
+    for (final notifId in unreadIds) {
+      await _firestoreService.markNotificationRead(uid, notifId);
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────

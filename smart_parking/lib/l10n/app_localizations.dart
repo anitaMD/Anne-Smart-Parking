@@ -1394,7 +1394,7 @@ abstract class AppLocalizations {
   /// Past bookings filter
   ///
   /// In en, this message translates to:
-  /// **'Past'**
+  /// **'Completed'**
   String get bookingFilterPast;
 
   /// Canceled bookings filter
@@ -1628,7 +1628,7 @@ abstract class AppLocalizations {
   /// Booking confirmed notification title
   ///
   /// In en, this message translates to:
-  /// **'Booking confirmed!'**
+  /// **'✔ Booking confirmed!'**
   String get notifBookingConfirmedTitle;
 
   /// Booking confirmed notification body
